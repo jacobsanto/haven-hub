@@ -19,6 +19,8 @@ import Destinations from "./pages/Destinations";
 import DestinationDetail from "./pages/DestinationDetail";
 import Experiences from "./pages/Experiences";
 import ExperienceDetail from "./pages/ExperienceDetail";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProperties from "./pages/admin/AdminProperties";
 import AdminPropertyForm from "./pages/admin/AdminPropertyForm";
@@ -29,6 +31,8 @@ import AdminAmenities from "./pages/admin/AdminAmenities";
 import AdminDestinations from "./pages/admin/AdminDestinations";
 import AdminExperiences from "./pages/admin/AdminExperiences";
 import AdminExperienceEnquiries from "./pages/admin/AdminExperienceEnquiries";
+import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
+import AdminBlogCategories from "./pages/admin/AdminBlogCategories";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +60,8 @@ const App = () => (
               <Route path="/destinations/:slug" element={<DestinationDetail />} />
               <Route path="/experiences" element={<Experiences />} />
               <Route path="/experiences/:slug" element={<ExperienceDetail />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/properties" element={<AdminProperties />} />
               <Route path="/admin/properties/new" element={<AdminPropertyForm />} />
@@ -66,6 +72,8 @@ const App = () => (
               <Route path="/admin/destinations" element={<AdminDestinations />} />
               <Route path="/admin/experiences" element={<AdminExperiences />} />
               <Route path="/admin/experience-enquiries" element={<AdminExperienceEnquiries />} />
+              <Route path="/admin/blog" element={<AdminBlogPosts />} />
+              <Route path="/admin/blog/categories" element={<AdminBlogCategories />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

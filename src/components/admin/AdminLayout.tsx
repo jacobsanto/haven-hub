@@ -14,6 +14,8 @@ import {
   MapPin,
   Star,
   MessageSquare,
+  FileText,
+  FolderOpen,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -32,6 +34,8 @@ const navItems = [
   { href: '/admin/destinations', icon: MapPin, label: 'Destinations' },
   { href: '/admin/experiences', icon: Star, label: 'Experiences' },
   { href: '/admin/experience-enquiries', icon: MessageSquare, label: 'Enquiries' },
+  { href: '/admin/blog', icon: FileText, label: 'Blog Posts' },
+  { href: '/admin/blog/categories', icon: FolderOpen, label: 'Blog Categories' },
   { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
   { href: '/admin/availability', icon: CalendarDays, label: 'Availability' },
   { href: '/admin/amenities', icon: Sparkles, label: 'Amenities' },
