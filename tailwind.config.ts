@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        serif: ["Cormorant Garamond", "Georgia", "serif"],
-        sans: ["Inter", "system-ui", "sans-serif"],
+        serif: ["Playfair Display", "Georgia", "serif"],
+        sans: ["Lato", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -61,24 +61,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Custom hospitality colors
-        terracotta: {
-          DEFAULT: "hsl(var(--terracotta))",
-          light: "hsl(var(--terracotta-light))",
-        },
-        sage: {
-          DEFAULT: "hsl(var(--sage))",
-          light: "hsl(var(--sage-light))",
-        },
-        cream: {
-          DEFAULT: "hsl(var(--cream))",
-          dark: "hsl(var(--cream-dark))",
-        },
-        gold: {
-          DEFAULT: "hsl(var(--gold))",
-          light: "hsl(var(--gold-light))",
-        },
-        "warm-brown": "hsl(var(--warm-brown))",
+        // Custom Arivia Villas brand colors
+        "navy-blue": "hsl(var(--navy-blue))",
+        "primary-blue": "hsl(var(--primary-blue))",
+        "gold-accent": "hsl(var(--gold-accent))",
+        "sand-brown": "hsl(var(--sand-brown))",
+        "light-blue": "hsl(var(--light-blue))",
+        "pale-blue": "hsl(var(--pale-blue))",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -122,9 +111,9 @@ export default {
         "slide-in-right": "slide-in-right 0.3s ease-out",
       },
       boxShadow: {
-        organic: "0 4px 6px -1px hsl(25 30% 15% / 0.05), 0 10px 15px -3px hsl(25 30% 15% / 0.08)",
-        "organic-lg": "0 20px 25px -5px hsl(25 30% 15% / 0.08), 0 8px 10px -6px hsl(25 30% 15% / 0.05)",
-        "organic-xl": "0 25px 50px -12px hsl(25 30% 15% / 0.15)",
+        organic: "0 4px 6px -1px hsl(244 42% 28% / 0.05), 0 10px 15px -3px hsl(244 42% 28% / 0.08)",
+        "organic-lg": "0 20px 25px -5px hsl(244 42% 28% / 0.08), 0 8px 10px -6px hsl(244 42% 28% / 0.05)",
+        "organic-xl": "0 25px 50px -12px hsl(244 42% 28% / 0.15)",
       },
     },
   },

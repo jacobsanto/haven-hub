@@ -26,13 +26,13 @@ export const defaultBrandSettings: Omit<BrandSettings, 'id' | 'updated_at'> = {
   contact_email: 'hello@ariviavillas.com',
   contact_phone: '+1 (234) 567-890',
   contact_address: '123 Luxury Lane, Paradise City',
-  primary_color: '16 50% 48%',
-  secondary_color: '142 25% 55%',
-  accent_color: '43 55% 55%',
-  background_color: '35 30% 96%',
-  foreground_color: '25 30% 15%',
-  heading_font: 'Cormorant Garamond',
-  body_font: 'Inter',
+  primary_color: '245 51% 19%',
+  secondary_color: '243 29% 86%',
+  accent_color: '32 48% 66%',
+  background_color: '0 0% 100%',
+  foreground_color: '244 42% 28%',
+  heading_font: 'Playfair Display',
+  body_font: 'Lato',
 };
 
 export function useBrandSettings() {
