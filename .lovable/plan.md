@@ -1,182 +1,185 @@
 
 
-# Blog Enhancement Plan
+# Author Profiles Implementation Plan
 
 ## Overview
-A comprehensive upgrade to transform the blog into a polished, magazine-style publication with enhanced reading experience, rich content rendering, and improved navigation.
+Add a dedicated blog authors system so each blog post can display the actual author's name, avatar, and bio instead of the default editorial team placeholder.
 
 ---
 
-## Part 1: Blog Listing Page Redesign
+## Part 1: Database Schema
 
-### Magazine-Style Layout
-Create a visually dynamic layout with varied card sizes:
+### Create `blog_authors` Table
 
-```text
-+----------------------------------+
-|   FEATURED POST (full width)     |
-|   Large hero image + excerpt     |
-+----------------------------------+
-+---------------+------------------+
-|  SECONDARY    |    SECONDARY     |
-|  POST (lg)    |    POST (lg)     |
-+---------------+------------------+
-+----------+----------+----------+
-|  POST    |   POST   |   POST   |
-|  (sm)    |   (sm)   |   (sm)   |
-+----------+----------+----------+
+A dedicated authors table separate from user profiles provides editorial flexibility - authors don't need user accounts (for guest contributors, editorial pseudonyms, etc.).
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid | Primary key |
+| `name` | text | Display name (required) |
+| `slug` | text | URL-friendly identifier |
+| `avatar_url` | text | Profile image URL |
+| `bio` | text | Short author biography |
+| `email` | text | Contact email (optional) |
+| `website_url` | text | Personal website (optional) |
+| `social_twitter` | text | Twitter/X handle |
+| `social_linkedin` | text | LinkedIn profile URL |
+| `is_active` | boolean | Whether author is currently active |
+| `created_at` | timestamptz | Creation timestamp |
+| `updated_at` | timestamptz | Last update timestamp |
+
+### Update `blog_posts` Foreign Key
+
+Add a foreign key relationship from `blog_posts.author_id` to `blog_authors.id`.
+
+### RLS Policies
+
+| Policy | Command | Rule |
+|--------|---------|------|
+| Anyone can view active authors | SELECT | `is_active = true` |
+| Admins can view all authors | SELECT | `has_role(auth.uid(), 'admin')` |
+| Admins can insert authors | INSERT | `has_role(auth.uid(), 'admin')` |
+| Admins can update authors | UPDATE | `has_role(auth.uid(), 'admin')` |
+| Admins can delete authors | DELETE | `has_role(auth.uid(), 'admin')` |
+
+---
+
+## Part 2: New Files to Create
+
+### `src/types/blog.ts` - Add Author Type
+
+Add `BlogAuthor` interface with all author fields.
+
+### `src/hooks/useBlogAuthors.ts`
+
+New hook for CRUD operations on authors:
+- `useBlogAuthors()` - List all authors
+- `useBlogAuthor(id)` - Get single author
+- `useCreateBlogAuthor()` - Create author
+- `useUpdateBlogAuthor()` - Update author
+- `useDeleteBlogAuthor()` - Delete author
+
+### `src/components/admin/BlogAuthorFormDialog.tsx`
+
+Admin dialog for creating/editing authors with:
+- Name and slug fields
+- Avatar URL input
+- Bio textarea
+- Social links (Twitter, LinkedIn)
+- Website URL
+- Active status toggle
+
+### `src/pages/admin/AdminBlogAuthors.tsx`
+
+Admin page to manage authors:
+- List all authors with avatar, name, post count
+- Add/Edit/Delete actions
+- Quick toggle for active status
+
+---
+
+## Part 3: Files to Modify
+
+### `src/hooks/useBlogPosts.ts`
+
+Update queries to join with `blog_authors`:
+```
+.select(`
+  *,
+  category:blog_categories(*),
+  author:blog_authors(*)
+`)
 ```
 
-### New Components
-- **BlogHero**: Full-width featured article with overlay text
-- **BlogSecondaryCard**: Larger horizontal cards for second-tier posts
-- **Enhanced BlogPostCard**: Refined styling with hover effects
+### `src/types/blog.ts`
 
-### Category Navigation Improvements
-- Pill-style category filters with post counts
-- Smooth scroll behavior on category change
-- Active state indicators
+- Add `BlogAuthor` interface
+- Add `author?: BlogAuthor` to `BlogPost` interface
 
----
+### `src/pages/BlogPost.tsx`
 
-## Part 2: Blog Post Detail Page Enhancements
+Replace hardcoded author with real data:
+- Use `post.author` from the query
+- Fall back to "Arivia Editorial" if no author assigned
+- Pass real author data to `AuthorBio` component
 
-### Reading Progress Indicator
-- Fixed position progress bar at top of viewport
-- Smooth animation as user scrolls through article
-- Primary color styling matching brand
+### `src/components/admin/BlogPostFormDialog.tsx`
 
-### Table of Contents Sidebar
-- Sticky sidebar on desktop (hidden on mobile)
-- Auto-generated from H2/H3 headings in content
-- Highlights current section as user scrolls
-- Smooth scroll-to-section on click
+Add author selector dropdown:
+- Fetch authors list using `useBlogAuthors()`
+- Add `author_id` field to form schema
+- Display author name with avatar in select options
 
-### Social Sharing Buttons
-- Floating share button group (or positioned after title)
-- Share options: X (Twitter), Facebook, LinkedIn, Copy Link
-- Uses Web Share API on mobile devices
-- Toast notification on link copy
+### `src/components/admin/AdminLayout.tsx`
 
-### Author Bio Section
-- Display at end of article
-- Avatar, name, and short bio
-- Link to view more posts by author (future enhancement)
+Add "Authors" link to the admin sidebar navigation.
+
+### `src/App.tsx`
+
+Add route for `/admin/authors` page.
 
 ---
 
-## Part 3: Rich Content Rendering
+## Part 4: Optional Enhancements
 
-### Markdown Support
-- Parse and render markdown content with proper styling
-- Support for:
-  - Headings (H1-H6)
-  - Bold, italic, strikethrough
-  - Blockquotes with styled borders
-  - Code blocks with syntax highlighting
-  - Ordered and unordered lists
-  - Links with primary color styling
-  - Images with captions
+### Author Display on Blog Cards
 
-### Typography Improvements
-- Larger, more readable body text (18px)
-- Proper line height (1.8) for article content
-- Drop cap for first paragraph
-- Pull quotes styling
-- Better heading hierarchy
+Show small author avatar and name on:
+- `BlogPostCard` - Author byline below title
+- `BlogHero` - Author info in overlay
+- `BlogSecondaryCard` - Compact author display
 
----
+### Author Profile Page (Future)
 
-## Part 4: New Components to Create
-
-| Component | Purpose |
-|-----------|---------|
-| `BlogHero` | Full-width featured post display |
-| `BlogSecondaryCard` | Medium-sized horizontal cards |
-| `ReadingProgress` | Progress bar at top of page |
-| `TableOfContents` | Sticky sidebar navigation |
-| `SocialShareButtons` | Share to social platforms |
-| `AuthorBio` | Author information card |
-| `MarkdownRenderer` | Parse and render markdown content |
-| `CategoryFilter` | Enhanced category pills |
-
----
-
-## Part 5: Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/pages/Blog.tsx` | Implement magazine layout, add CategoryFilter |
-| `src/pages/BlogPost.tsx` | Add ReadingProgress, TableOfContents, SocialShareButtons, AuthorBio, MarkdownRenderer |
-| `src/components/blog/BlogPostCard.tsx` | Enhanced styling and hover effects |
-| `src/hooks/useBlogPosts.ts` | Add hook for latest posts count |
-| `src/types/blog.ts` | Add author type if needed |
-
----
-
-## Part 6: Visual Design Improvements
-
-### Card Styling
-- Subtle shadows on hover
-- Image zoom effect on hover
-- Rounded corners consistent with design system
-- Category badge overlays
-
-### Color Palette Usage
-- Primary color for links and accents
-- Muted backgrounds for sections
-- Proper contrast for readability
-
-### Animations
-- Staggered fade-in for post grids
-- Smooth hover transitions
-- Progress bar animation
-- TOC highlight transitions
-
----
-
-## Technical Details
-
-### Reading Progress Implementation
-```text
-1. Track scroll position with useEffect
-2. Calculate percentage based on article height
-3. Update progress bar width dynamically
-4. Use transform for smooth animation
-```
-
-### Table of Contents Generation
-```text
-1. Parse content for H2/H3 headings
-2. Generate unique IDs for each heading
-3. Create navigation links
-4. Use Intersection Observer for active state
-5. Scroll to heading on click
-```
-
-### Markdown Parsing
-Use a lightweight markdown parser to convert content to JSX with proper styling classes applied to each element type.
+A public `/authors/:slug` page showing:
+- Author bio and avatar
+- Social links
+- All posts by this author
 
 ---
 
 ## Implementation Order
 
-1. Create utility components (ReadingProgress, SocialShareButtons)
-2. Create MarkdownRenderer component
-3. Create TableOfContents component
-4. Update BlogPost.tsx with new features
-5. Create magazine layout components
-6. Update Blog.tsx with new layout
-7. Polish styling and animations
-8. Create AuthorBio component
+1. **Database Migration**
+   - Create `blog_authors` table with columns and constraints
+   - Add foreign key to `blog_posts`
+   - Create RLS policies
+
+2. **Types & Hooks**
+   - Update `src/types/blog.ts` with author interface
+   - Create `src/hooks/useBlogAuthors.ts`
+   - Update `useBlogPosts.ts` to include author join
+
+3. **Admin Interface**
+   - Create `BlogAuthorFormDialog.tsx`
+   - Create `AdminBlogAuthors.tsx` page
+   - Add route and nav link
+
+4. **Blog Post Admin**
+   - Add author selector to `BlogPostFormDialog.tsx`
+
+5. **Public Display**
+   - Update `BlogPost.tsx` to use real author data
+   - Optionally update blog cards
 
 ---
 
-## Expected Outcome
-A professional, magazine-quality blog experience with:
-- Engaging visual hierarchy on the listing page
-- Immersive reading experience on article pages
-- Easy content navigation and discovery
-- Rich content formatting capabilities
-- Social sharing to increase reach
+## Sample Author Data
+
+Seed the database with a default author:
+
+| Field | Value |
+|-------|-------|
+| name | Arivia Editorial |
+| slug | arivia-editorial |
+| bio | Our editorial team curates the finest travel insights, destination guides, and luxury living inspiration. |
+| is_active | true |
+
+---
+
+## Technical Notes
+
+- The `blog_authors` table is intentionally separate from `profiles` to allow non-user authors (guest writers, editorial team accounts)
+- Author avatars can use the existing `property-images` bucket or a new `author-avatars` bucket
+- Deleting an author with posts should set those posts' `author_id` to NULL (not cascade delete)
 
