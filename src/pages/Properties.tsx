@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Filter, X } from 'lucide-react';
+import { Filter, Zap, LayoutGrid, Map } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { PropertyCard } from '@/components/properties/PropertyCard';
@@ -9,14 +9,31 @@ import { useProperties } from '@/hooks/useProperties';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AMENITIES, AMENITY_LABELS, Amenity } from '@/lib/constants';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { AMENITIES, AMENITY_LABELS, Amenity, PROPERTY_TYPES, PROPERTY_TYPE_LABELS, PropertyTypeValue } from '@/lib/constants';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { PropertyType } from '@/types/database';
 
 export default function Properties() {
   const [searchParams] = useSearchParams();
   const [priceRange, setPriceRange] = useState([0, 5000]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  
+  // New advanced filters
+  const [bedrooms, setBedrooms] = useState<number | undefined>(undefined);
+  const [bathrooms, setBathrooms] = useState<number | undefined>(undefined);
+  const [propertyType, setPropertyType] = useState<PropertyType | undefined>(undefined);
+  const [instantBooking, setInstantBooking] = useState(false);
 
   const location = searchParams.get('location') || undefined;
   const guests = searchParams.get('guests') ? parseInt(searchParams.get('guests')!) : undefined;
@@ -27,6 +44,10 @@ export default function Properties() {
     minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
     maxPrice: priceRange[1] < 5000 ? priceRange[1] : undefined,
     amenities: selectedAmenities.length > 0 ? selectedAmenities : undefined,
+    bedrooms,
+    bathrooms,
+    propertyType,
+    instantBooking: instantBooking ? true : undefined,
   });
 
   const toggleAmenity = (amenity: string) => {
@@ -40,12 +61,101 @@ export default function Properties() {
   const clearFilters = () => {
     setPriceRange([0, 5000]);
     setSelectedAmenities([]);
+    setBedrooms(undefined);
+    setBathrooms(undefined);
+    setPropertyType(undefined);
+    setInstantBooking(false);
   };
 
-  const hasActiveFilters = priceRange[0] > 0 || priceRange[1] < 5000 || selectedAmenities.length > 0;
+  const hasActiveFilters = 
+    priceRange[0] > 0 || 
+    priceRange[1] < 5000 || 
+    selectedAmenities.length > 0 ||
+    bedrooms !== undefined ||
+    bathrooms !== undefined ||
+    propertyType !== undefined ||
+    instantBooking;
+
+  const activeFilterCount = 
+    (priceRange[0] > 0 || priceRange[1] < 5000 ? 1 : 0) +
+    selectedAmenities.length +
+    (bedrooms !== undefined ? 1 : 0) +
+    (bathrooms !== undefined ? 1 : 0) +
+    (propertyType !== undefined ? 1 : 0) +
+    (instantBooking ? 1 : 0);
 
   const FilterContent = () => (
     <div className="space-y-8">
+      {/* Instant Booking Toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-amber-500" />
+          <Label htmlFor="instant-booking" className="font-medium">Instant Book Only</Label>
+        </div>
+        <Switch
+          id="instant-booking"
+          checked={instantBooking}
+          onCheckedChange={setInstantBooking}
+        />
+      </div>
+
+      {/* Property Type */}
+      <div>
+        <h3 className="font-medium mb-4">Property Type</h3>
+        <Select
+          value={propertyType || 'all'}
+          onValueChange={(value) => setPropertyType(value === 'all' ? undefined : value as PropertyType)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="All property types" />
+          </SelectTrigger>
+          <SelectContent className="bg-card">
+            <SelectItem value="all">All Types</SelectItem>
+            {PROPERTY_TYPES.map((type) => (
+              <SelectItem key={type} value={type}>
+                {PROPERTY_TYPE_LABELS[type]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Bedrooms */}
+      <div>
+        <h3 className="font-medium mb-4">Bedrooms</h3>
+        <div className="flex flex-wrap gap-2">
+          {[undefined, 1, 2, 3, 4, 5].map((num) => (
+            <Button
+              key={num ?? 'any'}
+              variant={bedrooms === num ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setBedrooms(num)}
+              className="rounded-full"
+            >
+              {num === undefined ? 'Any' : num === 5 ? '5+' : num}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Bathrooms */}
+      <div>
+        <h3 className="font-medium mb-4">Bathrooms</h3>
+        <div className="flex flex-wrap gap-2">
+          {[undefined, 1, 2, 3, 4].map((num) => (
+            <Button
+              key={num ?? 'any'}
+              variant={bathrooms === num ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setBathrooms(num)}
+              className="rounded-full"
+            >
+              {num === undefined ? 'Any' : num === 4 ? '4+' : num}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {/* Price Range */}
       <div>
         <h3 className="font-medium mb-4">Price Range</h3>
@@ -134,9 +244,9 @@ export default function Properties() {
                 >
                   <Filter className="h-4 w-4" />
                   Filters
-                  {hasActiveFilters && (
+                  {activeFilterCount > 0 && (
                     <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-                      {selectedAmenities.length + (priceRange[0] > 0 || priceRange[1] < 5000 ? 1 : 0)}
+                      {activeFilterCount}
                     </span>
                   )}
                 </Button>
@@ -153,41 +263,71 @@ export default function Properties() {
 
             {/* Properties Grid */}
             <div className="flex-1">
-              {/* Results Count */}
+              {/* Results Count & View Toggle */}
               <div className="flex items-center justify-between mb-6">
                 <p className="text-muted-foreground">
                   {isLoading
                     ? 'Loading...'
                     : `${properties?.length || 0} properties found`}
                 </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'outline'}
+                    size="icon"
+                    onClick={() => setViewMode('grid')}
+                    className="rounded-full"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'map' ? 'default' : 'outline'}
+                    size="icon"
+                    onClick={() => setViewMode('map')}
+                    className="rounded-full"
+                  >
+                    <Map className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
-              {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="card-organic animate-pulse">
-                      <div className="aspect-[4/3] bg-muted rounded-t-2xl" />
-                      <div className="p-5 space-y-3">
-                        <div className="h-6 bg-muted rounded w-3/4" />
-                        <div className="h-4 bg-muted rounded w-1/2" />
-                      </div>
+              {viewMode === 'grid' ? (
+                <>
+                  {isLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="card-organic animate-pulse">
+                          <div className="aspect-[4/3] bg-muted rounded-t-2xl" />
+                          <div className="p-5 space-y-3">
+                            <div className="h-6 bg-muted rounded w-3/4" />
+                            <div className="h-4 bg-muted rounded w-1/2" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : properties && properties.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {properties.map((property, index) => (
-                    <PropertyCard key={property.id} property={property} index={index} />
-                  ))}
-                </div>
+                  ) : properties && properties.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {properties.map((property, index) => (
+                        <PropertyCard key={property.id} property={property} index={index} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16 card-organic">
+                      <p className="text-muted-foreground text-lg mb-4">
+                        No properties match your criteria
+                      </p>
+                      <Button variant="outline" onClick={clearFilters}>
+                        Clear Filters
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="text-center py-16 card-organic">
-                  <p className="text-muted-foreground text-lg mb-4">
-                    No properties match your criteria
+                <div className="card-organic p-8 text-center">
+                  <Map className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="font-serif text-xl font-medium mb-2">Map View Coming Soon</h3>
+                  <p className="text-muted-foreground">
+                    Interactive map view with property pins is in development.
                   </p>
-                  <Button variant="outline" onClick={clearFilters}>
-                    Clear Filters
-                  </Button>
                 </div>
               )}
             </div>

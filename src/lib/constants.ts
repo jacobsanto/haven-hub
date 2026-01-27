@@ -87,6 +87,25 @@ export const AMENITY_LABELS: Record<Amenity, string> = {
   'wheelchair-accessible': 'Wheelchair Accessible',
 };
 
+// Property types
+export const PROPERTY_TYPES = [
+  'villa',
+  'apartment',
+  'estate',
+  'cottage',
+  'penthouse',
+] as const;
+
+export type PropertyTypeValue = typeof PROPERTY_TYPES[number];
+
+export const PROPERTY_TYPE_LABELS: Record<PropertyTypeValue, string> = {
+  villa: 'Villa',
+  apartment: 'Apartment',
+  estate: 'Estate',
+  cottage: 'Cottage',
+  penthouse: 'Penthouse',
+};
+
 // Popular destinations (for homepage)
 export const POPULAR_DESTINATIONS = [
   { name: 'Tuscany', country: 'Italy', image: '' },

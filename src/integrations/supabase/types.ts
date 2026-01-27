@@ -578,55 +578,196 @@ export type Database = {
         Row: {
           amenities: string[] | null
           base_price: number
+          bathrooms: number
+          bedrooms: number
+          cancellation_policy: string | null
           city: string
           country: string
           created_at: string
           description: string | null
+          destination_id: string | null
           gallery: string[] | null
           hero_image_url: string | null
+          highlights: string[]
+          house_rules: string[]
           id: string
+          instant_booking: boolean
           max_guests: number
           name: string
+          nearby_attractions: Json
+          neighborhood_description: string | null
+          pet_policy: string | null
+          property_type: string
           region: string | null
+          rooms: Json
           slug: string
           status: Database["public"]["Enums"]["property_status"]
           updated_at: string
+          video_url: string | null
+          virtual_tour_url: string | null
         }
         Insert: {
           amenities?: string[] | null
           base_price?: number
+          bathrooms?: number
+          bedrooms?: number
+          cancellation_policy?: string | null
           city: string
           country: string
           created_at?: string
           description?: string | null
+          destination_id?: string | null
           gallery?: string[] | null
           hero_image_url?: string | null
+          highlights?: string[]
+          house_rules?: string[]
           id?: string
+          instant_booking?: boolean
           max_guests?: number
           name: string
+          nearby_attractions?: Json
+          neighborhood_description?: string | null
+          pet_policy?: string | null
+          property_type?: string
           region?: string | null
+          rooms?: Json
           slug: string
           status?: Database["public"]["Enums"]["property_status"]
           updated_at?: string
+          video_url?: string | null
+          virtual_tour_url?: string | null
         }
         Update: {
           amenities?: string[] | null
           base_price?: number
+          bathrooms?: number
+          bedrooms?: number
+          cancellation_policy?: string | null
           city?: string
           country?: string
           created_at?: string
           description?: string | null
+          destination_id?: string | null
           gallery?: string[] | null
           hero_image_url?: string | null
+          highlights?: string[]
+          house_rules?: string[]
           id?: string
+          instant_booking?: boolean
           max_guests?: number
           name?: string
+          nearby_attractions?: Json
+          neighborhood_description?: string | null
+          pet_policy?: string | null
+          property_type?: string
           region?: string | null
+          rooms?: Json
           slug?: string
           status?: Database["public"]["Enums"]["property_status"]
           updated_at?: string
+          video_url?: string | null
+          virtual_tour_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasonal_rates: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          name: string
+          nightly_rate: number | null
+          price_multiplier: number
+          property_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          name: string
+          nightly_rate?: number | null
+          price_multiplier?: number
+          property_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          name?: string
+          nightly_rate?: number | null
+          price_multiplier?: number
+          property_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seasonal_rates_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      special_offers: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_percent: number
+          id: string
+          is_active: boolean
+          property_id: string
+          title: string
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_percent: number
+          id?: string
+          is_active?: boolean
+          property_id: string
+          title: string
+          updated_at?: string
+          valid_from: string
+          valid_until: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_percent?: number
+          id?: string
+          is_active?: boolean
+          property_id?: string
+          title?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "special_offers_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

@@ -8,14 +8,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useCreateBooking } from '@/hooks/useBookings';
 import { useToast } from '@/hooks/use-toast';
-import { Property } from '@/types/database';
+import { Property, SpecialOffer } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 interface BookingWidgetProps {
   property: Property;
+  specialOffer?: SpecialOffer | null;
 }
 
-export function BookingWidget({ property }: BookingWidgetProps) {
+export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const createBooking = useCreateBooking();
@@ -29,7 +30,9 @@ export function BookingWidget({ property }: BookingWidgetProps) {
   const [step, setStep] = useState<'dates' | 'details' | 'confirm'>('dates');
 
   const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
-  const totalPrice = nights * property.base_price;
+  const baseTotal = nights * property.base_price;
+  const discountAmount = specialOffer ? (baseTotal * specialOffer.discount_percent) / 100 : 0;
+  const totalPrice = baseTotal - discountAmount;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -264,8 +267,16 @@ export function BookingWidget({ property }: BookingWidgetProps) {
             <span>
               {formatPrice(property.base_price)} × {nights} nights
             </span>
-            <span>{formatPrice(totalPrice)}</span>
+            <span>{formatPrice(baseTotal)}</span>
           </div>
+          {specialOffer && discountAmount > 0 && (
+            <div className="flex justify-between text-sm text-green-600">
+              <span>
+                {specialOffer.title} (-{specialOffer.discount_percent}%)
+              </span>
+              <span>-{formatPrice(discountAmount)}</span>
+            </div>
+          )}
           <div className="flex justify-between font-semibold">
             <span>Total</span>
             <span>{formatPrice(totalPrice)}</span>
