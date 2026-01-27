@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Users } from 'lucide-react';
+import { MapPin, Users, Bed, Bath, Zap } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { LucideIcon, Sparkles } from 'lucide-react';
 import { Property } from '@/types/database';
 import { useAmenityMap } from '@/hooks/useAmenities';
+import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
 import { cn } from '@/lib/utils';
 
 interface PropertyCardProps {
@@ -29,6 +30,7 @@ function getIconComponent(iconName: string): LucideIcon {
 
 export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
   const amenityMap = useAmenityMap();
+  const { data: activeOffer } = useActiveSpecialOffer(property.id);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -71,10 +73,37 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
                 <span className="text-muted-foreground">No image</span>
               </div>
             )}
+            
+            {/* Badges - Top Left */}
+            <div className="absolute top-4 left-4 flex flex-col gap-2">
+              {property.instant_booking && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 dark:bg-amber-900/80 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium backdrop-blur-sm">
+                  <Zap className="h-3 w-3 fill-current" />
+                  Instant Book
+                </span>
+              )}
+              {activeOffer && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 dark:bg-green-900/80 text-green-700 dark:text-green-300 rounded-full text-xs font-medium backdrop-blur-sm">
+                  {activeOffer.discount_percent}% off
+                </span>
+              )}
+            </div>
+
             {/* Price Tag */}
             <div className="absolute bottom-4 left-4">
               <span className="bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium">
-                {formatPrice(property.base_price)}{' '}
+                {activeOffer ? (
+                  <>
+                    <span className="line-through text-muted-foreground mr-1">
+                      {formatPrice(property.base_price)}
+                    </span>
+                    <span className="text-green-600 dark:text-green-400">
+                      {formatPrice(property.base_price * (1 - activeOffer.discount_percent / 100))}
+                    </span>
+                  </>
+                ) : (
+                  formatPrice(property.base_price)
+                )}{' '}
                 <span className="text-muted-foreground text-xs">/ night</span>
               </span>
             </div>
@@ -86,19 +115,46 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
               {property.name}
             </h3>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
                 {property.city}, {property.country}
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                Up to {property.max_guests} guests
+                {property.max_guests}
+              </span>
+              <span className="flex items-center gap-1">
+                <Bed className="h-4 w-4" />
+                {property.bedrooms}
+              </span>
+              <span className="flex items-center gap-1">
+                <Bath className="h-4 w-4" />
+                {property.bathrooms}
               </span>
             </div>
 
+            {/* Highlights Preview */}
+            {property.highlights && property.highlights.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {property.highlights.slice(0, 2).map((highlight, idx) => (
+                  <span
+                    key={idx}
+                    className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full"
+                  >
+                    {highlight}
+                  </span>
+                ))}
+                {property.highlights.length > 2 && (
+                  <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">
+                    +{property.highlights.length - 2}
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Amenities Preview with Icons */}
-            {property.amenities.length > 0 && (
+            {property.amenities.length > 0 && (!property.highlights || property.highlights.length === 0) && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {property.amenities.slice(0, 3).map((slug) => {
                   const amenity = getAmenityData(slug);

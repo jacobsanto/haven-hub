@@ -33,7 +33,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { PropertyStatus } from '@/types/database';
+import { PropertyStatus, PropertyType } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminPropertyForm() {
@@ -60,6 +60,21 @@ export default function AdminPropertyForm() {
     base_price: 0,
     max_guests: 1,
     status: 'draft' as PropertyStatus,
+    // New fields
+    destination_id: null as string | null,
+    video_url: null as string | null,
+    virtual_tour_url: null as string | null,
+    instant_booking: false,
+    highlights: [] as string[],
+    rooms: [] as any[],
+    neighborhood_description: null as string | null,
+    nearby_attractions: [] as any[],
+    house_rules: [] as string[],
+    cancellation_policy: null as string | null,
+    pet_policy: null as string | null,
+    bedrooms: 1,
+    bathrooms: 1,
+    property_type: 'villa' as PropertyType,
   });
 
   const [uploading, setUploading] = useState(false);
@@ -79,6 +94,21 @@ export default function AdminPropertyForm() {
         base_price: existingProperty.base_price,
         max_guests: existingProperty.max_guests,
         status: existingProperty.status,
+        // New fields
+        destination_id: existingProperty.destination_id || null,
+        video_url: existingProperty.video_url || null,
+        virtual_tour_url: existingProperty.virtual_tour_url || null,
+        instant_booking: existingProperty.instant_booking || false,
+        highlights: existingProperty.highlights || [],
+        rooms: existingProperty.rooms || [],
+        neighborhood_description: existingProperty.neighborhood_description || null,
+        nearby_attractions: existingProperty.nearby_attractions || [],
+        house_rules: existingProperty.house_rules || [],
+        cancellation_policy: existingProperty.cancellation_policy || null,
+        pet_policy: existingProperty.pet_policy || null,
+        bedrooms: existingProperty.bedrooms || 1,
+        bathrooms: existingProperty.bathrooms || 1,
+        property_type: existingProperty.property_type || 'villa',
       });
     }
   }, [existingProperty]);
@@ -302,6 +332,88 @@ export default function AdminPropertyForm() {
               </div>
             </div>
 
+            {/* Property Details */}
+            <div className="card-organic p-6 space-y-6">
+              <h2 className="font-serif text-xl font-medium">Property Details</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="property_type">Property Type</Label>
+                  <Select
+                    value={formData.property_type}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        property_type: value as PropertyType,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="input-organic">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card">
+                      <SelectItem value="villa">Villa</SelectItem>
+                      <SelectItem value="apartment">Apartment</SelectItem>
+                      <SelectItem value="estate">Estate</SelectItem>
+                      <SelectItem value="cottage">Cottage</SelectItem>
+                      <SelectItem value="penthouse">Penthouse</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bedrooms">Bedrooms</Label>
+                  <Input
+                    id="bedrooms"
+                    type="number"
+                    min={1}
+                    value={formData.bedrooms}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        bedrooms: parseInt(e.target.value) || 1,
+                      }))
+                    }
+                    className="input-organic"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bathrooms">Bathrooms</Label>
+                  <Input
+                    id="bathrooms"
+                    type="number"
+                    min={1}
+                    step={0.5}
+                    value={formData.bathrooms}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        bathrooms: parseFloat(e.target.value) || 1,
+                      }))
+                    }
+                    className="input-organic"
+                  />
+                </div>
+
+                <div className="space-y-2 flex items-center pt-8">
+                  <Checkbox
+                    id="instant_booking"
+                    checked={formData.instant_booking}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        instant_booking: !!checked,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="instant_booking" className="ml-2 cursor-pointer">
+                    Instant Booking
+                  </Label>
+                </div>
+              </div>
+            </div>
+
             {/* Pricing & Capacity */}
             <div className="card-organic p-6 space-y-6">
               <h2 className="font-serif text-xl font-medium">Pricing & Capacity</h2>
@@ -363,6 +475,41 @@ export default function AdminPropertyForm() {
                       <SelectItem value="archived">Archived</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Media & Virtual Tour */}
+            <div className="card-organic p-6 space-y-6">
+              <h2 className="font-serif text-xl font-medium">Media & Virtual Tour</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="video_url">Video URL</Label>
+                  <Input
+                    id="video_url"
+                    value={formData.video_url || ''}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, video_url: e.target.value || null }))
+                    }
+                    placeholder="https://youtube.com/..."
+                    className="input-organic"
+                  />
+                  <p className="text-xs text-muted-foreground">YouTube, Vimeo, or direct video URL</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="virtual_tour_url">Virtual Tour URL</Label>
+                  <Input
+                    id="virtual_tour_url"
+                    value={formData.virtual_tour_url || ''}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, virtual_tour_url: e.target.value || null }))
+                    }
+                    placeholder="https://my.matterport.com/..."
+                    className="input-organic"
+                  />
+                  <p className="text-xs text-muted-foreground">Matterport, 360° tour, or similar</p>
                 </div>
               </div>
             </div>
