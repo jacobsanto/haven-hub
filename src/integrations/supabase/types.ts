@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      addons_catalog: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          max_quantity: number | null
+          name: string
+          price: number
+          price_type: string
+          property_id: string | null
+          requires_lead_time_hours: number | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          max_quantity?: number | null
+          name: string
+          price: number
+          price_type?: string
+          property_id?: string | null
+          requires_lead_time_hours?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          max_quantity?: number | null
+          name?: string
+          price?: number
+          price_type?: string
+          property_id?: string | null
+          requires_lead_time_hours?: number | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addons_catalog_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       amenities: {
         Row: {
           category: string
@@ -47,6 +106,45 @@ export type Database = {
           name?: string
           slug?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -214,6 +312,122 @@ export type Database = {
           },
         ]
       }
+      booking_addons: {
+        Row: {
+          addon_id: string
+          booking_id: string
+          created_at: string
+          guest_count: number | null
+          id: string
+          notes: string | null
+          quantity: number
+          scheduled_date: string | null
+          status: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          addon_id: string
+          booking_id: string
+          created_at?: string
+          guest_count?: number | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          scheduled_date?: string | null
+          status?: string
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          addon_id?: string
+          booking_id?: string
+          created_at?: string
+          guest_count?: number | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+          scheduled_date?: string | null
+          status?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_addons_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "addons_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_addons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_payments: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          currency: string
+          due_date: string | null
+          id: string
+          metadata: Json | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_type: string
+          status: string
+          stripe_charge_id: string | null
+          stripe_payment_intent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_type: string
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_type?: string
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           check_in: string
@@ -321,6 +535,47 @@ export type Database = {
         }
         Relationships: []
       }
+      checkout_holds: {
+        Row: {
+          check_in: string
+          check_out: string
+          created_at: string
+          expires_at: string
+          id: string
+          property_id: string
+          released: boolean
+          session_id: string
+        }
+        Insert: {
+          check_in: string
+          check_out: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          property_id: string
+          released?: boolean
+          session_id: string
+        }
+        Update: {
+          check_in?: string
+          check_out?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          property_id?: string
+          released?: boolean
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_holds_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_submissions: {
         Row: {
           created_at: string
@@ -351,6 +606,63 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["contact_status"]
           subject?: string
+        }
+        Relationships: []
+      }
+      coupons_promos: {
+        Row: {
+          applicable_properties: string[] | null
+          code: string
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          min_booking_value: number | null
+          min_nights: number | null
+          name: string
+          stackable: boolean
+          uses_count: number
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          applicable_properties?: string[] | null
+          code: string
+          created_at?: string
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_booking_value?: number | null
+          min_nights?: number | null
+          name: string
+          stackable?: boolean
+          uses_count?: number
+          valid_from: string
+          valid_until: string
+        }
+        Update: {
+          applicable_properties?: string[] | null
+          code?: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_booking_value?: number | null
+          min_nights?: number | null
+          name?: string
+          stackable?: boolean
+          uses_count?: number
+          valid_from?: string
+          valid_until?: string
         }
         Relationships: []
       }
@@ -523,6 +835,53 @@ export type Database = {
           },
         ]
       }
+      fees_taxes: {
+        Row: {
+          amount: number
+          applies_to: string
+          created_at: string
+          fee_type: string
+          id: string
+          is_active: boolean
+          is_mandatory: boolean
+          is_tax: boolean
+          name: string
+          property_id: string | null
+        }
+        Insert: {
+          amount: number
+          applies_to?: string
+          created_at?: string
+          fee_type: string
+          id?: string
+          is_active?: boolean
+          is_mandatory?: boolean
+          is_tax?: boolean
+          name: string
+          property_id?: string | null
+        }
+        Update: {
+          amount?: number
+          applies_to?: string
+          created_at?: string
+          fee_type?: string
+          id?: string
+          is_active?: boolean
+          is_mandatory?: boolean
+          is_tax?: boolean
+          name?: string
+          property_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fees_taxes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscribers: {
         Row: {
           email: string
@@ -546,6 +905,178 @@ export type Database = {
           subscribed_at?: string
         }
         Relationships: []
+      }
+      pms_connections: {
+        Row: {
+          config: Json | null
+          created_at: string
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          pms_name: string
+          sync_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          pms_name: string
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          pms_name?: string
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pms_property_map: {
+        Row: {
+          created_at: string
+          external_property_id: string
+          external_property_name: string | null
+          id: string
+          last_sync_at: string | null
+          pms_connection_id: string
+          property_id: string
+          sync_enabled: boolean
+        }
+        Insert: {
+          created_at?: string
+          external_property_id: string
+          external_property_name?: string | null
+          id?: string
+          last_sync_at?: string | null
+          pms_connection_id: string
+          property_id: string
+          sync_enabled?: boolean
+        }
+        Update: {
+          created_at?: string
+          external_property_id?: string
+          external_property_name?: string | null
+          id?: string
+          last_sync_at?: string | null
+          pms_connection_id?: string
+          property_id?: string
+          sync_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pms_property_map_pms_connection_id_fkey"
+            columns: ["pms_connection_id"]
+            isOneToOne: false
+            referencedRelation: "pms_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pms_property_map_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pms_raw_events: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          payload: Json
+          pms_connection_id: string | null
+          processed: boolean
+          processed_at: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          pms_connection_id?: string | null
+          processed?: boolean
+          processed_at?: string | null
+          source: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          pms_connection_id?: string | null
+          processed?: boolean
+          processed_at?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pms_raw_events_pms_connection_id_fkey"
+            columns: ["pms_connection_id"]
+            isOneToOne: false
+            referencedRelation: "pms_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pms_sync_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_summary: string | null
+          id: string
+          pms_connection_id: string
+          records_failed: number | null
+          records_processed: number | null
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_summary?: string | null
+          id?: string
+          pms_connection_id: string
+          records_failed?: number | null
+          records_processed?: number | null
+          started_at?: string
+          status?: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_summary?: string | null
+          id?: string
+          pms_connection_id?: string
+          records_failed?: number | null
+          records_processed?: number | null
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pms_sync_runs_pms_connection_id_fkey"
+            columns: ["pms_connection_id"]
+            isOneToOne: false
+            referencedRelation: "pms_connections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -678,6 +1209,65 @@ export type Database = {
           },
         ]
       }
+      rate_plans: {
+        Row: {
+          base_rate: number
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          max_stay: number | null
+          member_tier_required: string | null
+          min_stay: number
+          name: string
+          property_id: string
+          rate_type: string
+          updated_at: string
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          base_rate: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_stay?: number | null
+          member_tier_required?: string | null
+          min_stay?: number
+          name: string
+          property_id: string
+          rate_type?: string
+          updated_at?: string
+          valid_from: string
+          valid_until: string
+        }
+        Update: {
+          base_rate?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_stay?: number | null
+          member_tier_required?: string | null
+          min_stay?: number
+          name?: string
+          property_id?: string
+          rate_type?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_plans_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seasonal_rates: {
         Row: {
           created_at: string
@@ -792,6 +1382,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_checkout_holds: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

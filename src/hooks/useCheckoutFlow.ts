@@ -1,0 +1,269 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { pmsAdapter } from '@/integrations/pms';
+import { AvailabilityCalendarDay } from '@/types/booking-engine';
+import { format, eachDayOfInterval, parseISO, addDays } from 'date-fns';
+
+// Generate a session ID for checkout holds
+export function generateSessionId(): string {
+  return `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
+
+// Fetch availability calendar for a property
+export function useAvailabilityCalendar(
+  propertyId: string,
+  startDate: string,
+  endDate: string,
+  externalPropertyId?: string
+) {
+  return useQuery({
+    queryKey: ['availability-calendar', propertyId, startDate, endDate],
+    queryFn: async () => {
+      // First, try to get from PMS adapter
+      let pmsAvailability: AvailabilityCalendarDay[] = [];
+      
+      if (externalPropertyId) {
+        try {
+          const [availability, rates] = await Promise.all([
+            pmsAdapter.fetchAvailability(externalPropertyId, startDate, endDate),
+            pmsAdapter.fetchRates(externalPropertyId, startDate, endDate),
+          ]);
+
+          const ratesMap = new Map(rates.map(r => [r.date, r]));
+
+          pmsAvailability = availability.map(a => ({
+            date: a.date,
+            available: a.available,
+            price: ratesMap.get(a.date)?.baseRate,
+            minStay: a.minStay || ratesMap.get(a.date)?.minStay,
+            checkInAllowed: a.checkInAllowed ?? true,
+            checkOutAllowed: a.checkOutAllowed ?? true,
+          }));
+        } catch (error) {
+          console.warn('PMS availability fetch failed, falling back to local data', error);
+        }
+      }
+
+      // Also check local availability overrides
+      const { data: localBlocks } = await supabase
+        .from('availability')
+        .select('*')
+        .eq('property_id', propertyId)
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      // Check for active checkout holds (other than our own session)
+      const { data: holds } = await supabase
+        .from('checkout_holds')
+        .select('*')
+        .eq('property_id', propertyId)
+        .eq('released', false)
+        .gt('expires_at', new Date().toISOString());
+
+      // Merge PMS availability with local overrides and holds
+      const localBlocksMap = new Map(localBlocks?.map(b => [b.date, b]) || []);
+      const heldDates = new Set<string>();
+      
+      holds?.forEach(hold => {
+        const start = parseISO(hold.check_in);
+        const end = parseISO(hold.check_out);
+        const days = eachDayOfInterval({ start, end: addDays(end, -1) });
+        days.forEach(d => heldDates.add(format(d, 'yyyy-MM-dd')));
+      });
+
+      // If no PMS data, generate from local data
+      if (pmsAvailability.length === 0) {
+        const start = parseISO(startDate);
+        const end = parseISO(endDate);
+        const days = eachDayOfInterval({ start, end });
+
+        // Get property base price
+        const { data: property } = await supabase
+          .from('properties')
+          .select('base_price')
+          .eq('id', propertyId)
+          .single();
+
+        pmsAvailability = days.map(d => {
+          const dateStr = format(d, 'yyyy-MM-dd');
+          const localBlock = localBlocksMap.get(dateStr);
+          const isHeld = heldDates.has(dateStr);
+
+          return {
+            date: dateStr,
+            available: localBlock ? localBlock.available : !isHeld,
+            price: property?.base_price || 500,
+            minStay: 2,
+            checkInAllowed: true,
+            checkOutAllowed: true,
+            isBlocked: !localBlock?.available || isHeld,
+            blockReason: isHeld ? 'held' : localBlock?.available === false ? 'blocked' : undefined,
+          };
+        });
+      } else {
+        // Merge with local overrides
+        pmsAvailability = pmsAvailability.map(day => {
+          const localBlock = localBlocksMap.get(day.date);
+          const isHeld = heldDates.has(day.date);
+
+          if (localBlock && !localBlock.available) {
+            return { ...day, available: false, isBlocked: true, blockReason: 'blocked' };
+          }
+          if (isHeld) {
+            return { ...day, available: false, isBlocked: true, blockReason: 'held' };
+          }
+          return day;
+        });
+      }
+
+      return pmsAvailability;
+    },
+    enabled: !!propertyId && !!startDate && !!endDate,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+// Check if a date range is available
+export function useCheckDateRangeAvailability(
+  propertyId: string,
+  checkIn: string,
+  checkOut: string
+) {
+  return useQuery({
+    queryKey: ['check-date-range', propertyId, checkIn, checkOut],
+    queryFn: async () => {
+      // Check local availability table
+      const { data: blockedDates } = await supabase
+        .from('availability')
+        .select('date')
+        .eq('property_id', propertyId)
+        .eq('available', false)
+        .gte('date', checkIn)
+        .lt('date', checkOut);
+
+      // Check existing bookings
+      const { data: existingBookings } = await supabase
+        .from('bookings')
+        .select('check_in, check_out')
+        .eq('property_id', propertyId)
+        .in('status', ['pending', 'confirmed'])
+        .or(`check_in.lt.${checkOut},check_out.gt.${checkIn}`);
+
+      // Check active holds (excluding expired)
+      const { data: activeHolds } = await supabase
+        .from('checkout_holds')
+        .select('check_in, check_out, session_id')
+        .eq('property_id', propertyId)
+        .eq('released', false)
+        .gt('expires_at', new Date().toISOString());
+
+      const hasBlockedDates = (blockedDates?.length || 0) > 0;
+      const hasOverlappingBookings = (existingBookings?.length || 0) > 0;
+      const hasActiveHolds = (activeHolds?.length || 0) > 0;
+
+      return {
+        isAvailable: !hasBlockedDates && !hasOverlappingBookings && !hasActiveHolds,
+        blockedDates: blockedDates?.map(d => d.date) || [],
+        overlappingBookings: existingBookings || [],
+        activeHolds: activeHolds || [],
+      };
+    },
+    enabled: !!propertyId && !!checkIn && !!checkOut,
+  });
+}
+
+// Create a checkout hold (temporary lock)
+export function useCreateCheckoutHold() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      propertyId,
+      checkIn,
+      checkOut,
+      sessionId,
+      ttlMinutes = 10,
+    }: {
+      propertyId: string;
+      checkIn: string;
+      checkOut: string;
+      sessionId: string;
+      ttlMinutes?: number;
+    }) => {
+      const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString();
+
+      const { data, error } = await supabase
+        .from('checkout_holds')
+        .insert({
+          property_id: propertyId,
+          check_in: checkIn,
+          check_out: checkOut,
+          session_id: sessionId,
+          expires_at: expiresAt,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['availability-calendar', data.property_id] });
+      queryClient.invalidateQueries({ queryKey: ['check-date-range', data.property_id] });
+    },
+  });
+}
+
+// Release a checkout hold
+export function useReleaseCheckoutHold() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (holdId: string) => {
+      const { error } = await supabase
+        .from('checkout_holds')
+        .update({ released: true })
+        .eq('id', holdId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['check-date-range'] });
+    },
+  });
+}
+
+// Extend a checkout hold
+export function useExtendCheckoutHold() {
+  return useMutation({
+    mutationFn: async ({
+      holdId,
+      additionalMinutes = 5,
+    }: {
+      holdId: string;
+      additionalMinutes?: number;
+    }) => {
+      const { data: hold } = await supabase
+        .from('checkout_holds')
+        .select('expires_at')
+        .eq('id', holdId)
+        .single();
+
+      if (!hold) throw new Error('Hold not found');
+
+      const currentExpiry = new Date(hold.expires_at);
+      const newExpiry = new Date(currentExpiry.getTime() + additionalMinutes * 60 * 1000);
+
+      const { data, error } = await supabase
+        .from('checkout_holds')
+        .update({ expires_at: newExpiry.toISOString() })
+        .eq('id', holdId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+}
