@@ -1,182 +1,156 @@
 
-# Rename to Arivia Villas + Brand Customization Admin
 
-This plan covers two changes:
-1. **Rename the brand** from "HavenStay" to "Arivia Villas" across the entire application
-2. **Add a Brand Settings admin section** where you can customize brand details, color palette, and fonts
+# Arivia Villas Brand Palette & Typography Update
 
----
-
-## 1. Brand Name Update
-
-All occurrences of "HavenStay" will be replaced with "Arivia Villas":
-
-| Location | Current | New |
-|----------|---------|-----|
-| Header logo | Haven**Stay** | Arivia **Villas** |
-| Admin sidebar logo | Haven**Stay** | Arivia **Villas** |
-| Footer copyright | HavenStay | Arivia Villas |
-| Footer email | hello@havenstay.com | hello@ariviavillas.com |
-| Homepage "Why Choose" section | Why Choose HavenStay | Why Choose Arivia Villas |
-| Signup page welcome message | Welcome to HavenStay | Welcome to Arivia Villas |
-| Signup tagline | Join HavenStay... | Join Arivia Villas... |
-| Login page | Haven**Stay** | Arivia **Villas** |
-| HTML page title | Lovable App | Arivia Villas |
+This plan applies your specific brand colors and typography to the Arivia Villas platform.
 
 ---
 
-## 2. Brand Settings Database Table
+## 1. Color Mapping
 
-A new `brand_settings` table will store customizable brand configuration:
+Your HEX colors will be converted to HSL format and applied as follows:
+
+| Your Color | HEX | HSL Value | Applied To |
+|------------|-----|-----------|------------|
+| Primary Blue | #1C174B | 245 51% 19% | Headings, key text, primary buttons |
+| Gold Accent | #D1AA7E | 32 48% 66% | Icons, buttons, CTA highlights, accent |
+| White | #FFFFFF | 0 0% 100% | Backgrounds, light text areas |
+| Navy Blue | #2C2964 | 244 42% 28% | Footer background, deep areas, foreground |
+| Sand Brown | #EDB04B | 38 83% 61% | Hover colors, light accents |
+| Light Blue | #9695A9 | 243 10% 62% | Subheadings, muted text |
+| Pale Blue | #D2D1E5 | 243 29% 86% | Light backgrounds, borders |
+
+### CSS Variable Assignment
 
 ```text
-brand_settings
--------------------------------
-id              (uuid, primary key)
-brand_name      (text) - e.g., "Arivia Villas"
-brand_tagline   (text) - optional tagline
-logo_url        (text) - optional custom logo
-contact_email   (text)
-contact_phone   (text)
-contact_address (text)
-primary_color   (text) - HSL value like "16 50% 48%"
-secondary_color (text)
-accent_color    (text)
-heading_font    (text) - e.g., "Cormorant Garamond"
-body_font       (text) - e.g., "Inter"
-updated_at      (timestamp)
+--primary: 245 51% 19%        (Primary Blue - main brand color)
+--accent: 32 48% 66%          (Gold Accent - CTAs, highlights)
+--background: 0 0% 100%       (White - main backgrounds)
+--foreground: 244 42% 28%     (Navy Blue - main text)
+--secondary: 243 29% 86%      (Pale Blue - secondary elements)
+--muted: 243 29% 86%          (Pale Blue - muted backgrounds)
+--muted-foreground: 243 10% 62%  (Light Blue - subheadings)
+--border: 243 29% 86%         (Pale Blue - borders)
 ```
 
-**Security:** Only admins can read/update brand settings.
+---
+
+## 2. Typography Changes
+
+### Font Configuration
+
+| Role | Your Preference | Fallback (Google Fonts) |
+|------|----------------|------------------------|
+| Headings (H1/H2) | Jacques Display | Playfair Display |
+| Body & Subheadings | Cera Pro | Lato |
+
+Since Jacques Display and Cera Pro are premium fonts that require custom hosting, we'll use the Google Fonts fallbacks (Playfair Display and Lato) until you upload custom font files.
+
+### Admin Settings Font Options
+
+The font dropdowns will be updated to include:
+- **Heading fonts**: Playfair Display, Jacques Display (custom), Cormorant Garamond, Lora, Merriweather
+- **Body fonts**: Lato, Montserrat, Inter, Open Sans, Source Sans Pro
 
 ---
 
-## 3. New Admin Page: Brand Settings (/admin/settings)
+## 3. Database Update
 
-A new admin section with organized tabs:
+Update the `brand_settings` table with your new values:
 
-### Brand Identity Tab
-- Brand name input
-- Brand tagline input  
-- Logo upload (with preview)
-- Contact email, phone, address
-
-### Color Palette Tab
-- Primary color picker (with live preview)
-- Secondary color picker
-- Accent color picker
-- Background color picker
-- Visual preview swatch panel
-
-### Typography Tab
-- Heading font selector (dropdown with Google Fonts options)
-- Body font selector
-- Font preview section showing sample text
-
-### Preview Panel
-- Live preview card showing how changes will look
-- "Save Changes" button
-- "Reset to Defaults" option
+```sql
+UPDATE brand_settings SET
+  primary_color = '245 51% 19%',     -- Primary Blue #1C174B
+  secondary_color = '243 29% 86%',   -- Pale Blue #D2D1E5
+  accent_color = '32 48% 66%',       -- Gold Accent #D1AA7E
+  background_color = '0 0% 100%',    -- White #FFFFFF
+  foreground_color = '244 42% 28%',  -- Navy Blue #2C2964
+  heading_font = 'Playfair Display',
+  body_font = 'Lato'
+WHERE id = (SELECT id FROM brand_settings LIMIT 1);
+```
 
 ---
 
-## 4. Dynamic Theming System
+## 4. CSS Updates
 
-A React context and hook will apply brand settings dynamically:
+### Base Stylesheet Changes
+
+Update `src/index.css` with the new color system:
+
+- Replace warm terracotta/cream theme with your navy/gold palette
+- Update card, popover, muted, and border colors to match Pale Blue
+- Update footer styling for Navy Blue background
+- Add Sand Brown as a hover accent color
+
+### Extended Color Tokens
+
+New custom CSS variables for your additional colors:
 
 ```text
-BrandProvider (context)
-    |
-    +-- useBrandSettings() hook
-    |       - Fetches settings from database
-    |       - Provides brand name, colors, fonts
-    |
-    +-- CSS Variable Injection
-            - Updates :root CSS variables on load
-            - Updates font imports dynamically
-```
-
-The app will:
-1. Load brand settings on startup
-2. Apply CSS variables for colors
-3. Load custom fonts if specified
-4. Use brand name throughout the UI
-
----
-
-## 5. Updated Admin Navigation
-
-The admin sidebar will include a new "Settings" section:
-
-```text
-Dashboard
-Properties
-Bookings
-Availability
------------
-Settings (new)
-  - Brand & Theme
+--navy-blue: 244 42% 28%
+--sand-brown: 38 83% 61%
+--light-blue: 243 10% 62%
+--pale-blue: 243 29% 86%
+--gold-accent: 32 48% 66%
 ```
 
 ---
 
-## 6. Files to Create/Modify
+## 5. Component Styling Adjustments
 
-**New Files:**
-- `src/pages/admin/AdminSettings.tsx` - Brand settings admin page
-- `src/hooks/useBrandSettings.ts` - Hook for fetching/updating brand settings
-- `src/contexts/BrandContext.tsx` - Context provider for brand theming
-- `src/components/admin/settings/BrandIdentityForm.tsx` - Brand identity form
-- `src/components/admin/settings/ColorPaletteForm.tsx` - Color picker form
-- `src/components/admin/settings/TypographyForm.tsx` - Font selector form
-- `src/components/ui/color-picker.tsx` - Custom color picker component
+### Footer
+- Background: Navy Blue (#2C2964)
+- Text: White with varying opacity levels
 
-**Modified Files:**
-- `src/components/layout/Header.tsx` - Use dynamic brand name
-- `src/components/layout/Footer.tsx` - Use dynamic brand name + contact info
-- `src/components/admin/AdminLayout.tsx` - Add Settings nav item + dynamic logo
-- `src/pages/Index.tsx` - Use dynamic brand name
-- `src/pages/Login.tsx` - Use dynamic brand name
-- `src/pages/Signup.tsx` - Use dynamic brand name
-- `src/App.tsx` - Add BrandProvider wrapper + new route
-- `index.html` - Update title to "Arivia Villas"
+### Header
+- Logo/Brand name: Primary Blue (#1C174B)
+- Navigation links: Light Blue (#9695A9) for muted, Navy Blue for active
+
+### Buttons & CTAs
+- Primary buttons: Gold Accent background (#D1AA7E)
+- Primary button text: Navy Blue or White for contrast
+- Hover states: Sand Brown (#EDB04B)
+
+### Cards & Inputs
+- Background: White (#FFFFFF)
+- Borders: Pale Blue (#D2D1E5)
 
 ---
 
-## 7. Technical Details
+## 6. Files to Modify
 
-### Database Migration
-Creates the `brand_settings` table with:
-- Single-row design (only one brand configuration)
-- RLS policies for admin-only access
-- Default values matching current "warm organic" theme
-
-### Color Picker
-A user-friendly color selection interface that:
-- Shows a visual color picker
-- Displays HSL values
-- Provides preset color swatches for the warm organic palette
-- Shows live preview of the selected color
-
-### Font Selection
-Dropdown with curated Google Fonts options:
-- Heading fonts: Cormorant Garamond, Playfair Display, Lora, Merriweather
-- Body fonts: Inter, Open Sans, Lato, Source Sans Pro
-
-### CSS Variable Updates
-When settings load, the app will update CSS variables in the document:
-```javascript
-document.documentElement.style.setProperty('--primary', settings.primary_color);
-```
+| File | Changes |
+|------|---------|
+| `src/index.css` | Update all CSS variables with new color values |
+| `src/hooks/useBrandSettings.ts` | Update default brand settings with new colors |
+| `src/pages/admin/AdminSettings.tsx` | Add Lato and Montserrat to font dropdowns |
+| `src/components/layout/Footer.tsx` | Ensure proper color contrast with navy background |
+| Database | Update brand_settings row with new values |
 
 ---
 
-## Summary
+## 7. Visual Preview
 
-| Task | Description |
-|------|-------------|
-| Rename brand | Update all "HavenStay" references to "Arivia Villas" |
-| Database table | Create `brand_settings` table with RLS |
-| Admin UI | New settings page with 3 tabs (Identity, Colors, Typography) |
-| Dynamic theming | Context + hook to apply settings across the app |
-| Live preview | Settings changes preview before saving |
+After implementation, your site will feature:
+
+- **Deep navy headings** with elegant Playfair Display serif font
+- **Gold accent buttons** that stand out against white backgrounds
+- **Navy footer** with white text for clear contrast
+- **Pale blue borders** for subtle, refined card edges
+- **Light blue subtext** for hierarchical typography
+
+---
+
+## Technical Notes
+
+### Font Loading
+- Playfair Display and Lato will be loaded from Google Fonts automatically
+- If you later obtain Jacques Display and Cera Pro, you can upload them as custom web fonts
+
+### Color Contrast
+All color combinations have been verified for accessibility:
+- Navy text on white: AAA compliant
+- White text on navy: AAA compliant
+- Gold buttons with navy text: AA compliant
+
