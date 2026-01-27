@@ -1,179 +1,182 @@
 
+# Rename to Arivia Villas + Brand Customization Admin
 
-# Multi-Property Hospitality Platform
-
-A production-ready platform for managing 20+ luxury vacation properties with a warm, organic aesthetic. Built with React + Vite + TypeScript, powered by Lovable Cloud (Supabase).
-
----
-
-## 1. Database Architecture
-
-### Core Collections
-
-**Properties Table**
-- Name, slug (unique), description
-- Hero image URL + gallery (array of URLs)
-- Location (city, region, country)
-- Amenities (array: wifi, pool, spa, kitchen, etc.)
-- Base price per night
-- Maximum guests
-- Property status (active, draft, archived)
-- Created/updated timestamps
-
-**Bookings Table**
-- Property relationship
-- Guest information (name, email, phone)
-- Check-in / check-out dates
-- Number of nights (calculated)
-- Number of guests
-- Total price (basePrice × nights)
-- Booking status (pending, confirmed, cancelled)
-- Created timestamp
-
-**Availability Table**
-- Property relationship
-- Date
-- Available (boolean)
-- Used for blocking dates and managing availability
-
-**User Roles**
-- Admin users for property management
-- Role-based access control
+This plan covers two changes:
+1. **Rename the brand** from "HavenStay" to "Arivia Villas" across the entire application
+2. **Add a Brand Settings admin section** where you can customize brand details, color palette, and fonts
 
 ---
 
-## 2. Public-Facing Website
+## 1. Brand Name Update
 
-### Homepage
-- Full-screen hero section with warm, earthy tones and natural textures
-- Prominent search bar with:
-  - Location dropdown/autocomplete
-  - Guest count selector
-  - Check-in / check-out date pickers
-- Featured properties grid below the fold
-- Soft shadows, organic shapes, subtle animations
+All occurrences of "HavenStay" will be replaced with "Arivia Villas":
 
-### Property Listing Page
-- Filtered results based on search criteria
-- Card grid showing property image, name, location, price, max guests
-- Filter sidebar (amenities, price range)
-- Smooth Framer Motion transitions
-
-### Property Detail Page
-- Hero image with full-width gallery carousel
-- Property description and highlights
-- Amenities list with icons
-- Interactive booking widget (sticky sidebar):
-  - Custom date picker showing availability
-  - Guest count selector
-  - Price calculation (nights × base price)
-  - "Request Booking" button
-- Location section with property address
-
-### Booking Flow
-- Date selection with visual availability calendar
-- Guest details form
-- Price summary
-- Confirmation page after submission
+| Location | Current | New |
+|----------|---------|-----|
+| Header logo | Haven**Stay** | Arivia **Villas** |
+| Admin sidebar logo | Haven**Stay** | Arivia **Villas** |
+| Footer copyright | HavenStay | Arivia Villas |
+| Footer email | hello@havenstay.com | hello@ariviavillas.com |
+| Homepage "Why Choose" section | Why Choose HavenStay | Why Choose Arivia Villas |
+| Signup page welcome message | Welcome to HavenStay | Welcome to Arivia Villas |
+| Signup tagline | Join HavenStay... | Join Arivia Villas... |
+| Login page | Haven**Stay** | Arivia **Villas** |
+| HTML page title | Lovable App | Arivia Villas |
 
 ---
 
-## 3. Admin Dashboard (/admin)
+## 2. Brand Settings Database Table
 
-### Dashboard Overview
-- Total properties count
-- Upcoming bookings summary
-- Recent booking activity
-- Quick stats cards
+A new `brand_settings` table will store customizable brand configuration:
 
-### Properties Management
-- List all properties with search/filter
-- Add new property form with all fields
-- Edit existing properties
-- Upload hero image and gallery images (Supabase Storage)
-- Toggle property status (active/draft/archived)
+```text
+brand_settings
+-------------------------------
+id              (uuid, primary key)
+brand_name      (text) - e.g., "Arivia Villas"
+brand_tagline   (text) - optional tagline
+logo_url        (text) - optional custom logo
+contact_email   (text)
+contact_phone   (text)
+contact_address (text)
+primary_color   (text) - HSL value like "16 50% 48%"
+secondary_color (text)
+accent_color    (text)
+heading_font    (text) - e.g., "Cormorant Garamond"
+body_font       (text) - e.g., "Inter"
+updated_at      (timestamp)
+```
 
-### Bookings Management
-- List all bookings with filters (status, property, date range)
-- View booking details
-- Update booking status (confirm, cancel)
-- Search by guest name/email
-
-### Availability Management
-- Calendar view per property
-- Block/unblock specific dates
-- Bulk date management
-
-### Admin Authentication
-- Secure login for admin users
-- Role-based access control
-- Protected routes
+**Security:** Only admins can read/update brand settings.
 
 ---
 
-## 4. Design System (Warm & Organic)
+## 3. New Admin Page: Brand Settings (/admin/settings)
 
-### Color Palette
-- Primary: Warm terracotta/clay tones
-- Secondary: Soft sage green
-- Background: Warm off-white/cream
-- Text: Deep warm brown
-- Accents: Muted gold
+A new admin section with organized tabs:
 
-### Typography
-- Elegant serif for headings
-- Clean sans-serif for body text
+### Brand Identity Tab
+- Brand name input
+- Brand tagline input  
+- Logo upload (with preview)
+- Contact email, phone, address
 
-### Visual Elements
-- Soft, rounded corners
-- Natural shadow depth
-- Subtle texture overlays
-- Organic shapes in decorative elements
+### Color Palette Tab
+- Primary color picker (with live preview)
+- Secondary color picker
+- Accent color picker
+- Background color picker
+- Visual preview swatch panel
 
-### Animations (Framer Motion)
-- Smooth page transitions
-- Gallery image crossfades
-- Hover effects on property cards
-- Loading states with elegant spinners
+### Typography Tab
+- Heading font selector (dropdown with Google Fonts options)
+- Body font selector
+- Font preview section showing sample text
 
----
-
-## 5. Technical Foundation
-
-### File Storage
-- Supabase Storage buckets for property images
-- Separate buckets for hero images and gallery images
-- Proper RLS policies for upload permissions
-
-### API Structure
-- React Query for data fetching/caching
-- Optimistic updates for admin operations
-- Real-time availability updates
-
-### Routing
-- `/` - Homepage with search
-- `/properties` - Listing page
-- `/properties/:slug` - Property detail
-- `/booking/confirm` - Booking confirmation
-- `/admin` - Admin dashboard
-- `/admin/properties` - Property management
-- `/admin/bookings` - Booking management
-- `/admin/availability` - Calendar management
-
-### Security
-- Admin authentication required for /admin routes
-- RLS policies on all tables
-- Input validation on all forms
-- Secure file upload handling
+### Preview Panel
+- Live preview card showing how changes will look
+- "Save Changes" button
+- "Reset to Defaults" option
 
 ---
 
-## 6. Scalability Considerations
+## 4. Dynamic Theming System
 
-- Efficient database queries with proper indexing
-- Image optimization for fast loading
-- Lazy loading for property galleries
-- Pagination for large property lists
-- Component-based architecture for easy feature additions
-- Prepared for future payment gateway integration
+A React context and hook will apply brand settings dynamically:
 
+```text
+BrandProvider (context)
+    |
+    +-- useBrandSettings() hook
+    |       - Fetches settings from database
+    |       - Provides brand name, colors, fonts
+    |
+    +-- CSS Variable Injection
+            - Updates :root CSS variables on load
+            - Updates font imports dynamically
+```
+
+The app will:
+1. Load brand settings on startup
+2. Apply CSS variables for colors
+3. Load custom fonts if specified
+4. Use brand name throughout the UI
+
+---
+
+## 5. Updated Admin Navigation
+
+The admin sidebar will include a new "Settings" section:
+
+```text
+Dashboard
+Properties
+Bookings
+Availability
+-----------
+Settings (new)
+  - Brand & Theme
+```
+
+---
+
+## 6. Files to Create/Modify
+
+**New Files:**
+- `src/pages/admin/AdminSettings.tsx` - Brand settings admin page
+- `src/hooks/useBrandSettings.ts` - Hook for fetching/updating brand settings
+- `src/contexts/BrandContext.tsx` - Context provider for brand theming
+- `src/components/admin/settings/BrandIdentityForm.tsx` - Brand identity form
+- `src/components/admin/settings/ColorPaletteForm.tsx` - Color picker form
+- `src/components/admin/settings/TypographyForm.tsx` - Font selector form
+- `src/components/ui/color-picker.tsx` - Custom color picker component
+
+**Modified Files:**
+- `src/components/layout/Header.tsx` - Use dynamic brand name
+- `src/components/layout/Footer.tsx` - Use dynamic brand name + contact info
+- `src/components/admin/AdminLayout.tsx` - Add Settings nav item + dynamic logo
+- `src/pages/Index.tsx` - Use dynamic brand name
+- `src/pages/Login.tsx` - Use dynamic brand name
+- `src/pages/Signup.tsx` - Use dynamic brand name
+- `src/App.tsx` - Add BrandProvider wrapper + new route
+- `index.html` - Update title to "Arivia Villas"
+
+---
+
+## 7. Technical Details
+
+### Database Migration
+Creates the `brand_settings` table with:
+- Single-row design (only one brand configuration)
+- RLS policies for admin-only access
+- Default values matching current "warm organic" theme
+
+### Color Picker
+A user-friendly color selection interface that:
+- Shows a visual color picker
+- Displays HSL values
+- Provides preset color swatches for the warm organic palette
+- Shows live preview of the selected color
+
+### Font Selection
+Dropdown with curated Google Fonts options:
+- Heading fonts: Cormorant Garamond, Playfair Display, Lora, Merriweather
+- Body fonts: Inter, Open Sans, Lato, Source Sans Pro
+
+### CSS Variable Updates
+When settings load, the app will update CSS variables in the document:
+```javascript
+document.documentElement.style.setProperty('--primary', settings.primary_color);
+```
+
+---
+
+## Summary
+
+| Task | Description |
+|------|-------------|
+| Rename brand | Update all "HavenStay" references to "Arivia Villas" |
+| Database table | Create `brand_settings` table with RLS |
+| Admin UI | New settings page with 3 tabs (Identity, Colors, Typography) |
+| Dynamic theming | Context + hook to apply settings across the app |
+| Live preview | Settings changes preview before saving |
