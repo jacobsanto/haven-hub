@@ -4,7 +4,7 @@ import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { BlogPost } from '@/types/blog';
 import { Badge } from '@/components/ui/badge';
-
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 interface BlogHeroProps {
   post: BlogPost;
 }
@@ -64,6 +64,17 @@ export function BlogHero({ post }: BlogHeroProps) {
               )}
               
               <div className="flex flex-wrap items-center gap-4 md:gap-6">
+                {post.author && (
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8 border border-white/20">
+                      <AvatarImage src={post.author.avatar_url || undefined} alt={post.author.name} />
+                      <AvatarFallback className="text-xs bg-white/20 text-white">
+                        {post.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-white/90 text-sm font-medium">{post.author.name}</span>
+                  </div>
+                )}
                 <span className="flex items-center gap-2 text-white/70 text-sm">
                   <Calendar className="h-4 w-4" />
                   {format(publishedDate, 'MMM d, yyyy')}
