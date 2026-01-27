@@ -33,6 +33,7 @@ import AdminExperiences from "./pages/admin/AdminExperiences";
 import AdminExperienceEnquiries from "./pages/admin/AdminExperienceEnquiries";
 import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
 import AdminBlogCategories from "./pages/admin/AdminBlogCategories";
+import AdminBlogAuthors from "./pages/admin/AdminBlogAuthors";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/admin/experiences" element={<AdminExperiences />} />
               <Route path="/admin/experience-enquiries" element={<AdminExperienceEnquiries />} />
               <Route path="/admin/blog" element={<AdminBlogPosts />} />
+              <Route path="/admin/blog/authors" element={<AdminBlogAuthors />} />
               <Route path="/admin/blog/categories" element={<AdminBlogCategories />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="*" element={<NotFound />} />

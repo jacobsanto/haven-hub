@@ -79,6 +79,51 @@ export type Database = {
           },
         ]
       }
+      blog_authors: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          social_linkedin: string | null
+          social_twitter: string | null
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          social_linkedin?: string | null
+          social_twitter?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          social_linkedin?: string | null
+          social_twitter?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       blog_categories: {
         Row: {
           created_at: string
@@ -157,7 +202,7 @@ export type Database = {
             foreignKeyName: "blog_posts_author_id_fkey"
             columns: ["author_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "blog_authors"
             referencedColumns: ["id"]
           },
           {

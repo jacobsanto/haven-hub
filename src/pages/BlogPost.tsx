@@ -102,8 +102,8 @@ export default function BlogPost() {
   const readTime = estimateReadTime(post.content);
   const publishedDate = post.published_at ? new Date(post.published_at) : new Date(post.created_at);
 
-  // Mock author data (in real app, would come from profiles table)
-  const author = {
+  // Use real author data from the post, with fallback
+  const author = post.author || {
     name: 'Arivia Editorial',
     avatar_url: null,
     bio: 'Our editorial team curates the finest travel insights, destination guides, and luxury living inspiration to help you plan your perfect getaway.',

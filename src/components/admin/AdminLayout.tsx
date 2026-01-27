@@ -16,6 +16,7 @@ import {
   MessageSquare,
   FileText,
   FolderOpen,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -35,6 +36,7 @@ const navItems = [
   { href: '/admin/experiences', icon: Star, label: 'Experiences' },
   { href: '/admin/experience-enquiries', icon: MessageSquare, label: 'Enquiries' },
   { href: '/admin/blog', icon: FileText, label: 'Blog Posts' },
+  { href: '/admin/blog/authors', icon: Users, label: 'Blog Authors' },
   { href: '/admin/blog/categories', icon: FolderOpen, label: 'Blog Categories' },
   { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
   { href: '/admin/availability', icon: CalendarDays, label: 'Availability' },

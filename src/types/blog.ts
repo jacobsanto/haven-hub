@@ -8,6 +8,21 @@ export interface BlogCategory {
   created_at: string;
 }
 
+export interface BlogAuthor {
+  id: string;
+  name: string;
+  slug: string;
+  avatar_url: string | null;
+  bio: string | null;
+  email: string | null;
+  website_url: string | null;
+  social_twitter: string | null;
+  social_linkedin: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BlogPost {
   id: string;
   title: string;
@@ -24,4 +39,5 @@ export interface BlogPost {
   created_at: string;
   updated_at: string;
   category?: BlogCategory;
+  author?: BlogAuthor;
 }
