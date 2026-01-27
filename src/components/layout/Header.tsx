@@ -1,10 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, User } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X, User, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
+import { HeaderSearchToggle } from '@/components/booking/HeaderSearchToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,9 +16,23 @@ import {
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
   const { brandName, logoUrl } = useBrand();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Track scroll position for header style changes
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 100);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Don't show search on homepage (has its own hero search)
+  const showSearch = location.pathname !== '/';
 
   // Split brand name for styling (e.g., "Arivia Villas" -> "Arivia" + "Villas")
   const nameParts = brandName.split(' ');
@@ -75,8 +90,9 @@ export function Header() {
           </Link>
         </div>
 
-        {/* Auth / Admin */}
+        {/* Search & Auth */}
         <div className="hidden md:flex items-center gap-4">
+          {showSearch && <HeaderSearchToggle />}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -128,6 +144,20 @@ export function Header() {
           className="md:hidden bg-background border-b border-border"
         >
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
+            {/* Mobile Search CTA */}
+            <Button
+              onClick={() => {
+                navigate('/properties');
+                setMobileMenuOpen(false);
+              }}
+              className="rounded-full w-full gap-2"
+            >
+              <Search className="h-4 w-4" />
+              Find Your Stay
+            </Button>
+
+            <div className="border-t border-border my-2" />
+
             <Link
               to="/properties"
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
