@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, X } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { useBlogPosts, useFeaturedBlogPost } from '@/hooks/useBlogPosts';
+import { useBlogPosts, useFeaturedBlogPost, usePaginatedBlogPosts } from '@/hooks/useBlogPosts';
 import { useBlogCategories } from '@/hooks/useBlogCategories';
 import { BlogHero } from '@/components/blog/BlogHero';
 import { BlogSecondaryCard } from '@/components/blog/BlogSecondaryCard';
@@ -15,15 +15,22 @@ import { Button } from '@/components/ui/button';
 export default function Blog() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  
   const { data: categories } = useBlogCategories();
   const { data: featuredPost, isLoading: featuredLoading } = useFeaturedBlogPost();
-  const { data: posts, isLoading: postsLoading } = useBlogPosts({ 
+  
+  // Use paginated query for main listing
+  const { data: paginatedData, isLoading: postsLoading } = usePaginatedBlogPosts({ 
     status: 'published',
-    categorySlug: selectedCategory !== 'all' ? selectedCategory : undefined 
+    categorySlug: selectedCategory !== 'all' ? selectedCategory : undefined,
+    page: currentPage,
   });
 
-  // Calculate post counts per category
+  // Use regular query for search (client-side filtering)
   const { data: allPosts } = useBlogPosts({ status: 'published' });
+
+  // Calculate post counts per category
   const postCounts = useMemo(() => {
     if (!allPosts || !categories) return {};
     const counts: Record<string, number> = {};
@@ -33,12 +40,12 @@ export default function Blog() {
     return counts;
   }, [allPosts, categories]);
 
-  // Filter posts by search query
+  // Filter posts by search query (uses all posts for search)
   const searchFilteredPosts = useMemo(() => {
-    if (!posts || !searchQuery.trim()) return posts;
+    if (!allPosts || !searchQuery.trim()) return null;
     
     const query = searchQuery.toLowerCase().trim();
-    return posts.filter(post => 
+    return allPosts.filter(post => 
       post.title.toLowerCase().includes(query) ||
       post.excerpt?.toLowerCase().includes(query) ||
       post.content?.toLowerCase().includes(query) ||
@@ -46,19 +53,27 @@ export default function Blog() {
       post.category?.name.toLowerCase().includes(query) ||
       post.author?.name.toLowerCase().includes(query)
     );
-  }, [posts, searchQuery]);
+  }, [allPosts, searchQuery]);
 
-  // Separate posts into tiers for magazine layout
+  // Separate posts into tiers for magazine layout (only for first page, no search)
   const { heroPost, secondaryPosts, regularPosts } = useMemo(() => {
-    const filteredPosts = searchFilteredPosts;
-    if (!filteredPosts) return { heroPost: null, secondaryPosts: [], regularPosts: [] };
-    
-    // If searching, show all results in grid format (no hero)
-    if (searchQuery.trim()) {
+    // If searching, use search results
+    if (searchQuery.trim() && searchFilteredPosts) {
       return {
         heroPost: null,
         secondaryPosts: [],
-        regularPosts: filteredPosts,
+        regularPosts: searchFilteredPosts,
+      };
+    }
+
+    const posts = paginatedData?.posts || [];
+    
+    // Only show hero layout on first page without search
+    if (currentPage > 1 || searchQuery.trim()) {
+      return {
+        heroPost: null,
+        secondaryPosts: [],
+        regularPosts: posts,
       };
     }
     
@@ -66,7 +81,7 @@ export default function Blog() {
     const hero = selectedCategory === 'all' && featuredPost ? featuredPost : null;
     
     // Filter out hero from the list
-    const remaining = hero ? filteredPosts.filter(p => p.id !== hero.id) : filteredPosts;
+    const remaining = hero ? posts.filter(p => p.id !== hero.id) : posts;
     
     // If no featured hero, use first post as hero
     const finalHero = hero || remaining[0] || null;
@@ -83,15 +98,21 @@ export default function Blog() {
       secondaryPosts: secondary,
       regularPosts: regular,
     };
-  }, [searchFilteredPosts, featuredPost, selectedCategory, searchQuery]);
+  }, [paginatedData, featuredPost, selectedCategory, searchQuery, currentPage, searchFilteredPosts]);
 
   const handleCategoryChange = (slug: string) => {
     setSelectedCategory(slug);
-    setSearchQuery(''); // Clear search when changing category
+    setSearchQuery('');
+    setCurrentPage(1); // Reset to first page
   };
 
   const handleClearSearch = () => {
     setSearchQuery('');
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -158,12 +179,12 @@ export default function Blog() {
             )}
 
             {/* Search Results Info */}
-            {searchQuery && (
+            {searchQuery && searchFilteredPosts && (
               <div className="text-center">
                 <p className="text-muted-foreground">
-                  {searchFilteredPosts?.length === 0 
+                  {searchFilteredPosts.length === 0 
                     ? `No articles found for "${searchQuery}"`
-                    : `Found ${searchFilteredPosts?.length} article${searchFilteredPosts?.length === 1 ? '' : 's'} for "${searchQuery}"`
+                    : `Found ${searchFilteredPosts.length} article${searchFilteredPosts.length === 1 ? '' : 's'} for "${searchQuery}"`
                   }
                 </p>
               </div>
@@ -236,6 +257,61 @@ export default function Blog() {
                       : 'No blog posts available yet. Check back soon for inspiring stories!'
                     }
                   </p>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {!searchQuery && paginatedData && paginatedData.totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-12 pt-8 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={!paginatedData.hasPrevPage}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: paginatedData.totalPages }, (_, i) => i + 1).map((page) => {
+                      // Show first, last, current, and adjacent pages
+                      const showPage = 
+                        page === 1 || 
+                        page === paginatedData.totalPages || 
+                        Math.abs(page - currentPage) <= 1;
+                      
+                      const showEllipsis = 
+                        (page === 2 && currentPage > 3) ||
+                        (page === paginatedData.totalPages - 1 && currentPage < paginatedData.totalPages - 2);
+
+                      if (showEllipsis && !showPage) {
+                        return <span key={page} className="px-2 text-muted-foreground">…</span>;
+                      }
+
+                      if (!showPage) return null;
+
+                      return (
+                        <Button
+                          key={page}
+                          variant={page === currentPage ? 'default' : 'outline'}
+                          size="icon"
+                          onClick={() => handlePageChange(page)}
+                          className="w-10 h-10"
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={!paginatedData.hasNextPage}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
             </>

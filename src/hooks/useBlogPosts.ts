@@ -35,6 +35,64 @@ export function useBlogPosts(options?: { status?: BlogStatus; categorySlug?: str
   });
 }
 
+const POSTS_PER_PAGE = 9;
+
+export function usePaginatedBlogPosts(options?: { 
+  status?: BlogStatus; 
+  categorySlug?: string;
+  page?: number;
+}) {
+  const page = options?.page || 1;
+  const from = (page - 1) * POSTS_PER_PAGE;
+  const to = from + POSTS_PER_PAGE - 1;
+
+  return useQuery({
+    queryKey: ['blog-posts-paginated', options],
+    queryFn: async () => {
+      let query = supabase
+        .from('blog_posts')
+        .select(`
+          *,
+          category:blog_categories(*),
+          author:blog_authors(*)
+        `, { count: 'exact' })
+        .order('published_at', { ascending: false, nullsFirst: false });
+      
+      if (options?.status) {
+        query = query.eq('status', options.status);
+      }
+
+      if (options?.categorySlug) {
+        // Get category ID first
+        const { data: category } = await supabase
+          .from('blog_categories')
+          .select('id')
+          .eq('slug', options.categorySlug)
+          .maybeSingle();
+        
+        if (category) {
+          query = query.eq('category_id', category.id);
+        }
+      }
+      
+      query = query.range(from, to);
+      
+      const { data, error, count } = await query;
+      
+      if (error) throw error;
+      
+      return {
+        posts: data as BlogPost[],
+        totalCount: count || 0,
+        totalPages: Math.ceil((count || 0) / POSTS_PER_PAGE),
+        currentPage: page,
+        hasNextPage: to < (count || 0) - 1,
+        hasPrevPage: page > 1,
+      };
+    },
+  });
+}
+
 export function useBlogPost(slug: string) {
   return useQuery({
     queryKey: ['blog-post', slug],
