@@ -1,15 +1,24 @@
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Users, Star } from 'lucide-react';
+import { MapPin, Users } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { PropertyGallery } from '@/components/properties/PropertyGallery';
 import { AmenityList } from '@/components/properties/AmenityList';
 import { BookingWidget } from '@/components/booking/BookingWidget';
+import { MobileBookingCTA } from '@/components/booking/MobileBookingCTA';
 import { useProperty } from '@/hooks/useProperties';
 
 export default function PropertyDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: property, isLoading, error } = useProperty(slug || '');
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
 
   if (isLoading) {
     return (
@@ -23,7 +32,7 @@ export default function PropertyDetail() {
                 <div className="h-6 bg-muted rounded w-1/3" />
                 <div className="h-32 bg-muted rounded" />
               </div>
-              <div className="h-96 bg-muted rounded-2xl" />
+              <div className="hidden lg:block h-96 bg-muted rounded-2xl" />
             </div>
           </div>
         </div>
@@ -43,14 +52,6 @@ export default function PropertyDetail() {
       </PageLayout>
     );
   }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
 
   return (
     <PageLayout>
@@ -79,7 +80,7 @@ export default function PropertyDetail() {
           >
             {/* Header */}
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl font-serif font-medium text-foreground">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium text-foreground">
                 {property.name}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
@@ -98,7 +99,7 @@ export default function PropertyDetail() {
             {/* Description */}
             {property.description && (
               <div className="prose prose-lg max-w-none">
-                <h2 className="text-2xl font-serif font-medium mb-4">About This Property</h2>
+                <h2 className="text-xl sm:text-2xl font-serif font-medium mb-4">About This Property</h2>
                 <p className="text-muted-foreground leading-relaxed">
                   {property.description}
                 </p>
@@ -108,7 +109,7 @@ export default function PropertyDetail() {
             {/* Amenities */}
             {property.amenities.length > 0 && (
               <div>
-                <h2 className="text-2xl font-serif font-medium mb-6">Amenities & Features</h2>
+                <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Amenities & Features</h2>
                 <AmenityList 
                   amenities={property.amenities} 
                   variant="grid" 
@@ -119,8 +120,8 @@ export default function PropertyDetail() {
 
             {/* Location */}
             <div>
-              <h2 className="text-2xl font-serif font-medium mb-4">Location</h2>
-              <div className="card-organic p-6">
+              <h2 className="text-xl sm:text-2xl font-serif font-medium mb-4">Location</h2>
+              <div className="card-organic p-4 sm:p-6">
                 <div className="flex items-start gap-4">
                   <MapPin className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                   <div>
@@ -134,9 +135,9 @@ export default function PropertyDetail() {
               </div>
             </div>
 
-            {/* House Rules (Placeholder) */}
+            {/* House Rules */}
             <div>
-              <h2 className="text-2xl font-serif font-medium mb-4">House Rules</h2>
+              <h2 className="text-xl sm:text-2xl font-serif font-medium mb-4">House Rules</h2>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary" />
@@ -158,15 +159,22 @@ export default function PropertyDetail() {
             </div>
           </motion.div>
 
-          {/* Booking Widget */}
+          {/* Desktop Booking Widget */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
+            className="hidden lg:block"
           >
             <BookingWidget property={property} />
           </motion.div>
         </div>
+
+        {/* Mobile Booking CTA */}
+        <MobileBookingCTA 
+          property={property} 
+          priceDisplay={formatPrice(property.base_price)} 
+        />
       </div>
     </PageLayout>
   );

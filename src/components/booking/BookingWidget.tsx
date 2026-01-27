@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { format, differenceInDays } from 'date-fns';
 import { Calendar, Users, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -103,11 +102,7 @@ export function BookingWidget({ property }: BookingWidgetProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="card-organic p-6 space-y-6 sticky top-24"
-    >
+    <div className="card-organic p-6 space-y-6 lg:sticky lg:top-24">
       {/* Price Header */}
       <div className="flex items-baseline gap-2">
         <span className="text-3xl font-serif font-semibold">
@@ -296,6 +291,6 @@ export function BookingWidget({ property }: BookingWidgetProps) {
       <p className="text-xs text-center text-muted-foreground">
         You won't be charged yet. We'll confirm availability first.
       </p>
-    </motion.div>
+    </div>
   );
 }
