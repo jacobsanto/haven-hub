@@ -1,110 +1,107 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lato:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Warm & Organic Hospitality Design System */
+/* Arivia Villas Brand Design System */
 
 @layer base {
   :root {
-    /* Warm cream background */
-    --background: 40 33% 97%;
-    --foreground: 25 30% 15%;
+    /* White background */
+    --background: 0 0% 100%;
+    --foreground: 244 42% 28%;
 
-    /* Card surfaces - warm white */
-    --card: 40 25% 99%;
-    --card-foreground: 25 30% 15%;
+    /* Card surfaces - white */
+    --card: 0 0% 100%;
+    --card-foreground: 244 42% 28%;
 
-    --popover: 40 25% 99%;
-    --popover-foreground: 25 30% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 244 42% 28%;
 
-    /* Primary - Warm terracotta */
-    --primary: 16 50% 48%;
-    --primary-foreground: 40 33% 97%;
+    /* Primary - Primary Blue */
+    --primary: 245 51% 19%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Soft sage green */
-    --secondary: 150 25% 85%;
-    --secondary-foreground: 150 30% 25%;
+    /* Secondary - Pale Blue */
+    --secondary: 243 29% 86%;
+    --secondary-foreground: 245 51% 19%;
 
-    /* Muted - Light warm gray */
-    --muted: 40 15% 92%;
-    --muted-foreground: 25 15% 45%;
+    /* Muted - Pale Blue */
+    --muted: 243 29% 86%;
+    --muted-foreground: 243 10% 62%;
 
-    /* Accent - Muted gold */
-    --accent: 42 60% 70%;
-    --accent-foreground: 42 50% 20%;
+    /* Accent - Gold */
+    --accent: 32 48% 66%;
+    --accent-foreground: 245 51% 19%;
 
-    /* Destructive - Soft terracotta red */
+    /* Destructive */
     --destructive: 0 55% 55%;
-    --destructive-foreground: 40 33% 97%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Borders and inputs */
-    --border: 40 20% 88%;
-    --input: 40 20% 88%;
-    --ring: 16 50% 48%;
+    /* Borders and inputs - Pale Blue */
+    --border: 243 29% 86%;
+    --input: 243 29% 86%;
+    --ring: 32 48% 66%;
 
     --radius: 0.75rem;
 
-    /* Sidebar - Warm off-white */
-    --sidebar-background: 40 25% 96%;
-    --sidebar-foreground: 25 30% 20%;
-    --sidebar-primary: 16 50% 48%;
-    --sidebar-primary-foreground: 40 33% 97%;
-    --sidebar-accent: 40 20% 92%;
-    --sidebar-accent-foreground: 25 30% 20%;
-    --sidebar-border: 40 20% 88%;
-    --sidebar-ring: 16 50% 48%;
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 244 42% 28%;
+    --sidebar-primary: 245 51% 19%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 243 29% 86%;
+    --sidebar-accent-foreground: 244 42% 28%;
+    --sidebar-border: 243 29% 86%;
+    --sidebar-ring: 32 48% 66%;
 
-    /* Custom hospitality tokens */
-    --warm-brown: 25 30% 15%;
-    --terracotta: 16 50% 48%;
-    --terracotta-light: 16 45% 65%;
-    --sage: 150 25% 60%;
-    --sage-light: 150 25% 85%;
-    --cream: 40 33% 97%;
-    --cream-dark: 40 25% 92%;
-    --gold: 42 60% 55%;
-    --gold-light: 42 60% 70%;
+    /* Custom Arivia Villas brand tokens */
+    --navy-blue: 244 42% 28%;
+    --primary-blue: 245 51% 19%;
+    --gold-accent: 32 48% 66%;
+    --sand-brown: 38 83% 61%;
+    --light-blue: 243 10% 62%;
+    --pale-blue: 243 29% 86%;
   }
 
   .dark {
-    --background: 25 25% 8%;
-    --foreground: 40 20% 92%;
+    --background: 244 42% 8%;
+    --foreground: 243 29% 86%;
 
-    --card: 25 25% 10%;
-    --card-foreground: 40 20% 92%;
+    --card: 244 42% 10%;
+    --card-foreground: 243 29% 86%;
 
-    --popover: 25 25% 10%;
-    --popover-foreground: 40 20% 92%;
+    --popover: 244 42% 10%;
+    --popover-foreground: 243 29% 86%;
 
-    --primary: 16 45% 55%;
-    --primary-foreground: 25 25% 8%;
+    --primary: 32 48% 66%;
+    --primary-foreground: 244 42% 8%;
 
-    --secondary: 150 20% 20%;
-    --secondary-foreground: 150 25% 85%;
+    --secondary: 244 30% 20%;
+    --secondary-foreground: 243 29% 86%;
 
-    --muted: 25 20% 15%;
-    --muted-foreground: 40 15% 60%;
+    --muted: 244 30% 15%;
+    --muted-foreground: 243 10% 62%;
 
-    --accent: 42 45% 35%;
-    --accent-foreground: 42 60% 85%;
+    --accent: 38 83% 61%;
+    --accent-foreground: 244 42% 8%;
 
     --destructive: 0 50% 45%;
-    --destructive-foreground: 40 20% 92%;
+    --destructive-foreground: 243 29% 86%;
 
-    --border: 25 20% 18%;
-    --input: 25 20% 18%;
-    --ring: 16 45% 55%;
+    --border: 244 30% 18%;
+    --input: 244 30% 18%;
+    --ring: 32 48% 66%;
 
-    --sidebar-background: 25 25% 10%;
-    --sidebar-foreground: 40 20% 92%;
-    --sidebar-primary: 16 45% 55%;
-    --sidebar-primary-foreground: 25 25% 8%;
-    --sidebar-accent: 25 20% 15%;
-    --sidebar-accent-foreground: 40 20% 92%;
-    --sidebar-border: 25 20% 18%;
-    --sidebar-ring: 16 45% 55%;
+    --sidebar-background: 244 42% 10%;
+    --sidebar-foreground: 243 29% 86%;
+    --sidebar-primary: 32 48% 66%;
+    --sidebar-primary-foreground: 244 42% 8%;
+    --sidebar-accent: 244 30% 15%;
+    --sidebar-accent-foreground: 243 29% 86%;
+    --sidebar-border: 244 30% 18%;
+    --sidebar-ring: 32 48% 66%;
   }
 }
 
@@ -115,43 +112,48 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-sans, 'Lato', sans-serif);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-serif, 'Playfair Display', serif);
     @apply font-medium tracking-tight;
   }
 }
 
 @layer components {
-  /* Organic button styles */
+  /* Brand button styles */
   .btn-organic {
     @apply relative overflow-hidden rounded-full px-8 py-3 font-medium transition-all duration-300;
-    @apply bg-primary text-primary-foreground;
-    @apply hover:shadow-lg hover:shadow-primary/20;
+    @apply bg-accent text-accent-foreground;
+    @apply hover:shadow-lg;
+    background-color: hsl(var(--gold-accent));
   }
 
-  /* Card with organic shadow */
+  .btn-organic:hover {
+    background-color: hsl(var(--sand-brown));
+  }
+
+  /* Card with refined shadow */
   .card-organic {
     @apply bg-card rounded-2xl border border-border/50;
     box-shadow: 
-      0 4px 6px -1px hsl(var(--warm-brown) / 0.05),
-      0 10px 15px -3px hsl(var(--warm-brown) / 0.08);
+      0 4px 6px -1px hsl(var(--navy-blue) / 0.05),
+      0 10px 15px -3px hsl(var(--navy-blue) / 0.08);
   }
 
   /* Soft input styling */
   .input-organic {
     @apply rounded-xl border-border bg-background px-4 py-3 transition-all duration-200;
-    @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+    @apply focus:border-accent focus:ring-2 focus:ring-accent/20;
   }
 
   /* Hero section gradient */
   .hero-gradient {
     background: linear-gradient(
       180deg,
-      hsl(var(--cream)) 0%,
-      hsl(var(--cream-dark)) 100%
+      hsl(var(--background)) 0%,
+      hsl(var(--pale-blue)) 100%
     );
   }
 
@@ -181,7 +183,7 @@
 }
 
 @layer utilities {
-  /* Organic hover effects */
+  /* Hover effects */
   .hover-lift {
     @apply transition-all duration-300 ease-out;
   }
@@ -189,8 +191,8 @@
   .hover-lift:hover {
     @apply -translate-y-1;
     box-shadow: 
-      0 20px 25px -5px hsl(var(--warm-brown) / 0.08),
-      0 8px 10px -6px hsl(var(--warm-brown) / 0.05);
+      0 20px 25px -5px hsl(var(--navy-blue) / 0.08),
+      0 8px 10px -6px hsl(var(--navy-blue) / 0.05);
   }
 
   /* Animation utilities */

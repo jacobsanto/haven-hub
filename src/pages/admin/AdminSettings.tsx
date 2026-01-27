@@ -13,8 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Palette, Type, Building2, Save, RotateCcw, Upload, X, ImageIcon } from 'lucide-react';
 
 const HEADING_FONTS = [
-  'Cormorant Garamond',
   'Playfair Display',
+  'Cormorant Garamond',
   'Lora',
   'Merriweather',
   'Crimson Text',
@@ -22,9 +22,10 @@ const HEADING_FONTS = [
 ];
 
 const BODY_FONTS = [
+  'Lato',
+  'Montserrat',
   'Inter',
   'Open Sans',
-  'Lato',
   'Source Sans Pro',
   'Nunito',
   'Roboto',
