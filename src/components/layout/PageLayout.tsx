@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { ExitIntentModal } from '@/components/booking/ExitIntentModal';
+import { useExitIntent } from '@/hooks/useExitIntent';
 
 interface PageLayoutProps {
   children: ReactNode;
@@ -15,6 +17,8 @@ const pageVariants = {
 };
 
 export function PageLayout({ children, hideFooter = false }: PageLayoutProps) {
+  const { showExitIntent, dismiss } = useExitIntent({ delay: 3000, cookieExpiry: 7 });
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -29,6 +33,9 @@ export function PageLayout({ children, hideFooter = false }: PageLayoutProps) {
         {children}
       </motion.main>
       {!hideFooter && <Footer />}
+      
+      {/* Exit Intent Modal */}
+      <ExitIntentModal isOpen={showExitIntent} onClose={dismiss} />
     </div>
   );
 }
