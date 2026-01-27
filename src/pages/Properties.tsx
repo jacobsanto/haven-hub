@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Filter, Zap, LayoutGrid, Map } from 'lucide-react';
+import { Filter, Zap, LayoutGrid, Map, Shield, Clock, ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
-import { PropertyCard } from '@/components/properties/PropertyCard';
+import { QuickBookCard } from '@/components/booking/QuickBookCard';
+import { TrustBadges } from '@/components/booking/TrustBadges';
 import { useProperties } from '@/hooks/useProperties';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -202,19 +203,30 @@ export default function Properties() {
   return (
     <PageLayout>
       <div className="min-h-screen bg-background">
-        {/* Header */}
+        {/* Header with Booking Focus */}
         <div className="bg-secondary/30 py-12">
           <div className="container mx-auto px-4">
-            <motion.h1
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-serif font-medium text-center mb-8"
+              className="text-center mb-8"
             >
-              {location ? `Properties in ${location}` : 'All Properties'}
-            </motion.h1>
-            <div className="max-w-3xl mx-auto">
+              <h1 className="text-4xl md:text-5xl font-serif font-medium mb-4">
+                {location ? `Book Your Stay in ${location}` : 'Find & Book Your Perfect Stay'}
+              </h1>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Best rates guaranteed when you book direct. Instant confirmation available.
+              </p>
+            </motion.div>
+            <div className="max-w-3xl mx-auto mb-6">
               <SearchBar variant="compact" className="justify-center" />
             </div>
+            {/* Trust badges */}
+            <TrustBadges 
+              variant="compact" 
+              badges={['price', 'cancellation', 'instant']} 
+              className="justify-center"
+            />
           </div>
         </div>
 
@@ -307,7 +319,7 @@ export default function Properties() {
                   ) : properties && properties.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                       {properties.map((property, index) => (
-                        <PropertyCard key={property.id} property={property} index={index} />
+                        <QuickBookCard key={property.id} property={property} index={index} />
                       ))}
                     </div>
                   ) : (

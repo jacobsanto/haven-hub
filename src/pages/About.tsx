@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Heart, Shield, Sparkles, Users } from 'lucide-react';
+import { Heart, Shield, Sparkles, Users, ArrowRight, CheckCircle } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useBrand } from '@/contexts/BrandContext';
 import { Button } from '@/components/ui/button';
+import { TrustBadges } from '@/components/booking/TrustBadges';
 
 const values = [
   {
@@ -165,6 +166,43 @@ const About = () => {
         </div>
       </section>
 
+      {/* Direct Booking Benefits */}
+      <section className="py-20 md:py-28 bg-primary/5">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-4">
+              Why Book Direct with {brandName}
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              When you book directly, you get the best rates and exclusive benefits
+            </p>
+          </motion.div>
+
+          <div className="max-w-3xl mx-auto mb-12">
+            <TrustBadges variant="grid" badges={['price', 'cancellation', 'support', 'verified']} />
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <Link to="/properties">
+              <Button size="lg" className="rounded-full gap-2 px-8">
+                Start Booking Now
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 md:py-28 bg-background">
         <div className="container mx-auto px-4 text-center">
@@ -175,20 +213,21 @@ const About = () => {
             className="max-w-2xl mx-auto"
           >
             <h2 className="text-3xl md:text-4xl font-serif font-medium mb-6">
-              Ready to Experience the Difference?
+              Ready to Book Your Escape?
             </h2>
             <p className="text-muted-foreground text-lg mb-8">
-              Browse our collection of handpicked luxury villas and find your perfect escape.
+              Browse our collection of handpicked luxury villas and secure the best rates.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/properties">
-                <Button size="lg" className="rounded-full px-8">
-                  Explore Properties
+                <Button size="lg" className="rounded-full px-8 gap-2">
+                  Browse & Book Properties
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/contact">
                 <Button variant="outline" size="lg" className="rounded-full px-8">
-                  Get in Touch
+                  Talk to Concierge
                 </Button>
               </Link>
             </div>

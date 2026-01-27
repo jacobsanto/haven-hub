@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Sparkles } from 'lucide-react';
+import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
-import { PropertyCard } from '@/components/properties/PropertyCard';
+import { QuickBookCard } from '@/components/booking/QuickBookCard';
 import { DestinationCard } from '@/components/destinations/DestinationCard';
 import { ExperienceCard } from '@/components/experiences/ExperienceCard';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
+import { TrustBadges } from '@/components/booking/TrustBadges';
+import { UrgencyBanner } from '@/components/booking/UrgencyBanner';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useDestinations } from '@/hooks/useDestinations';
 import { useActiveExperiences } from '@/hooks/useExperiences';
@@ -22,6 +24,9 @@ const Index = () => {
   const { data: blogPosts, isLoading: blogLoading } = useBlogPosts({ status: 'published' });
   const { brandName } = useBrand();
 
+  // Properties count for social proof
+  const propertiesAvailable = properties?.length || 0;
+
   // Get featured items (limit to 3-4 for homepage)
   const featuredDestinations = destinations?.filter(d => d.is_featured).slice(0, 3) || destinations?.slice(0, 3);
   const featuredExperiences = experiences?.filter(e => e.is_featured).slice(0, 4) || experiences?.slice(0, 4);
@@ -29,6 +34,9 @@ const Index = () => {
 
   return (
     <PageLayout>
+      {/* Urgency Banner */}
+      <UrgencyBanner variant="rotating" />
+
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center justify-center hero-gradient texture-overlay overflow-hidden">
         {/* Decorative Elements */}
@@ -43,19 +51,44 @@ const Index = () => {
             className="max-w-4xl mx-auto text-center mb-12"
           >
             <h1 className="text-5xl md:text-7xl font-serif font-medium text-foreground mb-6 leading-tight">
-              Find Your Perfect
+              Book Your Perfect
               <span className="block text-primary">Escape</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-4">
               Discover extraordinary vacation homes in the world's most desirable destinations. 
-              Luxury living, reimagined for unforgettable experiences.
+              Direct booking. Best rates. Instant confirmation.
             </p>
+            {propertiesAvailable > 0 && (
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="text-sm text-primary font-medium flex items-center justify-center gap-2"
+              >
+                <Calendar className="h-4 w-4" />
+                {propertiesAvailable} properties available for booking
+              </motion.p>
+            )}
           </motion.div>
 
           {/* Search Bar */}
           <div className="max-w-4xl mx-auto">
             <SearchBar variant="hero" />
           </div>
+
+          {/* Trust Badges below search */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-10"
+          >
+            <TrustBadges 
+              variant="compact" 
+              badges={['price', 'cancellation', 'instant']}
+              className="justify-center"
+            />
+          </motion.div>
         </div>
       </section>
 
@@ -104,7 +137,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* Featured Properties */}
+      {/* Featured Properties - Booking Focused */}
       <section className="py-24 bg-secondary/30">
         <div className="container mx-auto px-4">
           <motion.div
@@ -114,11 +147,11 @@ const Index = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-4">
-              Featured Properties
+              Book Your Stay
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Handpicked luxury homes that offer the perfect blend of comfort, 
-              style, and unforgettable experiences.
+              Handpicked luxury homes ready for instant booking. 
+              Best rates guaranteed when you book direct.
             </p>
           </motion.div>
 
@@ -137,7 +170,7 @@ const Index = () => {
           ) : properties && properties.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {properties.map((property, index) => (
-                <PropertyCard key={property.id} property={property} index={index} />
+                <QuickBookCard key={property.id} property={property} index={index} />
               ))}
             </div>
           ) : (
@@ -156,8 +189,8 @@ const Index = () => {
               className="text-center mt-12"
             >
               <Link to="/properties">
-                <Button variant="outline" size="lg" className="rounded-full gap-2">
-                  View All Properties
+                <Button size="lg" className="rounded-full gap-2">
+                  View All Properties & Book
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -215,7 +248,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* Why Choose Us */}
+      {/* Why Book Direct Section */}
       <section className="py-24 bg-secondary/30">
         <div className="container mx-auto px-4">
           <motion.div
@@ -225,23 +258,34 @@ const Index = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-4">
-              Why Choose {brandName}
+              Why Book Direct with {brandName}
             </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Get the best rates and exclusive benefits when you book directly
+            </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {[
               {
-                title: 'Curated Selection',
-                description: 'Every property is personally vetted for quality, comfort, and exceptional experiences.',
+                icon: Shield,
+                title: 'Best Price Guarantee',
+                description: 'Our direct rates are always the lowest. Find it cheaper elsewhere? We\'ll match it.',
               },
               {
-                title: 'Seamless Booking',
-                description: 'Simple, transparent booking process with instant confirmation and flexible policies.',
+                icon: Clock,
+                title: 'Free Cancellation',
+                description: 'Flexible booking with free cancellation up to 48 hours before check-in.',
               },
               {
-                title: 'Dedicated Support',
-                description: '24/7 concierge service to ensure your stay exceeds expectations.',
+                icon: CheckCircle,
+                title: 'Instant Confirmation',
+                description: 'Book and receive your confirmation immediately. No waiting.',
+              },
+              {
+                icon: Calendar,
+                title: '24/7 Support',
+                description: 'Our concierge team is available around the clock for your needs.',
               },
             ].map((feature, index) => (
               <motion.div
@@ -250,16 +294,31 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="text-center p-8"
+                className="text-center p-6 card-organic"
               >
-                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-3xl font-serif text-primary">{index + 1}</span>
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                  <feature.icon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-serif font-medium mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+                <h3 className="text-lg font-serif font-medium mb-2">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
               </motion.div>
             ))}
           </div>
+
+          {/* Central booking CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mt-12"
+          >
+            <Link to="/properties">
+              <Button size="lg" className="rounded-full gap-2 px-8">
+                Start Booking Now
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </section>
 
@@ -308,7 +367,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* CTA Section */}
+      {/* CTA Section - Booking Focused */}
       <section className="py-24 bg-foreground text-background">
         <div className="container mx-auto px-4 text-center">
           <motion.div
@@ -318,19 +377,32 @@ const Index = () => {
             className="max-w-3xl mx-auto"
           >
             <h2 className="text-4xl md:text-5xl font-serif font-medium mb-6">
-              Ready for Your Next Adventure?
+              Ready to Book Your Escape?
             </h2>
             <p className="text-lg opacity-80 mb-8">
-              Start exploring our collection of extraordinary vacation homes today.
+              Start exploring our collection of extraordinary vacation homes.
+              Best rates guaranteed when you book direct.
             </p>
-            <Link to="/properties">
-              <Button
-                size="lg"
-                className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-8"
-              >
-                Browse Properties
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/properties">
+                <Button
+                  size="lg"
+                  className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-8"
+                >
+                  Browse & Book Now
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/contact">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="rounded-full border-background/30 text-background hover:bg-background/10 px-8"
+                >
+                  Talk to Concierge
+                </Button>
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

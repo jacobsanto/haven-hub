@@ -1,8 +1,9 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Sun, Calendar, Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
+import { MapPin, Sun, Calendar, Sparkles, ArrowRight, ArrowLeft, Zap } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { PropertyCard } from '@/components/properties/PropertyCard';
+import { QuickBookCard } from '@/components/booking/QuickBookCard';
+import { TrustBadges } from '@/components/booking/TrustBadges';
 import { useDestination } from '@/hooks/useDestinations';
 import { useProperties } from '@/hooks/useProperties';
 import { Button } from '@/components/ui/button';
@@ -178,7 +179,7 @@ const DestinationDetail = () => {
         </div>
       </section>
 
-      {/* Properties in this Destination */}
+      {/* Properties in this Destination - Booking Focused */}
       {destinationProperties.length > 0 && (
         <section className="py-16 md:py-24 bg-secondary/30">
           <div className="container mx-auto px-4">
@@ -189,22 +190,23 @@ const DestinationDetail = () => {
               className="text-center mb-12"
             >
               <h2 className="text-3xl md:text-4xl font-serif font-medium mb-4">
-                Properties in {destination.name}
+                Book Your Stay in {destination.name}
               </h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Discover our handpicked selection of luxury villas and vacation homes
+              <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
+                Discover our handpicked selection of luxury villas. Best rates guaranteed when you book direct.
               </p>
+              <TrustBadges variant="compact" badges={['price', 'cancellation']} className="justify-center" />
             </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {destinationProperties.map((property, index) => (
-                <PropertyCard key={property.id} property={property} index={index} />
+                <QuickBookCard key={property.id} property={property} index={index} />
               ))}
             </div>
 
             <div className="text-center mt-12">
-              <Link to={`/properties?country=${encodeURIComponent(destination.country)}`}>
-                <Button variant="outline" className="rounded-full gap-2">
+              <Link to={`/properties`}>
+                <Button className="rounded-full gap-2">
                   View All Properties
                   <ArrowRight className="h-4 w-4" />
                 </Button>

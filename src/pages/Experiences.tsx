@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Home, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { ExperienceCard } from '@/components/experiences/ExperienceCard';
 import { useActiveExperiences } from '@/hooks/useExperiences';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { TrustBadges } from '@/components/booking/TrustBadges';
 
 const categories = ['All', 'Culinary', 'Adventure', 'Cultural', 'Wellness'];
 
@@ -36,12 +38,18 @@ const Experiences = () => {
               <span className="text-sm font-medium uppercase tracking-wider">Curated</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-serif font-medium text-foreground mb-6">
-              Unique Experiences
+              Enhance Your Stay
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-              Go beyond the ordinary with our handpicked collection of authentic 
-              local experiences and adventures.
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6">
+              Add unforgettable experiences to your booking. Curated adventures available 
+              exclusively for our guests.
             </p>
+            <Link to="/properties">
+              <Button size="lg" variant="outline" className="rounded-full gap-2">
+                <Home className="h-4 w-4" />
+                Book a Property First
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </section>
@@ -104,6 +112,33 @@ const Experiences = () => {
               </p>
             </div>
           )}
+
+          {/* Property Booking CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-16 text-center"
+          >
+            <div className="card-organic p-8 max-w-3xl mx-auto bg-primary/5 border-primary/20">
+              <h3 className="text-2xl font-serif font-medium mb-4">
+                Complete Your Trip
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                These experiences are available exclusively for guests staying at our properties.
+                Book your luxury accommodation first, then add experiences to your stay.
+              </p>
+              <Link to="/properties">
+                <Button size="lg" className="rounded-full gap-2">
+                  Browse & Book Properties
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <div className="mt-6">
+                <TrustBadges variant="compact" badges={['price', 'instant']} className="justify-center" />
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
     </PageLayout>
