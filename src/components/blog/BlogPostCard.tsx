@@ -4,7 +4,7 @@ import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { BlogPost } from '@/types/blog';
 import { Badge } from '@/components/ui/badge';
-
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 interface BlogPostCardProps {
   post: BlogPost;
   featured?: boolean;
@@ -58,6 +58,17 @@ export function BlogPostCard({ post, featured = false }: BlogPostCardProps) {
               </p>
             )}
             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
+              {post.author && (
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={post.author.avatar_url || undefined} alt={post.author.name} />
+                    <AvatarFallback className="text-xs">
+                      {post.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{post.author.name}</span>
+                </div>
+              )}
               <span className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
                 {format(publishedDate, 'MMM d, yyyy')}
@@ -112,14 +123,21 @@ export function BlogPostCard({ post, featured = false }: BlogPostCardProps) {
               {post.excerpt}
             </p>
           )}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {format(publishedDate, 'MMM d, yyyy')}
-            </span>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {post.author && (
+              <div className="flex items-center gap-1.5">
+                <Avatar className="h-5 w-5">
+                  <AvatarImage src={post.author.avatar_url || undefined} alt={post.author.name} />
+                  <AvatarFallback className="text-[10px]">
+                    {post.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <span>{post.author.name}</span>
+              </div>
+            )}
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              {readTime} min read
+              {readTime} min
             </span>
           </div>
         </div>

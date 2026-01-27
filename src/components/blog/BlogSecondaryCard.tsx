@@ -4,7 +4,7 @@ import { Calendar, Clock, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { BlogPost } from '@/types/blog';
 import { Badge } from '@/components/ui/badge';
-
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 interface BlogSecondaryCardProps {
   post: BlogPost;
   index?: number;
@@ -66,12 +66,19 @@ export function BlogSecondaryCard({ post, index = 0 }: BlogSecondaryCardProps) {
           )}
           
           <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {format(publishedDate, 'MMM d')}
-              </span>
-              <span className="flex items-center gap-1">
+            <div className="flex items-center gap-3">
+              {post.author && (
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={post.author.avatar_url || undefined} alt={post.author.name} />
+                    <AvatarFallback className="text-[10px]">
+                      {post.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs text-muted-foreground">{post.author.name}</span>
+                </div>
+              )}
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 {readTime} min
               </span>
