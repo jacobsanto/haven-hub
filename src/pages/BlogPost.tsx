@@ -10,6 +10,7 @@ import { ReadingProgress } from '@/components/blog/ReadingProgress';
 import { TableOfContents } from '@/components/blog/TableOfContents';
 import { SocialShareButtons } from '@/components/blog/SocialShareButtons';
 import { AuthorBio } from '@/components/blog/AuthorBio';
+import { NewsletterSignup } from '@/components/blog/NewsletterSignup';
 import { MarkdownRenderer, extractHeadings } from '@/components/blog/MarkdownRenderer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -210,6 +211,9 @@ export default function BlogPost() {
 
               {/* Author Bio */}
               <AuthorBio author={author} className="mt-12" />
+
+              {/* Newsletter Signup */}
+              <NewsletterSignup className="mt-12" />
             </motion.div>
           </article>
 
