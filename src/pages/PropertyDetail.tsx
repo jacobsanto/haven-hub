@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Users, Bed, Bath, ChevronRight, Home } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -18,8 +19,10 @@ import { InstantBookingBadge } from '@/components/properties/InstantBookingBadge
 import { AmenityList } from '@/components/properties/AmenityList';
 import { BookingWidget } from '@/components/booking/BookingWidget';
 import { MobileBookingCTA } from '@/components/booking/MobileBookingCTA';
+import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidget';
 import { useProperty } from '@/hooks/useProperties';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -45,6 +48,14 @@ export default function PropertyDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: property, isLoading, error } = useProperty(slug || '');
   const { data: activeOffer } = useActiveSpecialOffer(property?.id || '');
+  const { addToRecentlyViewed } = useRecentlyViewed();
+
+  // Track property view
+  useEffect(() => {
+    if (property) {
+      addToRecentlyViewed(property);
+    }
+  }, [property, addToRecentlyViewed]);
 
   // Fetch destination if property has one
   const { data: destination } = useQuery({
