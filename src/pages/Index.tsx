@@ -1,16 +1,31 @@
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MapPin, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { PropertyCard } from '@/components/properties/PropertyCard';
+import { DestinationCard } from '@/components/destinations/DestinationCard';
+import { ExperienceCard } from '@/components/experiences/ExperienceCard';
+import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { useFeaturedProperties } from '@/hooks/useProperties';
+import { useDestinations } from '@/hooks/useDestinations';
+import { useActiveExperiences } from '@/hooks/useExperiences';
+import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { useBrand } from '@/contexts/BrandContext';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
-  const { data: properties, isLoading } = useFeaturedProperties();
+  const { data: properties, isLoading: propertiesLoading } = useFeaturedProperties();
+  const { data: destinations, isLoading: destinationsLoading } = useDestinations();
+  const { data: experiences, isLoading: experiencesLoading } = useActiveExperiences();
+  const { data: blogPosts, isLoading: blogLoading } = useBlogPosts({ status: 'published' });
   const { brandName } = useBrand();
+
+  // Get featured items (limit to 3-4 for homepage)
+  const featuredDestinations = destinations?.filter(d => d.is_featured).slice(0, 3) || destinations?.slice(0, 3);
+  const featuredExperiences = experiences?.filter(e => e.is_featured).slice(0, 4) || experiences?.slice(0, 4);
+  const latestBlogPosts = blogPosts?.slice(0, 3);
 
   return (
     <PageLayout>
@@ -44,8 +59,53 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Featured Destinations */}
+      {(destinationsLoading || (featuredDestinations && featuredDestinations.length > 0)) && (
+        <section className="py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12"
+            >
+              <div>
+                <div className="flex items-center gap-2 text-primary mb-2">
+                  <MapPin className="h-5 w-5" />
+                  <span className="text-sm font-medium uppercase tracking-wider">Explore</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground">
+                  Featured Destinations
+                </h2>
+              </div>
+              <Link to="/destinations" className="inline-flex items-center gap-2 text-primary hover:underline">
+                View all destinations <ArrowRight className="h-4 w-4" />
+              </Link>
+            </motion.div>
+
+            {destinationsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="space-y-4">
+                    <Skeleton className="aspect-[4/3] rounded-2xl" />
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : featuredDestinations && featuredDestinations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {featuredDestinations.map((destination, index) => (
+                  <DestinationCard key={destination.id} destination={destination} index={index} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      )}
+
       {/* Featured Properties */}
-      <section className="py-24 bg-background">
+      <section className="py-24 bg-secondary/30">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -62,7 +122,7 @@ const Index = () => {
             </p>
           </motion.div>
 
-          {isLoading ? (
+          {propertiesLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="card-organic animate-pulse">
@@ -105,6 +165,55 @@ const Index = () => {
           )}
         </div>
       </section>
+
+      {/* Featured Experiences */}
+      {(experiencesLoading || (featuredExperiences && featuredExperiences.length > 0)) && (
+        <section className="py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12"
+            >
+              <div>
+                <div className="flex items-center gap-2 text-primary mb-2">
+                  <Sparkles className="h-5 w-5" />
+                  <span className="text-sm font-medium uppercase tracking-wider">Curated</span>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground">
+                  Unforgettable Experiences
+                </h2>
+                <p className="text-muted-foreground mt-2 max-w-xl">
+                  Elevate your stay with our hand-selected experiences, from culinary adventures to cultural immersions.
+                </p>
+              </div>
+              <Link to="/experiences" className="inline-flex items-center gap-2 text-primary hover:underline">
+                View all experiences <ArrowRight className="h-4 w-4" />
+              </Link>
+            </motion.div>
+
+            {experiencesLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="space-y-4">
+                    <Skeleton className="aspect-[4/3] rounded-xl" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : featuredExperiences && featuredExperiences.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredExperiences.map((experience, index) => (
+                  <ExperienceCard key={experience.id} experience={experience} index={index} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      )}
 
       {/* Why Choose Us */}
       <section className="py-24 bg-secondary/30">
@@ -153,6 +262,51 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Latest Blog Posts */}
+      {(blogLoading || (latestBlogPosts && latestBlogPosts.length > 0)) && (
+        <section className="py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12"
+            >
+              <div>
+                <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground">
+                  Stories & Inspiration
+                </h2>
+                <p className="text-muted-foreground mt-2">
+                  Travel insights, destination guides, and luxury living inspiration.
+                </p>
+              </div>
+              <Link to="/blog" className="inline-flex items-center gap-2 text-primary hover:underline">
+                Read all articles <ArrowRight className="h-4 w-4" />
+              </Link>
+            </motion.div>
+
+            {blogLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="space-y-4">
+                    <Skeleton className="aspect-[16/10] rounded-xl" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                ))}
+              </div>
+            ) : latestBlogPosts && latestBlogPosts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {latestBlogPosts.map((post) => (
+                  <BlogPostCard key={post.id} post={post} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-24 bg-foreground text-background">
