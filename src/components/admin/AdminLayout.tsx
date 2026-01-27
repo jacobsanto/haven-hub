@@ -8,8 +8,10 @@ import {
   CalendarDays,
   LogOut,
   ChevronLeft,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useBrand } from '@/contexts/BrandContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -22,12 +24,19 @@ const navItems = [
   { href: '/admin/properties', icon: Building2, label: 'Properties' },
   { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
   { href: '/admin/availability', icon: CalendarDays, label: 'Availability' },
+  { href: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+  const { brandName } = useBrand();
+
+  // Split brand name for styling
+  const nameParts = brandName.split(' ');
+  const primaryPart = nameParts[0] || brandName;
+  const secondaryPart = nameParts.slice(1).join(' ');
 
   const handleSignOut = async () => {
     await signOut();
@@ -42,8 +51,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-6 border-b border-border">
           <Link to="/admin" className="flex items-center gap-2">
             <h1 className="text-xl font-serif">
-              <span className="text-primary">Haven</span>
-              <span className="text-muted-foreground">Stay</span>
+              <span className="text-primary">{primaryPart}</span>
+              {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
             </h1>
             <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
               Admin

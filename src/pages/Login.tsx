@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { useBrand } from '@/contexts/BrandContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +11,13 @@ import { useToast } from '@/hooks/use-toast';
 export default function Login() {
   const navigate = useNavigate();
   const { signIn, isAdmin } = useAuth();
+  const { brandName } = useBrand();
   const { toast } = useToast();
+  
+  // Split brand name for styling
+  const nameParts = brandName.split(' ');
+  const primaryPart = nameParts[0] || brandName;
+  const secondaryPart = nameParts.slice(1).join(' ');
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,8 +58,8 @@ export default function Login() {
         {/* Logo */}
         <Link to="/" className="block text-center mb-8">
           <h1 className="text-3xl font-serif">
-            <span className="text-primary">Haven</span>
-            <span className="text-muted-foreground">Stay</span>
+            <span className="text-primary">{primaryPart}</span>
+            {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
           </h1>
         </Link>
 

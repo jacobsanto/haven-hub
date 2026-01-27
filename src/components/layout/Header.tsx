@@ -4,6 +4,7 @@ import { Menu, X, User } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useBrand } from '@/contexts/BrandContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,13 @@ import {
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
+  const { brandName } = useBrand();
   const navigate = useNavigate();
+
+  // Split brand name for styling (e.g., "Arivia Villas" -> "Arivia" + "Villas")
+  const nameParts = brandName.split(' ');
+  const primaryPart = nameParts[0] || brandName;
+  const secondaryPart = nameParts.slice(1).join(' ');
 
   const handleSignOut = async () => {
     await signOut();
@@ -31,8 +38,8 @@ export function Header() {
             whileHover={{ scale: 1.05 }}
             className="text-2xl font-serif font-semibold text-foreground"
           >
-            <span className="text-primary">Haven</span>
-            <span className="text-muted-foreground">Stay</span>
+            <span className="text-primary">{primaryPart}</span>
+            {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
           </motion.div>
         </Link>
 
