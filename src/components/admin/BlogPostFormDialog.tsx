@@ -2,8 +2,10 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BlogPost, BlogCategory, BlogStatus } from '@/types/blog';
+import { BlogPost, BlogCategory, BlogStatus, BlogAuthor } from '@/types/blog';
 import { useCreateBlogPost, useUpdateBlogPost } from '@/hooks/useBlogPosts';
+import { useBlogAuthors } from '@/hooks/useBlogAuthors';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +39,7 @@ const formSchema = z.object({
   content: z.string().optional(),
   featured_image_url: z.string().url().optional().or(z.literal('')),
   category_id: z.string().optional(),
+  author_id: z.string().optional(),
   status: z.enum(['draft', 'published', 'archived']),
   is_featured: z.boolean(),
   tags: z.string().optional(),
@@ -54,6 +57,7 @@ interface BlogPostFormDialogProps {
 export function BlogPostFormDialog({ open, onOpenChange, post, categories }: BlogPostFormDialogProps) {
   const createPost = useCreateBlogPost();
   const updatePost = useUpdateBlogPost();
+  const { data: authors } = useBlogAuthors();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -64,6 +68,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
       content: '',
       featured_image_url: '',
       category_id: '',
+      author_id: '',
       status: 'draft',
       is_featured: false,
       tags: '',
@@ -79,6 +84,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
         content: post.content || '',
         featured_image_url: post.featured_image_url || '',
         category_id: post.category_id || '',
+        author_id: post.author_id || '',
         status: post.status,
         is_featured: post.is_featured,
         tags: post.tags?.join(', ') || '',
@@ -91,6 +97,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
         content: '',
         featured_image_url: '',
         category_id: '',
+        author_id: '',
         status: 'draft',
         is_featured: false,
         tags: '',
@@ -119,7 +126,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
       content: values.content || null,
       featured_image_url: values.featured_image_url || null,
       category_id: values.category_id || null,
-      author_id: null,
+      author_id: values.author_id || null,
       status: values.status as BlogStatus,
       is_featured: values.is_featured,
       tags: tagsArray,
@@ -234,6 +241,39 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="author_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Author</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select author" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {authors?.filter(a => a.is_active).map((author) => (
+                        <SelectItem key={author.id} value={author.id}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={author.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {author.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            {author.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

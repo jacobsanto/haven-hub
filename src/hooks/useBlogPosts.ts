@@ -11,7 +11,8 @@ export function useBlogPosts(options?: { status?: BlogStatus; categorySlug?: str
         .from('blog_posts')
         .select(`
           *,
-          category:blog_categories(*)
+          category:blog_categories(*),
+          author:blog_authors(*)
         `)
         .order('published_at', { ascending: false, nullsFirst: false });
       
@@ -42,7 +43,8 @@ export function useBlogPost(slug: string) {
         .from('blog_posts')
         .select(`
           *,
-          category:blog_categories(*)
+          category:blog_categories(*),
+          author:blog_authors(*)
         `)
         .eq('slug', slug)
         .maybeSingle();
@@ -62,7 +64,8 @@ export function useFeaturedBlogPost() {
         .from('blog_posts')
         .select(`
           *,
-          category:blog_categories(*)
+          category:blog_categories(*),
+          author:blog_authors(*)
         `)
         .eq('status', 'published')
         .eq('is_featured', true)
