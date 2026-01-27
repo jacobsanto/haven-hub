@@ -11,6 +11,9 @@ import {
   Settings,
   Sparkles,
   Menu,
+  MapPin,
+  Star,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -26,6 +29,9 @@ interface AdminLayoutProps {
 const navItems = [
   { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/admin/properties', icon: Building2, label: 'Properties' },
+  { href: '/admin/destinations', icon: MapPin, label: 'Destinations' },
+  { href: '/admin/experiences', icon: Star, label: 'Experiences' },
+  { href: '/admin/experience-enquiries', icon: MessageSquare, label: 'Enquiries' },
   { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
   { href: '/admin/availability', icon: CalendarDays, label: 'Availability' },
   { href: '/admin/amenities', icon: Sparkles, label: 'Amenities' },
