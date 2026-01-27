@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Search, X } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useBlogPosts, useFeaturedBlogPost } from '@/hooks/useBlogPosts';
 import { useBlogCategories } from '@/hooks/useBlogCategories';
@@ -8,9 +9,12 @@ import { BlogSecondaryCard } from '@/components/blog/BlogSecondaryCard';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { CategoryFilter } from '@/components/blog/CategoryFilter';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function Blog() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const { data: categories } = useBlogCategories();
   const { data: featuredPost, isLoading: featuredLoading } = useFeaturedBlogPost();
   const { data: posts, isLoading: postsLoading } = useBlogPosts({ 
@@ -29,15 +33,40 @@ export default function Blog() {
     return counts;
   }, [allPosts, categories]);
 
+  // Filter posts by search query
+  const searchFilteredPosts = useMemo(() => {
+    if (!posts || !searchQuery.trim()) return posts;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return posts.filter(post => 
+      post.title.toLowerCase().includes(query) ||
+      post.excerpt?.toLowerCase().includes(query) ||
+      post.content?.toLowerCase().includes(query) ||
+      post.tags?.some(tag => tag.toLowerCase().includes(query)) ||
+      post.category?.name.toLowerCase().includes(query) ||
+      post.author?.name.toLowerCase().includes(query)
+    );
+  }, [posts, searchQuery]);
+
   // Separate posts into tiers for magazine layout
   const { heroPost, secondaryPosts, regularPosts } = useMemo(() => {
-    if (!posts) return { heroPost: null, secondaryPosts: [], regularPosts: [] };
+    const filteredPosts = searchFilteredPosts;
+    if (!filteredPosts) return { heroPost: null, secondaryPosts: [], regularPosts: [] };
+    
+    // If searching, show all results in grid format (no hero)
+    if (searchQuery.trim()) {
+      return {
+        heroPost: null,
+        secondaryPosts: [],
+        regularPosts: filteredPosts,
+      };
+    }
     
     // If we have a featured post and we're showing all posts, use it as hero
     const hero = selectedCategory === 'all' && featuredPost ? featuredPost : null;
     
     // Filter out hero from the list
-    const remaining = hero ? posts.filter(p => p.id !== hero.id) : posts;
+    const remaining = hero ? filteredPosts.filter(p => p.id !== hero.id) : filteredPosts;
     
     // If no featured hero, use first post as hero
     const finalHero = hero || remaining[0] || null;
@@ -54,15 +83,15 @@ export default function Blog() {
       secondaryPosts: secondary,
       regularPosts: regular,
     };
-  }, [posts, featuredPost, selectedCategory]);
+  }, [searchFilteredPosts, featuredPost, selectedCategory, searchQuery]);
 
   const handleCategoryChange = (slug: string) => {
     setSelectedCategory(slug);
-    // Smooth scroll to posts section
-    const postsSection = document.getElementById('posts-section');
-    if (postsSection) {
-      postsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    setSearchQuery(''); // Clear search when changing category
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
   };
 
   return (
@@ -89,20 +118,55 @@ export default function Blog() {
 
       <section id="posts-section" className="py-16 md:py-24">
         <div className="container mx-auto px-4">
-          {/* Category Filter */}
+          {/* Search and Category Filter */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="mb-12"
+            className="space-y-6 mb-12"
           >
-            {categories && (
+            {/* Search Bar */}
+            <div className="relative max-w-md mx-auto">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search articles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-10 h-12 text-base rounded-full border-border bg-card"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleClearSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Category Filter - hide when searching */}
+            {!searchQuery && categories && (
               <CategoryFilter
                 categories={categories}
                 selectedCategory={selectedCategory}
                 onCategoryChange={handleCategoryChange}
                 postCounts={postCounts}
               />
+            )}
+
+            {/* Search Results Info */}
+            {searchQuery && (
+              <div className="text-center">
+                <p className="text-muted-foreground">
+                  {searchFilteredPosts?.length === 0 
+                    ? `No articles found for "${searchQuery}"`
+                    : `Found ${searchFilteredPosts?.length} article${searchFilteredPosts?.length === 1 ? '' : 's'} for "${searchQuery}"`
+                  }
+                </p>
+              </div>
             )}
           </motion.div>
 
@@ -130,15 +194,15 @@ export default function Blog() {
           {/* Magazine Layout */}
           {!postsLoading && !featuredLoading && (
             <>
-              {/* Hero Post - Full Width */}
-              {heroPost && (
+              {/* Hero Post - Full Width (only when not searching) */}
+              {heroPost && !searchQuery && (
                 <div className="mb-12">
                   <BlogHero post={heroPost} />
                 </div>
               )}
 
-              {/* Secondary Posts - 2 Column Grid */}
-              {secondaryPosts.length > 0 && (
+              {/* Secondary Posts - 2 Column Grid (only when not searching) */}
+              {secondaryPosts.length > 0 && !searchQuery && (
                 <div className="grid md:grid-cols-2 gap-6 mb-12">
                   {secondaryPosts.map((post, index) => (
                     <BlogSecondaryCard key={post.id} post={post} index={index} />
@@ -149,10 +213,12 @@ export default function Blog() {
               {/* Regular Posts Grid */}
               {regularPosts.length > 0 && (
                 <>
-                  <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-xl font-serif text-foreground">More Stories</h2>
-                    <div className="h-px flex-1 bg-border ml-6" />
-                  </div>
+                  {!searchQuery && (
+                    <div className="flex items-center justify-between mb-8">
+                      <h2 className="text-xl font-serif text-foreground">More Stories</h2>
+                      <div className="h-px flex-1 bg-border ml-6" />
+                    </div>
+                  )}
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {regularPosts.map((post) => (
                       <BlogPostCard key={post.id} post={post} />
@@ -162,10 +228,13 @@ export default function Blog() {
               )}
 
               {/* Empty State */}
-              {!heroPost && !postsLoading && (
+              {!heroPost && regularPosts.length === 0 && !postsLoading && (
                 <div className="text-center py-16">
                   <p className="text-muted-foreground text-lg">
-                    No blog posts available yet. Check back soon for inspiring stories!
+                    {searchQuery 
+                      ? 'Try adjusting your search terms or browse by category.'
+                      : 'No blog posts available yet. Check back soon for inspiring stories!'
+                    }
                   </p>
                 </div>
               )}
