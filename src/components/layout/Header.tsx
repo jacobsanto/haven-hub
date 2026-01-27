@@ -16,7 +16,7 @@ import {
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
-  const { brandName } = useBrand();
+  const { brandName, logoUrl } = useBrand();
   const navigate = useNavigate();
 
   // Split brand name for styling (e.g., "Arivia Villas" -> "Arivia" + "Villas")
@@ -36,10 +36,20 @@ export function Header() {
         <Link to="/" className="flex items-center gap-2">
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="text-2xl font-serif font-semibold text-foreground"
+            className="flex items-center"
           >
-            <span className="text-primary">{primaryPart}</span>
-            {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={brandName} 
+                className="h-10 w-auto max-w-[160px] object-contain"
+              />
+            ) : (
+              <span className="text-2xl font-serif font-semibold text-foreground">
+                <span className="text-primary">{primaryPart}</span>
+                {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
+              </span>
+            )}
           </motion.div>
         </Link>
 
