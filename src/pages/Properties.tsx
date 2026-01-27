@@ -6,6 +6,7 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { QuickBookCard } from '@/components/booking/QuickBookCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
+import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidget';
 import { useProperties } from '@/hooks/useProperties';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -342,6 +343,9 @@ export default function Properties() {
                   </p>
                 </div>
               )}
+
+              {/* Recently Viewed Section */}
+              <RecentlyViewedWidget variant="inline" className="mt-12" />
             </div>
           </div>
         </div>
