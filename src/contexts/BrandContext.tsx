@@ -6,23 +6,13 @@ interface BrandContextValue {
   isLoading: boolean;
   brandName: string;
   brandTagline: string;
+  logoUrl: string | null;
   contactEmail: string;
   contactPhone: string;
   contactAddress: string;
 }
 
 const BrandContext = createContext<BrandContextValue | undefined>(undefined);
-
-const GOOGLE_FONTS = [
-  'Cormorant Garamond',
-  'Playfair Display',
-  'Lora',
-  'Merriweather',
-  'Inter',
-  'Open Sans',
-  'Lato',
-  'Source Sans Pro',
-];
 
 function loadGoogleFont(fontName: string) {
   const fontId = `google-font-${fontName.replace(/\s+/g, '-').toLowerCase()}`;
@@ -73,6 +63,7 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     isLoading,
     brandName: settings?.brand_name ?? defaultBrandSettings.brand_name,
     brandTagline: settings?.brand_tagline ?? defaultBrandSettings.brand_tagline ?? '',
+    logoUrl: settings?.logo_url ?? null,
     contactEmail: settings?.contact_email ?? defaultBrandSettings.contact_email ?? '',
     contactPhone: settings?.contact_phone ?? defaultBrandSettings.contact_phone ?? '',
     contactAddress: settings?.contact_address ?? defaultBrandSettings.contact_address ?? '',

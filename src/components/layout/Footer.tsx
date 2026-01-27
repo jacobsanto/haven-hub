@@ -3,7 +3,7 @@ import { MapPin, Mail, Phone } from 'lucide-react';
 import { useBrand } from '@/contexts/BrandContext';
 
 export function Footer() {
-  const { brandName, brandTagline, contactEmail, contactPhone, contactAddress } = useBrand();
+  const { brandName, brandTagline, logoUrl, contactEmail, contactPhone, contactAddress } = useBrand();
   
   // Split brand name for styling
   const nameParts = brandName.split(' ');
@@ -16,10 +16,18 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-serif">
-              <span className="text-primary-foreground">{primaryPart}</span>
-              {secondaryPart && <span className="opacity-60"> {secondaryPart}</span>}
-            </h3>
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={brandName} 
+                className="h-10 w-auto max-w-[160px] object-contain brightness-0 invert"
+              />
+            ) : (
+              <h3 className="text-2xl font-serif">
+                <span className="text-primary-foreground">{primaryPart}</span>
+                {secondaryPart && <span className="opacity-60"> {secondaryPart}</span>}
+              </h3>
+            )}
             <p className="text-sm opacity-70 leading-relaxed">
               {brandTagline || 'Discover extraordinary vacation homes in the world\'s most desirable destinations.'}
             </p>

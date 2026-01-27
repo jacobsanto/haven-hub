@@ -31,7 +31,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
-  const { brandName } = useBrand();
+  const { brandName, logoUrl } = useBrand();
 
   // Split brand name for styling
   const nameParts = brandName.split(' ');
@@ -50,10 +50,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Logo */}
         <div className="p-6 border-b border-border">
           <Link to="/admin" className="flex items-center gap-2">
-            <h1 className="text-xl font-serif">
-              <span className="text-primary">{primaryPart}</span>
-              {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
-            </h1>
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={brandName} 
+                className="h-8 w-auto max-w-[120px] object-contain"
+              />
+            ) : (
+              <h1 className="text-xl font-serif">
+                <span className="text-primary">{primaryPart}</span>
+                {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
+              </h1>
+            )}
             <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
               Admin
             </span>
