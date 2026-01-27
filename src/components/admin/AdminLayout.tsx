@@ -17,6 +17,7 @@ import {
   FileText,
   FolderOpen,
   Users,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -38,6 +39,7 @@ const navItems = [
   { href: '/admin/blog', icon: FileText, label: 'Blog Posts' },
   { href: '/admin/blog/authors', icon: Users, label: 'Blog Authors' },
   { href: '/admin/blog/categories', icon: FolderOpen, label: 'Blog Categories' },
+  { href: '/admin/newsletter', icon: Mail, label: 'Newsletter' },
   { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
   { href: '/admin/availability', icon: CalendarDays, label: 'Availability' },
   { href: '/admin/amenities', icon: Sparkles, label: 'Amenities' },
