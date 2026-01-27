@@ -17,6 +17,7 @@ import AdminPropertyForm from "./pages/admin/AdminPropertyForm";
 import AdminBookings from "./pages/admin/AdminBookings";
 import AdminAvailability from "./pages/admin/AdminAvailability";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminAmenities from "./pages/admin/AdminAmenities";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/admin/properties/:id/edit" element={<AdminPropertyForm />} />
               <Route path="/admin/bookings" element={<AdminBookings />} />
               <Route path="/admin/availability" element={<AdminAvailability />} />
+              <Route path="/admin/amenities" element={<AdminAmenities />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

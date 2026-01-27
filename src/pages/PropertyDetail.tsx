@@ -108,8 +108,12 @@ export default function PropertyDetail() {
             {/* Amenities */}
             {property.amenities.length > 0 && (
               <div>
-                <h2 className="text-2xl font-serif font-medium mb-6">Amenities</h2>
-                <AmenityList amenities={property.amenities} variant="grid" />
+                <h2 className="text-2xl font-serif font-medium mb-6">Amenities & Features</h2>
+                <AmenityList 
+                  amenities={property.amenities} 
+                  variant="grid" 
+                  showDescriptions={true}
+                />
               </div>
             )}
 

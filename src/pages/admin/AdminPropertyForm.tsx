@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import {
@@ -8,6 +8,8 @@ import {
   useUpdateProperty,
   useAdminProperties,
 } from '@/hooks/useProperties';
+import { useAmenities, useAmenitiesByCategory, Amenity as AmenityType } from '@/hooks/useAmenities';
+import { DynamicIcon } from '@/components/admin/IconPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,8 +22,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { AMENITIES, AMENITY_LABELS, Amenity } from '@/lib/constants';
 import { PropertyStatus } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -439,26 +450,11 @@ export default function AdminPropertyForm() {
               </div>
             </div>
 
-            {/* Amenities */}
-            <div className="card-organic p-6 space-y-6">
-              <h2 className="font-serif text-xl font-medium">Amenities</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {AMENITIES.map((amenity) => (
-                  <label
-                    key={amenity}
-                    className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-muted transition-colors"
-                  >
-                    <Checkbox
-                      checked={formData.amenities.includes(amenity)}
-                      onCheckedChange={() => toggleAmenity(amenity)}
-                    />
-                    <span className="text-sm">
-                      {AMENITY_LABELS[amenity as Amenity]}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
+            {/* Amenities - Dynamic with Categories */}
+            <AmenitiesSection
+              selectedAmenities={formData.amenities}
+              onToggle={toggleAmenity}
+            />
 
             {/* Submit */}
             <div className="flex gap-4 justify-end">
@@ -485,5 +481,166 @@ export default function AdminPropertyForm() {
         </div>
       </AdminLayout>
     </AdminGuard>
+  );
+}
+
+// Amenities section with categories
+interface AmenitiesSectionProps {
+  selectedAmenities: string[];
+  onToggle: (slug: string) => void;
+}
+
+function AmenitiesSection({ selectedAmenities, onToggle }: AmenitiesSectionProps) {
+  const { data: amenities, isLoading } = useAmenities();
+  const amenitiesByCategory = useAmenitiesByCategory();
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
+
+  // Get sorted categories
+  const categories = Object.keys(amenitiesByCategory).sort();
+
+  // Filter amenities by search
+  const filteredByCategory = search
+    ? Object.entries(amenitiesByCategory).reduce((acc, [category, items]) => {
+        const filtered = items.filter(
+          (a) =>
+            a.name.toLowerCase().includes(search.toLowerCase()) ||
+            a.slug.toLowerCase().includes(search.toLowerCase())
+        );
+        if (filtered.length > 0) {
+          acc[category] = filtered;
+        }
+        return acc;
+      }, {} as Record<string, AmenityType[]>)
+    : amenitiesByCategory;
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  };
+
+  // Count selected per category
+  const countSelected = (categoryAmenities: AmenityType[]) => {
+    return categoryAmenities.filter((a) => selectedAmenities.includes(a.slug)).length;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="card-organic p-6">
+        <h2 className="font-serif text-xl font-medium mb-4">Amenities</h2>
+        <div className="animate-pulse space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 bg-muted rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card-organic p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-xl font-medium">Amenities</h2>
+        <Link
+          to="/admin/amenities"
+          className="text-sm text-primary hover:underline flex items-center gap-1"
+        >
+          <Settings2 className="h-4 w-4" />
+          Manage Amenities
+        </Link>
+      </div>
+
+      {/* Search */}
+      <Input
+        placeholder="Search amenities..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="max-w-md"
+      />
+
+      {/* Selected count */}
+      <p className="text-sm text-muted-foreground">
+        {selectedAmenities.length} amenities selected
+      </p>
+
+      {/* Categories */}
+      <div className="space-y-2">
+        {Object.entries(filteredByCategory).map(([category, categoryAmenities]) => {
+          const isExpanded = expandedCategories.has(category) || search.length > 0;
+          const selectedCount = countSelected(categoryAmenities);
+
+          return (
+            <Collapsible
+              key={category}
+              open={isExpanded}
+              onOpenChange={() => toggleCategory(category)}
+            >
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                    <span className="font-medium">{category}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({categoryAmenities.length} amenities)
+                    </span>
+                  </div>
+                  {selectedCount > 0 && (
+                    <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                      {selectedCount} selected
+                    </span>
+                  )}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-3">
+                  {categoryAmenities.map((amenity) => (
+                    <Tooltip key={amenity.id}>
+                      <TooltipTrigger asChild>
+                        <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-muted transition-colors">
+                          <Checkbox
+                            checked={selectedAmenities.includes(amenity.slug)}
+                            onCheckedChange={() => onToggle(amenity.slug)}
+                          />
+                          <DynamicIcon
+                            name={amenity.icon}
+                            className="h-4 w-4 text-primary"
+                          />
+                          <span className="text-sm">{amenity.name}</span>
+                        </label>
+                      </TooltipTrigger>
+                      {amenity.description && (
+                        <TooltipContent side="top" className="max-w-xs bg-popover">
+                          <p className="text-sm">{amenity.description}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
+      </div>
+
+      {Object.keys(filteredByCategory).length === 0 && (
+        <p className="text-center text-muted-foreground py-4">
+          No amenities found matching "{search}"
+        </p>
+      )}
+    </div>
   );
 }
