@@ -11,6 +11,14 @@ import PropertyDetail from "./pages/PropertyDetail";
 import BookingConfirm from "./pages/BookingConfirm";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Destinations from "./pages/Destinations";
+import DestinationDetail from "./pages/DestinationDetail";
+import Experiences from "./pages/Experiences";
+import ExperienceDetail from "./pages/ExperienceDetail";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProperties from "./pages/admin/AdminProperties";
 import AdminPropertyForm from "./pages/admin/AdminPropertyForm";
@@ -18,6 +26,9 @@ import AdminBookings from "./pages/admin/AdminBookings";
 import AdminAvailability from "./pages/admin/AdminAvailability";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAmenities from "./pages/admin/AdminAmenities";
+import AdminDestinations from "./pages/admin/AdminDestinations";
+import AdminExperiences from "./pages/admin/AdminExperiences";
+import AdminExperienceEnquiries from "./pages/admin/AdminExperienceEnquiries";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +48,14 @@ const App = () => (
               <Route path="/booking/confirm" element={<BookingConfirm />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/destinations" element={<Destinations />} />
+              <Route path="/destinations/:slug" element={<DestinationDetail />} />
+              <Route path="/experiences" element={<Experiences />} />
+              <Route path="/experiences/:slug" element={<ExperienceDetail />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/properties" element={<AdminProperties />} />
               <Route path="/admin/properties/new" element={<AdminPropertyForm />} />
@@ -44,6 +63,9 @@ const App = () => (
               <Route path="/admin/bookings" element={<AdminBookings />} />
               <Route path="/admin/availability" element={<AdminAvailability />} />
               <Route path="/admin/amenities" element={<AdminAmenities />} />
+              <Route path="/admin/destinations" element={<AdminDestinations />} />
+              <Route path="/admin/experiences" element={<AdminExperiences />} />
+              <Route path="/admin/experience-enquiries" element={<AdminExperienceEnquiries />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

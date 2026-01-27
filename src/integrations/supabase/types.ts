@@ -186,6 +186,208 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          status: Database["public"]["Enums"]["contact_status"]
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["contact_status"]
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["contact_status"]
+          subject?: string
+        }
+        Relationships: []
+      }
+      destinations: {
+        Row: {
+          best_time_to_visit: string | null
+          climate: string | null
+          country: string
+          created_at: string
+          description: string | null
+          gallery: string[] | null
+          hero_image_url: string | null
+          highlights: string[] | null
+          id: string
+          is_featured: boolean
+          long_description: string | null
+          name: string
+          slug: string
+          status: Database["public"]["Enums"]["destination_status"]
+          updated_at: string
+        }
+        Insert: {
+          best_time_to_visit?: string | null
+          climate?: string | null
+          country: string
+          created_at?: string
+          description?: string | null
+          gallery?: string[] | null
+          hero_image_url?: string | null
+          highlights?: string[] | null
+          id?: string
+          is_featured?: boolean
+          long_description?: string | null
+          name: string
+          slug: string
+          status?: Database["public"]["Enums"]["destination_status"]
+          updated_at?: string
+        }
+        Update: {
+          best_time_to_visit?: string | null
+          climate?: string | null
+          country?: string
+          created_at?: string
+          description?: string | null
+          gallery?: string[] | null
+          hero_image_url?: string | null
+          highlights?: string[] | null
+          id?: string
+          is_featured?: boolean
+          long_description?: string | null
+          name?: string
+          slug?: string
+          status?: Database["public"]["Enums"]["destination_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      experience_enquiries: {
+        Row: {
+          created_at: string
+          email: string
+          experience_id: string
+          group_size: number | null
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+          preferred_date: string | null
+          status: Database["public"]["Enums"]["enquiry_status"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          experience_id: string
+          group_size?: number | null
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+          preferred_date?: string | null
+          status?: Database["public"]["Enums"]["enquiry_status"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          experience_id?: string
+          group_size?: number | null
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+          preferred_date?: string | null
+          status?: Database["public"]["Enums"]["enquiry_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experience_enquiries_experience_id_fkey"
+            columns: ["experience_id"]
+            isOneToOne: false
+            referencedRelation: "experiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experiences: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          destination_id: string | null
+          duration: string | null
+          gallery: string[] | null
+          hero_image_url: string | null
+          id: string
+          includes: string[] | null
+          is_featured: boolean
+          long_description: string | null
+          name: string
+          price_from: number | null
+          price_type: string | null
+          slug: string
+          status: Database["public"]["Enums"]["experience_status"]
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          destination_id?: string | null
+          duration?: string | null
+          gallery?: string[] | null
+          hero_image_url?: string | null
+          id?: string
+          includes?: string[] | null
+          is_featured?: boolean
+          long_description?: string | null
+          name: string
+          price_from?: number | null
+          price_type?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["experience_status"]
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          destination_id?: string | null
+          duration?: string | null
+          gallery?: string[] | null
+          hero_image_url?: string | null
+          id?: string
+          includes?: string[] | null
+          is_featured?: boolean
+          long_description?: string | null
+          name?: string
+          price_from?: number | null
+          price_type?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["experience_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiences_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -301,6 +503,10 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       booking_status: "pending" | "confirmed" | "cancelled"
+      contact_status: "new" | "read" | "responded"
+      destination_status: "active" | "draft"
+      enquiry_status: "new" | "contacted" | "confirmed" | "cancelled"
+      experience_status: "active" | "draft"
       property_status: "active" | "draft" | "archived"
     }
     CompositeTypes: {
@@ -431,6 +637,10 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       booking_status: ["pending", "confirmed", "cancelled"],
+      contact_status: ["new", "read", "responded"],
+      destination_status: ["active", "draft"],
+      enquiry_status: ["new", "contacted", "confirmed", "cancelled"],
+      experience_status: ["active", "draft"],
       property_status: ["active", "draft", "archived"],
     },
   },
