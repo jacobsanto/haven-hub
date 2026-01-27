@@ -195,8 +195,15 @@ export default function PropertyDetail() {
             transition={{ delay: 0.1 }}
             className="lg:col-span-2 space-y-12"
           >
-            {/* Overview Section */}
-            <section id="overview" className="scroll-mt-32">
+          {/* Overview Section */}
+            <motion.section 
+              id="overview" 
+              className="scroll-mt-32"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0 }}
+            >
               <div className="space-y-4">
                 <div className="flex flex-wrap items-start gap-3">
                   <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium text-foreground">
@@ -227,40 +234,68 @@ export default function PropertyDetail() {
                   </div>
                 )}
               </div>
-            </section>
+            </motion.section>
 
             {/* Highlights */}
             {property.highlights && property.highlights.length > 0 && (
-              <section id="highlights" className="scroll-mt-32">
+              <motion.section 
+                id="highlights" 
+                className="scroll-mt-32"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
                 <h2 className="text-xl sm:text-2xl font-serif font-medium mb-4">Highlights</h2>
                 <PropertyHighlights highlights={property.highlights} variant="badges" />
-              </section>
+              </motion.section>
             )}
 
             {/* Room Breakdown */}
-            <section id="rooms" className="scroll-mt-32">
+            <motion.section 
+              id="rooms" 
+              className="scroll-mt-32"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+            >
               <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Rooms & Spaces</h2>
               <RoomBreakdown
                 rooms={property.rooms}
                 bedrooms={property.bedrooms}
                 bathrooms={property.bathrooms}
               />
-            </section>
+            </motion.section>
 
             {/* Amenities */}
             {property.amenities.length > 0 && (
-              <section id="amenities" className="scroll-mt-32">
+              <motion.section 
+                id="amenities" 
+                className="scroll-mt-32"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
                 <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Amenities & Features</h2>
                 <AmenityList 
                   amenities={property.amenities} 
                   variant="grid" 
                   showDescriptions={true}
                 />
-              </section>
+              </motion.section>
             )}
 
             {/* Neighborhood & Location */}
-            <section id="location" className="scroll-mt-32">
+            <motion.section 
+              id="location" 
+              className="scroll-mt-32"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+            >
               <h2 className="text-xl sm:text-2xl font-serif font-medium mb-4">Location & Neighborhood</h2>
               <NeighborhoodInfo
                 description={property.neighborhood_description}
@@ -269,17 +304,24 @@ export default function PropertyDetail() {
                 region={property.region}
                 country={property.country}
               />
-            </section>
+            </motion.section>
 
             {/* House Rules & Policies */}
-            <section id="policies" className="scroll-mt-32">
+            <motion.section 
+              id="policies" 
+              className="scroll-mt-32"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
               <h2 className="text-xl sm:text-2xl font-serif font-medium mb-4">House Rules & Policies</h2>
               <HouseRulesAccordion
                 houseRules={property.house_rules}
                 cancellationPolicy={property.cancellation_policy}
                 petPolicy={property.pet_policy}
               />
-            </section>
+            </motion.section>
           </motion.div>
 
           {/* Desktop Booking Widget */}
