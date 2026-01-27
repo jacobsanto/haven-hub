@@ -1,10 +1,53 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Mail, Phone } from 'lucide-react';
+import { MapPin, Mail, Phone, Send, CheckCircle, Loader2 } from 'lucide-react';
 import { useBrand } from '@/contexts/BrandContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export function Footer() {
   const { brandName, brandTagline, logoUrl, contactEmail, contactPhone, contactAddress } = useBrand();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || isSubmitting) return;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({ title: 'Please enter a valid email address', variant: 'destructive' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .insert({ email: email.trim(), source: 'footer' });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast({ title: 'You\'re already subscribed!' });
+          setIsSubscribed(true);
+        } else {
+          throw error;
+        }
+      } else {
+        setIsSubscribed(true);
+        toast({ title: 'Successfully subscribed!' });
+      }
+    } catch {
+      toast({ title: 'Something went wrong. Please try again.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Split brand name for styling
   const nameParts = brandName.split(' ');
   const primaryPart = nameParts[0] || brandName;
@@ -13,7 +56,7 @@ export function Footer() {
   return (
     <footer className="bg-foreground text-background py-16">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-12">
           {/* Brand */}
           <div className="space-y-4">
             {logoUrl ? (
@@ -31,6 +74,47 @@ export function Footer() {
             <p className="text-sm opacity-70 leading-relaxed">
               {brandTagline || 'Discover extraordinary vacation homes in the world\'s most desirable destinations.'}
             </p>
+          </div>
+
+          {/* Newsletter */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-sm uppercase tracking-wider opacity-60">
+              Newsletter
+            </h4>
+            {isSubscribed ? (
+              <div className="flex items-center gap-2 text-sm opacity-80">
+                <CheckCircle className="h-4 w-4 text-primary" />
+                <span>Thanks for subscribing!</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="space-y-3">
+                <p className="text-sm opacity-70">
+                  Get travel inspiration and exclusive offers.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-background/10 border-background/20 text-background placeholder:text-background/50 h-10"
+                    disabled={isSubmitting}
+                  />
+                  <Button 
+                    type="submit" 
+                    size="icon"
+                    disabled={isSubmitting}
+                    className="h-10 w-10 shrink-0"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
           </div>
 
           {/* Explore */}
@@ -52,6 +136,11 @@ export function Footer() {
               <li>
                 <Link to="/experiences" className="text-sm opacity-80 hover:opacity-100 transition-opacity">
                   Experiences
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog" className="text-sm opacity-80 hover:opacity-100 transition-opacity">
+                  Blog
                 </Link>
               </li>
             </ul>
