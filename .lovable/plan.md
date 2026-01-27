@@ -1,134 +1,365 @@
 
+# Complete Implementation Plan: Missing Pages and Features
 
-# Mobile-First & Responsive Design Improvements
+## Executive Summary
 
-## Overview
+This plan covers the implementation of all missing pages and systems for your luxury villa rental platform. The work is organized into 4 phases, progressing from simpler static pages to more complex database-driven features.
 
-After analyzing the codebase, the site has **good responsive foundations** but uses a desktop-first approach rather than true mobile-first CSS. Most pages work well on mobile, but a few areas need improvement.
+---
 
-## Current Status
+## Phase 1: Static Information Pages
 
-| Component | Mobile Status | Notes |
-|-----------|--------------|-------|
-| Header | ✅ Good | Mobile hamburger menu implemented |
-| Homepage | ✅ Good | Responsive text, grid, search |
-| Property Cards | ✅ Good | Single column on mobile |
-| Properties List | ✅ Good | Mobile filter sheet |
-| Property Gallery | ✅ Good | "View all" button on mobile |
-| Footer | ✅ Good | Stacked columns on mobile |
-| Login/Signup | ✅ Good | Centered, full-width on mobile |
-| Admin Layout | ❌ Broken | No mobile navigation |
-| Property Detail | ⚠️ Needs Work | Booking widget layout |
+These pages require no database changes and can be built using existing patterns.
 
-## Proposed Improvements
+### 1.1 About Page (`/about`)
 
-### 1. Fix Admin Layout for Mobile (Priority: High)
+**Purpose**: Company story, mission, and team information
 
-**Problem**: The admin sidebar is fixed width (w-64) with no mobile alternative - completely inaccessible on phones.
+**Sections**:
+- Hero with brand story headline
+- Our Story section with founding narrative
+- Mission & Values (3-4 value cards)
+- Team section with founders/key team members
+- Statistics bar (years in business, properties managed, happy guests)
+- Call-to-action to browse properties
 
-**Solution**: 
-- Add mobile drawer/sheet for admin navigation
-- Collapse sidebar on tablet, hide on mobile
-- Add hamburger menu trigger in admin header
+**Design**: Follows existing page patterns with `PageLayout`, Framer Motion animations, and the established luxury aesthetic
 
-### 2. Improve Property Detail Page Mobile Layout (Priority: High)
+---
 
-**Problem**: The booking widget uses a 3-column grid with sticky positioning that doesn't work well on mobile.
+### 1.2 Contact Page (`/contact`)
 
-**Solution**:
-- Stack content vertically on mobile
-- Move booking widget to bottom of page on mobile (or add floating "Book Now" button)
-- Add sticky booking CTA bar on mobile
+**Purpose**: Allow guests to reach out with questions
 
-### 3. Enhance Search Bar for Medium Screens (Priority: Medium)
+**Sections**:
+- Split layout: Contact form on left, contact details on right
+- Form fields: Name, Email, Phone (optional), Subject dropdown, Message
+- Contact information pulled from `brand_settings` (email, phone, address)
+- Optional: Embedded map placeholder (static image for now)
 
-**Problem**: Hero search bar uses 4-column grid that may be cramped on tablets.
+**Database**: New `contact_submissions` table to store form entries
 
-**Solution**:
-- Use 2x2 grid on tablets (md)
-- Full 4-column on large screens only (lg)
+**Table Schema**:
+```
+contact_submissions
+- id (uuid)
+- name (text, required)
+- email (text, required)  
+- phone (text, optional)
+- subject (text, required)
+- message (text, required)
+- status (enum: new, read, responded)
+- created_at (timestamp)
+```
 
-### 4. Add Touch-Friendly Improvements (Priority: Medium)
+---
 
-**Improvements**:
-- Ensure all interactive elements are at least 44x44px
-- Add active/pressed states for mobile
-- Improve spacing in property amenity badges
+### 1.3 Privacy Policy & Terms of Service
 
-### 5. Optimize Images for Mobile (Priority: Low)
+**Purpose**: Legal pages required for any booking platform
 
-**Improvements**:
-- Add srcset for responsive images
-- Lazy load off-screen images
-- Consider WebP with fallbacks
+**Approach**:
+- `/privacy` - Privacy Policy page
+- `/terms` - Terms of Service page
+- Simple static content with proper legal structure
+- Consistent styling with the rest of the site
+
+---
+
+## Phase 2: Destinations System
+
+### 2.1 Database Schema
+
+```
+destinations
+- id (uuid)
+- name (text, required) - e.g., "Santorini"
+- slug (text, unique, required)
+- country (text, required) - e.g., "Greece"
+- description (text)
+- long_description (text) - Rich content
+- hero_image_url (text)
+- gallery (text array)
+- highlights (text array) - Key selling points
+- best_time_to_visit (text)
+- climate (text)
+- is_featured (boolean)
+- status (enum: active, draft)
+- created_at, updated_at (timestamps)
+```
+
+### 2.2 Destinations Listing Page (`/destinations`)
+
+**Sections**:
+- Hero with tagline "Explore Our Destinations"
+- Grid of destination cards showing:
+  - Hero image
+  - Name and country
+  - Property count for that location
+  - Brief description excerpt
+
+### 2.3 Destination Detail Page (`/destinations/:slug`)
+
+**Sections**:
+- Full-width hero image with destination name overlay
+- Overview section with description
+- "Highlights" section (best time to visit, climate, key features)
+- Properties in this destination (filtered list from existing properties)
+- Photo gallery
+- Call-to-action to view all properties in this destination
+
+### 2.4 Initial Data: Santorini
+
+Pre-populate the destinations table with Santorini as the first entry, linking to the existing Santorini Retreat property.
+
+---
+
+## Phase 3: Experiences System with Enquiries
+
+### 3.1 Database Schema
+
+```
+experiences
+- id (uuid)
+- name (text, required)
+- slug (text, unique, required)
+- description (text)
+- long_description (text)
+- hero_image_url (text)
+- gallery (text array)
+- duration (text) - e.g., "Half day", "Full day", "3 hours"
+- price_from (numeric) - Starting price
+- price_type (text) - "per person", "per group", "custom"
+- includes (text array) - What's included
+- destination_id (uuid, optional) - Link to destination
+- category (text) - e.g., "Culinary", "Adventure", "Cultural", "Wellness"
+- is_featured (boolean)
+- status (enum: active, draft)
+- created_at, updated_at (timestamps)
+
+experience_enquiries
+- id (uuid)
+- experience_id (uuid, foreign key)
+- name (text, required)
+- email (text, required)
+- phone (text, optional)
+- preferred_date (date, optional)
+- group_size (integer, optional)
+- message (text)
+- status (enum: new, contacted, confirmed, cancelled)
+- created_at (timestamp)
+```
+
+### 3.2 Experiences Listing Page (`/experiences`)
+
+**Sections**:
+- Hero section with tagline
+- Category filter tabs (All, Culinary, Adventure, Cultural, Wellness)
+- Grid of experience cards showing:
+  - Hero image
+  - Name and category badge
+  - Duration
+  - Starting price
+  - Brief description
+
+### 3.3 Experience Detail Page (`/experiences/:slug`)
+
+**Sections**:
+- Hero image with title overlay
+- Overview with full description
+- Details card (duration, price, what's included)
+- Photo gallery
+- Enquiry form (inline or modal):
+  - Name, email, phone
+  - Preferred date picker
+  - Group size
+  - Message/special requests
+- Related experiences from same category
+
+### 3.4 Admin: Experience Management
+
+- Add to admin sidebar: "Experiences" menu item
+- `/admin/experiences` - List all experiences with CRUD operations
+- `/admin/experiences/new` and `/admin/experiences/:id/edit` - Form pages
+- `/admin/experience-enquiries` - View and manage enquiries
+
+---
+
+## Phase 4: Blog System
+
+### 4.1 Database Schema
+
+```
+blog_categories
+- id (uuid)
+- name (text, required)
+- slug (text, unique, required)
+- description (text, optional)
+- created_at (timestamp)
+
+blog_posts
+- id (uuid)
+- title (text, required)
+- slug (text, unique, required)
+- excerpt (text) - Short preview
+- content (text) - Full article content (Markdown or HTML)
+- featured_image_url (text)
+- category_id (uuid, foreign key)
+- author_id (uuid, optional) - Link to profiles
+- tags (text array)
+- is_featured (boolean)
+- status (enum: draft, published, archived)
+- published_at (timestamp, nullable)
+- created_at, updated_at (timestamps)
+```
+
+### 4.2 Blog Listing Page (`/blog`)
+
+**Sections**:
+- Hero with "Stories & Inspiration" tagline
+- Featured post (large card at top)
+- Category filter
+- Grid of post cards showing:
+  - Featured image
+  - Title
+  - Category badge
+  - Excerpt
+  - Published date
+  - Read time estimate
+
+### 4.3 Blog Post Detail Page (`/blog/:slug`)
+
+**Sections**:
+- Full-width featured image
+- Title and metadata (date, category, read time)
+- Full article content
+- Related posts from same category
+- Newsletter signup CTA (optional)
+
+### 4.4 Admin: Blog Management
+
+- Add to admin sidebar: "Blog" with submenu
+- `/admin/blog/posts` - List all posts
+- `/admin/blog/posts/new` and `/admin/blog/posts/:id/edit` - Post editor
+- `/admin/blog/categories` - Manage categories
+
+---
 
 ## Implementation Sequence
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  Phase 1: Critical Fixes (Admin + Property Detail)      │
-│  ─────────────────────────────────────────────────────  │
-│  • Add mobile navigation to AdminLayout                 │
-│  • Reorganize PropertyDetail for mobile                 │
-│  • Add mobile booking CTA                               │
-└─────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────┐
-│  Phase 2: Refinements (Search + Touch)                  │
-│  ─────────────────────────────────────────────────────  │
-│  • Improve SearchBar tablet layout                      │
-│  • Enhance touch targets across components              │
-│  • Test all breakpoints                                 │
-└─────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────┐
-│  Phase 3: Performance (Images)                          │
-│  ─────────────────────────────────────────────────────  │
-│  • Add responsive image srcsets                         │
-│  • Implement lazy loading                               │
-└─────────────────────────────────────────────────────────┘
+Week 1: Static Pages
+├── About page
+├── Contact page (with contact_submissions table)
+├── Privacy Policy page
+└── Terms of Service page
+
+Week 2: Destinations
+├── destinations table + RLS policies
+├── Destinations listing page
+├── Destination detail page
+├── Admin destinations management
+└── Seed Santorini data
+
+Week 3: Experiences
+├── experiences + experience_enquiries tables
+├── Experiences listing page
+├── Experience detail page with enquiry form
+├── Admin experiences management
+└── Admin enquiries management
+
+Week 4: Blog
+├── blog_categories + blog_posts tables
+├── Blog listing page
+├── Blog post detail page
+├── Admin blog management
+└── Admin category management
 ```
+
+---
 
 ## Technical Details
 
-### Admin Mobile Navigation Changes
+### New Database Tables Summary
 
-**File**: `src/components/admin/AdminLayout.tsx`
+| Table | Purpose | RLS Policy |
+|-------|---------|------------|
+| `contact_submissions` | Store contact form entries | Public insert, admin read/update |
+| `destinations` | Destination information | Public read (active), admin CRUD |
+| `experiences` | Curated experiences | Public read (active), admin CRUD |
+| `experience_enquiries` | Experience booking requests | Public insert, admin read/update |
+| `blog_categories` | Blog organization | Public read, admin CRUD |
+| `blog_posts` | Blog articles | Public read (published), admin CRUD |
 
-- Wrap sidebar in Sheet component for mobile
-- Add header bar with hamburger trigger
-- Use `useIsMobile()` hook to conditionally render
-- Preserve current desktop sidebar behavior
+### New Files to Create
 
-### Property Detail Mobile Changes
+**Pages (12 new files)**:
+- `src/pages/About.tsx`
+- `src/pages/Contact.tsx`
+- `src/pages/Privacy.tsx`
+- `src/pages/Terms.tsx`
+- `src/pages/Destinations.tsx`
+- `src/pages/DestinationDetail.tsx`
+- `src/pages/Experiences.tsx`
+- `src/pages/ExperienceDetail.tsx`
+- `src/pages/Blog.tsx`
+- `src/pages/BlogPost.tsx`
+- `src/pages/admin/AdminDestinations.tsx`
+- `src/pages/admin/AdminExperiences.tsx`
+- `src/pages/admin/AdminExperienceEnquiries.tsx`
+- `src/pages/admin/AdminBlogPosts.tsx`
+- `src/pages/admin/AdminBlogCategories.tsx`
 
-**File**: `src/pages/PropertyDetail.tsx`
+**Hooks (5 new files)**:
+- `src/hooks/useDestinations.ts`
+- `src/hooks/useExperiences.ts`
+- `src/hooks/useExperienceEnquiries.ts`
+- `src/hooks/useBlogPosts.ts`
+- `src/hooks/useContactSubmissions.ts`
 
-- Change grid to `grid-cols-1 lg:grid-cols-3`
-- Reorder content so booking widget appears naturally in flow
-- Add floating "Book Now" button (sticky to bottom) on mobile
-- Booking widget opens as bottom sheet on mobile
+**Components (6 new files)**:
+- `src/components/destinations/DestinationCard.tsx`
+- `src/components/experiences/ExperienceCard.tsx`
+- `src/components/experiences/EnquiryForm.tsx`
+- `src/components/blog/BlogPostCard.tsx`
+- `src/components/contact/ContactForm.tsx`
 
-### SearchBar Tablet Changes
+### Route Updates
 
-**File**: `src/components/search/SearchBar.tsx`
+Add to `src/App.tsx`:
+```tsx
+// Public routes
+<Route path="/about" element={<About />} />
+<Route path="/contact" element={<Contact />} />
+<Route path="/privacy" element={<Privacy />} />
+<Route path="/terms" element={<Terms />} />
+<Route path="/destinations" element={<Destinations />} />
+<Route path="/destinations/:slug" element={<DestinationDetail />} />
+<Route path="/experiences" element={<Experiences />} />
+<Route path="/experiences/:slug" element={<ExperienceDetail />} />
+<Route path="/blog" element={<Blog />} />
+<Route path="/blog/:slug" element={<BlogPost />} />
 
-- Change from `grid-cols-1 md:grid-cols-4` to `grid-cols-1 md:grid-cols-2 lg:grid-cols-4`
-- Adjust spacing for medium screens
+// Admin routes
+<Route path="/admin/destinations" element={<AdminDestinations />} />
+<Route path="/admin/experiences" element={<AdminExperiences />} />
+<Route path="/admin/experience-enquiries" element={<AdminExperienceEnquiries />} />
+<Route path="/admin/blog/posts" element={<AdminBlogPosts />} />
+<Route path="/admin/blog/categories" element={<AdminBlogCategories />} />
+```
 
-## Files to Modify
-
-1. `src/components/admin/AdminLayout.tsx` - Add mobile navigation
-2. `src/pages/PropertyDetail.tsx` - Improve mobile layout
-3. `src/components/booking/BookingWidget.tsx` - Add mobile sheet variant
-4. `src/components/search/SearchBar.tsx` - Better tablet breakpoints
-5. Various components - Touch target improvements
+---
 
 ## Summary
 
-The site is already well-structured for responsiveness. These changes will:
-- Make admin fully usable on mobile devices
-- Improve the property booking experience on phones
-- Refine tablet experiences
-- Ensure accessibility for touch users
+This plan adds **7 public pages** and **5 admin sections** to complete your luxury villa platform:
 
+| Category | Pages |
+|----------|-------|
+| Information | About, Contact, Privacy, Terms |
+| Destinations | Listing, Detail |
+| Experiences | Listing, Detail (with enquiry) |
+| Blog | Listing, Post Detail |
+| Admin | Destinations, Experiences, Enquiries, Blog Posts, Categories |
+
+All pages will follow the existing mobile-first responsive design patterns established in the codebase, using the same component library, Framer Motion animations, and luxury aesthetic.
