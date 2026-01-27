@@ -5,10 +5,12 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { PropertyCard } from '@/components/properties/PropertyCard';
 import { useFeaturedProperties } from '@/hooks/useProperties';
+import { useBrand } from '@/contexts/BrandContext';
 import { Button } from '@/components/ui/button';
 
 const Index = () => {
   const { data: properties, isLoading } = useFeaturedProperties();
+  const { brandName } = useBrand();
 
   return (
     <PageLayout>
@@ -114,7 +116,7 @@ const Index = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-4">
-              Why Choose HavenStay
+              Why Choose {brandName}
             </h2>
           </motion.div>
 
