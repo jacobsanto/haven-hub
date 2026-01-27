@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, KeyboardEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2, Sparkles } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import {
@@ -414,6 +414,14 @@ export default function AdminPropertyForm() {
               </div>
             </div>
 
+            {/* Property Highlights */}
+            <HighlightsEditor
+              highlights={formData.highlights}
+              onChange={(highlights) =>
+                setFormData((prev) => ({ ...prev, highlights }))
+              }
+            />
+
             {/* Pricing & Capacity */}
             <div className="card-organic p-6 space-y-6">
               <h2 className="font-serif text-xl font-medium">Pricing & Capacity</h2>
@@ -787,6 +795,159 @@ function AmenitiesSection({ selectedAmenities, onToggle }: AmenitiesSectionProps
         <p className="text-center text-muted-foreground py-4">
           No amenities found matching "{search}"
         </p>
+      )}
+    </div>
+  );
+}
+
+// Highlights Editor Component
+interface HighlightsEditorProps {
+  highlights: string[];
+  onChange: (highlights: string[]) => void;
+}
+
+const SUGGESTED_HIGHLIGHTS = [
+  'Beachfront',
+  'Ocean View',
+  'Mountain View',
+  'Private Pool',
+  'Infinity Pool',
+  'Chef\'s Kitchen',
+  'Private Chef',
+  'Spa',
+  'Wine Cellar',
+  'Home Theater',
+  'Gym',
+  'Tennis Court',
+  'Golf Access',
+  'Yacht Dock',
+  'Helipad',
+  'Butler Service',
+  'Pet Friendly',
+  'Family Friendly',
+  'Secluded',
+  'Historic Property',
+  'Newly Renovated',
+  'Award Winning',
+  'Celebrity Owned',
+  'Eco-Friendly',
+];
+
+function HighlightsEditor({ highlights, onChange }: HighlightsEditorProps) {
+  const [inputValue, setInputValue] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const addHighlight = (highlight: string) => {
+    const trimmed = highlight.trim();
+    if (trimmed && !highlights.includes(trimmed)) {
+      onChange([...highlights, trimmed]);
+    }
+    setInputValue('');
+    setShowSuggestions(false);
+  };
+
+  const removeHighlight = (index: number) => {
+    onChange(highlights.filter((_, i) => i !== index));
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (inputValue.trim()) {
+        addHighlight(inputValue);
+      }
+    } else if (e.key === 'Backspace' && !inputValue && highlights.length > 0) {
+      removeHighlight(highlights.length - 1);
+    }
+  };
+
+  // Filter suggestions based on input and already selected
+  const filteredSuggestions = SUGGESTED_HIGHLIGHTS.filter(
+    (s) =>
+      !highlights.includes(s) &&
+      s.toLowerCase().includes(inputValue.toLowerCase())
+  );
+
+  return (
+    <div className="card-organic p-6 space-y-6">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-primary" />
+        <h2 className="font-serif text-xl font-medium">Property Highlights</h2>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Add key selling points that make this property special (e.g., "Beachfront", "Private Pool", "Chef's Kitchen")
+      </p>
+
+      {/* Current highlights */}
+      <div className="flex flex-wrap gap-2 min-h-[40px]">
+        {highlights.map((highlight, index) => (
+          <span
+            key={index}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
+          >
+            {highlight}
+            <button
+              type="button"
+              onClick={() => removeHighlight(index)}
+              className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </span>
+        ))}
+      </div>
+
+      {/* Input */}
+      <div className="relative">
+        <Input
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setShowSuggestions(true);
+          }}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          placeholder="Type a highlight and press Enter..."
+          className="input-organic"
+        />
+
+        {/* Suggestions dropdown */}
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+            {filteredSuggestions.slice(0, 8).map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => addHighlight(suggestion)}
+                className="w-full text-left px-4 py-2 hover:bg-muted transition-colors text-sm"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick add suggestions */}
+      {highlights.length < 3 && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Quick add suggestions:</p>
+          <div className="flex flex-wrap gap-2">
+            {SUGGESTED_HIGHLIGHTS.filter((s) => !highlights.includes(s))
+              .slice(0, 6)
+              .map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => addHighlight(suggestion)}
+                  className="px-3 py-1 text-xs border border-dashed border-border rounded-full hover:border-primary hover:text-primary transition-colors"
+                >
+                  + {suggestion}
+                </button>
+              ))}
+          </div>
+        </div>
       )}
     </div>
   );
