@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, Users } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
+import { LucideIcon, Sparkles } from 'lucide-react';
 import { Property } from '@/types/database';
+import { useAmenityMap } from '@/hooks/useAmenities';
 import { cn } from '@/lib/utils';
 
 interface PropertyCardProps {
@@ -9,13 +12,42 @@ interface PropertyCardProps {
   index?: number;
 }
 
+// Fallback icons for amenities not in database
+const fallbackIconMap: Record<string, string> = {
+  wifi: 'Wifi', pool: 'Waves', spa: 'Sparkles', gym: 'Dumbbell',
+  kitchen: 'ChefHat', 'air-conditioning': 'Wind', heating: 'Flame',
+  parking: 'Car', 'beach-access': 'Umbrella', 'mountain-view': 'Mountain',
+  'ocean-view': 'Ship', garden: 'Flower2', terrace: 'TreeDeciduous',
+  balcony: 'Home', fireplace: 'Flame', 'hot-tub': 'Bath',
+  sauna: 'Thermometer', 'pet-friendly': 'PawPrint', concierge: 'Bell',
+};
+
+function getIconComponent(iconName: string): LucideIcon {
+  const IconComponent = (LucideIcons as unknown as Record<string, LucideIcon>)[iconName];
+  return IconComponent || Sparkles;
+}
+
 export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
+  const amenityMap = useAmenityMap();
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
     }).format(price);
+  };
+
+  // Get amenity data (from DB or fallback)
+  const getAmenityData = (slug: string) => {
+    const dbAmenity = amenityMap[slug];
+    if (dbAmenity) {
+      return { name: dbAmenity.name, icon: dbAmenity.icon };
+    }
+    return {
+      name: slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+      icon: fallbackIconMap[slug] || 'Sparkles',
+    };
   };
 
   return (
@@ -65,17 +97,22 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
               </span>
             </div>
 
-            {/* Amenities Preview */}
+            {/* Amenities Preview with Icons */}
             {property.amenities.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
-                {property.amenities.slice(0, 3).map((amenity) => (
-                  <span
-                    key={amenity}
-                    className="text-xs px-2 py-1 bg-secondary rounded-full text-secondary-foreground capitalize"
-                  >
-                    {amenity.replace('-', ' ')}
-                  </span>
-                ))}
+                {property.amenities.slice(0, 3).map((slug) => {
+                  const amenity = getAmenityData(slug);
+                  const Icon = getIconComponent(amenity.icon);
+                  return (
+                    <span
+                      key={slug}
+                      className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-secondary rounded-full text-secondary-foreground"
+                    >
+                      <Icon className="h-3 w-3" />
+                      {amenity.name}
+                    </span>
+                  );
+                })}
                 {property.amenities.length > 3 && (
                   <span className="text-xs px-2 py-1 bg-muted rounded-full text-muted-foreground">
                     +{property.amenities.length - 3} more

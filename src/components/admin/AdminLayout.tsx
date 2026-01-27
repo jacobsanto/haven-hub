@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronLeft,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/admin/properties', icon: Building2, label: 'Properties' },
   { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
   { href: '/admin/availability', icon: CalendarDays, label: 'Availability' },
+  { href: '/admin/amenities', icon: Sparkles, label: 'Amenities' },
   { href: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
