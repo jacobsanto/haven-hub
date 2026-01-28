@@ -40,6 +40,7 @@ import {
   useTriggerManualSync,
   useTogglePropertySync,
   useSyncPropertyNow,
+  useSyncAllPropertyAvailability,
 } from '@/hooks/useAdminPMSHealth';
 import { PMSConfigDialog } from '@/components/admin/PMSConfigDialog';
 import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDialog';
@@ -79,6 +80,7 @@ export default function AdminPMSHealth() {
   const triggerSync = useTriggerManualSync();
   const togglePropertySync = useTogglePropertySync();
   const syncPropertyNow = useSyncPropertyNow();
+  const syncAllAvailability = useSyncAllPropertyAvailability();
 
   // Get provider config from connection
   const connectionConfig = connection?.config as { provider?: string } | null;
@@ -163,6 +165,24 @@ export default function AdminPMSHealth() {
     }
   };
 
+  const handleSyncAllAvailability = async () => {
+    if (!connection) return;
+    try {
+      const result = await syncAllAvailability.mutateAsync(connection.id);
+      toast({
+        title: result.failed === 0 ? 'Availability Synced' : 'Partial Sync',
+        description: `Synced ${result.synced} of ${result.total} properties.${result.failed > 0 ? ` ${result.failed} failed.` : ''}`,
+        variant: result.failed === 0 ? 'default' : 'destructive',
+      });
+    } catch (error) {
+      toast({
+        title: 'Sync Failed',
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
+    }
+  };
+
 
   return (
     <AdminLayout>
@@ -229,11 +249,24 @@ export default function AdminPMSHealth() {
             {/* Property Mappings Tab */}
             <TabsContent value="mappings">
               <Card>
-                <CardHeader>
-                  <CardTitle>Property Mappings</CardTitle>
-                  <CardDescription>
-                    Map local properties to external PMS listings
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Property Mappings</CardTitle>
+                    <CardDescription>
+                      Map local properties to external PMS listings
+                    </CardDescription>
+                  </div>
+                  {propertyMappings && propertyMappings.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSyncAllAvailability}
+                      disabled={syncAllAvailability.isPending}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-2 ${syncAllAvailability.isPending ? 'animate-spin' : ''}`} />
+                      Sync All Availability
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent>
                   {mappingsLoading ? (
@@ -249,7 +282,7 @@ export default function AdminPMSHealth() {
                           <TableHead>Local Property</TableHead>
                           <TableHead>External ID</TableHead>
                           <TableHead>External Name</TableHead>
-                          <TableHead>Last Sync</TableHead>
+                          <TableHead>Last Availability Sync</TableHead>
                           <TableHead>Sync Enabled</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -267,8 +300,8 @@ export default function AdminPMSHealth() {
                             </TableCell>
                             <TableCell>{mapping.external_property_name || '-'}</TableCell>
                             <TableCell>
-                              {mapping.last_sync_at 
-                                ? format(new Date(mapping.last_sync_at), 'MMM d, HH:mm')
+                              {mapping.last_availability_sync_at 
+                                ? format(new Date(mapping.last_availability_sync_at), 'MMM d, HH:mm')
                                 : 'Never'}
                             </TableCell>
                             <TableCell>

@@ -516,6 +516,132 @@ Deno.serve(async (req) => {
         );
       }
 
+      case "sync-availability": {
+        const { propertyId, startDate, endDate } = body;
+        if (!propertyId) {
+          throw new Error("propertyId is required");
+        }
+
+        // Create admin client for database operations
+        const adminClient = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+
+        // Look up the external property ID from the mapping
+        const { data: mapping, error: mappingError } = await adminClient
+          .from("pms_property_map")
+          .select("external_property_id")
+          .eq("property_id", propertyId)
+          .maybeSingle();
+
+        if (mappingError || !mapping) {
+          throw new Error("Property not mapped to PMS");
+        }
+
+        const externalPropertyId = mapping.external_property_id;
+
+        // Calculate date range - default to 12 months
+        const start = startDate || new Date().toISOString().split("T")[0];
+        const endDateObj = endDate ? new Date(endDate) : new Date();
+        if (!endDate) {
+          endDateObj.setMonth(endDateObj.getMonth() + 12);
+        }
+        const end = endDateObj.toISOString().split("T")[0];
+
+        // Fetch availability from Tokeet
+        const endpoint = `/rental/${externalPropertyId}/availability?from=${start}&to=${end}`;
+        const response = await callTokeetAPI(endpoint, apiKey, accountId);
+        if (!response.ok) {
+          throw new Error(`Tokeet API error: ${response.statusText}`);
+        }
+        
+        const tokeetAvailability = await response.json();
+
+        // Process the Tokeet availability response
+        // Tokeet returns blocked date ranges - dates in these ranges are unavailable
+        // Format can be: { blocked: [{ from: "YYYY-MM-DD", to: "YYYY-MM-DD" }] } or array of blocked periods
+        let blockedRanges: Array<{ from: string; to: string }> = [];
+        
+        if (Array.isArray(tokeetAvailability)) {
+          blockedRanges = tokeetAvailability.map((range: { from?: string; to?: string; start?: string; end?: string }) => ({
+            from: range.from || range.start || "",
+            to: range.to || range.end || "",
+          })).filter((r: { from: string; to: string }) => r.from && r.to);
+        } else if (tokeetAvailability?.blocked && Array.isArray(tokeetAvailability.blocked)) {
+          blockedRanges = tokeetAvailability.blocked;
+        } else if (tokeetAvailability?.data && Array.isArray(tokeetAvailability.data)) {
+          blockedRanges = tokeetAvailability.data.map((range: { from?: string; to?: string; start?: string; end?: string }) => ({
+            from: range.from || range.start || "",
+            to: range.to || range.end || "",
+          })).filter((r: { from: string; to: string }) => r.from && r.to);
+        }
+
+        // Generate all dates in range and mark blocked ones
+        const startDt = new Date(start);
+        const endDt = new Date(end);
+        const blockedDates = new Set<string>();
+
+        // Build set of all blocked dates
+        for (const range of blockedRanges) {
+          const rangeStart = new Date(range.from);
+          const rangeEnd = new Date(range.to);
+          for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
+            blockedDates.add(d.toISOString().split("T")[0]);
+          }
+        }
+
+        // Prepare upsert data - only blocked dates need to be stored
+        const availabilityRecords: Array<{ property_id: string; date: string; available: boolean }> = [];
+        for (let d = new Date(startDt); d <= endDt; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split("T")[0];
+          const isBlocked = blockedDates.has(dateStr);
+          // Only upsert blocked dates to keep table size manageable
+          // Dates not in table are assumed available
+          if (isBlocked) {
+            availabilityRecords.push({
+              property_id: propertyId,
+              date: dateStr,
+              available: false,
+            });
+          }
+        }
+
+        // Clear existing availability records for this property and date range
+        await adminClient
+          .from("availability")
+          .delete()
+          .eq("property_id", propertyId)
+          .gte("date", start)
+          .lte("date", end);
+
+        // Insert new blocked dates
+        if (availabilityRecords.length > 0) {
+          const { error: upsertError } = await adminClient
+            .from("availability")
+            .insert(availabilityRecords);
+
+          if (upsertError) {
+            throw new Error(`Failed to upsert availability: ${upsertError.message}`);
+          }
+        }
+
+        // Update last sync timestamp on the mapping
+        await adminClient
+          .from("pms_property_map")
+          .update({ last_availability_sync_at: new Date().toISOString() })
+          .eq("property_id", propertyId);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            daysProcessed: Math.ceil((endDt.getTime() - startDt.getTime()) / (1000 * 60 * 60 * 24)),
+            blockedDaysFound: blockedDates.size,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown action: ${action}` }),

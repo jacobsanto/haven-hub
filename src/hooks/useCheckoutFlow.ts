@@ -10,41 +10,27 @@ export function generateSessionId(): string {
 }
 
 // Fetch availability calendar for a property
+// Now reads from local availability table which is synced from PMS
 export function useAvailabilityCalendar(
   propertyId: string,
   startDate: string,
   endDate: string,
-  externalPropertyId?: string
+  _externalPropertyId?: string // Kept for API compatibility but no longer used
 ) {
   return useQuery({
     queryKey: ['availability-calendar', propertyId, startDate, endDate],
     queryFn: async () => {
-      // First, try to get from PMS adapter
+      // The availability table is now the source of truth, synced from PMS
+      // No need to call PMS adapter directly - data is already in local DB
       let pmsAvailability: AvailabilityCalendarDay[] = [];
       
-      if (externalPropertyId) {
-        try {
-          const [availability, rates] = await Promise.all([
-            pmsAdapter.fetchAvailability(externalPropertyId, startDate, endDate),
-            pmsAdapter.fetchRates(externalPropertyId, startDate, endDate),
-          ]);
-
-          const ratesMap = new Map(rates.map(r => [r.date, r]));
-
-          pmsAvailability = availability.map(a => ({
-            date: a.date,
-            available: a.available,
-            price: ratesMap.get(a.date)?.baseRate,
-            minStay: a.minStay || ratesMap.get(a.date)?.minStay,
-            checkInAllowed: a.checkInAllowed ?? true,
-            checkOutAllowed: a.checkOutAllowed ?? true,
-          }));
-        } catch (error) {
-          console.warn('PMS availability fetch failed, falling back to local data', error);
-        }
+      // Note: externalPropertyId lookup is no longer needed here
+      // The sync-availability edge function handles the PMS sync
+      // This hook now just reads from the local availability table
+      {
       }
 
-      // Also check local availability overrides
+      // Get availability from local table (synced from PMS)
       const { data: localBlocks } = await supabase
         .from('availability')
         .select('*')

@@ -334,3 +334,52 @@ export function useEnsureAdvanceCMConnection() {
     },
   });
 }
+
+// Sync availability for a single property from PMS
+export function useSyncPropertyAvailability() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      propertyId,
+      startDate,
+      endDate,
+    }: {
+      propertyId: string;
+      startDate?: string;
+      endDate?: string;
+    }) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Authentication required");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/advancecm-sync`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            action: "sync-availability",
+            propertyId,
+            startDate,
+            endDate,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to sync availability");
+      }
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["availability-calendar"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "pms"] });
+    },
+  });
+}
