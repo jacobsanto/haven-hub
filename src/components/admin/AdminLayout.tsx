@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -8,6 +8,7 @@ import {
   CalendarDays,
   LogOut,
   ChevronLeft,
+  ChevronDown,
   Settings,
   Sparkles,
   Menu,
@@ -30,7 +31,10 @@ import { useBrand } from '@/contexts/BrandContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+
+const STORAGE_KEY = 'admin-sidebar-collapsed-sections';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -99,11 +103,38 @@ const navSections: NavSection[] = [
   },
 ];
 
+function useCollapsedSections() {
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleSection = useCallback((sectionTitle: string) => {
+    setCollapsedSections(prev => {
+      const updated = { ...prev, [sectionTitle]: !prev[sectionTitle] };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const isSectionOpen = useCallback((sectionTitle: string) => {
+    // Default to open if not explicitly collapsed
+    return collapsedSections[sectionTitle] !== true;
+  }, [collapsedSections]);
+
+  return { toggleSection, isSectionOpen };
+}
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { brandName, logoUrl } = useBrand();
+  const { toggleSection, isSectionOpen } = useCollapsedSections();
 
   const nameParts = brandName.split(' ');
   const primaryPart = nameParts[0] || brandName;
@@ -116,6 +147,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   const handleNavClick = () => {
     onNavigate?.();
+  };
+
+  // Check if any item in a section is active
+  const isSectionActive = (section: NavSection) => {
+    return section.items.some(item => location.pathname === item.href);
   };
 
   return (
@@ -134,37 +170,94 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </Link>
       </div>
 
-      <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
-        {navSections.map((section, sectionIndex) => (
-          <div key={sectionIndex}>
-            {section.title && (
-              <h3 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                {section.title}
-              </h3>
-            )}
-            <div className="space-y-1">
-              {section.items.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    onClick={handleNavClick}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors min-h-[40px]',
-                      isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        {navSections.map((section, sectionIndex) => {
+          const hasTitle = !!section.title;
+          const isOpen = hasTitle ? isSectionOpen(section.title) : true;
+          const hasActiveItem = isSectionActive(section);
+
+          // Sections without title render directly
+          if (!hasTitle) {
+            return (
+              <div key={sectionIndex} className="space-y-1">
+                {section.items.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={handleNavClick}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors min-h-[40px]',
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            );
+          }
+
+          return (
+            <Collapsible
+              key={sectionIndex}
+              open={isOpen}
+              onOpenChange={() => toggleSection(section.title)}
+            >
+              <CollapsibleTrigger asChild>
+                <button
+                  className={cn(
+                    'w-full flex items-center justify-between px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors hover:bg-muted/50 min-h-[36px]',
+                    hasActiveItem && !isOpen
+                      ? 'text-primary'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    {section.title}
+                    {hasActiveItem && !isOpen && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                     )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 transition-transform duration-200',
+                      isOpen ? 'rotate-0' : '-rotate-90'
+                    )}
+                  />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                <div className="space-y-1 pt-1">
+                  {section.items.map((item) => {
+                    const isActive = location.pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={handleNavClick}
+                        className={cn(
+                          'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors min-h-[40px]',
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
       </nav>
 
       <div className="p-4 border-t border-border space-y-4">
