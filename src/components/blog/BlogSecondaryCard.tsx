@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, ArrowRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { Clock, ArrowRight } from 'lucide-react';
 import { BlogPost } from '@/types/blog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ArticleStyleBadge } from './ArticleStyleBadge';
 interface BlogSecondaryCardProps {
   post: BlogPost;
   index?: number;
@@ -45,14 +45,20 @@ export function BlogSecondaryCard({ post, index = 0 }: BlogSecondaryCardProps) {
               <span className="text-muted-foreground">No image</span>
             </div>
           )}
-          {post.category && (
-            <Badge 
-              variant="secondary" 
-              className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm"
-            >
-              {post.category.name}
-            </Badge>
-          )}
+          <div className="absolute top-4 left-4 flex items-center gap-2">
+            {post.category && (
+              <Badge 
+                variant="secondary" 
+                className="bg-background/90 backdrop-blur-sm"
+              >
+                {post.category.name}
+              </Badge>
+            )}
+            <ArticleStyleBadge 
+              categorySlug={post.category?.slug} 
+              variant="overlay" 
+            />
+          </div>
         </div>
         
         {/* Content - Right side on tablet+ */}
