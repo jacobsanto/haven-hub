@@ -1,5 +1,5 @@
 // Cancellation Policy Definitions for Vacation Rentals
-// Industry-standard policies aligned with vacation rental norms
+// Supports both legacy hardcoded policies and database-driven custom policies
 
 import { differenceInDays } from 'date-fns';
 
@@ -8,7 +8,7 @@ export type CancellationPolicyKey = 'flexible' | 'moderate' | 'strict' | 'non_re
 export interface CancellationRule {
   daysBeforeCheckIn: number; // Cutoff in days (e.g., 7 means "7+ days before check-in")
   refundPercentage: number;  // 100 = full refund, 50 = half, 0 = none
-  label: string;             // Human-readable description
+  label?: string;            // Optional human-readable description
 }
 
 export interface CancellationPolicy {
@@ -20,6 +20,7 @@ export interface CancellationPolicy {
   color: string; // For badges/UI
 }
 
+// Legacy hardcoded policies (kept for backward compatibility)
 export const CANCELLATION_POLICIES: Record<CancellationPolicyKey, CancellationPolicy> = {
   flexible: {
     key: 'flexible',
@@ -78,7 +79,7 @@ export interface RefundCalculation {
 }
 
 /**
- * Calculate refund amount based on cancellation policy, check-in date, and cancellation time
+ * Calculate refund amount based on cancellation policy key (legacy)
  */
 export function calculateRefund(
   policyKey: CancellationPolicyKey,
@@ -87,12 +88,30 @@ export function calculateRefund(
   totalAmount: number
 ): RefundCalculation {
   const policy = CANCELLATION_POLICIES[policyKey];
-  const daysUntilCheckIn = differenceInDays(checkInDate, cancellationDate);
+  return calculateRefundFromPolicy(
+    { rules: policy.rules, name: policy.label },
+    checkInDate,
+    cancellationDate,
+    totalAmount
+  );
+}
 
-  // Find applicable rule (rules are sorted by daysBeforeCheckIn descending)
-  let applicableRule = policy.rules[policy.rules.length - 1]; // Default to last rule (0 days)
+/**
+ * Calculate refund from database policy object (new)
+ */
+export function calculateRefundFromPolicy(
+  policy: { rules: CancellationRule[]; name?: string },
+  checkInDate: Date,
+  cancellationDate: Date,
+  totalAmount: number
+): RefundCalculation {
+  const daysUntilCheckIn = differenceInDays(checkInDate, cancellationDate);
+  const sortedRules = [...policy.rules].sort((a, b) => b.daysBeforeCheckIn - a.daysBeforeCheckIn);
+
+  // Find applicable rule
+  let applicableRule = sortedRules[sortedRules.length - 1]; // Default to last rule (0 days)
   
-  for (const rule of policy.rules) {
+  for (const rule of sortedRules) {
     if (daysUntilCheckIn >= rule.daysBeforeCheckIn) {
       applicableRule = rule;
       break;
@@ -100,13 +119,25 @@ export function calculateRefund(
   }
 
   const refundPercentage = applicableRule.refundPercentage;
-  const refundAmount = Math.round((totalAmount * refundPercentage) / 100 * 100) / 100; // Round to 2 decimal places
+  const refundAmount = Math.round((totalAmount * refundPercentage) / 100 * 100) / 100;
+
+  // Generate message
+  let message = applicableRule.label || '';
+  if (!message) {
+    if (refundPercentage === 100) {
+      message = 'Full refund available';
+    } else if (refundPercentage === 0) {
+      message = 'No refund available';
+    } else {
+      message = `${refundPercentage}% refund available`;
+    }
+  }
 
   return {
     refundAmount,
     refundPercentage,
-    message: applicableRule.label,
-    policyLabel: policy.label,
+    message,
+    policyLabel: policy.name || 'Custom Policy',
     daysUntilCheckIn,
   };
 }
@@ -119,34 +150,54 @@ export function getCancellationDeadlines(
   checkInDate: Date
 ): { deadline: Date; refundPercentage: number; label: string }[] {
   const policy = CANCELLATION_POLICIES[policyKey];
-  
-  return policy.rules
+  return getCancellationDeadlinesFromRules(policy.rules, checkInDate);
+}
+
+/**
+ * Get cancellation deadlines from database policy rules
+ */
+export function getCancellationDeadlinesFromRules(
+  rules: CancellationRule[],
+  checkInDate: Date
+): { deadline: Date; refundPercentage: number; label: string }[] {
+  return rules
     .filter(rule => rule.daysBeforeCheckIn > 0)
+    .sort((a, b) => b.daysBeforeCheckIn - a.daysBeforeCheckIn)
     .map(rule => {
       const deadline = new Date(checkInDate);
       deadline.setDate(deadline.getDate() - rule.daysBeforeCheckIn);
       return {
         deadline,
         refundPercentage: rule.refundPercentage,
-        label: rule.label,
+        label: rule.label || `${rule.refundPercentage}% refund`,
       };
     });
 }
 
 /**
- * Get a human-readable summary of policy terms for checkout display
+ * Get a human-readable summary of policy terms (legacy key-based)
  */
 export function getPolicySummary(
   policyKey: CancellationPolicyKey,
   checkInDate: Date
 ): string[] {
-  const deadlines = getCancellationDeadlines(policyKey, checkInDate);
   const policy = CANCELLATION_POLICIES[policyKey];
-  
-  if (policyKey === 'non_refundable') {
+  return getPolicySummaryFromRules(policy.rules, checkInDate, policyKey === 'non_refundable');
+}
+
+/**
+ * Get a human-readable summary from database policy rules
+ */
+export function getPolicySummaryFromRules(
+  rules: CancellationRule[],
+  checkInDate: Date,
+  isNonRefundable: boolean = false
+): string[] {
+  if (isNonRefundable || (rules.length === 1 && rules[0].refundPercentage === 0)) {
     return ['This booking is non-refundable'];
   }
 
+  const deadlines = getCancellationDeadlinesFromRules(rules, checkInDate);
   const summaryLines: string[] = [];
   
   deadlines.forEach((deadline, index) => {
@@ -167,28 +218,30 @@ export function getPolicySummary(
   });
 
   // Add no refund line
-  const lastCutoff = policy.rules.find(r => r.daysBeforeCheckIn > 0 && r.refundPercentage === 0) 
-    || policy.rules.find(r => r.refundPercentage === 0);
+  const sortedRules = [...rules].sort((a, b) => b.daysBeforeCheckIn - a.daysBeforeCheckIn);
+  const minDaysWithRefund = sortedRules
+    .filter(r => r.refundPercentage > 0)
+    .reduce((min, r) => Math.min(min, r.daysBeforeCheckIn), Infinity);
   
-  if (lastCutoff && lastCutoff.daysBeforeCheckIn > 0) {
-    const noRefundDate = new Date(checkInDate);
-    noRefundDate.setDate(noRefundDate.getDate() - lastCutoff.daysBeforeCheckIn);
-    summaryLines.push(`No refund after ${noRefundDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
-  } else {
-    // For flexible/moderate, add the final no refund period
-    const minDays = Math.min(...policy.rules.filter(r => r.refundPercentage > 0).map(r => r.daysBeforeCheckIn));
-    if (minDays > 0) {
-      summaryLines.push(`No refund within ${minDays} days of check-in`);
-    }
+  if (minDaysWithRefund !== Infinity && minDaysWithRefund > 0) {
+    summaryLines.push(`No refund within ${minDaysWithRefund} days of check-in`);
   }
 
   return summaryLines;
 }
 
 /**
- * Get badge color class based on policy
+ * Get badge color class based on policy key (legacy)
  */
 export function getPolicyBadgeClass(policyKey: CancellationPolicyKey): string {
+  const policy = CANCELLATION_POLICIES[policyKey];
+  return getPolicyBadgeClassByColor(policy.color);
+}
+
+/**
+ * Get badge color class by color name (for database policies)
+ */
+export function getPolicyBadgeClassByColor(color: string): string {
   const colorMap: Record<string, string> = {
     green: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     yellow: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
@@ -196,6 +249,5 @@ export function getPolicyBadgeClass(policyKey: CancellationPolicyKey): string {
     red: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   };
   
-  const policy = CANCELLATION_POLICIES[policyKey];
-  return colorMap[policy.color] || colorMap.yellow;
+  return colorMap[color] || colorMap.yellow;
 }

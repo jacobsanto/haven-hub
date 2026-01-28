@@ -631,6 +631,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cancellation_policies: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          rules: Json
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          rules?: Json
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          rules?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       checkout_holds: {
         Row: {
           check_in: string
