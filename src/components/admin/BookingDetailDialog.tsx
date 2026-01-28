@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import {
   User,
@@ -14,11 +15,14 @@ import {
   Package,
   FileText,
   DollarSign,
+  ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
 import { useBookingDetails } from '@/hooks/useBookings';
 import { useUpdateBookingStatus } from '@/hooks/useBookings';
 import { useConfirmBookingWithPMS, useRetryPMSSync } from '@/hooks/useCompleteBooking';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +43,18 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProcessRefundButton } from './ProcessRefundButton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface BookingDetailDialogProps {
   bookingId: string | null;
@@ -51,11 +67,12 @@ export function BookingDetailDialog({
   open,
   onOpenChange,
 }: BookingDetailDialogProps) {
-  const { data, isLoading, isFetching } = useBookingDetails(bookingId);
+  const { data, isLoading, isFetching, refetch } = useBookingDetails(bookingId);
   const updateStatus = useUpdateBookingStatus();
   const confirmWithPMS = useConfirmBookingWithPMS();
   const retrySync = useRetryPMSSync();
   const { toast } = useToast();
+  const [isRefunding, setIsRefunding] = useState(false);
 
   const booking = data?.booking;
   const priceBreakdown = data?.priceBreakdown || [];
