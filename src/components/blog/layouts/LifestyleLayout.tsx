@@ -53,84 +53,78 @@ export function LifestyleLayout({
       {!isMobile && <FloatingShareBar title={post.title} />}
       {isMobile && headings.length > 0 && <MobileTableOfContents headings={headings} />}
 
-      {/* Back Link - Consistent Style */}
-      <div className="container mx-auto px-4 pt-6">
-        <Link
-          to="/blog"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 hover:bg-muted text-foreground text-sm font-medium transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Blog
-        </Link>
-      </div>
-
-      {/* Split Hero - Magazine Style */}
-      <section className="container mx-auto px-4 py-8 md:py-12">
-        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center max-w-6xl mx-auto">
-          {/* Hero Image */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="aspect-[4/5] md:aspect-[3/4] overflow-hidden rounded-2xl order-2 md:order-1"
+      {/* Hero Image with gradient */}
+      <section className="relative h-[35vh] overflow-hidden">
+        {post.featured_image_url ? (
+          <img
+            src={post.featured_image_url}
+            alt={post.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+        
+        {/* Back Button - Consistent Style */}
+        <div className="absolute top-4 left-4 z-10">
+          <Link
+            to="/blog"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors"
           >
-            {post.featured_image_url ? (
-              <img
-                src={post.featured_image_url}
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-accent/20 to-primary/10" />
-            )}
-          </motion.div>
-
-          {/* Title & Meta */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="order-1 md:order-2"
-          >
-            {post.category && (
-              <Badge variant="secondary" className="mb-4">
-                {post.category.name}
-              </Badge>
-            )}
-
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-medium text-foreground mb-6 leading-tight">
-              {post.title}
-            </h1>
-
-            {post.excerpt && (
-              <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
-                {post.excerpt}
-              </p>
-            )}
-
-            {/* Author & Meta - Consistent Styling */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-6 border-t border-border">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8 border border-border">
-                  <AvatarImage src={author.avatar_url || undefined} alt={author.name} />
-                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                    {authorInitials}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <span className="font-medium text-foreground block">{author.name}</span>
-                  <span className="text-xs">{format(publishedDate, 'MMMM d, yyyy')}</span>
-                </div>
-              </div>
-              <span className="hidden sm:inline text-border">•</span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {readTime} min read
-              </span>
-            </div>
-          </motion.div>
+            <ArrowLeft className="h-4 w-4" />
+            Back to Blog
+          </Link>
         </div>
       </section>
+
+      {/* Article Header Card */}
+      <div className="container mx-auto px-4 -mt-24 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-card rounded-2xl p-6 md:p-10 shadow-xl max-w-4xl mx-auto border border-border/50"
+        >
+          {post.category && (
+            <Badge variant="secondary" className="mb-4">
+              {post.category.name}
+            </Badge>
+          )}
+
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-medium text-foreground mb-6 leading-tight">
+            {post.title}
+          </h1>
+
+          {post.excerpt && (
+            <p className="text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed">
+              {post.excerpt}
+            </p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8 border border-border">
+                <AvatarImage src={author.avatar_url || undefined} alt={author.name} />
+                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                  {authorInitials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium text-foreground">{author.name}</span>
+            </div>
+            <span className="hidden sm:inline text-border">•</span>
+            <span className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              {format(publishedDate, 'MMMM d, yyyy')}
+            </span>
+            <span className="hidden sm:inline text-border">•</span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              {readTime} min read
+            </span>
+          </div>
+        </motion.div>
+      </div>
 
       {/* Article Content - Centered, Clean */}
       <div className="container mx-auto px-4 py-12 md:py-16">
