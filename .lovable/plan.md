@@ -1,80 +1,133 @@
 
 
-## Sheet-Only Filters Implementation Plan
+## PMS Availability Sync Implementation Plan
 
-This plan converts the Properties page filters from a dual-mode (sidebar + mobile sheet) to a unified Sheet-only approach for all screen sizes.
+This plan connects the PMS availability (Tokeet/AdvanceCM) to the booking engine so that the calendar reflects real availability from your source of truth.
 
 ---
 
-### What Changes
+### Current State
 
-**Before:**
-- Desktop (lg+): Fixed 72px sidebar always visible on the left
-- Mobile: Floating "Filters" button at bottom, opens Sheet drawer
+**What exists:**
+- Edge function `advancecm-sync` with `fetch-availability` action that calls Tokeet API
+- `AdvanceCMAdapter.fetchAvailability()` that calls the edge function
+- Local `availability` table in the database
+- `useAvailabilityCalendar` hook that reads availability data
 
-**After:**
-- All screens: "Filters" button in the toolbar area, opens Sheet drawer
-- Property grid gets full width on all devices
-- Consistent user experience across desktop, tablet, and mobile
+**The gap:**
+- No mechanism to sync PMS availability to the local database
+- Booking calendar uses mock adapter, not the real AdvanceCM adapter
+- No scheduled or manual sync for availability data
 
 ---
 
 ### Implementation Steps
 
-#### Step 1: Remove Desktop Sidebar
-Remove the entire `<aside>` block (currently lines 236-249) that renders the desktop filter sidebar.
+#### Step 1: Add `sync-availability` Action to Edge Function
 
-#### Step 2: Update Layout Structure  
-Change the main content wrapper from `flex gap-8` to a simpler single-column layout since there's no sidebar anymore.
+Extend `advancecm-sync/index.ts` to add a new action that:
+1. Fetches availability from Tokeet for a specific property
+2. Writes/upserts the data to the local `availability` table
+3. Returns sync statistics
 
-#### Step 3: Move Filter Button to Toolbar
-Relocate the Sheet trigger button from the fixed bottom position to the toolbar row (next to the results count and view toggle buttons). This creates a cleaner, more accessible placement.
+**New action logic:**
+- Fetch availability from Tokeet API: `/rental/{pkey}/availability?from={start}&to={end}`
+- For each date received, upsert to the `availability` table
+- Mark dates as `available: false` where Tokeet says blocked/booked
 
-#### Step 4: Update Filter Button Styling
-- Remove `lg:hidden` class so it shows on all screens
-- Remove `fixed bottom-4 left-1/2 -translate-x-1/2` positioning
-- Style as a regular toolbar button with the Filter icon and active count badge
+#### Step 2: Create Availability Sync Hook
 
-#### Step 5: Adjust Grid Columns
-With no sidebar taking space, the property grid can use more columns on larger screens:
-- Current: `grid-cols-1 md:grid-cols-2 xl:grid-cols-3`
-- New: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`
+Add a new hook `useSyncPropertyAvailability` in `useAdvanceCMSync.ts` that:
+1. Looks up the `external_property_id` from `pms_property_map`
+2. Calls the edge function with `action: 'sync-availability'`
+3. Returns success/failure status
+
+#### Step 3: Update Calendar to Use Real Data
+
+Modify `useAvailabilityCalendar` in `useCheckoutFlow.ts` to:
+1. Get the `external_property_id` from `pms_property_map` automatically
+2. Prioritize reading from the local `availability` table (which is now synced from PMS)
+3. Remove dependency on mock adapter for production
+
+#### Step 4: Add Sync Controls to Admin PMS Dashboard
+
+Update the Admin PMS Health page to:
+1. Add a "Sync Availability" button per mapped property
+2. Add a "Sync All Availability" button for all mapped properties
+3. Show last availability sync timestamp per property
+
+#### Step 5: Update Property Map Table
+
+Add `last_availability_sync_at` column to `pms_property_map` table to track when each property's availability was last synced.
 
 ---
 
 ### Technical Details
 
-**File to modify:** `src/pages/Properties.tsx`
+**File changes:**
 
-**Key changes:**
+| File | Change |
+|------|--------|
+| `supabase/functions/advancecm-sync/index.ts` | Add `sync-availability` action that upserts to `availability` table |
+| `src/hooks/useAdvanceCMSync.ts` | Add `useSyncPropertyAvailability` hook |
+| `src/hooks/useCheckoutFlow.ts` | Auto-lookup `external_property_id` from mapping |
+| `src/pages/admin/AdminPMSHealth.tsx` | Add sync availability buttons |
+| Database migration | Add `last_availability_sync_at` to `pms_property_map` |
+
+**Edge function sync-availability logic:**
 
 ```text
-1. DELETE lines 236-249 (desktop sidebar aside element)
-
-2. MODIFY line 235: Change wrapper from flex layout
-   FROM: <div className="flex gap-8">
-   TO:   <div>
-
-3. MODIFY lines 252-265: Move SheetTrigger into toolbar row
-   - Remove: lg:hidden, fixed positioning classes
-   - Add: Standard button styling in toolbar
-
-4. MODIFY property grid classes (lines 309, 321):
-   FROM: grid-cols-1 md:grid-cols-2 xl:grid-cols-3
-   TO:   grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
+1. Receive: { action: "sync-availability", propertyId, startDate, endDate }
+2. Look up external_property_id from pms_property_map
+3. Call Tokeet: GET /rental/{pkey}/availability?from={start}&to={end}
+4. Parse response - Tokeet returns array of blocked date ranges
+5. Generate full date range, mark blocked dates as available: false
+6. Upsert to availability table
+7. Update pms_property_map.last_availability_sync_at
+8. Return { success: true, daysProcessed: N }
 ```
 
-**New toolbar layout structure:**
+**Tokeet Availability Response Format:**
+
+```text
+The Tokeet API returns blocked/booked periods. The sync logic inverts this:
+- All dates default to available: true
+- Dates within blocked ranges become available: false
 ```
-[Results count] -------- [Filters button] [Grid/Map toggle]
+
+---
+
+### Data Flow After Implementation
+
+```text
+┌─────────────────┐     ┌─────────────────────┐     ┌──────────────────┐
+│   Tokeet PMS    │────▶│  sync-availability  │────▶│ availability DB  │
+│ (Source of Truth)│     │    edge function    │     │    (synced)      │
+└─────────────────┘     └─────────────────────┘     └──────────────────┘
+                                                            │
+                        ┌───────────────────────────────────┘
+                        ▼
+              ┌───────────────────┐     ┌──────────────────┐
+              │ useAvailability   │────▶│ Booking Calendar │
+              │  Calendar hook    │     │    Component     │
+              └───────────────────┘     └──────────────────┘
 ```
 
 ---
 
 ### Benefits
 
-1. **More property visibility**: Full-width grid shows 4 columns on XL screens instead of 3
-2. **Consistent UX**: Same interaction pattern on all devices
-3. **Cleaner interface**: No permanent sidebar taking horizontal space
-4. **Better for browsing**: Users can focus on properties, opening filters only when needed
+1. **Single source of truth**: PMS availability is synced to local database
+2. **Faster calendar loading**: Reads from local DB instead of calling PMS API per request
+3. **Works with realtime**: Local `availability` table changes trigger realtime updates
+4. **Admin visibility**: See when each property's availability was last synced
+5. **Manual control**: Sync individual properties or all at once from admin dashboard
+
+---
+
+### Future Enhancements (Not in This Plan)
+
+- Scheduled sync via Supabase pg_cron or external scheduler
+- Webhook handler for real-time PMS updates
+- Conflict detection when local bookings don't match PMS
 
