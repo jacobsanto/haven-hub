@@ -105,7 +105,7 @@ async function callTokeetAPI(
   return await fetch(url, {
     method: "GET",
     headers: {
-      Authorization: `Basic ${btoa(apiKey + ":")}`,
+      Authorization: apiKey,
       "Content-Type": "application/json",
     },
   });
