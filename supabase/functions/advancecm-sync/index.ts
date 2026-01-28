@@ -185,7 +185,21 @@ Deno.serve(async (req) => {
         if (!response.ok) {
           throw new Error(`Tokeet API error: ${response.statusText}`);
         }
-        const rentals: TokeetRental[] = await response.json();
+        const data = await response.json();
+        
+        // Tokeet API returns {"data": [...]} format
+        let rentals: TokeetRental[] = [];
+        if (Array.isArray(data)) {
+          rentals = data;
+        } else if (data && Array.isArray(data.data)) {
+          rentals = data.data;
+        } else if (data && Array.isArray(data.rentals)) {
+          rentals = data.rentals;
+        } else if (data && Array.isArray(data.results)) {
+          rentals = data.results;
+        } else if (data && typeof data === 'object' && data.error) {
+          throw new Error(`Tokeet API error: ${data.error}`);
+        }
 
         // Transform to our format
         const properties = rentals.map((rental) => ({
