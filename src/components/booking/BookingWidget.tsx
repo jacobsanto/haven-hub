@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { Calendar, Users, Check } from 'lucide-react';
+import { Calendar, Users, Zap, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,6 +24,8 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
   const [guests, setGuests] = useState(1);
+  
+  // Request-based flow state (only used when instant_booking is false)
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
@@ -42,6 +44,28 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
     }).format(price);
   };
 
+  // Instant booking - route to checkout with Stripe payment
+  const handleInstantBook = () => {
+    if (!checkIn || !checkOut) {
+      toast({
+        title: 'Please select dates',
+        description: 'Choose your check-in and check-out dates.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const params = new URLSearchParams({
+      property: property.slug,
+      guests: String(guests),
+      checkIn: format(checkIn, 'yyyy-MM-dd'),
+      checkOut: format(checkOut, 'yyyy-MM-dd'),
+    });
+
+    navigate(`/checkout?${params.toString()}`);
+  };
+
+  // Request-based flow - continue through multi-step form
   const handleContinue = () => {
     if (step === 'dates') {
       if (!checkIn || !checkOut) {
@@ -66,7 +90,8 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
     }
   };
 
-  const handleBooking = async () => {
+  // Request-based booking submission
+  const handleRequestBooking = async () => {
     if (!checkIn || !checkOut) return;
 
     try {
@@ -93,6 +118,7 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
           checkOut: format(checkOut, 'MMM d, yyyy'),
           nights,
           totalPrice,
+          isRequest: true,
         },
       });
     } catch (error) {
@@ -104,6 +130,93 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
     }
   };
 
+  // Shared date/guest picker component
+  const DateGuestPicker = () => (
+    <div className="space-y-4">
+      {/* Date Selection */}
+      <div className="grid grid-cols-2 gap-2">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                'justify-start text-left font-normal',
+                !checkIn && 'text-muted-foreground'
+              )}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {checkIn ? format(checkIn, 'MMM d') : 'Check in'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 bg-card" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={checkIn}
+              onSelect={setCheckIn}
+              disabled={(date) => date < new Date()}
+              initialFocus
+              className="pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                'justify-start text-left font-normal',
+                !checkOut && 'text-muted-foreground'
+              )}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {checkOut ? format(checkOut, 'MMM d') : 'Check out'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 bg-card" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={checkOut}
+              onSelect={setCheckOut}
+              disabled={(date) => date < (checkIn || new Date())}
+              initialFocus
+              className="pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Guests */}
+      <div className="flex items-center justify-between p-3 border border-border rounded-lg">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">Guests</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => setGuests(Math.max(1, guests - 1))}
+            aria-label="Decrease guests"
+          >
+            -
+          </Button>
+          <span className="w-8 text-center">{guests}</span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => setGuests(Math.min(property.max_guests, guests + 1))}
+            aria-label="Increase guests"
+          >
+            +
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="card-organic p-6 space-y-6 lg:sticky lg:top-24">
       {/* Price Header */}
@@ -114,196 +227,157 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
         <span className="text-muted-foreground">/ night</span>
       </div>
 
-      {step === 'dates' && (
-        <div className="space-y-4">
-          {/* Date Selection */}
-          <div className="grid grid-cols-2 gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'justify-start text-left font-normal',
-                    !checkIn && 'text-muted-foreground'
-                  )}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {checkIn ? format(checkIn, 'MMM d') : 'Check in'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-card" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={checkIn}
-                  onSelect={setCheckIn}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'justify-start text-left font-normal',
-                    !checkOut && 'text-muted-foreground'
-                  )}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {checkOut ? format(checkOut, 'MMM d') : 'Check out'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-card" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={checkOut}
-                  onSelect={setCheckOut}
-                  disabled={(date) => date < (checkIn || new Date())}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Guests */}
-          <div className="flex items-center justify-between p-3 border border-border rounded-lg">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">Guests</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={() => setGuests(Math.max(1, guests - 1))}
-                aria-label="Decrease guests"
-              >
-                -
-              </Button>
-              <span className="w-8 text-center">{guests}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={() => setGuests(Math.min(property.max_guests, guests + 1))}
-                aria-label="Increase guests"
-              >
-                +
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {step === 'details' && (
-        <div className="space-y-4">
-          <Input
-            placeholder="Full Name *"
-            value={guestName}
-            onChange={(e) => setGuestName(e.target.value)}
-            className="input-organic"
-          />
-          <Input
-            type="email"
-            placeholder="Email Address *"
-            value={guestEmail}
-            onChange={(e) => setGuestEmail(e.target.value)}
-            className="input-organic"
-          />
-          <Input
-            type="tel"
-            placeholder="Phone Number (optional)"
-            value={guestPhone}
-            onChange={(e) => setGuestPhone(e.target.value)}
-            className="input-organic"
-          />
-          <Button
-            variant="ghost"
-            onClick={() => setStep('dates')}
-            className="w-full"
-          >
-            ← Back to dates
-          </Button>
-        </div>
-      )}
-
-      {step === 'confirm' && (
-        <div className="space-y-4">
-          <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Check-in</span>
-              <span className="font-medium">{checkIn && format(checkIn, 'MMM d, yyyy')}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Check-out</span>
-              <span className="font-medium">{checkOut && format(checkOut, 'MMM d, yyyy')}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Guests</span>
-              <span className="font-medium">{guests}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Guest Name</span>
-              <span className="font-medium">{guestName}</span>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            onClick={() => setStep('details')}
-            className="w-full"
-          >
-            ← Edit details
-          </Button>
-        </div>
-      )}
-
-      {/* Price Breakdown */}
-      {nights > 0 && (
-        <div className="space-y-3 pt-4 border-t border-border">
-          <div className="flex justify-between text-sm">
-            <span>
-              {formatPrice(property.base_price)} × {nights} nights
-            </span>
-            <span>{formatPrice(baseTotal)}</span>
-          </div>
-          {specialOffer && discountAmount > 0 && (
-            <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
-              <span>
-                {specialOffer.title} (-{specialOffer.discount_percent}%)
-              </span>
-              <span>-{formatPrice(discountAmount)}</span>
+      {/* INSTANT BOOKING FLOW */}
+      {property.instant_booking ? (
+        <>
+          <DateGuestPicker />
+          
+          {/* Price Breakdown */}
+          {nights > 0 && (
+            <div className="space-y-3 pt-4 border-t border-border">
+              <div className="flex justify-between text-sm">
+                <span>
+                  {formatPrice(property.base_price)} × {nights} nights
+                </span>
+                <span>{formatPrice(baseTotal)}</span>
+              </div>
+              {specialOffer && discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
+                  <span>
+                    {specialOffer.title} (-{specialOffer.discount_percent}%)
+                  </span>
+                  <span>-{formatPrice(discountAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold">
+                <span>Total</span>
+                <span>{formatPrice(totalPrice)}</span>
+              </div>
             </div>
           )}
-          <div className="flex justify-between font-semibold">
-            <span>Total</span>
-            <span>{formatPrice(totalPrice)}</span>
-          </div>
-        </div>
-      )}
 
-      {/* Action Button */}
-      {step === 'confirm' ? (
-        <Button
-          onClick={handleBooking}
-          disabled={createBooking.isPending}
-          className="w-full btn-organic"
-        >
-          {createBooking.isPending ? 'Submitting...' : 'Request Booking'}
-        </Button>
+          {/* Instant Book Button */}
+          <Button onClick={handleInstantBook} className="w-full btn-organic">
+            <Zap className="h-4 w-4" />
+            Book & Pay Now
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Secure payment via Stripe
+          </p>
+        </>
       ) : (
-        <Button onClick={handleContinue} className="w-full btn-organic">
-          Continue
-        </Button>
-      )}
+        /* REQUEST-BASED BOOKING FLOW */
+        <>
+          {step === 'dates' && <DateGuestPicker />}
 
-      <p className="text-xs text-center text-muted-foreground">
-        You won't be charged yet. We'll confirm availability first.
-      </p>
+          {step === 'details' && (
+            <div className="space-y-4">
+              <Input
+                placeholder="Full Name *"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                className="input-organic"
+              />
+              <Input
+                type="email"
+                placeholder="Email Address *"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                className="input-organic"
+              />
+              <Input
+                type="tel"
+                placeholder="Phone Number (optional)"
+                value={guestPhone}
+                onChange={(e) => setGuestPhone(e.target.value)}
+                className="input-organic"
+              />
+              <Button
+                variant="ghost"
+                onClick={() => setStep('dates')}
+                className="w-full"
+              >
+                ← Back to dates
+              </Button>
+            </div>
+          )}
+
+          {step === 'confirm' && (
+            <div className="space-y-4">
+              <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Check-in</span>
+                  <span className="font-medium">{checkIn && format(checkIn, 'MMM d, yyyy')}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Check-out</span>
+                  <span className="font-medium">{checkOut && format(checkOut, 'MMM d, yyyy')}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Guests</span>
+                  <span className="font-medium">{guests}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Guest Name</span>
+                  <span className="font-medium">{guestName}</span>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setStep('details')}
+                className="w-full"
+              >
+                ← Edit details
+              </Button>
+            </div>
+          )}
+
+          {/* Price Breakdown */}
+          {nights > 0 && (
+            <div className="space-y-3 pt-4 border-t border-border">
+              <div className="flex justify-between text-sm">
+                <span>
+                  {formatPrice(property.base_price)} × {nights} nights
+                </span>
+                <span>{formatPrice(baseTotal)}</span>
+              </div>
+              {specialOffer && discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
+                  <span>
+                    {specialOffer.title} (-{specialOffer.discount_percent}%)
+                  </span>
+                  <span>-{formatPrice(discountAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-semibold">
+                <span>Total</span>
+                <span>{formatPrice(totalPrice)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Action Button */}
+          {step === 'confirm' ? (
+            <Button
+              onClick={handleRequestBooking}
+              disabled={createBooking.isPending}
+              className="w-full btn-organic"
+            >
+              <Clock className="h-4 w-4" />
+              {createBooking.isPending ? 'Submitting...' : 'Request Booking'}
+            </Button>
+          ) : (
+            <Button onClick={handleContinue} className="w-full btn-organic">
+              Continue
+            </Button>
+          )}
+
+          <p className="text-xs text-center text-muted-foreground">
+            We'll confirm availability first
+          </p>
+        </>
+      )}
     </div>
   );
 }
