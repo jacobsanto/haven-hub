@@ -33,6 +33,7 @@ export interface PMSPropertyMapping {
   external_property_name: string | null;
   sync_enabled: boolean;
   last_sync_at: string | null;
+  last_availability_sync_at: string | null;
   property?: { id: string; name: string; slug: string };
 }
 
@@ -225,6 +226,18 @@ export function useSyncPropertyNow() {
 
   return useMutation({
     mutationFn: async ({ connectionId, externalPropertyId }: { connectionId: string; externalPropertyId: string }) => {
+      // Get property ID from mapping
+      const { data: mapping, error: mappingError } = await supabase
+        .from('pms_property_map')
+        .select('property_id')
+        .eq('pms_connection_id', connectionId)
+        .eq('external_property_id', externalPropertyId)
+        .maybeSingle();
+
+      if (mappingError || !mapping) {
+        throw new Error('Property mapping not found');
+      }
+
       // Create sync run record
       const { data: syncRun, error: createError } = await supabase
         .from('pms_sync_runs')
@@ -239,15 +252,27 @@ export function useSyncPropertyNow() {
       if (createError) throw createError;
 
       try {
-        // Sync both availability and rates
-        const [availResult, ratesResult] = await Promise.all([
-          pmsAdapter.syncAvailability(externalPropertyId),
-          pmsAdapter.syncRates(externalPropertyId),
-        ]);
+        // Call the sync-availability edge function
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Authentication required');
 
-        const success = availResult.success && ratesResult.success;
-        const recordsProcessed = (availResult.recordsProcessed || 0) + (ratesResult.recordsProcessed || 0);
-        const recordsFailed = (availResult.recordsFailed || 0) + (ratesResult.recordsFailed || 0);
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/advancecm-sync`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              action: 'sync-availability',
+              propertyId: mapping.property_id,
+            }),
+          }
+        );
+
+        const result = await response.json();
+        const success = response.ok && result.success;
 
         // Update sync run
         await supabase
@@ -255,12 +280,13 @@ export function useSyncPropertyNow() {
           .update({
             status: success ? 'success' : 'failed',
             completed_at: new Date().toISOString(),
-            records_processed: recordsProcessed,
-            records_failed: recordsFailed,
+            records_processed: result.daysProcessed || 0,
+            records_failed: success ? 0 : 1,
+            error_summary: result.error || null,
           })
           .eq('id', syncRun.id);
 
-        return { success, recordsProcessed, recordsFailed };
+        return { success, recordsProcessed: result.daysProcessed || 0, blockedDaysFound: result.blockedDaysFound || 0 };
       } catch (error) {
         await supabase
           .from('pms_sync_runs')
@@ -276,7 +302,77 @@ export function useSyncPropertyNow() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
-      queryClient.invalidateQueries({ queryKey: ['availability'] });
+      queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
+    },
+  });
+}
+
+// Sync availability for all mapped properties
+export function useSyncAllPropertyAvailability() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (connectionId: string) => {
+      // Get all mappings for this connection
+      const { data: mappings, error: mappingsError } = await supabase
+        .from('pms_property_map')
+        .select('property_id, external_property_id')
+        .eq('pms_connection_id', connectionId)
+        .eq('sync_enabled', true);
+
+      if (mappingsError) throw mappingsError;
+      if (!mappings || mappings.length === 0) {
+        return { success: true, total: 0, synced: 0, failed: 0 };
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Authentication required');
+
+      let synced = 0;
+      let failed = 0;
+
+      for (const mapping of mappings) {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/advancecm-sync`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                action: 'sync-availability',
+                propertyId: mapping.property_id,
+              }),
+            }
+          );
+
+          const result = await response.json();
+          if (response.ok && result.success) {
+            synced++;
+          } else {
+            failed++;
+          }
+        } catch {
+          failed++;
+        }
+      }
+
+      // Update connection last sync
+      await supabase
+        .from('pms_connections')
+        .update({
+          last_sync_at: new Date().toISOString(),
+          sync_status: failed === 0 ? 'success' : (synced > 0 ? 'partial' : 'error'),
+        })
+        .eq('id', connectionId);
+
+      return { success: failed === 0, total: mappings.length, synced, failed };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
+      queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
     },
   });
 }

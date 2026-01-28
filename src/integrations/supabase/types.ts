@@ -1032,6 +1032,7 @@ export type Database = {
           external_property_id: string
           external_property_name: string | null
           id: string
+          last_availability_sync_at: string | null
           last_sync_at: string | null
           pms_connection_id: string
           property_id: string
@@ -1042,6 +1043,7 @@ export type Database = {
           external_property_id: string
           external_property_name?: string | null
           id?: string
+          last_availability_sync_at?: string | null
           last_sync_at?: string | null
           pms_connection_id: string
           property_id: string
@@ -1052,6 +1054,7 @@ export type Database = {
           external_property_id?: string
           external_property_name?: string | null
           id?: string
+          last_availability_sync_at?: string | null
           last_sync_at?: string | null
           pms_connection_id?: string
           property_id?: string
