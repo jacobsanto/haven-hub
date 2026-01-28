@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+import { CancellationPolicyKey } from '@/lib/cancellation-policies';
+
 export interface RatePlan {
   id: string;
   property_id: string;
@@ -13,6 +15,7 @@ export interface RatePlan {
   valid_from: string;
   valid_until: string;
   member_tier_required: string | null;
+  cancellation_policy: CancellationPolicyKey;
   is_active: boolean;
   created_at: string;
   updated_at: string;

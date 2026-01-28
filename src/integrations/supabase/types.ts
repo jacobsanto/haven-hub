@@ -483,6 +483,7 @@ export type Database = {
         Row: {
           adults: number | null
           booking_reference: string | null
+          cancellation_policy: string | null
           check_in: string
           check_in_time: string | null
           check_out: string
@@ -511,6 +512,7 @@ export type Database = {
         Insert: {
           adults?: number | null
           booking_reference?: string | null
+          cancellation_policy?: string | null
           check_in: string
           check_in_time?: string | null
           check_out: string
@@ -539,6 +541,7 @@ export type Database = {
         Update: {
           adults?: number | null
           booking_reference?: string | null
+          cancellation_policy?: string | null
           check_in?: string
           check_in_time?: string | null
           check_out?: string
@@ -1326,6 +1329,7 @@ export type Database = {
       rate_plans: {
         Row: {
           base_rate: number
+          cancellation_policy: string
           created_at: string
           description: string | null
           id: string
@@ -1342,6 +1346,7 @@ export type Database = {
         }
         Insert: {
           base_rate: number
+          cancellation_policy?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -1358,6 +1363,7 @@ export type Database = {
         }
         Update: {
           base_rate?: number
+          cancellation_policy?: string
           created_at?: string
           description?: string | null
           id?: string

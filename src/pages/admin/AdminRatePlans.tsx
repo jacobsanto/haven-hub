@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, Copy, Calendar, Users, Tag, Crown, Sun, Snowflake, TrendingUp, BarChart3 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Copy, Calendar, Users, Tag, Crown, Sun, Snowflake, TrendingUp, BarChart3, Shield } from 'lucide-react';
 import { format, parseISO, isWithinInterval, isBefore, isAfter } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
@@ -10,6 +10,7 @@ import { useAdminProperties } from '@/hooks/useProperties';
 import { SeasonalRateFormDialog } from '@/components/admin/SeasonalRateFormDialog';
 import { SeasonalRatesHeatmap } from '@/components/admin/SeasonalRatesHeatmap';
 import { SeasonalRate } from '@/types/database';
+import { CANCELLATION_POLICIES, CancellationPolicyKey, getPolicyBadgeClass } from '@/lib/cancellation-policies';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -84,6 +85,7 @@ export default function AdminRatePlans() {
     valid_from: format(today, 'yyyy-MM-dd'),
     valid_until: format(nextYear, 'yyyy-MM-dd'),
     member_tier_required: null,
+    cancellation_policy: 'moderate',
     is_active: true,
   });
 
@@ -99,6 +101,7 @@ export default function AdminRatePlans() {
       valid_from: format(today, 'yyyy-MM-dd'),
       valid_until: format(nextYear, 'yyyy-MM-dd'),
       member_tier_required: null,
+      cancellation_policy: 'moderate',
       is_active: true,
     });
     setEditingPlan(null);
@@ -122,6 +125,7 @@ export default function AdminRatePlans() {
       valid_from: plan.valid_from,
       valid_until: plan.valid_until,
       member_tier_required: plan.member_tier_required,
+      cancellation_policy: plan.cancellation_policy,
       is_active: plan.is_active,
     });
     setDialogOpen(true);
@@ -439,6 +443,7 @@ export default function AdminRatePlans() {
                             <TableHead>Type</TableHead>
                             <TableHead>Base Rate</TableHead>
                             <TableHead>Stay Length</TableHead>
+                            <TableHead>Cancellation</TableHead>
                             <TableHead>Valid Period</TableHead>
                             <TableHead>Member Tier</TableHead>
                             <TableHead>Active</TableHead>
@@ -465,6 +470,12 @@ export default function AdminRatePlans() {
                                   {plan.min_stay}
                                   {plan.max_stay ? ` - ${plan.max_stay}` : '+'} nights
                                 </span>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={getPolicyBadgeClass(plan.cancellation_policy)}>
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  {CANCELLATION_POLICIES[plan.cancellation_policy]?.label || 'Moderate'}
+                                </Badge>
                               </TableCell>
                               <TableCell>
                                 <span className="text-sm">
@@ -874,15 +885,42 @@ export default function AdminRatePlans() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description || ''}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
-                  placeholder="Optional description for this rate plan..."
-                  rows={2}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description || ''}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
+                    placeholder="Optional description for this rate plan..."
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Cancellation Policy</Label>
+                  <Select
+                    value={formData.cancellation_policy}
+                    onValueChange={(v) => setFormData({ ...formData, cancellation_policy: v as CancellationPolicyKey })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      {Object.values(CANCELLATION_POLICIES).map((policy) => (
+                        <SelectItem key={policy.key} value={policy.key}>
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-3 w-3" />
+                            <span>{policy.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {CANCELLATION_POLICIES[formData.cancellation_policy]?.shortDescription}
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
