@@ -11,10 +11,8 @@ import {
   Server,
   Clock,
   ArrowRight,
-  Play,
-  Pause,
-  Eye,
-  ExternalLink
+  Download,
+  Settings
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,13 +29,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Accordion,
   AccordionContent,
@@ -56,6 +47,8 @@ import {
   useSyncPropertyNow,
   type PMSRawEvent,
 } from '@/hooks/useAdminPMSHealth';
+import { PMSConfigDialog } from '@/components/admin/PMSConfigDialog';
+import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDialog';
 
 const getStatusIcon = (status: string | null) => {
   switch (status) {
@@ -90,6 +83,8 @@ const getStatusBadge = (status: string | null) => {
 export default function AdminPMSHealth() {
   const { toast } = useToast();
   const [selectedEvent, setSelectedEvent] = useState<PMSRawEvent | null>(null);
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Data hooks
   const { data: connection, isLoading: connectionLoading } = usePMSConnectionStatus();
@@ -196,7 +191,23 @@ export default function AdminPMSHealth() {
               Monitor property management system synchronization
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowConfigDialog(true)}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Configure
+            </Button>
+            {connection && (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowImportDialog(true)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Import Properties
+              </Button>
+            )}
             <Button 
               variant="outline" 
               onClick={handleTestConnection}
@@ -298,9 +309,12 @@ export default function AdminPMSHealth() {
                   <Server className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No PMS Connected</h3>
                   <p className="text-muted-foreground mb-4">
-                    Connect to a property management system to enable synchronization.
+                    Connect to AdvanceCM (Tokeet) to sync properties and availability.
                   </p>
-                  <Button variant="outline">Configure PMS</Button>
+                  <Button onClick={() => setShowConfigDialog(true)}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configure AdvanceCM
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -630,6 +644,24 @@ export default function AdminPMSHealth() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Dialogs */}
+      <PMSConfigDialog
+        open={showConfigDialog}
+        onOpenChange={setShowConfigDialog}
+        onConnectionEstablished={() => {
+          // Refetch connection data
+          window.location.reload();
+        }}
+      />
+
+      {connection && (
+        <PMSPropertyImportDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          connectionId={connection.id}
+        />
+      )}
     </AdminLayout>
   );
 }
