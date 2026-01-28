@@ -255,6 +255,7 @@ export type Database = {
           excerpt: string | null
           featured_image_url: string | null
           id: string
+          inline_images: Json | null
           is_featured: boolean
           published_at: string | null
           slug: string
@@ -271,6 +272,7 @@ export type Database = {
           excerpt?: string | null
           featured_image_url?: string | null
           id?: string
+          inline_images?: Json | null
           is_featured?: boolean
           published_at?: string | null
           slug: string
@@ -287,6 +289,7 @@ export type Database = {
           excerpt?: string | null
           featured_image_url?: string | null
           id?: string
+          inline_images?: Json | null
           is_featured?: boolean
           published_at?: string | null
           slug?: string
