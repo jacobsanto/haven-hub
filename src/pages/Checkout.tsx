@@ -14,6 +14,8 @@ import { PaymentOptions } from '@/components/booking/PaymentOptions';
 import { useProperty } from '@/hooks/useProperties';
 import { useFeesTaxes, calculatePriceBreakdown } from '@/hooks/useBookingEngine';
 import { useCreateCheckoutHold, useReleaseCheckoutHold, generateSessionId } from '@/hooks/useCheckoutFlow';
+import { useCompleteBooking } from '@/hooks/useCompleteBooking';
+import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { SelectedAddon, CouponPromo, BookingGuestWithCounts, PaymentType, PriceBreakdown } from '@/types/booking-engine';
 import { toast } from '@/hooks/use-toast';
 
@@ -49,6 +51,10 @@ export default function Checkout() {
 
   const createHold = useCreateCheckoutHold();
   const releaseHold = useReleaseCheckoutHold();
+  const completeBooking = useCompleteBooking();
+  
+  // Real-time availability updates
+  useRealtimeAvailability(property?.id);
 
   // Calculate nights and price
   const nights = useMemo(() => {
@@ -139,18 +145,64 @@ export default function Checkout() {
     }
   };
 
-  const handleProceedToPayment = () => {
-    setIsProcessing(true);
-    // TODO: Create Stripe Payment Intent via edge function
-    // For now, simulate processing
-    setTimeout(() => {
-      setIsProcessing(false);
+  const handleProceedToPayment = async () => {
+    if (!property || !checkIn || !checkOut || !guestInfo || !priceBreakdown) {
       toast({
-        title: 'Stripe integration pending',
-        description: 'Add your Stripe key to enable payments.',
-        variant: 'default',
+        title: 'Missing information',
+        description: 'Please complete all required fields.',
+        variant: 'destructive',
       });
-    }, 1500);
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const result = await completeBooking.mutateAsync({
+        propertyId: property.id,
+        property: {
+          id: property.id,
+          name: property.name,
+          slug: property.slug,
+          instant_booking: property.instant_booking,
+        },
+        checkIn,
+        checkOut,
+        nights,
+        guests,
+        adults,
+        children,
+        guestInfo,
+        selectedAddons,
+        priceBreakdown,
+        appliedCoupon,
+        paymentType,
+        holdId: holdId || undefined,
+        sessionId,
+      });
+
+      // Navigate to confirmation page
+      navigate(`/booking/confirm?ref=${result.bookingReference}`, {
+        state: {
+          propertyName: property.name,
+          checkIn: format(checkIn, 'MMM d, yyyy'),
+          checkOut: format(checkOut, 'MMM d, yyyy'),
+          nights,
+          totalPrice: priceBreakdown.total,
+          status: result.status,
+          bookingReference: result.bookingReference,
+        },
+      });
+    } catch (error) {
+      console.error('Booking error:', error);
+      toast({
+        title: 'Booking failed',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (propertyLoading) {
