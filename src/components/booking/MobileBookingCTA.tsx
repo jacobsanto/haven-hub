@@ -1,12 +1,15 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Zap, Percent, Users, Minus, Plus } from 'lucide-react';
+import { Calendar as CalendarIcon, Zap, Percent, Users, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Calendar } from '@/components/ui/calendar';
 import { BookingWidget } from './BookingWidget';
 import { Property, SpecialOffer } from '@/types/database';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { format, differenceInDays } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 
 // Haptic feedback utility
 const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
@@ -31,10 +34,16 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
   const [open, setOpen] = useState(false);
   const [guests, setGuests] = useState(2);
   const [showGuestSelector, setShowGuestSelector] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const discountedPrice = specialOffer 
     ? property.base_price * (1 - specialOffer.discount_percent / 100)
     : null;
+
+  const nights = dateRange?.from && dateRange?.to 
+    ? differenceInDays(dateRange.to, dateRange.from) 
+    : 0;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -58,8 +67,11 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
 
   const handleQuickBook = useCallback(() => {
     triggerHaptic('success');
-    navigate(`/checkout?property=${property.slug}&guests=${guests}`);
-  }, [navigate, property.slug, guests]);
+    const params = new URLSearchParams({ property: property.slug, guests: String(guests) });
+    if (dateRange?.from) params.set('checkIn', format(dateRange.from, 'yyyy-MM-dd'));
+    if (dateRange?.to) params.set('checkOut', format(dateRange.to, 'yyyy-MM-dd'));
+    navigate(`/checkout?${params.toString()}`);
+  }, [navigate, property.slug, guests, dateRange]);
 
   const handleGuestChange = useCallback((delta: number) => {
     triggerHaptic('light');
@@ -69,6 +81,18 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
   const toggleGuestSelector = useCallback(() => {
     triggerHaptic('light');
     setShowGuestSelector(prev => !prev);
+    if (!showGuestSelector) setShowDatePicker(false);
+  }, [showGuestSelector]);
+
+  const toggleDatePicker = useCallback(() => {
+    triggerHaptic('light');
+    setShowDatePicker(prev => !prev);
+    if (!showDatePicker) setShowGuestSelector(false);
+  }, [showDatePicker]);
+
+  const handleDateSelect = useCallback((range: DateRange | undefined) => {
+    triggerHaptic('light');
+    setDateRange(range);
   }, []);
 
   return (
@@ -80,7 +104,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
         transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 25 }}
         className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50 lg:hidden safe-area-inset-bottom"
       >
-        {/* Guest Selector Drawer */}
+        {/* Guest Selector Panel */}
         <AnimatePresence>
           {showGuestSelector && (
             <motion.div
@@ -117,6 +141,35 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Date Picker Panel */}
+        <AnimatePresence>
+          {showDatePicker && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="border-b border-border overflow-hidden"
+            >
+              <div className="p-3 flex flex-col items-center">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDateSelect}
+                  numberOfMonths={1}
+                  disabled={{ before: new Date() }}
+                  className="pointer-events-auto"
+                />
+                {nights > 0 && (
+                  <div className="text-sm text-muted-foreground mt-2">
+                    {nights} night{nights > 1 ? 's' : ''} selected
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -166,6 +219,25 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
               </div>
             )}
           </div>
+
+          {/* Date Picker Toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleDatePicker}
+            className={cn(
+              "h-10 px-3 rounded-xl gap-1.5 shrink-0",
+              showDatePicker && "ring-2 ring-primary"
+            )}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            <span className="text-xs">
+              {dateRange?.from && dateRange?.to 
+                ? `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d')}`
+                : 'Dates'
+              }
+            </span>
+          </Button>
 
           {/* Guest Selector Toggle */}
           <Button
