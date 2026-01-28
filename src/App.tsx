@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { BrandProvider } from "@/contexts/BrandContext";
+import { BookingProvider } from "@/contexts/BookingContext";
+import { UnifiedBookingDialog } from "@/components/booking/UnifiedBookingDialog";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -44,47 +46,50 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <BrandProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/properties/:slug" element={<PropertyDetail />} />
-              <Route path="/booking/confirm" element={<BookingConfirm />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/destinations" element={<Destinations />} />
-              <Route path="/destinations/:slug" element={<DestinationDetail />} />
-              <Route path="/experiences" element={<Experiences />} />
-              <Route path="/experiences/:slug" element={<ExperienceDetail />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/blog/:slug" element={<BlogPost />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/properties" element={<AdminProperties />} />
-              <Route path="/admin/properties/new" element={<AdminPropertyForm />} />
-              <Route path="/admin/properties/:id/edit" element={<AdminPropertyForm />} />
-              <Route path="/admin/bookings" element={<AdminBookings />} />
-              <Route path="/admin/availability" element={<AdminAvailability />} />
-              <Route path="/admin/amenities" element={<AdminAmenities />} />
-              <Route path="/admin/destinations" element={<AdminDestinations />} />
-              <Route path="/admin/experiences" element={<AdminExperiences />} />
-              <Route path="/admin/experience-enquiries" element={<AdminExperienceEnquiries />} />
-              <Route path="/admin/blog" element={<AdminBlogPosts />} />
-              <Route path="/admin/blog/authors" element={<AdminBlogAuthors />} />
-              <Route path="/admin/blog/categories" element={<AdminBlogCategories />} />
-              <Route path="/admin/newsletter" element={<AdminNewsletterSubscribers />} />
-              <Route path="/admin/settings" element={<AdminSettings />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <BookingProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <UnifiedBookingDialog />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/properties" element={<Properties />} />
+                <Route path="/properties/:slug" element={<PropertyDetail />} />
+                <Route path="/booking/confirm" element={<BookingConfirm />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/destinations" element={<Destinations />} />
+                <Route path="/destinations/:slug" element={<DestinationDetail />} />
+                <Route path="/experiences" element={<Experiences />} />
+                <Route path="/experiences/:slug" element={<ExperienceDetail />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/properties" element={<AdminProperties />} />
+                <Route path="/admin/properties/new" element={<AdminPropertyForm />} />
+                <Route path="/admin/properties/:id/edit" element={<AdminPropertyForm />} />
+                <Route path="/admin/bookings" element={<AdminBookings />} />
+                <Route path="/admin/availability" element={<AdminAvailability />} />
+                <Route path="/admin/amenities" element={<AdminAmenities />} />
+                <Route path="/admin/destinations" element={<AdminDestinations />} />
+                <Route path="/admin/experiences" element={<AdminExperiences />} />
+                <Route path="/admin/experience-enquiries" element={<AdminExperienceEnquiries />} />
+                <Route path="/admin/blog" element={<AdminBlogPosts />} />
+                <Route path="/admin/blog/authors" element={<AdminBlogAuthors />} />
+                <Route path="/admin/blog/categories" element={<AdminBlogCategories />} />
+                <Route path="/admin/newsletter" element={<AdminNewsletterSubscribers />} />
+                <Route path="/admin/settings" element={<AdminSettings />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </BookingProvider>
       </BrandProvider>
     </AuthProvider>
   </QueryClientProvider>

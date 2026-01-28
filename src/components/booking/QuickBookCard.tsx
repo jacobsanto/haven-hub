@@ -1,21 +1,23 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Users, Bed, Bath, Zap, Calendar, ArrowRight, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { InstantBookingBadge } from '@/components/properties/InstantBookingBadge';
-import type { Property, SpecialOffer } from '@/types/database';
+import { useBooking } from '@/contexts/BookingContext';
+import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
+import type { Property } from '@/types/database';
 
 interface QuickBookCardProps {
   property: Property;
-  specialOffer?: SpecialOffer | null;
   index?: number;
 }
 
-export function QuickBookCard({ property, specialOffer, index = 0 }: QuickBookCardProps) {
-  const navigate = useNavigate();
+export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { openBooking } = useBooking();
+  const { data: specialOffer } = useActiveSpecialOffer(property.id);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -25,16 +27,11 @@ export function QuickBookCard({ property, specialOffer, index = 0 }: QuickBookCa
     }).format(price);
   };
 
-  const handleQuickBook = (e: React.MouseEvent) => {
+  const handleBookNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/properties/${property.slug}#booking`);
-  };
-
-  const handleViewDates = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigate(`/properties/${property.slug}#booking`);
+    // Open unified booking dialog with this property pre-selected (direct booking mode)
+    openBooking({ mode: 'direct', property });
   };
 
   return (
@@ -93,25 +90,23 @@ export function QuickBookCard({ property, specialOffer, index = 0 }: QuickBookCa
                   exit={{ opacity: 0 }}
                   className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3"
                 >
-                  {property.instant_booking ? (
-                    <Button
-                      onClick={handleQuickBook}
-                      size="lg"
-                      className="rounded-full gap-2"
-                    >
-                      <Zap className="h-4 w-4" />
-                      Instant Book
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleViewDates}
-                      size="lg"
-                      className="rounded-full gap-2"
-                    >
-                      <Calendar className="h-4 w-4" />
-                      Check Availability
-                    </Button>
-                  )}
+                  <Button
+                    onClick={handleBookNow}
+                    size="lg"
+                    className="rounded-full gap-2"
+                  >
+                    {property.instant_booking ? (
+                      <>
+                        <Zap className="h-4 w-4" />
+                        Instant Book
+                      </>
+                    ) : (
+                      <>
+                        <Calendar className="h-4 w-4" />
+                        Book Now
+                      </>
+                    )}
+                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -149,7 +144,7 @@ export function QuickBookCard({ property, specialOffer, index = 0 }: QuickBookCa
             {/* CTA */}
             <div className="flex items-center justify-between pt-3 border-t border-border">
               <span className="text-xs text-muted-foreground">
-                {property.instant_booking ? 'Instant confirmation' : 'Request to book'}
+                {property.instant_booking ? 'Instant confirmation' : 'Book direct & save'}
               </span>
               <div className="flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all">
                 <span>View Details</span>
