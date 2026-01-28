@@ -13,6 +13,8 @@ interface CreatePaymentIntentRequest {
   propertyId: string;
   propertyName: string;
   propertySlug: string;
+  propertyCity: string;
+  propertyCountry: string;
   
   // Stay details
   checkIn: string;
@@ -114,6 +116,8 @@ serve(async (req) => {
       property_id: body.propertyId,
       property_name: body.propertyName,
       property_slug: body.propertySlug,
+      property_city: body.propertyCity || "",
+      property_country: body.propertyCountry || "",
       
       // Stay details
       check_in: body.checkIn,
@@ -167,7 +171,7 @@ serve(async (req) => {
       automatic_payment_methods: {
         enabled: true,
       },
-      description: `Booking at ${body.propertyName} - ${body.checkIn} to ${body.checkOut}`,
+      description: `Booking at ${body.propertyName}, ${body.propertyCity || "Property"} - ${body.checkIn} to ${body.checkOut}`,
       receipt_email: body.guestEmail,
       statement_descriptor_suffix: body.propertyName.substring(0, 22),
     });
