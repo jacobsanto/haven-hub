@@ -128,17 +128,139 @@ export function useBatchImportProperties() {
   });
 }
 
-// Sync rates for a specific property
-export function useSyncPropertyRates() {
+// Push booking to PMS
+export function usePushBookingToPMS() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
-      externalId,
+      bookingId,
       propertyId,
+      bookingReference,
+      checkIn,
+      checkOut,
+      guests,
+      adults,
+      children,
+      guestInfo,
+      totalPrice,
+      currency,
+      priceBreakdown,
+      specialRequests,
     }: {
-      externalId: string;
+      bookingId: string;
       propertyId: string;
+      bookingReference: string;
+      checkIn: string;
+      checkOut: string;
+      guests: number;
+      adults: number;
+      children: number;
+      guestInfo: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone?: string;
+        country?: string;
+      };
+      totalPrice: number;
+      currency: string;
+      priceBreakdown: Array<{ label: string; amount: number }>;
+      specialRequests?: string;
+    }) => {
+      // Get external property ID from mapping
+      const { data: mapping } = await supabase
+        .from("pms_property_map")
+        .select("external_property_id")
+        .eq("property_id", propertyId)
+        .maybeSingle();
+
+      if (!mapping) {
+        // Property not linked to PMS - skip push
+        return { success: true, skipped: true };
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Authentication required");
+
+      // Format price breakdown for notes
+      const notesLines = [
+        `Booking Ref: ${bookingReference}`,
+        `Adults: ${adults}, Children: ${children}`,
+        "",
+        "=== Price Breakdown ===",
+        ...priceBreakdown.map((item) => `${item.label}: €${item.amount.toFixed(2)}`),
+        "",
+        specialRequests ? `Special Requests: ${specialRequests}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/advancecm-sync`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            action: "create-booking",
+            externalPropertyId: mapping.external_property_id,
+            bookingReference,
+            checkIn,
+            checkOut,
+            guests,
+            adults,
+            children,
+            guestInfo,
+            totalPrice,
+            currency,
+            priceBreakdownNotes: notesLines,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Update local booking with external ID
+        await supabase
+          .from("bookings")
+          .update({
+            external_booking_id: result.externalBookingId,
+            pms_sync_status: "synced",
+            pms_synced_at: new Date().toISOString(),
+          })
+          .eq("id", bookingId);
+      }
+
+      return result;
+    },
+    onError: async (_error, variables) => {
+      // Mark as failed for retry
+      await supabase
+        .from("bookings")
+        .update({ pms_sync_status: "failed" })
+        .eq("id", variables.bookingId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    },
+  });
+}
+
+// Cancel booking in PMS
+export function useCancelBookingInPMS() {
+  return useMutation({
+    mutationFn: async ({
+      externalBookingId,
+      cancellationReason,
+    }: {
+      externalBookingId: string;
+      cancellationReason?: string;
     }) => {
       const {
         data: { session },
@@ -154,99 +276,14 @@ export function useSyncPropertyRates() {
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            action: "sync-rates",
-            externalId,
-            propertyId,
+            action: "cancel-booking",
+            externalBookingId,
+            cancellationReason,
           }),
         }
       );
 
-      const data = await response.json();
-      if (!response.ok || data.error) {
-        throw new Error(data.error || "Failed to sync rates");
-      }
-
-      return data as {
-        success: boolean;
-        basePrice: number;
-        seasonalRatesCreated: number;
-        ratePlansCreated: number;
-        message: string;
-      };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["properties"] });
-      queryClient.invalidateQueries({ queryKey: ["seasonal-rates"] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "rate-plans"] });
-    },
-  });
-}
-
-// Sync rates for ALL linked properties
-export function useSyncAllPropertyRates() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (connectionId: string) => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) throw new Error("Authentication required");
-
-      // 1. Get all enabled property mappings
-      const { data: mappings, error: mappingsError } = await supabase
-        .from("pms_property_map")
-        .select("external_property_id, property_id")
-        .eq("pms_connection_id", connectionId)
-        .eq("sync_enabled", true);
-
-      if (mappingsError) throw mappingsError;
-      if (!mappings || mappings.length === 0) {
-        return { success: 0, failed: 0, errors: [] as string[], total: 0 };
-      }
-
-      // 2. Sync rates for each property
-      const results = { success: 0, failed: 0, errors: [] as string[], total: mappings.length };
-
-      for (const mapping of mappings) {
-        try {
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/advancecm-sync`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${session.access_token}`,
-              },
-              body: JSON.stringify({
-                action: "sync-rates",
-                externalId: mapping.external_property_id,
-                propertyId: mapping.property_id,
-              }),
-            }
-          );
-
-          const data = await response.json();
-          if (response.ok && data.success) {
-            results.success++;
-          } else {
-            results.failed++;
-            results.errors.push(data.error || `Failed for ${mapping.external_property_id}`);
-          }
-        } catch (error) {
-          results.failed++;
-          results.errors.push(
-            error instanceof Error ? error.message : `Unknown error for ${mapping.external_property_id}`
-          );
-        }
-      }
-
-      return results;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["properties"] });
-      queryClient.invalidateQueries({ queryKey: ["seasonal-rates"] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "rate-plans"] });
+      return await response.json();
     },
   });
 }

@@ -25,6 +25,7 @@ import {
   TrendingUp,
   Activity,
   DollarSign,
+  Upload,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -67,6 +68,7 @@ const navSections: NavSection[] = [
       { href: '/admin/promotions', icon: Tag, label: 'Promotions' },
       { href: '/admin/fees', icon: Receipt, label: 'Fees & Taxes' },
       { href: '/admin/rate-plans', icon: DollarSign, label: 'Rate Plans' },
+      { href: '/admin/seasonal-rates-import', icon: Upload, label: 'Import Rates' },
     ],
   },
   {
