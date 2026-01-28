@@ -52,12 +52,12 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <BrandProvider>
-        <BookingProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <UnifiedBookingDialog />
-            <BrowserRouter>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <BookingProvider>
+              <UnifiedBookingDialog />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/properties" element={<Properties />} />
@@ -99,9 +99,9 @@ const App = () => (
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </BookingProvider>
+            </BookingProvider>
+          </BrowserRouter>
+        </TooltipProvider>
       </BrandProvider>
     </AuthProvider>
   </QueryClientProvider>
