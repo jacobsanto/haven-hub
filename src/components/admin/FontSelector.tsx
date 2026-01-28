@@ -43,7 +43,7 @@ export function FontSelector({ value, onValueChange, fonts, placeholder = "Selec
       <PopoverContent className="w-[300px] p-0" align="start">
         <Command>
           <CommandInput placeholder="Search fonts..." />
-          <CommandList>
+          <CommandList className="max-h-[300px]">
             <CommandEmpty>No font found.</CommandEmpty>
             <CommandGroup>
               {fonts.map((font) => (
@@ -54,15 +54,23 @@ export function FontSelector({ value, onValueChange, fonts, placeholder = "Selec
                     onValueChange(currentValue === value ? '' : font);
                     setOpen(false);
                   }}
-                  style={{ fontFamily: `"${font}", sans-serif` }}
+                  className="flex items-center gap-3 py-2"
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "h-4 w-4 shrink-0",
                       value === font ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {font}
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-sm font-medium truncate">{font}</span>
+                    <span 
+                      className="text-lg text-muted-foreground truncate"
+                      style={{ fontFamily: `"${font}", sans-serif` }}
+                    >
+                      The quick brown fox
+                    </span>
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>
