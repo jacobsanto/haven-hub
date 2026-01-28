@@ -1,13 +1,15 @@
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Calendar, Clock, ArrowLeft, Tag } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { Calendar, Clock, ArrowLeft, Tag, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useBlogPost, useBlogPosts } from '@/hooks/useBlogPosts';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { ReadingProgress } from '@/components/blog/ReadingProgress';
 import { TableOfContents } from '@/components/blog/TableOfContents';
+import { MobileTableOfContents } from '@/components/blog/MobileTableOfContents';
+import { FloatingShareBar } from '@/components/blog/FloatingShareBar';
 import { SocialShareButtons } from '@/components/blog/SocialShareButtons';
 import { AuthorBio } from '@/components/blog/AuthorBio';
 import { NewsletterSignup } from '@/components/blog/NewsletterSignup';
@@ -15,23 +17,14 @@ import { MarkdownRenderer, extractHeadings } from '@/components/blog/MarkdownRen
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function estimateReadTime(content: string | null): number {
   if (!content) return 1;
   const wordsPerMinute = 200;
   const words = content.split(/\s+/).length;
   return Math.max(1, Math.ceil(words / wordsPerMinute));
-}
-
-// Add IDs to headings in content for Table of Contents navigation
-function addHeadingIds(content: string): string {
-  return content.replace(/^(#{2,3})\s+(.+)$/gm, (_, hashes, text) => {
-    const id = text
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-    return `${hashes} ${text} {#${id}}`;
-  });
 }
 
 export default function BlogPost() {
@@ -41,6 +34,12 @@ export default function BlogPost() {
     status: 'published',
     categorySlug: post?.category?.slug 
   });
+  const isMobile = useIsMobile();
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  // Parallax effect for hero
+  const { scrollY } = useScroll();
+  const heroY = useTransform(scrollY, [0, 500], [0, 150]);
 
   // Filter out current post from related
   const filteredRelated = relatedPosts?.filter(p => p.id !== post?.id).slice(0, 3);
@@ -56,7 +55,6 @@ export default function BlogPost() {
     if (!post?.content) return;
     
     headings.forEach(({ id, text }) => {
-      // Find heading elements and add IDs
       const headingElements = document.querySelectorAll('h2, h3');
       headingElements.forEach((el) => {
         if (el.textContent?.trim() === text && !el.id) {
@@ -69,12 +67,14 @@ export default function BlogPost() {
   if (isLoading) {
     return (
       <PageLayout>
-        <div className="container mx-auto px-4 py-16">
-          <Skeleton className="h-8 w-32 mb-8" />
-          <Skeleton className="h-[400px] rounded-2xl mb-8" />
-          <Skeleton className="h-12 w-3/4 mb-4" />
-          <Skeleton className="h-6 w-1/2 mb-8" />
-          <div className="space-y-4">
+        <div className="h-[35vh] md:h-[40vh] bg-muted" />
+        <div className="container mx-auto px-4 -mt-20 relative z-10">
+          <div className="bg-card rounded-2xl p-6 md:p-10 shadow-lg max-w-4xl mx-auto">
+            <Skeleton className="h-6 w-24 mb-4" />
+            <Skeleton className="h-10 w-3/4 mb-4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+          <div className="max-w-4xl mx-auto mt-12 space-y-4">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
@@ -103,91 +103,133 @@ export default function BlogPost() {
   const readTime = estimateReadTime(post.content);
   const publishedDate = post.published_at ? new Date(post.published_at) : new Date(post.created_at);
 
-  // Use real author data from the post, with fallback
   const author = post.author || {
     name: 'Arivia Editorial',
     avatar_url: null,
-    bio: 'Our editorial team curates the finest travel insights, destination guides, and luxury living inspiration to help you plan your perfect getaway.',
+    bio: 'Our editorial team curates the finest travel insights, destination guides, and luxury living inspiration.',
   };
+
+  const authorInitials = author.name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <PageLayout>
       {/* Reading Progress Indicator */}
       <ReadingProgress />
 
-      {/* Hero Image */}
-      <section className="relative h-[50vh] md:h-[60vh] overflow-hidden">
+      {/* Floating Share Bar - Desktop Only */}
+      {!isMobile && <FloatingShareBar title={post.title} />}
+
+      {/* Mobile TOC */}
+      {isMobile && headings.length > 0 && (
+        <MobileTableOfContents headings={headings} />
+      )}
+
+      {/* Hero Image with Parallax - Reduced Height */}
+      <section ref={heroRef} className="relative h-[35vh] md:h-[40vh] overflow-hidden">
         {post.featured_image_url ? (
-          <img
+          <motion.img
             src={post.featured_image_url}
             alt={post.title}
             className="w-full h-full object-cover"
+            style={{ y: heroY }}
           />
         ) : (
-          <div className="w-full h-full bg-muted" />
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+        
+        {/* Back Link - Top Left */}
+        <div className="absolute top-4 left-4 z-10">
+          <Link
+            to="/blog"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Blog
+          </Link>
+        </div>
       </section>
 
+      {/* Article Header Card - Lifted Design */}
+      <div className="container mx-auto px-4 -mt-24 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-card rounded-2xl p-6 md:p-10 shadow-xl max-w-4xl mx-auto border border-border/50"
+        >
+          {/* Category Badge */}
+          {post.category && (
+            <Badge variant="secondary" className="mb-4">
+              {post.category.name}
+            </Badge>
+          )}
+
+          {/* Title */}
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif text-foreground mb-6 leading-tight">
+            {post.title}
+          </h1>
+
+          {/* Meta Info */}
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            {/* Author */}
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8 border border-border">
+                <AvatarImage src={author.avatar_url || undefined} alt={author.name} />
+                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                  {authorInitials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium text-foreground">{author.name}</span>
+            </div>
+            
+            <span className="hidden sm:inline text-border">•</span>
+            
+            <span className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              {format(publishedDate, 'MMMM d, yyyy')}
+            </span>
+            
+            <span className="hidden sm:inline text-border">•</span>
+            
+            <span className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              {readTime} min read
+            </span>
+          </div>
+        </motion.div>
+      </div>
+
       {/* Article Content with ToC Sidebar */}
-      <div className="container mx-auto px-4 -mt-32 relative z-10">
-        <div className="flex gap-8 lg:gap-12">
+      <div className="container mx-auto px-4 py-12 md:py-16">
+        <div className="flex gap-8 lg:gap-16 max-w-6xl mx-auto">
           {/* Main Article */}
-          <article className="flex-1 max-w-3xl mx-auto lg:mx-0">
+          <article className="flex-1 max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              {/* Back Link */}
-              <Link
-                to="/blog"
-                className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Blog
-              </Link>
-
-              {/* Category Badge */}
-              {post.category && (
-                <Badge variant="secondary" className="mb-4">
-                  {post.category.name}
-                </Badge>
-              )}
-
-              {/* Title */}
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif text-foreground mb-6">
-                {post.title}
-              </h1>
-
-              {/* Meta & Social Sharing */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 pb-8 border-b border-border">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  {format(publishedDate, 'MMMM d, yyyy')}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {readTime} min read
-                </span>
-                <div className="ml-auto">
-                  <SocialShareButtons title={post.title} />
-                </div>
-              </div>
-
-              {/* Excerpt */}
+              {/* Excerpt / Lead */}
               {post.excerpt && (
-                <p className="text-xl text-muted-foreground mb-8 font-serif italic">
+                <p className="text-xl md:text-2xl text-muted-foreground mb-10 font-serif italic leading-relaxed border-l-4 border-primary/30 pl-6">
                   {post.excerpt}
                 </p>
               )}
 
               {/* Content with Markdown Rendering */}
-              {post.content ? (
-                <MarkdownRenderer content={post.content} />
-              ) : (
-                <p className="text-muted-foreground">No content available.</p>
-              )}
+              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-blockquote:border-l-primary/50 prose-blockquote:text-muted-foreground prose-blockquote:italic">
+                {post.content ? (
+                  <MarkdownRenderer content={post.content} />
+                ) : (
+                  <p className="text-muted-foreground">No content available.</p>
+                )}
+              </div>
 
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (
@@ -195,7 +237,7 @@ export default function BlogPost() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <Tag className="h-4 w-4 text-muted-foreground" />
                     {post.tags.map((tag) => (
-                      <Badge key={tag} variant="outline">
+                      <Badge key={tag} variant="outline" className="text-sm">
                         {tag}
                       </Badge>
                     ))}
@@ -209,7 +251,7 @@ export default function BlogPost() {
                 <SocialShareButtons title={post.title} />
               </div>
 
-              {/* Author Bio */}
+              {/* Author Bio - Before Newsletter */}
               <AuthorBio author={author} className="mt-12" />
 
               {/* Newsletter Signup */}
@@ -226,17 +268,29 @@ export default function BlogPost() {
         </div>
       </div>
 
-      {/* Related Posts */}
+      {/* Related Posts - Continue Your Journey */}
       {filteredRelated && filteredRelated.length > 0 && (
-        <section className="py-16 md:py-24 bg-muted/30 mt-16">
+        <section className="py-16 md:py-20 bg-muted/30">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-8">
-              Related Articles
-            </h2>
+            <div className="flex items-center justify-between mb-10">
+              <h2 className="text-2xl md:text-3xl font-serif text-foreground">
+                Continue Your Journey
+              </h2>
+              <Button variant="ghost" asChild className="hidden sm:inline-flex">
+                <Link to="/blog" className="gap-2">
+                  View All <ChevronRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredRelated.map((relatedPost) => (
                 <BlogPostCard key={relatedPost.id} post={relatedPost} />
               ))}
+            </div>
+            <div className="mt-8 text-center sm:hidden">
+              <Button variant="outline" asChild>
+                <Link to="/blog">View All Articles</Link>
+              </Button>
             </div>
           </div>
         </section>

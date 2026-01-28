@@ -96,18 +96,20 @@ export function BlogPostCard({ post, featured = false }: BlogPostCardProps) {
       className="group"
     >
       <Link to={`/blog/${post.slug}`} className="block">
-        <div className="aspect-[16/10] overflow-hidden rounded-xl mb-4">
+        <div className="aspect-[16/10] overflow-hidden rounded-xl mb-4 relative">
           {post.featured_image_url ? (
             <img
               src={post.featured_image_url}
               alt={post.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center">
               <span className="text-muted-foreground">No image</span>
             </div>
           )}
+          {/* Hover overlay */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
         </div>
         <div className="space-y-3">
           {post.category && (
@@ -115,18 +117,18 @@ export function BlogPostCard({ post, featured = false }: BlogPostCardProps) {
               {post.category.name}
             </Badge>
           )}
-          <h3 className="text-xl font-serif text-foreground group-hover:text-primary transition-colors line-clamp-2">
+          <h3 className="text-lg md:text-xl font-serif text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
             {post.title}
           </h3>
           {post.excerpt && (
-            <p className="text-muted-foreground text-sm line-clamp-2">
+            <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
               {post.excerpt}
             </p>
           )}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
             {post.author && (
               <div className="flex items-center gap-1.5">
-                <Avatar className="h-5 w-5">
+                <Avatar className="h-6 w-6">
                   <AvatarImage src={post.author.avatar_url || undefined} alt={post.author.name} />
                   <AvatarFallback className="text-[10px]">
                     {post.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}

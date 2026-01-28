@@ -15,14 +15,15 @@ export function CategoryFilter({
   postCounts,
 }: CategoryFilterProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1">
       <button
         onClick={() => onCategoryChange('all')}
         className={`
-          relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+          relative px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200
+          whitespace-nowrap snap-start min-h-[44px] min-w-[44px] flex items-center justify-center
           ${
             selectedCategory === 'all'
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary text-primary-foreground shadow-md'
               : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
           }
         `}
@@ -47,10 +48,11 @@ export function CategoryFilter({
           key={category.id}
           onClick={() => onCategoryChange(category.slug)}
           className={`
-            relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-200
+            relative px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200
+            whitespace-nowrap snap-start min-h-[44px] min-w-[44px] flex items-center justify-center
             ${
               selectedCategory === category.slug
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-primary text-primary-foreground shadow-md'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
             }
           `}
