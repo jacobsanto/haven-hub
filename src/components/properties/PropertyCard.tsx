@@ -1,11 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Users, Bed, Bath, Zap } from 'lucide-react';
+import { MapPin, Users, Bed, Bath, Zap, ArrowRight } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { LucideIcon, Sparkles } from 'lucide-react';
 import { Property } from '@/types/database';
 import { useAmenityMap } from '@/hooks/useAmenities';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface PropertyCardProps {
@@ -29,8 +30,15 @@ function getIconComponent(iconName: string): LucideIcon {
 }
 
 export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
+  const navigate = useNavigate();
   const amenityMap = useAmenityMap();
   const { data: activeOffer } = useActiveSpecialOffer(property.id);
+
+  const handleBookNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/checkout?property=${property.slug}`);
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -176,6 +184,18 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
                 )}
               </div>
             )}
+
+            {/* Book Now Button */}
+            <div className="pt-3 border-t border-border">
+              <Button
+                onClick={handleBookNow}
+                className="w-full gap-2 group/btn"
+                size="sm"
+              >
+                Book Now
+                <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+              </Button>
+            </div>
           </div>
         </div>
       </Link>
