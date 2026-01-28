@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Search, Check, X, Clock } from 'lucide-react';
+import { Search, Check, X, Clock, Eye } from 'lucide-react';
 import { getStatusColors } from '@/lib/utils';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminBookings, useUpdateBookingStatus } from '@/hooks/useBookings';
 import { useAdminProperties } from '@/hooks/useProperties';
+import { BookingDetailDialog } from '@/components/admin/BookingDetailDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -30,6 +31,7 @@ export default function AdminBookings() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
   const { data: bookings, isLoading } = useAdminBookings({
     status: statusFilter === 'all' ? undefined : statusFilter,
@@ -184,6 +186,15 @@ export default function AdminBookings() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8"
+                            onClick={() => setSelectedBookingId(booking.id)}
+                            aria-label="View booking details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                           {booking.status === 'pending' && (
                             <>
                               <Button
@@ -249,6 +260,15 @@ export default function AdminBookings() {
             )}
           </div>
         </div>
+
+        {/* Booking Detail Dialog */}
+        <BookingDetailDialog
+          bookingId={selectedBookingId}
+          open={!!selectedBookingId}
+          onOpenChange={(open) => {
+            if (!open) setSelectedBookingId(null);
+          }}
+        />
       </AdminLayout>
     </AdminGuard>
   );

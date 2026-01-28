@@ -169,6 +169,42 @@ export interface UserRole {
   role: AppRole;
 }
 
+// Booking-related types
+export interface BookingPayment {
+  id: string;
+  booking_id: string;
+  payment_type: string;
+  amount: number;
+  currency: string;
+  status: string;
+  payment_method: string | null;
+  stripe_payment_intent_id: string | null;
+  stripe_charge_id: string | null;
+  due_date: string | null;
+  paid_at: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BookingAddon {
+  id: string;
+  booking_id: string;
+  addon_id: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  guest_count: number | null;
+  scheduled_date: string | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  addon?: {
+    name: string;
+    category: string;
+  };
+}
+
 // Search and filter types
 export interface PropertySearchParams {
   location?: string;
