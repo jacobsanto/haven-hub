@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -9,6 +10,7 @@ import { ExperienceCard } from '@/components/experiences/ExperienceCard';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
 import { UrgencyBanner } from '@/components/booking/UrgencyBanner';
+import { PropertySelectorDialog } from '@/components/booking/PropertySelectorDialog';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useDestinations } from '@/hooks/useDestinations';
 import { useActiveExperiences } from '@/hooks/useExperiences';
@@ -18,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
+  const [showPropertySelector, setShowPropertySelector] = useState(false);
   const { data: properties, isLoading: propertiesLoading } = useFeaturedProperties();
   const { data: destinations, isLoading: destinationsLoading } = useDestinations();
   const { data: experiences, isLoading: experiencesLoading } = useActiveExperiences();
@@ -34,6 +37,12 @@ const Index = () => {
 
   return (
     <PageLayout>
+      {/* Property Selector Dialog */}
+      <PropertySelectorDialog 
+        open={showPropertySelector} 
+        onOpenChange={setShowPropertySelector} 
+      />
+
       {/* Urgency Banner */}
       <UrgencyBanner variant="rotating" />
 
@@ -58,6 +67,24 @@ const Index = () => {
               Discover extraordinary vacation homes in the world's most desirable destinations. 
               Direct booking. Best rates. Instant confirmation.
             </p>
+            
+            {/* Prominent Book Now Button */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+              className="mt-6 mb-4"
+            >
+              <Button
+                size="lg"
+                onClick={() => setShowPropertySelector(true)}
+                className="h-14 px-10 text-lg rounded-full shadow-lg hover:shadow-xl transition-all gap-2"
+              >
+                Book Now
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </motion.div>
+
             {propertiesAvailable > 0 && (
               <motion.p 
                 initial={{ opacity: 0 }}
