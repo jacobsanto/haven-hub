@@ -498,6 +498,8 @@ export type Database = {
           id: string
           nights: number
           payment_status: string | null
+          pms_last_error: string | null
+          pms_retry_count: number
           pms_sync_status: string | null
           pms_synced_at: string | null
           property_id: string
@@ -524,6 +526,8 @@ export type Database = {
           id?: string
           nights: number
           payment_status?: string | null
+          pms_last_error?: string | null
+          pms_retry_count?: number
           pms_sync_status?: string | null
           pms_synced_at?: string | null
           property_id: string
@@ -550,6 +554,8 @@ export type Database = {
           id?: string
           nights?: number
           payment_status?: string | null
+          pms_last_error?: string | null
+          pms_retry_count?: number
           pms_sync_status?: string | null
           pms_synced_at?: string | null
           property_id?: string
@@ -995,32 +1001,38 @@ export type Database = {
       }
       pms_connections: {
         Row: {
+          auto_sync_enabled: boolean
           config: Json | null
           created_at: string
           id: string
           is_active: boolean
           last_sync_at: string | null
           pms_name: string
+          sync_interval_minutes: number
           sync_status: string | null
           updated_at: string
         }
         Insert: {
+          auto_sync_enabled?: boolean
           config?: Json | null
           created_at?: string
           id?: string
           is_active?: boolean
           last_sync_at?: string | null
           pms_name: string
+          sync_interval_minutes?: number
           sync_status?: string | null
           updated_at?: string
         }
         Update: {
+          auto_sync_enabled?: boolean
           config?: Json | null
           created_at?: string
           id?: string
           is_active?: boolean
           last_sync_at?: string | null
           pms_name?: string
+          sync_interval_minutes?: number
           sync_status?: string | null
           updated_at?: string
         }
@@ -1133,6 +1145,7 @@ export type Database = {
           started_at: string
           status: string
           sync_type: string
+          trigger_type: string
         }
         Insert: {
           completed_at?: string | null
@@ -1145,6 +1158,7 @@ export type Database = {
           started_at?: string
           status?: string
           sync_type: string
+          trigger_type?: string
         }
         Update: {
           completed_at?: string | null
@@ -1157,6 +1171,7 @@ export type Database = {
           started_at?: string
           status?: string
           sync_type?: string
+          trigger_type?: string
         }
         Relationships: [
           {

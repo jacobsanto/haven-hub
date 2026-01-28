@@ -11,6 +11,8 @@ export interface PMSConnection {
   sync_status: string | null;
   created_at: string;
   updated_at: string;
+  auto_sync_enabled: boolean;
+  sync_interval_minutes: number;
 }
 
 export interface PMSSyncRun {
@@ -23,6 +25,7 @@ export interface PMSSyncRun {
   records_processed: number | null;
   records_failed: number | null;
   error_summary: string | null;
+  trigger_type: string;
 }
 
 export interface PMSPropertyMapping {
@@ -373,6 +376,40 @@ export function useSyncAllPropertyAvailability() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
       queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
+    },
+  });
+}
+
+// Update auto-sync settings
+export function useUpdateAutoSyncSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      connectionId,
+      autoSyncEnabled,
+      syncIntervalMinutes,
+    }: {
+      connectionId: string;
+      autoSyncEnabled?: boolean;
+      syncIntervalMinutes?: number;
+    }) => {
+      const updates: Record<string, unknown> = {};
+      if (autoSyncEnabled !== undefined) updates.auto_sync_enabled = autoSyncEnabled;
+      if (syncIntervalMinutes !== undefined) updates.sync_interval_minutes = syncIntervalMinutes;
+
+      const { data, error } = await supabase
+        .from('pms_connections')
+        .update(updates)
+        .eq('id', connectionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pms', 'connection'] });
     },
   });
 }

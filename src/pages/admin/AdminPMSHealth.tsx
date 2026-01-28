@@ -41,11 +41,13 @@ import {
   useTogglePropertySync,
   useSyncPropertyNow,
   useSyncAllPropertyAvailability,
+  useUpdateAutoSyncSettings,
 } from '@/hooks/useAdminPMSHealth';
 import { PMSConfigDialog } from '@/components/admin/PMSConfigDialog';
 import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDialog';
 import { PMSConnectionHealthCard } from '@/components/admin/PMSConnectionHealthCard';
 import { PMSSyncStatusPanel } from '@/components/admin/PMSSyncStatusPanel';
+import { AutoSyncSettingsCard } from '@/components/admin/AutoSyncSettingsCard';
 import { getProviderById } from '@/lib/pms-providers';
 
 const getStatusBadge = (status: string | null) => {
@@ -82,11 +84,20 @@ export default function AdminPMSHealth() {
   const togglePropertySync = useTogglePropertySync();
   const syncPropertyNow = useSyncPropertyNow();
   const syncAllAvailability = useSyncAllPropertyAvailability();
+  const updateAutoSyncSettings = useUpdateAutoSyncSettings();
 
   // Get provider config from connection
   const connectionConfig = connection?.config as { provider?: string } | null;
   const currentProviderId = connectionConfig?.provider || 'advancecm';
   const currentProvider = getProviderById(currentProviderId);
+
+  const handleUpdateSyncSettings = async (settings: { autoSyncEnabled?: boolean; syncIntervalMinutes?: number }) => {
+    if (!connection) return;
+    await updateAutoSyncSettings.mutateAsync({
+      connectionId: connection.id,
+      ...settings,
+    });
+  };
 
   const handleTestConnection = async () => {
     try {
@@ -233,6 +244,25 @@ export default function AdminPMSHealth() {
               isConnected={!!connection?.is_active}
               lastSyncAt={connection?.last_sync_at}
               propertyCount={propertyMappings?.length}
+            />
+          </motion.div>
+        )}
+
+        {/* Auto-Sync Settings Card */}
+        {connection && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18 }}
+          >
+            <AutoSyncSettingsCard
+              connectionId={connection.id}
+              autoSyncEnabled={connection.auto_sync_enabled ?? true}
+              syncIntervalMinutes={connection.sync_interval_minutes ?? 5}
+              lastScheduledSync={connection.last_sync_at}
+              onUpdateSettings={handleUpdateSyncSettings}
+              isUpdating={updateAutoSyncSettings.isPending}
+              projectId="xavjbiuhcmupsoocrmhf"
             />
           </motion.div>
         )}
