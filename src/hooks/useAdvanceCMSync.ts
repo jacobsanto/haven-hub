@@ -182,6 +182,75 @@ export function useSyncPropertyRates() {
   });
 }
 
+// Sync rates for ALL linked properties
+export function useSyncAllPropertyRates() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (connectionId: string) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Authentication required");
+
+      // 1. Get all enabled property mappings
+      const { data: mappings, error: mappingsError } = await supabase
+        .from("pms_property_map")
+        .select("external_property_id, property_id")
+        .eq("pms_connection_id", connectionId)
+        .eq("sync_enabled", true);
+
+      if (mappingsError) throw mappingsError;
+      if (!mappings || mappings.length === 0) {
+        return { success: 0, failed: 0, errors: [] as string[], total: 0 };
+      }
+
+      // 2. Sync rates for each property
+      const results = { success: 0, failed: 0, errors: [] as string[], total: mappings.length };
+
+      for (const mapping of mappings) {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/advancecm-sync`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                action: "sync-rates",
+                externalId: mapping.external_property_id,
+                propertyId: mapping.property_id,
+              }),
+            }
+          );
+
+          const data = await response.json();
+          if (response.ok && data.success) {
+            results.success++;
+          } else {
+            results.failed++;
+            results.errors.push(data.error || `Failed for ${mapping.external_property_id}`);
+          }
+        } catch (error) {
+          results.failed++;
+          results.errors.push(
+            error instanceof Error ? error.message : `Unknown error for ${mapping.external_property_id}`
+          );
+        }
+      }
+
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["seasonal-rates"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "rate-plans"] });
+    },
+  });
+}
+
 // Create or ensure PMS connection exists for AdvanceCM
 export function useEnsureAdvanceCMConnection() {
   const queryClient = useQueryClient();
