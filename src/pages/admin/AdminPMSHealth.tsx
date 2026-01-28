@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Link as LinkIcon,
   Clock,
+  DollarSign,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +42,7 @@ import {
   useTogglePropertySync,
   useSyncPropertyNow,
 } from '@/hooks/useAdminPMSHealth';
+import { useSyncAllPropertyRates } from '@/hooks/useAdvanceCMSync';
 import { PMSConfigDialog } from '@/components/admin/PMSConfigDialog';
 import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDialog';
 import { PMSConnectionHealthCard } from '@/components/admin/PMSConnectionHealthCard';
@@ -79,6 +81,7 @@ export default function AdminPMSHealth() {
   const triggerSync = useTriggerManualSync();
   const togglePropertySync = useTogglePropertySync();
   const syncPropertyNow = useSyncPropertyNow();
+  const syncAllRates = useSyncAllPropertyRates();
 
   // Get provider config from connection
   const connectionConfig = connection?.config as { provider?: string } | null;
@@ -163,6 +166,24 @@ export default function AdminPMSHealth() {
     }
   };
 
+  const handleSyncAllRates = async () => {
+    if (!connection) return;
+    try {
+      const result = await syncAllRates.mutateAsync(connection.id);
+      toast({
+        title: result.success > 0 ? 'Rates Synced' : 'Sync Complete',
+        description: `Updated ${result.success} of ${result.total} properties${result.failed > 0 ? `, ${result.failed} failed` : ''}.`,
+        variant: result.failed > 0 && result.success === 0 ? 'destructive' : 'default',
+      });
+    } catch (error) {
+      toast({
+        title: 'Sync All Rates Failed',
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -229,10 +250,28 @@ export default function AdminPMSHealth() {
             <TabsContent value="mappings">
               <Card>
                 <CardHeader>
-                  <CardTitle>Property Mappings</CardTitle>
-                  <CardDescription>
-                    Map local properties to external PMS listings
-                  </CardDescription>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <CardTitle>Property Mappings</CardTitle>
+                      <CardDescription>
+                        Map local properties to external PMS listings
+                      </CardDescription>
+                    </div>
+                    {propertyMappings && propertyMappings.length > 0 && (
+                      <Button
+                        onClick={handleSyncAllRates}
+                        disabled={syncAllRates.isPending}
+                        size="sm"
+                      >
+                        {syncAllRates.isPending ? (
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <DollarSign className="h-4 w-4 mr-2" />
+                        )}
+                        Sync All Rates
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {mappingsLoading ? (
