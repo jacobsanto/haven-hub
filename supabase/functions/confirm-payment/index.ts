@@ -8,10 +8,55 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface BookingPayload {
+  propertyId: string;
+  propertyName: string;
+  propertySlug: string;
+  instantBooking: boolean;
+  bookingReference: string;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  guests: number;
+  adults: number;
+  children: number;
+  guestInfo: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    country?: string;
+    specialRequests?: string;
+  };
+  totalPrice: number;
+  paymentType: 'full' | 'deposit';
+  depositAmount?: number;
+  cancellationPolicy: string;
+  holdId?: string;
+  priceBreakdown: {
+    lineItems: Array<{
+      type: string;
+      label: string;
+      amount: number;
+      details?: string;
+    }>;
+  };
+  selectedAddons: Array<{
+    addon: { id: string; price: number };
+    quantity: number;
+    calculatedPrice: number;
+    guestCount?: number;
+    scheduledDate?: string;
+  }>;
+}
+
 interface ConfirmPaymentRequest {
   paymentIntentId: string;
-  bookingId: string;
   paymentType: 'full' | 'deposit';
+  // New: booking payload for deferred creation
+  bookingPayload?: BookingPayload;
+  // Legacy: bookingId for backward compatibility
+  bookingId?: string;
 }
 
 serve(async (req) => {
@@ -27,8 +72,8 @@ serve(async (req) => {
   try {
     const body: ConfirmPaymentRequest = await req.json();
 
-    if (!body.paymentIntentId || !body.bookingId) {
-      throw new Error("Missing required fields");
+    if (!body.paymentIntentId) {
+      throw new Error("Missing paymentIntentId");
     }
 
     // Initialize Stripe
@@ -55,131 +100,309 @@ serve(async (req) => {
     });
     const charge = charges.data[0];
 
-    // Update booking_payments with Stripe details
-    const { error: paymentError } = await supabaseClient
-      .from("booking_payments")
-      .update({
-        stripe_payment_intent_id: body.paymentIntentId,
-        stripe_charge_id: charge?.id || null,
-        status: "succeeded",
-        paid_at: new Date().toISOString(),
-        payment_method: charge?.payment_method_details?.type || "card",
-        metadata: {
-          stripe_receipt_url: charge?.receipt_url,
-          stripe_payment_method_id: paymentIntent.payment_method,
-        },
-      })
-      .eq("booking_id", body.bookingId)
-      .eq("status", "pending");
+    let bookingId = body.bookingId;
+    let bookingReference = body.bookingPayload?.bookingReference;
 
-    if (paymentError) {
-      console.error("Failed to update payment record:", paymentError);
-    }
+    // If bookingPayload provided, create booking atomically after payment verification
+    if (body.bookingPayload && !body.bookingId) {
+      const payload = body.bookingPayload;
+      const guestName = `${payload.guestInfo.firstName} ${payload.guestInfo.lastName}`;
 
-    // Update booking payment_status
-    const paymentStatus = body.paymentType === "deposit" ? "partial" : "paid";
-    
-    const { error: bookingError } = await supabaseClient
-      .from("bookings")
-      .update({
-        payment_status: paymentStatus,
-      })
-      .eq("id", body.bookingId);
+      // Determine initial status based on instant_booking
+      const initialStatus = payload.instantBooking ? 'confirmed' : 'pending';
+      const paymentStatus = body.paymentType === 'deposit' ? 'partial' : 'paid';
 
-    if (bookingError) {
-      console.error("Failed to update booking status:", bookingError);
-    }
+      // 1. Create booking record
+      const { data: booking, error: bookingError } = await supabaseClient
+        .from("bookings")
+        .insert({
+          property_id: payload.propertyId,
+          booking_reference: payload.bookingReference,
+          guest_name: guestName,
+          guest_email: payload.guestInfo.email,
+          guest_phone: payload.guestInfo.phone || null,
+          guest_country: payload.guestInfo.country || null,
+          check_in: payload.checkIn,
+          check_out: payload.checkOut,
+          nights: payload.nights,
+          guests: payload.guests,
+          adults: payload.adults,
+          children: payload.children,
+          total_price: payload.totalPrice,
+          status: initialStatus,
+          source: 'direct',
+          payment_status: paymentStatus,
+          special_requests: payload.guestInfo.specialRequests || null,
+          cancellation_policy: payload.cancellationPolicy,
+          pms_sync_status: 'pending',
+        })
+        .select()
+        .single();
 
-    // Get booking details for PMS sync
-    const { data: booking } = await supabaseClient
-      .from("bookings")
-      .select(`
-        *,
-        property:properties(id, name, instant_booking)
-      `)
-      .eq("id", body.bookingId)
-      .single();
+      if (bookingError) {
+        console.error("Failed to create booking:", bookingError);
+        throw new Error(`Failed to create booking: ${bookingError.message}`);
+      }
 
-    // If instant booking, trigger PMS sync
-    let pmsSynced = false;
-    if (booking?.property?.instant_booking) {
-      // Get PMS mapping
-      const { data: mapping } = await supabaseClient
-        .from("pms_property_map")
-        .select("external_property_id")
-        .eq("property_id", booking.property_id)
-        .eq("sync_enabled", true)
-        .maybeSingle();
+      bookingId = booking.id;
+      bookingReference = booking.booking_reference;
 
-      if (mapping?.external_property_id) {
-        try {
-          // Trigger PMS sync via edge function
-          const nameParts = booking.guest_name.split(" ");
-          const firstName = nameParts[0] || "";
-          const lastName = nameParts.slice(1).join(" ") || "";
+      // 2. Insert price breakdown line items
+      if (payload.priceBreakdown?.lineItems?.length > 0) {
+        const breakdownItems = payload.priceBreakdown.lineItems.map(item => ({
+          booking_id: booking.id,
+          line_type: item.type,
+          label: item.label,
+          amount: item.type === 'discount' ? -Math.abs(item.amount) : item.amount,
+          quantity: 1,
+          details: item.details ? { notes: item.details } : null,
+        }));
 
-          const syncResponse = await fetch(
-            `${Deno.env.get("SUPABASE_URL")}/functions/v1/advancecm-sync`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-              },
-              body: JSON.stringify({
-                action: "create-booking",
-                externalPropertyId: mapping.external_property_id,
-                bookingReference: booking.booking_reference,
-                checkIn: booking.check_in,
-                checkOut: booking.check_out,
-                guests: booking.guests,
-                adults: booking.adults || booking.guests,
-                children: booking.children || 0,
-                guestInfo: {
-                  firstName,
-                  lastName,
-                  email: booking.guest_email,
-                  phone: booking.guest_phone,
-                  country: booking.guest_country,
+        const { error: breakdownError } = await supabaseClient
+          .from("booking_price_breakdown")
+          .insert(breakdownItems);
+
+        if (breakdownError) {
+          console.error("Failed to insert price breakdown:", breakdownError);
+        }
+      }
+
+      // 3. Insert booking addons
+      if (payload.selectedAddons?.length > 0) {
+        const addonItems = payload.selectedAddons.map(selected => ({
+          booking_id: booking.id,
+          addon_id: selected.addon.id,
+          quantity: selected.quantity,
+          unit_price: selected.addon.price,
+          total_price: selected.calculatedPrice,
+          guest_count: selected.guestCount || null,
+          scheduled_date: selected.scheduledDate || null,
+          status: 'pending',
+        }));
+
+        const { error: addonsError } = await supabaseClient
+          .from("booking_addons")
+          .insert(addonItems);
+
+        if (addonsError) {
+          console.error("Failed to insert booking addons:", addonsError);
+        }
+      }
+
+      // 4. Create payment record with Stripe details
+      const { error: paymentError } = await supabaseClient
+        .from("booking_payments")
+        .insert({
+          booking_id: booking.id,
+          payment_type: body.paymentType === 'deposit' ? 'deposit' : 'full',
+          amount: body.paymentType === 'deposit' 
+            ? (payload.depositAmount || payload.totalPrice * 0.3) 
+            : payload.totalPrice,
+          currency: 'EUR',
+          status: 'succeeded',
+          stripe_payment_intent_id: body.paymentIntentId,
+          stripe_charge_id: charge?.id || null,
+          paid_at: new Date().toISOString(),
+          payment_method: charge?.payment_method_details?.type || 'card',
+          metadata: {
+            stripe_receipt_url: charge?.receipt_url,
+            stripe_payment_method_id: paymentIntent.payment_method,
+          },
+        });
+
+      if (paymentError) {
+        console.error("Failed to create payment record:", paymentError);
+      }
+
+      // 5. Release checkout hold if exists
+      if (payload.holdId) {
+        await supabaseClient
+          .from("checkout_holds")
+          .update({ released: true })
+          .eq("id", payload.holdId);
+      }
+
+      // 6. If instant booking, trigger PMS sync
+      if (payload.instantBooking) {
+        const { data: mapping } = await supabaseClient
+          .from("pms_property_map")
+          .select("external_property_id")
+          .eq("property_id", payload.propertyId)
+          .eq("sync_enabled", true)
+          .maybeSingle();
+
+        if (mapping?.external_property_id) {
+          try {
+            const syncResponse = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/advancecm-sync`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
                 },
-                totalPrice: booking.total_price,
-                currency: "EUR",
-                priceBreakdownNotes: `Payment confirmed via Stripe`,
-              }),
-            }
-          );
+                body: JSON.stringify({
+                  action: "create-booking",
+                  externalPropertyId: mapping.external_property_id,
+                  bookingReference: payload.bookingReference,
+                  checkIn: payload.checkIn,
+                  checkOut: payload.checkOut,
+                  guests: payload.guests,
+                  adults: payload.adults,
+                  children: payload.children,
+                  guestInfo: payload.guestInfo,
+                  totalPrice: payload.totalPrice,
+                  currency: "EUR",
+                  priceBreakdownNotes: `Payment confirmed via Stripe`,
+                }),
+              }
+            );
 
-          const syncResult = await syncResponse.json();
-          
-          if (syncResult.success) {
-            pmsSynced = true;
+            const syncResult = await syncResponse.json();
+            
+            if (syncResult.success) {
+              await supabaseClient
+                .from("bookings")
+                .update({
+                  pms_sync_status: "synced",
+                  pms_synced_at: new Date().toISOString(),
+                  external_booking_id: syncResult.externalBookingId,
+                })
+                .eq("id", booking.id);
+            }
+          } catch (syncError) {
+            console.error("PMS sync error:", syncError);
             await supabaseClient
               .from("bookings")
               .update({
-                pms_sync_status: "synced",
-                pms_synced_at: new Date().toISOString(),
-                external_booking_id: syncResult.externalBookingId,
+                pms_sync_status: "failed",
+                pms_last_error: syncError instanceof Error ? syncError.message : "Sync failed",
               })
-              .eq("id", body.bookingId);
+              .eq("id", booking.id);
           }
-        } catch (syncError) {
-          console.error("PMS sync error:", syncError);
-          await supabaseClient
-            .from("bookings")
-            .update({
-              pms_sync_status: "failed",
-              pms_last_error: syncError instanceof Error ? syncError.message : "Sync failed",
-            })
-            .eq("id", body.bookingId);
         }
       }
+    } else if (bookingId) {
+      // Legacy flow: Update existing booking
+      const { error: paymentError } = await supabaseClient
+        .from("booking_payments")
+        .update({
+          stripe_payment_intent_id: body.paymentIntentId,
+          stripe_charge_id: charge?.id || null,
+          status: "succeeded",
+          paid_at: new Date().toISOString(),
+          payment_method: charge?.payment_method_details?.type || "card",
+          metadata: {
+            stripe_receipt_url: charge?.receipt_url,
+            stripe_payment_method_id: paymentIntent.payment_method,
+          },
+        })
+        .eq("booking_id", bookingId)
+        .eq("status", "pending");
+
+      if (paymentError) {
+        console.error("Failed to update payment record:", paymentError);
+      }
+
+      const paymentStatus = body.paymentType === "deposit" ? "partial" : "paid";
+      
+      const { error: bookingError } = await supabaseClient
+        .from("bookings")
+        .update({ payment_status: paymentStatus })
+        .eq("id", bookingId);
+
+      if (bookingError) {
+        console.error("Failed to update booking status:", bookingError);
+      }
+
+      // Get booking for reference
+      const { data: booking } = await supabaseClient
+        .from("bookings")
+        .select("booking_reference")
+        .eq("id", bookingId)
+        .single();
+
+      bookingReference = booking?.booking_reference;
+
+      // Check for PMS sync (legacy)
+      const { data: bookingFull } = await supabaseClient
+        .from("bookings")
+        .select(`*, property:properties(id, name, instant_booking)`)
+        .eq("id", bookingId)
+        .single();
+
+      if (bookingFull?.property?.instant_booking) {
+        const { data: mapping } = await supabaseClient
+          .from("pms_property_map")
+          .select("external_property_id")
+          .eq("property_id", bookingFull.property_id)
+          .eq("sync_enabled", true)
+          .maybeSingle();
+
+        if (mapping?.external_property_id) {
+          try {
+            const nameParts = bookingFull.guest_name.split(" ");
+            const firstName = nameParts[0] || "";
+            const lastName = nameParts.slice(1).join(" ") || "";
+
+            const syncResponse = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/advancecm-sync`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                },
+                body: JSON.stringify({
+                  action: "create-booking",
+                  externalPropertyId: mapping.external_property_id,
+                  bookingReference: bookingFull.booking_reference,
+                  checkIn: bookingFull.check_in,
+                  checkOut: bookingFull.check_out,
+                  guests: bookingFull.guests,
+                  adults: bookingFull.adults || bookingFull.guests,
+                  children: bookingFull.children || 0,
+                  guestInfo: { firstName, lastName, email: bookingFull.guest_email, phone: bookingFull.guest_phone, country: bookingFull.guest_country },
+                  totalPrice: bookingFull.total_price,
+                  currency: "EUR",
+                  priceBreakdownNotes: `Payment confirmed via Stripe`,
+                }),
+              }
+            );
+
+            const syncResult = await syncResponse.json();
+            
+            if (syncResult.success) {
+              await supabaseClient
+                .from("bookings")
+                .update({
+                  pms_sync_status: "synced",
+                  pms_synced_at: new Date().toISOString(),
+                  external_booking_id: syncResult.externalBookingId,
+                })
+                .eq("id", bookingId);
+            }
+          } catch (syncError) {
+            console.error("PMS sync error:", syncError);
+            await supabaseClient
+              .from("bookings")
+              .update({
+                pms_sync_status: "failed",
+                pms_last_error: syncError instanceof Error ? syncError.message : "Sync failed",
+              })
+              .eq("id", bookingId);
+          }
+        }
+      }
+    } else {
+      throw new Error("Missing bookingId or bookingPayload");
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        paymentStatus,
-        pmsSynced,
+        bookingId,
+        bookingReference,
         receiptUrl: charge?.receipt_url,
       }),
       {

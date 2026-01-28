@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ArrowLeft, MapPin, Users, Calendar, Loader2 } from 'lucide-react';
@@ -17,7 +17,6 @@ import { CancellationPolicyDisplay } from '@/components/booking/CancellationPoli
 import { useProperty } from '@/hooks/useProperties';
 import { useFeesTaxes, calculatePriceBreakdown } from '@/hooks/useBookingEngine';
 import { useCreateCheckoutHold, useReleaseCheckoutHold, generateSessionId } from '@/hooks/useCheckoutFlow';
-import { useCompleteBooking } from '@/hooks/useCompleteBooking';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { SelectedAddon, CouponPromo, BookingGuestWithCounts, PaymentType, PriceBreakdown } from '@/types/booking-engine';
 import { CancellationPolicyKey } from '@/lib/cancellation-policies';
@@ -69,12 +68,12 @@ export default function Checkout() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
-  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
+  
+  // Double-click protection
+  const isSubmittingRef = useRef(false);
 
   const createHold = useCreateCheckoutHold();
   const releaseHold = useReleaseCheckoutHold();
-  const completeBooking = useCompleteBooking();
-  
   // Real-time availability updates
   useRealtimeAvailability(property?.id);
 
@@ -175,8 +174,11 @@ export default function Checkout() {
     }
   };
 
-  // Create Payment Intent and show Stripe form
+  // Create Payment Intent and show Stripe form (deferred booking creation)
   const handleProceedToPayment = async () => {
+    // Double-click protection
+    if (isSubmittingRef.current) return;
+    
     if (!property || !checkIn || !checkOut || !guestInfo || !priceBreakdown) {
       toast({
         title: 'Missing information',
@@ -186,40 +188,15 @@ export default function Checkout() {
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsProcessing(true);
 
     try {
-      // Generate booking reference
+      // Generate booking reference upfront
       const newBookingReference = generateBookingReference();
       setBookingReference(newBookingReference);
 
-      // First create the booking record (with pending payment status)
-      const bookingResult = await completeBooking.mutateAsync({
-        propertyId: property.id,
-        property: {
-          id: property.id,
-          name: property.name,
-          slug: property.slug,
-          instant_booking: property.instant_booking,
-        },
-        checkIn,
-        checkOut,
-        nights,
-        guests,
-        adults,
-        children,
-        guestInfo,
-        selectedAddons,
-        priceBreakdown,
-        appliedCoupon,
-        paymentType,
-        holdId: holdId || undefined,
-        sessionId,
-      });
-
-      setCreatedBookingId(bookingResult.bookingId);
-
-      // Create Payment Intent via edge function
+      // Create Payment Intent via edge function (NO booking created yet)
       const { data, error } = await supabase.functions.invoke('create-payment-intent', {
         body: {
           propertyId: property.id,
@@ -250,7 +227,7 @@ export default function Checkout() {
           guestEmail: guestInfo.email,
           guestCountry: guestInfo.country,
           sessionId,
-          bookingReference: bookingResult.bookingReference,
+          bookingReference: newBookingReference,
         },
       });
 
@@ -274,42 +251,79 @@ export default function Checkout() {
       });
     } finally {
       setIsProcessing(false);
+      isSubmittingRef.current = false;
     }
   };
 
-  // Handle successful Stripe payment
+  // Handle successful Stripe payment - CREATE BOOKING HERE (after payment succeeds)
   const handlePaymentSuccess = async (stripePaymentIntentId: string) => {
-    if (!createdBookingId) {
+    if (!property || !checkIn || !checkOut || !guestInfo || !priceBreakdown || !bookingReference) {
       toast({
         title: 'Error',
-        description: 'Booking not found',
+        description: 'Missing booking information',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      // Confirm payment via edge function
+      // Confirm payment AND create booking atomically via edge function
       const { data, error } = await supabase.functions.invoke('confirm-payment', {
         body: {
           paymentIntentId: stripePaymentIntentId,
-          bookingId: createdBookingId,
           paymentType,
+          // Pass full booking payload for deferred creation
+          bookingPayload: {
+            propertyId: property.id,
+            propertyName: property.name,
+            propertySlug: property.slug,
+            instantBooking: property.instant_booking,
+            bookingReference,
+            checkIn: format(checkIn, 'yyyy-MM-dd'),
+            checkOut: format(checkOut, 'yyyy-MM-dd'),
+            nights,
+            guests,
+            adults,
+            children,
+            guestInfo: {
+              firstName: guestInfo.firstName,
+              lastName: guestInfo.lastName,
+              email: guestInfo.email,
+              phone: guestInfo.phone,
+              country: guestInfo.country,
+              specialRequests: guestInfo.specialRequests,
+            },
+            totalPrice: priceBreakdown.total,
+            depositAmount: priceBreakdown.depositAmount,
+            cancellationPolicy: 'moderate',
+            holdId: holdId || undefined,
+            priceBreakdown: {
+              lineItems: priceBreakdown.lineItems,
+            },
+            selectedAddons: selectedAddons.map(sa => ({
+              addon: { id: sa.addon.id, price: sa.addon.price },
+              quantity: sa.quantity,
+              calculatedPrice: sa.calculatedPrice,
+              guestCount: sa.guestCount,
+              scheduledDate: sa.scheduledDate,
+            })),
+          },
         },
       });
 
       if (error) {
         console.error('Payment confirmation error:', error);
+        throw new Error(error.message || 'Failed to confirm booking');
       }
 
       // Navigate to confirmation page
       navigate(`/booking/confirm?ref=${bookingReference}`, {
         state: {
-          propertyName: property?.name,
-          checkIn: checkIn ? format(checkIn, 'MMM d, yyyy') : '',
-          checkOut: checkOut ? format(checkOut, 'MMM d, yyyy') : '',
+          propertyName: property.name,
+          checkIn: format(checkIn, 'MMM d, yyyy'),
+          checkOut: format(checkOut, 'MMM d, yyyy'),
           nights,
-          totalPrice: priceBreakdown?.total,
+          totalPrice: priceBreakdown.total,
           amountPaid: amountDue,
           paymentType,
           status: 'confirmed',
@@ -319,8 +333,11 @@ export default function Checkout() {
       });
     } catch (error) {
       console.error('Confirmation error:', error);
-      // Still navigate - payment was successful
-      navigate(`/booking/confirm?ref=${bookingReference}`);
+      toast({
+        title: 'Booking failed',
+        description: error instanceof Error ? error.message : 'Please contact support.',
+        variant: 'destructive',
+      });
     }
   };
 
