@@ -38,6 +38,8 @@ import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
 import AdminBlogCategories from "./pages/admin/AdminBlogCategories";
 import AdminBlogAuthors from "./pages/admin/AdminBlogAuthors";
 import AdminNewsletterSubscribers from "./pages/admin/AdminNewsletterSubscribers";
+import AdminAddonsManagement from "./pages/admin/AdminAddonsManagement";
+import AdminPromotions from "./pages/admin/AdminPromotions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,6 +86,8 @@ const App = () => (
                 <Route path="/admin/blog/authors" element={<AdminBlogAuthors />} />
                 <Route path="/admin/blog/categories" element={<AdminBlogCategories />} />
                 <Route path="/admin/newsletter" element={<AdminNewsletterSubscribers />} />
+                <Route path="/admin/addons" element={<AdminAddonsManagement />} />
+                <Route path="/admin/promotions" element={<AdminPromotions />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
