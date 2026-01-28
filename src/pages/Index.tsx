@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -10,7 +9,6 @@ import { ExperienceCard } from '@/components/experiences/ExperienceCard';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
 import { UrgencyBanner } from '@/components/booking/UrgencyBanner';
-import { PropertySelectorDialog } from '@/components/booking/PropertySelectorDialog';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useDestinations } from '@/hooks/useDestinations';
 import { useActiveExperiences } from '@/hooks/useExperiences';
@@ -20,7 +18,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
-  const [showPropertySelector, setShowPropertySelector] = useState(false);
   const { data: properties, isLoading: propertiesLoading } = useFeaturedProperties();
   const { data: destinations, isLoading: destinationsLoading } = useDestinations();
   const { data: experiences, isLoading: experiencesLoading } = useActiveExperiences();
@@ -37,12 +34,6 @@ const Index = () => {
 
   return (
     <PageLayout>
-      {/* Property Selector Dialog */}
-      <PropertySelectorDialog 
-        open={showPropertySelector} 
-        onOpenChange={setShowPropertySelector} 
-      />
-
       {/* Urgency Banner */}
       <UrgencyBanner variant="rotating" />
 
@@ -68,23 +59,6 @@ const Index = () => {
               Direct booking. Best rates. Instant confirmation.
             </p>
             
-            {/* Prominent Book Now Button */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4 }}
-              className="mt-6 mb-4"
-            >
-              <Button
-                size="lg"
-                onClick={() => setShowPropertySelector(true)}
-                className="h-14 px-10 text-lg rounded-full shadow-lg hover:shadow-xl transition-all gap-2"
-              >
-                Book Now
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </motion.div>
-
             {propertiesAvailable > 0 && (
               <motion.p 
                 initial={{ opacity: 0 }}
@@ -98,10 +72,25 @@ const Index = () => {
             )}
           </motion.div>
 
-          {/* Search Bar */}
+          {/* Search Bar - Primary Entry Point */}
           <div className="max-w-4xl mx-auto">
             <SearchBar variant="hero" />
           </div>
+
+          {/* Secondary Action */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="text-center mt-6"
+          >
+            <Link to="/properties">
+              <Button variant="outline" className="rounded-full gap-2">
+                View All Properties
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </motion.div>
 
           {/* Trust Badges below search */}
           <motion.div
@@ -412,21 +401,14 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/properties">
-                <Button
-                  size="lg"
-                  className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-8"
-                >
-                  Browse & Book Now
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button size="lg" variant="secondary" className="rounded-full gap-2 px-8">
+                  Browse Properties
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/contact">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full border-background/30 text-background hover:bg-background/10 px-8"
-                >
-                  Talk to Concierge
+                <Button size="lg" variant="outline" className="rounded-full px-8 border-background/30 text-background hover:bg-background/10">
+                  Contact Us
                 </Button>
               </Link>
             </div>
