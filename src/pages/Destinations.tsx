@@ -13,11 +13,11 @@ const Destinations = () => {
   const { data: destinations, isLoading } = useActiveDestinations();
   const { data: properties } = useProperties();
 
-  // Count properties per destination (by country matching)
-  const getPropertyCount = (country: string) => {
+  // Count properties per destination (by city/village matching)
+  const getPropertyCount = (destinationName: string) => {
     if (!properties) return 0;
     return properties.filter(p => 
-      p.country.toLowerCase() === country.toLowerCase()
+      p.city.toLowerCase() === destinationName.toLowerCase()
     ).length;
   };
 
@@ -78,7 +78,7 @@ const Destinations = () => {
                 <DestinationCard
                   key={destination.id}
                   destination={destination}
-                  propertyCount={getPropertyCount(destination.country)}
+                  propertyCount={getPropertyCount(destination.name)}
                   index={index}
                 />
               ))}

@@ -14,9 +14,9 @@ const DestinationDetail = () => {
   const { data: destination, isLoading } = useDestination(slug || '');
   const { data: allProperties } = useProperties();
 
-  // Filter properties for this destination (by country)
+  // Filter properties for this destination (by city/village name)
   const destinationProperties = allProperties?.filter(
-    p => destination && p.country.toLowerCase() === destination.country.toLowerCase()
+    p => destination && p.city.toLowerCase() === destination.name.toLowerCase()
   ) || [];
 
   if (isLoading) {
