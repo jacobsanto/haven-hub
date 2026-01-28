@@ -11,12 +11,14 @@ import { GuestForm } from '@/components/booking/GuestForm';
 import { PriceBreakdownDisplay } from '@/components/booking/PriceBreakdown';
 import { CouponInput } from '@/components/booking/CouponInput';
 import { PaymentOptions } from '@/components/booking/PaymentOptions';
+import { CancellationPolicyDisplay } from '@/components/booking/CancellationPolicyDisplay';
 import { useProperty } from '@/hooks/useProperties';
 import { useFeesTaxes, calculatePriceBreakdown } from '@/hooks/useBookingEngine';
 import { useCreateCheckoutHold, useReleaseCheckoutHold, generateSessionId } from '@/hooks/useCheckoutFlow';
 import { useCompleteBooking } from '@/hooks/useCompleteBooking';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { SelectedAddon, CouponPromo, BookingGuestWithCounts, PaymentType, PriceBreakdown } from '@/types/booking-engine';
+import { CancellationPolicyKey } from '@/lib/cancellation-policies';
 import { toast } from '@/hooks/use-toast';
 
 type CheckoutStep = 'dates' | 'addons' | 'guest' | 'payment';
@@ -415,8 +417,14 @@ export default function Checkout() {
               )}
 
               {/* Step: Payment */}
-              {currentStep === 'payment' && (
+              {currentStep === 'payment' && checkIn && (
                 <>
+                  {/* Cancellation Policy - shown before payment */}
+                  <CancellationPolicyDisplay
+                    policyKey="moderate"
+                    checkInDate={checkIn}
+                  />
+
                   <PaymentOptions
                     breakdown={priceBreakdown!}
                     depositPercentage={30}

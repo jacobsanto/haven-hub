@@ -7,6 +7,7 @@ import {
   PaymentType, 
   CouponPromo 
 } from '@/types/booking-engine';
+import { CancellationPolicyKey } from '@/lib/cancellation-policies';
 import { format, differenceInDays } from 'date-fns';
 
 // Generate a unique booking reference
@@ -57,6 +58,7 @@ export interface CompleteBookingParams {
   priceBreakdown: PriceBreakdown;
   appliedCoupon?: CouponPromo | null;
   paymentType: PaymentType;
+  cancellationPolicy?: CancellationPolicyKey;
   holdId?: string;
   sessionId: string;
 }
@@ -88,6 +90,7 @@ export function useCompleteBooking() {
         priceBreakdown,
         appliedCoupon,
         paymentType,
+        cancellationPolicy = 'moderate',
         holdId,
       } = params;
 
@@ -118,6 +121,7 @@ export function useCompleteBooking() {
           source: 'direct',
           payment_status: paymentType === 'deposit' ? 'partial' : 'unpaid',
           special_requests: guestInfo.specialRequests || null,
+          cancellation_policy: cancellationPolicy,
           pms_sync_status: 'pending',
         })
         .select()
