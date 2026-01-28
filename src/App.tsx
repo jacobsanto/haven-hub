@@ -42,6 +42,7 @@ import AdminAddonsManagement from "./pages/admin/AdminAddonsManagement";
 import AdminPromotions from "./pages/admin/AdminPromotions";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminPMSHealth from "./pages/admin/AdminPMSHealth";
+import AdminFees from "./pages/admin/AdminFees";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +93,7 @@ const App = () => (
                 <Route path="/admin/promotions" element={<AdminPromotions />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/pms" element={<AdminPMSHealth />} />
+                <Route path="/admin/fees" element={<AdminFees />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
