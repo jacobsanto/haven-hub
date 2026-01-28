@@ -1,1 +1,13 @@
 project_id = "xavjbiuhcmupsoocrmhf"
+
+[functions.advancecm-sync]
+verify_jwt = false
+
+[functions.pms-sync-cron]
+verify_jwt = false
+
+[functions.pms-webhook]
+verify_jwt = false
+
+[functions.seasonal-rates-import]
+verify_jwt = false
