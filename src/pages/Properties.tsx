@@ -232,39 +232,10 @@ export default function Properties() {
         </div>
 
         <div className="container mx-auto px-4 py-12">
-          <div className="flex gap-8">
-            {/* Desktop Filters Sidebar */}
-            <aside className="hidden lg:block w-72 flex-shrink-0">
-              <div className="sticky top-24 card-organic p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="font-serif text-xl font-medium">Filters</h2>
-                  {hasActiveFilters && (
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>
-                      Clear
-                    </Button>
-                  )}
-                </div>
-                <FilterContent />
-              </div>
-            </aside>
-
-            {/* Mobile Filter Button */}
+          <div>
+            {/* Filter Sheet */}
             <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-full shadow-lg gap-2"
-                >
-                  <Filter className="h-4 w-4" />
-                  Filters
-                  {activeFilterCount > 0 && (
-                    <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-80">
+              <SheetContent side="left" className="w-80 overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle className="font-serif">Filters</SheetTitle>
                 </SheetHeader>
@@ -272,11 +243,8 @@ export default function Properties() {
                   <FilterContent />
                 </div>
               </SheetContent>
-            </Sheet>
 
-            {/* Properties Grid */}
-            <div className="flex-1">
-              {/* Results Count & View Toggle */}
+              {/* Toolbar: Results Count, Filters Button, View Toggle */}
               <div className="flex items-center justify-between mb-6">
                 <p className="text-muted-foreground">
                   {isLoading
@@ -284,11 +252,26 @@ export default function Properties() {
                     : `${properties?.length || 0} properties found`}
                 </p>
                 <div className="flex items-center gap-2">
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Filter className="h-4 w-4" />
+                      Filters
+                      {activeFilterCount > 0 && (
+                        <span className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </Button>
+                  </SheetTrigger>
                   <Button
                     variant={viewMode === 'grid' ? 'default' : 'outline'}
                     size="icon"
                     onClick={() => setViewMode('grid')}
                     className="rounded-full"
+                    aria-label="Grid view"
                   >
                     <LayoutGrid className="h-4 w-4" />
                   </Button>
@@ -297,56 +280,58 @@ export default function Properties() {
                     size="icon"
                     onClick={() => setViewMode('map')}
                     className="rounded-full"
+                    aria-label="Map view"
                   >
                     <Map className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
+            </Sheet>
 
-              {viewMode === 'grid' ? (
-                <>
-                  {isLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {[...Array(6)].map((_, i) => (
-                        <div key={i} className="card-organic animate-pulse">
-                          <div className="aspect-[4/3] bg-muted rounded-t-2xl" />
-                          <div className="p-5 space-y-3">
-                            <div className="h-6 bg-muted rounded w-3/4" />
-                            <div className="h-4 bg-muted rounded w-1/2" />
-                          </div>
+            {/* Properties Grid */}
+            {viewMode === 'grid' ? (
+              <>
+                {isLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {[...Array(8)].map((_, i) => (
+                      <div key={i} className="card-organic animate-pulse">
+                        <div className="aspect-[4/3] bg-muted rounded-t-2xl" />
+                        <div className="p-5 space-y-3">
+                          <div className="h-6 bg-muted rounded w-3/4" />
+                          <div className="h-4 bg-muted rounded w-1/2" />
                         </div>
-                      ))}
-                    </div>
-                  ) : properties && properties.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {properties.map((property, index) => (
-                        <QuickBookCard key={property.id} property={property} index={index} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-16 card-organic">
-                      <p className="text-muted-foreground text-lg mb-4">
-                        No properties match your criteria
-                      </p>
-                      <Button variant="outline" onClick={clearFilters}>
-                        Clear Filters
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="card-organic p-8 text-center">
-                  <Map className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="font-serif text-xl font-medium mb-2">Map View Coming Soon</h3>
-                  <p className="text-muted-foreground">
-                    Interactive map view with property pins is in development.
-                  </p>
-                </div>
-              )}
+                      </div>
+                    ))}
+                  </div>
+                ) : properties && properties.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {properties.map((property, index) => (
+                      <QuickBookCard key={property.id} property={property} index={index} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 card-organic">
+                    <p className="text-muted-foreground text-lg mb-4">
+                      No properties match your criteria
+                    </p>
+                    <Button variant="outline" onClick={clearFilters}>
+                      Clear Filters
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="card-organic p-8 text-center">
+                <Map className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="font-serif text-xl font-medium mb-2">Map View Coming Soon</h3>
+                <p className="text-muted-foreground">
+                  Interactive map view with property pins is in development.
+                </p>
+              </div>
+            )}
 
-              {/* Recently Viewed Section */}
-              <RecentlyViewedWidget variant="inline" className="mt-12" />
-            </div>
+            {/* Recently Viewed Section */}
+            <RecentlyViewedWidget variant="inline" className="mt-12" />
           </div>
         </div>
       </div>
