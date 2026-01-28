@@ -1,99 +1,80 @@
 
 
-# Restructure Destinations to Santorini Villages
+## Sheet-Only Filters Implementation Plan
 
-## Current State
+This plan converts the Properties page filters from a dual-mode (sidebar + mobile sheet) to a unified Sheet-only approach for all screen sizes.
 
-- **1 destination**: "Santorini" (island-level)
-- **Properties** have `city` field with village names: Oia, Fira, Thira, Imerovigli, Megalochori, Emporio, Vothonas, Perissa, Mesaria
-- **Linking**: Currently matches `property.country` to `destination.country` (too broad)
+---
 
-## Goal
+### What Changes
 
-Destinations = Santorini villages (Oia, Fira, Imerovigli, etc.) so guests can browse properties by specific village
+**Before:**
+- Desktop (lg+): Fixed 72px sidebar always visible on the left
+- Mobile: Floating "Filters" button at bottom, opens Sheet drawer
 
-## Implementation Plan
+**After:**
+- All screens: "Filters" button in the toolbar area, opens Sheet drawer
+- Property grid gets full width on all devices
+- Consistent user experience across desktop, tablet, and mobile
 
-### Step 1: Create Village Destinations
+---
 
-Create new destination records for each Santorini village where you have properties:
+### Implementation Steps
 
-| Village | Slug | Description |
-|---------|------|-------------|
-| Oia | oia | Famous for sunsets, blue domes, luxury boutiques |
-| Fira | fira | Island capital, vibrant nightlife, caldera views |
-| Imerovigli | imerovigli | "Balcony of the Aegean", quietest caldera village |
-| Megalochori | megalochori | Traditional wine village, authentic Cycladic charm |
-| Emporio | emporio | Medieval fortress village, local atmosphere |
-| Vothonas | vothonas | Cave houses, peaceful countryside setting |
-| Perissa | perissa | Black sand beach, family-friendly |
-| Mesaria | mesaria | Central location, traditional wineries |
-| Thira | thira | Historic center, walking distance to Fira |
+#### Step 1: Remove Desktop Sidebar
+Remove the entire `<aside>` block (currently lines 236-249) that renders the desktop filter sidebar.
 
-Each destination will have:
-- `name`: Village name
-- `slug`: URL-friendly name
-- `country`: "Greece"
-- `description`: Short village description
-- `is_featured`: true for main villages (Oia, Fira, Imerovigli)
-- `status`: "active"
+#### Step 2: Update Layout Structure  
+Change the main content wrapper from `flex gap-8` to a simpler single-column layout since there's no sidebar anymore.
 
-### Step 2: Update Property-Destination Linking Logic
+#### Step 3: Move Filter Button to Toolbar
+Relocate the Sheet trigger button from the fixed bottom position to the toolbar row (next to the results count and view toggle buttons). This creates a cleaner, more accessible placement.
 
-Modify how properties connect to destinations:
+#### Step 4: Update Filter Button Styling
+- Remove `lg:hidden` class so it shows on all screens
+- Remove `fixed bottom-4 left-1/2 -translate-x-1/2` positioning
+- Style as a regular toolbar button with the Filter icon and active count badge
 
-**Option A (Recommended)**: Use the existing `destination_id` foreign key
-- Update each property's `destination_id` to link to its village destination
-- Most reliable approach, proper relational data
+#### Step 5: Adjust Grid Columns
+With no sidebar taking space, the property grid can use more columns on larger screens:
+- Current: `grid-cols-1 md:grid-cols-2 xl:grid-cols-3`
+- New: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`
 
-**Option B**: Match by city name
-- Update `DestinationCard`, `Destinations.tsx`, and `DestinationDetail.tsx` to match `property.city` to `destination.name`
-- Faster to implement but less structured
+---
 
-### Step 3: Files to Modify
+### Technical Details
 
-| File | Change |
-|------|--------|
-| `src/pages/Destinations.tsx` | Update `getPropertyCount()` to filter by city or destination_id |
-| `src/pages/DestinationDetail.tsx` | Update `destinationProperties` filter to use city or destination_id |
-| `src/components/destinations/DestinationCard.tsx` | No changes needed (receives count as prop) |
+**File to modify:** `src/pages/Properties.tsx`
 
-### Step 4: Delete or Archive Old Destination
+**Key changes:**
 
-Remove or set to "draft" the old "Santorini" island-level destination after village destinations are created
+```text
+1. DELETE lines 236-249 (desktop sidebar aside element)
 
-## Data Changes Required
+2. MODIFY line 235: Change wrapper from flex layout
+   FROM: <div className="flex gap-8">
+   TO:   <div>
 
-1. **Insert** 9 new village destinations into `destinations` table
-2. **Update** each property's `destination_id` to match its village (or update linking logic)
-3. **Delete** or set `status='draft'` on the old "Santorini" destination
+3. MODIFY lines 252-265: Move SheetTrigger into toolbar row
+   - Remove: lg:hidden, fixed positioning classes
+   - Add: Standard button styling in toolbar
 
-## Technical Details
-
-### Updated getPropertyCount in Destinations.tsx
-
-```typescript
-// Match by city (village name) instead of country
-const getPropertyCount = (destinationName: string) => {
-  if (!properties) return 0;
-  return properties.filter(p => 
-    p.city.toLowerCase() === destinationName.toLowerCase()
-  ).length;
-};
+4. MODIFY property grid classes (lines 309, 321):
+   FROM: grid-cols-1 md:grid-cols-2 xl:grid-cols-3
+   TO:   grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
 ```
 
-### Updated filter in DestinationDetail.tsx
-
-```typescript
-// Filter properties for this destination (by city/village)
-const destinationProperties = allProperties?.filter(
-  p => destination && p.city.toLowerCase() === destination.name.toLowerCase()
-) || [];
+**New toolbar layout structure:**
+```
+[Results count] -------- [Filters button] [Grid/Map toggle]
 ```
 
-## Expected Result
+---
 
-- Homepage and Destinations page will show village cards: Oia (2 properties), Fira (4 properties), etc.
-- Clicking a village shows only properties in that village
-- Guests can browse by specific Santorini location
+### Benefits
+
+1. **More property visibility**: Full-width grid shows 4 columns on XL screens instead of 3
+2. **Consistent UX**: Same interaction pattern on all devices
+3. **Cleaner interface**: No permanent sidebar taking horizontal space
+4. **Better for browsing**: Users can focus on properties, opening filters only when needed
 
