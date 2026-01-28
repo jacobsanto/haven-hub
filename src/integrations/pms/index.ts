@@ -1,23 +1,23 @@
 // PMS Integration Entry Point
-// Currently uses MockPMSAdapter, will switch to TokeetAdvanceCMAdapter when credentials are configured
+// Uses AdvanceCMAdapter when credentials are configured, falls back to MockPMSAdapter
 
 import { PMSAdapter } from './types';
 import { MockPMSAdapter } from './mock-adapter';
+import { AdvanceCMAdapter } from './advancecm-adapter';
 
 export * from './types';
+export { AdvanceCMAdapter } from './advancecm-adapter';
 
 // Factory function to get the appropriate PMS adapter
-// In production, this would check for Tokeet credentials and return the real adapter
-export function getPMSAdapter(): PMSAdapter {
-  // TODO: Check for Tokeet credentials in environment
-  // const tokeetApiKey = process.env.TOKEET_API_KEY;
-  // if (tokeetApiKey) {
-  //   return new TokeetAdvanceCMAdapter(tokeetApiKey);
-  // }
-  
-  // Fall back to mock adapter for development
+// Returns AdvanceCMAdapter when Tokeet credentials are available
+export function getPMSAdapter(useReal: boolean = false): PMSAdapter {
+  if (useReal) {
+    return new AdvanceCMAdapter();
+  }
+  // Fall back to mock adapter for development/testing
   return new MockPMSAdapter();
 }
 
-// Export a default adapter instance
-export const pmsAdapter = getPMSAdapter();
+// Export a default adapter instance (mock for backward compatibility)
+// Use AdvanceCMAdapter directly for real API calls
+export const pmsAdapter = getPMSAdapter(false);
