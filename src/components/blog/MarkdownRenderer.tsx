@@ -2,11 +2,13 @@ import { useMemo } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { InlineImage as InlineImageType } from '@/types/blog';
+import { ArticleStyle } from '@/types/article-styles';
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
   inlineImages?: InlineImageType[];
+  style?: ArticleStyle;
 }
 
 // Configure marked options
@@ -134,10 +136,13 @@ renderer.image = ({ href, title, text }) => {
 
 marked.use({ renderer });
 
-export function MarkdownRenderer({ content, className = '', inlineImages = [] }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className = '', inlineImages = [], style = 'destination-guide' }: MarkdownRendererProps) {
   const htmlContent = useMemo(() => {
     if (!content) return '';
     
+    const isDestinationGuide = style === 'destination-guide';
+    const isLifestyle = style === 'lifestyle';
+    const isTravelTips = style === 'travel-tips';
     let rawHtml = marked.parse(content) as string;
     
     // Process pull quotes
@@ -210,20 +215,45 @@ export function MarkdownRenderer({ content, className = '', inlineImages = [] }:
       </div>`
     );
     
-    // Add drop cap to first paragraph
-    rawHtml = rawHtml.replace(
-      /<p class="text-muted-foreground leading-relaxed mb-8">([\s\S]*?)<\/p>/,
-      (match, content) => {
-        const firstChar = content.trim().charAt(0);
-        const rest = content.trim().slice(1);
-        return `<p class="text-muted-foreground leading-relaxed mb-8">
-          <span class="float-left text-6xl md:text-7xl font-serif text-primary mr-3 mt-1 leading-none">${firstChar}</span>${rest}
-        </p>`;
-      }
-    );
+    // Add drop cap to first paragraph - only for destination guides
+    if (isDestinationGuide) {
+      rawHtml = rawHtml.replace(
+        /<p class="text-muted-foreground leading-relaxed mb-8">([\s\S]*?)<\/p>/,
+        (match, content) => {
+          const firstChar = content.trim().charAt(0);
+          const rest = content.trim().slice(1);
+          return `<p class="text-muted-foreground leading-relaxed mb-8">
+            <span class="float-left text-6xl md:text-7xl font-serif text-primary mr-3 mt-1 leading-none">${firstChar}</span>${rest}
+          </p>`;
+        }
+      );
+    }
+    
+    // Travel tips: style H2s as numbered sections
+    if (isTravelTips) {
+      let sectionNumber = 0;
+      rawHtml = rawHtml.replace(
+        /<h2([^>]*)class="([^"]*)"([^>]*)>([^<]*)<\/h2>/g,
+        (match, before, classes, after, text) => {
+          sectionNumber++;
+          return `<div class="relative mt-12 mb-6">
+            <span class="absolute -left-2 md:-left-12 top-0 text-4xl md:text-5xl font-bold text-primary/20">${sectionNumber.toString().padStart(2, '0')}</span>
+            <h2${before}class="${classes}"${after}>${text}</h2>
+          </div>`;
+        }
+      );
+    }
+    
+    // Lifestyle: clean minimal dividers
+    if (isLifestyle) {
+      rawHtml = rawHtml.replace(
+        /<div class="my-14 md:my-20 flex items-center justify-center gap-4">[\s\S]*?<\/div>/g,
+        `<div class="my-12 md:my-16 border-t border-border/50"></div>`
+      );
+    }
     
     return DOMPurify.sanitize(rawHtml);
-  }, [content]);
+  }, [content, style]);
 
   return (
     <div
