@@ -1,18 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { 
   Activity, 
   CheckCircle, 
   XCircle, 
-  AlertTriangle,
   RefreshCw,
   Link as LinkIcon,
-  Server,
   Clock,
-  ArrowRight,
-  Download,
-  Settings
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,24 +40,12 @@ import {
   useTriggerManualSync,
   useTogglePropertySync,
   useSyncPropertyNow,
-  type PMSRawEvent,
 } from '@/hooks/useAdminPMSHealth';
 import { PMSConfigDialog } from '@/components/admin/PMSConfigDialog';
 import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDialog';
-
-const getStatusIcon = (status: string | null) => {
-  switch (status) {
-    case 'success':
-      return <CheckCircle className="h-5 w-5 text-green-600" />;
-    case 'error':
-    case 'failed':
-      return <XCircle className="h-5 w-5 text-red-600" />;
-    case 'running':
-      return <RefreshCw className="h-5 w-5 text-blue-600 animate-spin" />;
-    default:
-      return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
-  }
-};
+import { PMSConnectionHealthCard } from '@/components/admin/PMSConnectionHealthCard';
+import { PMSSyncStatusPanel } from '@/components/admin/PMSSyncStatusPanel';
+import { getProviderById } from '@/lib/pms-providers';
 
 const getStatusBadge = (status: string | null) => {
   switch (status) {
@@ -82,7 +65,6 @@ const getStatusBadge = (status: string | null) => {
 
 export default function AdminPMSHealth() {
   const { toast } = useToast();
-  const [selectedEvent, setSelectedEvent] = useState<PMSRawEvent | null>(null);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
 
@@ -97,6 +79,11 @@ export default function AdminPMSHealth() {
   const triggerSync = useTriggerManualSync();
   const togglePropertySync = useTogglePropertySync();
   const syncPropertyNow = useSyncPropertyNow();
+
+  // Get provider config from connection
+  const connectionConfig = connection?.config as { provider?: string } | null;
+  const currentProviderId = connectionConfig?.provider || 'advancecm';
+  const currentProvider = getProviderById(currentProviderId);
 
   const handleTestConnection = async () => {
     try {
@@ -183,143 +170,47 @@ export default function AdminPMSHealth() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">PMS Health</h1>
-            <p className="text-muted-foreground">
-              Monitor property management system synchronization
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowConfigDialog(true)}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Configure
-            </Button>
-            {connection && (
-              <Button 
-                variant="outline" 
-                onClick={() => setShowImportDialog(true)}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Import Properties
-              </Button>
-            )}
-            <Button 
-              variant="outline" 
-              onClick={handleTestConnection}
-              disabled={testConnection.isPending}
-            >
-              {testConnection.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <LinkIcon className="h-4 w-4 mr-2" />
-              )}
-              Test Connection
-            </Button>
-            <Button 
-              onClick={handleManualSync}
-              disabled={triggerSync.isPending || !connection}
-            >
-              {triggerSync.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Sync Now
-            </Button>
-          </div>
+          <h1 className="text-3xl font-bold tracking-tight">PMS Health</h1>
+          <p className="text-muted-foreground">
+            Monitor and configure property management system integration
+          </p>
         </motion.div>
 
-        {/* Connection Status Card */}
+        {/* Connection Health Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Server className="h-5 w-5" />
-                Connection Status
-              </CardTitle>
-              <CardDescription>Current PMS connection and sync status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {connectionLoading ? (
-                <div className="grid gap-4 md:grid-cols-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-20" />
-                  ))}
-                </div>
-              ) : connection ? (
-                <div className="grid gap-4 md:grid-cols-4">
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                      connection.is_active ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
-                    }`}>
-                      {connection.is_active ? (
-                        <CheckCircle className="h-6 w-6 text-green-600" />
-                      ) : (
-                        <XCircle className="h-6 w-6 text-red-600" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Status</p>
-                      <p className="font-semibold">{connection.is_active ? 'Connected' : 'Disconnected'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Activity className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">PMS Provider</p>
-                      <p className="font-semibold">{connection.pms_name}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                      {getStatusIcon(connection.sync_status)}
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Sync Status</p>
-                      <p className="font-semibold capitalize">{connection.sync_status || 'Unknown'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                      <Clock className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Last Sync</p>
-                      <p className="font-semibold">
-                        {connection.last_sync_at 
-                          ? formatDistanceToNow(new Date(connection.last_sync_at), { addSuffix: true })
-                          : 'Never'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Server className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No PMS Connected</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Connect to AdvanceCM (Tokeet) to sync properties and availability.
-                  </p>
-                  <Button onClick={() => setShowConfigDialog(true)}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configure AdvanceCM
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <PMSConnectionHealthCard
+            connection={connection || null}
+            isLoading={connectionLoading}
+            onConfigure={() => setShowConfigDialog(true)}
+            onTestConnection={handleTestConnection}
+            onSyncNow={handleManualSync}
+            onImportProperties={() => setShowImportDialog(true)}
+            isTestingConnection={testConnection.isPending}
+            isSyncing={triggerSync.isPending}
+            propertyMappingsCount={propertyMappings?.length}
+          />
         </motion.div>
+
+        {/* Sync Status Panel */}
+        {currentProvider && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <PMSSyncStatusPanel
+              provider={currentProvider}
+              isConnected={!!connection?.is_active}
+              lastSyncAt={connection?.last_sync_at}
+              propertyCount={propertyMappings?.length}
+            />
+          </motion.div>
+        )}
 
         {/* Tabs for different views */}
         <motion.div
@@ -405,7 +296,7 @@ export default function AdminPMSHealth() {
                     <div className="text-center py-8 text-muted-foreground">
                       <LinkIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>No property mappings configured.</p>
-                      <p className="text-sm">Properties will be mapped automatically during sync.</p>
+                      <p className="text-sm">Import properties from your PMS to create mappings.</p>
                     </div>
                   )}
                 </CardContent>
@@ -463,7 +354,7 @@ export default function AdminPMSHealth() {
                               <TableCell>{run.records_processed ?? '-'}</TableCell>
                               <TableCell>
                                 {run.records_failed !== null && run.records_failed > 0 ? (
-                                  <span className="text-red-600">{run.records_failed}</span>
+                                  <span className="text-destructive">{run.records_failed}</span>
                                 ) : (
                                   run.records_failed ?? '-'
                                 )}
@@ -513,7 +404,7 @@ export default function AdminPMSHealth() {
                                 {event.processed ? (
                                   <CheckCircle className="h-4 w-4 text-green-600" />
                                 ) : event.error_message ? (
-                                  <XCircle className="h-4 w-4 text-red-600" />
+                                  <XCircle className="h-4 w-4 text-destructive" />
                                 ) : (
                                   <Clock className="h-4 w-4 text-yellow-600" />
                                 )}
@@ -536,8 +427,8 @@ export default function AdminPMSHealth() {
                           <AccordionContent>
                             <div className="space-y-4 pt-2">
                               {event.error_message && (
-                                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                                  <p className="text-sm text-red-800 dark:text-red-200">
+                                <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                                  <p className="text-sm text-destructive">
                                     <strong>Error:</strong> {event.error_message}
                                   </p>
                                 </div>
@@ -570,85 +461,13 @@ export default function AdminPMSHealth() {
             </TabsContent>
           </Tabs>
         </motion.div>
-
-        {/* Two-Way Sync Status */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowRight className="h-5 w-5" />
-                Bidirectional Sync Status
-              </CardTitle>
-              <CardDescription>
-                Real-time sync between your booking engine and the PMS
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="p-4 rounded-lg border">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <ArrowRight className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">Pull from PMS</h4>
-                      <p className="text-sm text-muted-foreground">Availability, rates, fees</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Availability</span>
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Active</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Rates</span>
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Active</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fees & Taxes</span>
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Active</Badge>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 rounded-lg border">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                      <ArrowRight className="h-5 w-5 text-purple-600 rotate-180" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">Push to PMS</h4>
-                      <p className="text-sm text-muted-foreground">Bookings, cancellations</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">New Bookings</span>
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Active</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Cancellations</span>
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Active</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Modifications</span>
-                      <Badge variant="secondary">Coming Soon</Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       </div>
 
       {/* Dialogs */}
       <PMSConfigDialog
         open={showConfigDialog}
         onOpenChange={setShowConfigDialog}
+        currentProvider={currentProviderId}
         onConnectionEstablished={() => {
           // Refetch connection data
           window.location.reload();
