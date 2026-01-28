@@ -1,36 +1,61 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Booking, BookingFormData, BookingStatus } from '@/types/database';
+import { Booking, BookingFormData, BookingStatus, BookingWithProperty } from '@/types/database';
 import { differenceInDays } from 'date-fns';
+
+// Generate a unique booking reference
+function generateBookingReference(): string {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `BK-${year}${month}-${random}`;
+}
 
 // Create a new booking
 export function useCreateBooking() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (formData: BookingFormData & { basePrice: number }) => {
+    mutationFn: async (formData: BookingFormData & { 
+      basePrice: number;
+      adults?: number;
+      children?: number;
+      guestCountry?: string;
+      specialRequests?: string;
+    }) => {
       const nights = differenceInDays(formData.checkOut, formData.checkIn);
       const totalPrice = nights * formData.basePrice;
+      const adults = formData.adults ?? formData.guests;
+      const children = formData.children ?? 0;
 
       const { data, error } = await supabase
         .from('bookings')
         .insert({
           property_id: formData.propertyId,
+          booking_reference: generateBookingReference(),
           guest_name: formData.guestName,
           guest_email: formData.guestEmail,
           guest_phone: formData.guestPhone || null,
+          guest_country: formData.guestCountry || null,
           check_in: formData.checkIn.toISOString().split('T')[0],
           check_out: formData.checkOut.toISOString().split('T')[0],
           nights,
           guests: formData.guests,
+          adults,
+          children,
           total_price: totalPrice,
           status: 'pending',
+          source: 'direct',
+          payment_status: 'unpaid',
+          special_requests: formData.specialRequests || null,
+          pms_sync_status: 'pending',
         })
         .select()
         .single();
 
       if (error) throw error;
-      return data as Booking;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
@@ -75,7 +100,7 @@ export function useAdminBookings(filters?: {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as (Booking & { property: { id: string; name: string; slug: string; hero_image_url: string | null } })[];
+      return data as BookingWithProperty[];
     },
   });
 }

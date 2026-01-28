@@ -5,15 +5,21 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { BookingGuest } from '@/types/booking-engine';
+import { COUNTRIES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+import { Minus, Plus, Users } from 'lucide-react';
 
 const guestFormSchema = z.object({
   firstName: z.string().min(2, 'First name is required'),
   lastName: z.string().min(2, 'Last name is required'),
   email: z.string().email('Valid email is required'),
   phone: z.string().optional(),
-  country: z.string().optional(),
+  country: z.string().min(1, 'Please select a country'),
+  adults: z.number().min(1, 'At least 1 adult required'),
+  children: z.number().min(0),
   specialRequests: z.string().optional(),
   marketingConsent: z.boolean().default(false),
   termsAccepted: z.boolean().refine(val => val === true, {
@@ -24,10 +30,17 @@ const guestFormSchema = z.object({
 type GuestFormValues = z.infer<typeof guestFormSchema>;
 
 interface GuestFormProps {
-  onSubmit: (data: BookingGuest & { marketingConsent: boolean; termsAccepted: boolean }) => void;
+  onSubmit: (data: BookingGuest & { 
+    marketingConsent: boolean; 
+    termsAccepted: boolean;
+    adults: number;
+    children: number;
+  }) => void;
   defaultValues?: Partial<GuestFormValues>;
   isLoading?: boolean;
   className?: string;
+  maxGuests?: number;
+  initialGuests?: number;
 }
 
 export function GuestForm({
@@ -35,6 +48,8 @@ export function GuestForm({
   defaultValues,
   isLoading,
   className,
+  maxGuests = 10,
+  initialGuests = 2,
 }: GuestFormProps) {
   const form = useForm<GuestFormValues>({
     resolver: zodResolver(guestFormSchema),
@@ -44,12 +59,18 @@ export function GuestForm({
       email: '',
       phone: '',
       country: '',
+      adults: defaultValues?.adults ?? Math.min(initialGuests, maxGuests),
+      children: defaultValues?.children ?? 0,
       specialRequests: '',
       marketingConsent: false,
       termsAccepted: false,
       ...defaultValues,
     },
   });
+
+  const adults = form.watch('adults');
+  const children = form.watch('children');
+  const totalGuests = adults + children;
 
   const handleSubmit = (values: GuestFormValues) => {
     onSubmit({
@@ -61,12 +82,14 @@ export function GuestForm({
       specialRequests: values.specialRequests,
       marketingConsent: values.marketingConsent,
       termsAccepted: values.termsAccepted,
+      adults: values.adults,
+      children: values.children,
     });
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className={cn('space-y-6', className)}>
+      <form id="guest-form" onSubmit={form.handleSubmit(handleSubmit)} className={cn('space-y-6', className)}>
         <div className="bg-card rounded-xl border p-6">
           <h3 className="font-serif text-lg font-medium mb-4">Guest Information</h3>
           
@@ -136,20 +159,129 @@ export function GuestForm({
             name="country"
             render={({ field }) => (
               <FormItem className="mt-4">
-                <FormLabel>Country</FormLabel>
-                <FormControl>
-                  <Input placeholder="Greece" {...field} />
-                </FormControl>
+                <FormLabel>Country *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your country" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {COUNTRIES.map((country) => (
+                      <SelectItem key={country} value={country}>
+                        {country}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </div>
 
+        {/* Guest Count Breakdown */}
+        <div className="bg-card rounded-xl border p-6">
+          <h3 className="font-serif text-lg font-medium mb-4">Guest Breakdown</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Maximum {maxGuests} guests allowed
+          </p>
+          
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="adults"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <FormLabel className="text-base">Adults</FormLabel>
+                      <p className="text-sm text-muted-foreground">Age 13+</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => field.onChange(Math.max(1, field.value - 1))}
+                        disabled={field.value <= 1}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-8 text-center font-medium">{field.value}</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => field.onChange(Math.min(maxGuests - children, field.value + 1))}
+                        disabled={totalGuests >= maxGuests}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="children"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <FormLabel className="text-base">Children</FormLabel>
+                      <p className="text-sm text-muted-foreground">Age 0-12</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => field.onChange(Math.max(0, field.value - 1))}
+                        disabled={field.value <= 0}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-8 text-center font-medium">{field.value}</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => field.onChange(Math.min(maxGuests - adults, field.value + 1))}
+                        disabled={totalGuests >= maxGuests}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex items-center gap-2 pt-2 border-t">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">
+                Total: <strong>{totalGuests}</strong> guest{totalGuests !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Special Requests */}
+        <div className="bg-card rounded-xl border p-6">
           <FormField
             control={form.control}
             name="specialRequests"
             render={({ field }) => (
-              <FormItem className="mt-4">
+              <FormItem>
                 <FormLabel>Special Requests</FormLabel>
                 <FormControl>
                   <Textarea 
@@ -167,6 +299,7 @@ export function GuestForm({
           />
         </div>
 
+        {/* Preferences & Terms */}
         <div className="bg-card rounded-xl border p-6 space-y-4">
           <h3 className="font-serif text-lg font-medium">Preferences & Terms</h3>
 

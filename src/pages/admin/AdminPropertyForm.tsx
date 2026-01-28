@@ -60,7 +60,6 @@ export default function AdminPropertyForm() {
     base_price: 0,
     max_guests: 1,
     status: 'draft' as PropertyStatus,
-    // New fields
     destination_id: null as string | null,
     video_url: null as string | null,
     virtual_tour_url: null as string | null,
@@ -75,6 +74,10 @@ export default function AdminPropertyForm() {
     bedrooms: 1,
     bathrooms: 1,
     property_type: 'villa' as PropertyType,
+    // Timing/timezone fields
+    timezone: 'Europe/Athens',
+    check_in_time: '14:00',
+    check_out_time: '11:00',
   });
 
   const [uploading, setUploading] = useState(false);
@@ -94,7 +97,6 @@ export default function AdminPropertyForm() {
         base_price: existingProperty.base_price,
         max_guests: existingProperty.max_guests,
         status: existingProperty.status,
-        // New fields
         destination_id: existingProperty.destination_id || null,
         video_url: existingProperty.video_url || null,
         virtual_tour_url: existingProperty.virtual_tour_url || null,
@@ -109,6 +111,9 @@ export default function AdminPropertyForm() {
         bedrooms: existingProperty.bedrooms || 1,
         bathrooms: existingProperty.bathrooms || 1,
         property_type: existingProperty.property_type || 'villa',
+        timezone: existingProperty.timezone || 'Europe/Athens',
+        check_in_time: existingProperty.check_in_time || '14:00',
+        check_out_time: existingProperty.check_out_time || '11:00',
       });
     }
   }, [existingProperty]);

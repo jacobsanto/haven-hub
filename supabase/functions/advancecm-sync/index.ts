@@ -67,13 +67,37 @@ interface SyncRequest {
     | "fetch-availability"
     | "fetch-rates"
     | "sync-rates"
-    | "import-property";
+    | "sync-availability"
+    | "import-property"
+    | "create-booking"
+    | "cancel-booking";
   externalId?: string;
   startDate?: string;
   endDate?: string;
   propertyData?: TokeetRental;
   connectionId?: string;
   propertyId?: string;
+  // For create-booking
+  externalPropertyId?: string;
+  bookingReference?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
+  adults?: number;
+  children?: number;
+  guestInfo?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    country?: string;
+  };
+  totalPrice?: number;
+  currency?: string;
+  priceBreakdownNotes?: string;
+  // For cancel-booking
+  externalBookingId?: string;
+  cancellationReason?: string;
 }
 
 // Country code to full name mapping
@@ -611,6 +635,96 @@ Deno.serve(async (req) => {
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
+        );
+      }
+
+      case "create-booking": {
+        const { externalPropertyId, bookingReference, checkIn, checkOut, guests, adults, children, guestInfo, totalPrice, currency, priceBreakdownNotes } = body;
+        
+        if (!externalPropertyId || !checkIn || !checkOut || !guestInfo) {
+          throw new Error("Missing required booking fields");
+        }
+
+        // Create guest in Tokeet
+        const guestPayload = {
+          name: `${guestInfo.firstName} ${guestInfo.lastName}`,
+          email: guestInfo.email,
+          phone: guestInfo.phone || "",
+          country: guestInfo.country || "",
+        };
+
+        await fetch(`https://capi.tokeet.com/v1/guest?account=${accountId}`, {
+          method: "POST",
+          headers: { Authorization: apiKey, "Content-Type": "application/json" },
+          body: JSON.stringify(guestPayload),
+        });
+
+        // Create booking/inquiry in Tokeet
+        const bookingPayload = {
+          rental_id: externalPropertyId,
+          check_in: checkIn,
+          check_out: checkOut,
+          num_guests: guests || (adults || 1) + (children || 0),
+          num_adults: adults || 1,
+          num_child: children || 0,
+          price: totalPrice || 0,
+          currency: currency || "EUR",
+          source: "Direct Website",
+          status: "booked",
+          confirmation_code: bookingReference,
+          guest: guestPayload,
+          notes: priceBreakdownNotes || "",
+        };
+
+        const bookingResponse = await fetch(`https://capi.tokeet.com/v1/inquiry?account=${accountId}`, {
+          method: "POST",
+          headers: { Authorization: apiKey, "Content-Type": "application/json" },
+          body: JSON.stringify(bookingPayload),
+        });
+
+        if (!bookingResponse.ok) {
+          const errorText = await bookingResponse.text();
+          throw new Error(`Failed to create booking in PMS: ${errorText}`);
+        }
+
+        const bookingData = await bookingResponse.json();
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            externalBookingId: bookingData.pkey || bookingData.id,
+            message: "Booking pushed to PMS successfully",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      case "cancel-booking": {
+        const { externalBookingId, cancellationReason } = body;
+        
+        if (!externalBookingId) {
+          throw new Error("externalBookingId is required");
+        }
+
+        const cancelResponse = await fetch(
+          `https://capi.tokeet.com/v1/inquiry/${externalBookingId}?account=${accountId}`,
+          {
+            method: "PUT",
+            headers: { Authorization: apiKey, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: "cancelled",
+              notes: cancellationReason ? `Cancelled: ${cancellationReason}` : "Cancelled via direct booking system",
+            }),
+          }
+        );
+
+        if (!cancelResponse.ok) {
+          throw new Error(`Failed to cancel booking in PMS`);
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, message: "Booking cancelled in PMS" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
