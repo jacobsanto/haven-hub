@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FontSelector } from '@/components/admin/FontSelector';
 import { useToast } from '@/hooks/use-toast';
 import { Palette, Type, Building2, Save, RotateCcw, Upload, X, ImageIcon } from 'lucide-react';
 
@@ -517,42 +517,24 @@ export default function AdminSettings() {
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="heading_font">Heading Font</Label>
-                      <Select
+                      <FontSelector
                         value={formState.heading_font}
                         onValueChange={(value) => handleInputChange('heading_font', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a font" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {HEADING_FONTS.map((font) => (
-                            <SelectItem key={font} value={font}>
-                              {font}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        fonts={HEADING_FONTS}
+                        placeholder="Select a heading font"
+                      />
                       <p className="text-xs text-muted-foreground">
                         Used for titles and section headings
                       </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="body_font">Body Font</Label>
-                      <Select
+                      <FontSelector
                         value={formState.body_font}
                         onValueChange={(value) => handleInputChange('body_font', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a font" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {BODY_FONTS.map((font) => (
-                            <SelectItem key={font} value={font}>
-                              {font}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        fonts={BODY_FONTS}
+                        placeholder="Select a body font"
+                      />
                       <p className="text-xs text-muted-foreground">
                         Used for paragraphs and general text
                       </p>
