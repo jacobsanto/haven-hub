@@ -1,266 +1,271 @@
 
 
-## Automated Bidirectional Availability Sync
+## Combined Implementation: Real-Time Availability from First Search + Complete Booking Flow
 
-This plan implements automated synchronization of availability between the booking engine and PMS (Tokeet/AdvanceCM), including scheduled syncs and event-driven triggers for booking changes on both sides.
-
----
-
-### Current State
-
-**What exists:**
-- Manual "Sync" button per property in Admin PMS Health
-- Manual "Sync All Availability" button
-- `sync-availability` action in edge function (pulls from PMS to local DB)
-- `create-booking` and `cancel-booking` actions (pushes to PMS)
-- `pms_sync_status` field on bookings to track sync state
-
-**What's missing:**
-- Scheduled automatic sync (every 5 minutes)
-- Automatic sync when local booking is created/modified/cancelled
-- Webhook handler for when bookings change in PMS
-- Retry mechanism for failed syncs
+This implementation combines two critical features:
+1. **Real-time availability display from the first search** - so guests see blocked dates immediately, not just at checkout
+2. **Complete booking submission flow** - connecting Checkout.tsx to the database and PMS with instant vs request booking logic
 
 ---
 
-### Architecture Overview
+### Part 1: Real-Time Availability from First Search
+
+#### Current Problem
+The `UnifiedBookingDialog` uses the standard `Calendar` component which only disables past dates. Guests can select dates that are actually blocked by existing bookings or PMS sync, leading to frustration at checkout.
+
+#### Solution
+Replace the `Calendar` component with `AvailabilityCalendar` (which already exists and works in Checkout.tsx) and add real-time subscriptions.
+
+#### Files to Modify
+
+**1. `src/components/booking/AvailabilityCalendar.tsx`**
+- Add `variant` prop: `"full"` (default, used in checkout) or `"compact"` (used in dialog)
+- Compact variant hides the legend row and per-day prices for cleaner dialog UI
+- Add `showPrices` optional prop to control price display independently
+
+**2. `src/components/booking/UnifiedBookingDialog.tsx`**
+- Import `AvailabilityCalendar` component
+- Import `useRealtimeAvailability` hook for live updates
+- Replace the basic `Calendar` at lines 218-225 (search step) - keep basic calendar here since no property selected
+- Replace the basic `Calendar` at lines 366-373 (dates step) with `AvailabilityCalendar`
+- Add `useRealtimeAvailability(selectedProperty?.id)` to subscribe to live changes
+- Adapt date selection callback to work with AvailabilityCalendar's API
+
+---
+
+### Part 2: Complete Booking Submission Flow
+
+#### Current Problem
+- `handleProceedToPayment` in Checkout.tsx is a placeholder (shows "Stripe integration pending")
+- `useCreateBooking` hook inserts booking but never pushes to PMS
+- `pms_sync_status` stays "pending" forever
+- Admin can confirm bookings but this doesn't trigger PMS sync
+
+#### Solution
+Create a `useCompleteBooking` hook that orchestrates the full booking submission, and update the admin flow to trigger PMS sync on confirmation.
+
+#### New Files to Create
+
+**1. `src/hooks/useCompleteBooking.ts`**
+New hook that orchestrates the complete booking submission:
+
+| Step | Action |
+|------|--------|
+| 1 | Final availability validation (double-check dates still available) |
+| 2 | Create booking record with appropriate status based on `instant_booking` flag |
+| 3 | Insert price breakdown line items to `booking_price_breakdown` |
+| 4 | Insert selected addons to `booking_addons` |
+| 5 | If instant booking: Call `advancecm-sync` with `create-booking` action |
+| 6 | Update booking with `external_booking_id` and `pms_sync_status` |
+| 7 | Release checkout hold |
+| 8 | Return booking reference for confirmation page |
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        BIDIRECTIONAL SYNC                               │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│   SCHEDULED SYNC (every 5 min)                                         │
-│   ┌──────────────┐     ┌──────────────────┐     ┌────────────────┐     │
-│   │  pg_cron     │────▶│  pms-sync-cron   │────▶│ availability   │     │
-│   │  job         │     │  edge function   │     │ table          │     │
-│   └──────────────┘     └──────────────────┘     └────────────────┘     │
-│                                                                         │
-│   LOCAL BOOKING CHANGES                                                 │
-│   ┌──────────────┐     ┌──────────────────┐     ┌────────────────┐     │
-│   │  DB trigger  │────▶│  pms-booking-sync│────▶│ Tokeet PMS     │     │
-│   │  on bookings │     │  edge function   │     │ (create/cancel)│     │
-│   └──────────────┘     └──────────────────┘     └────────────────┘     │
-│                                                                         │
-│   PMS BOOKING CHANGES (incoming webhooks)                              │
-│   ┌──────────────┐     ┌──────────────────┐     ┌────────────────┐     │
-│   │  Tokeet      │────▶│  pms-webhook     │────▶│ availability   │     │
-│   │  webhook     │     │  edge function   │     │ + bookings DB  │     │
-│   └──────────────┘     └──────────────────┘     └────────────────┘     │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+Flow for Instant Booking Property:
+  Checkout Submit
+       ↓
+  useCompleteBooking
+       ↓
+  Insert booking (status: 'confirmed')
+       ↓
+  Insert price breakdown + addons
+       ↓
+  Call advancecm-sync (create-booking)
+       ↓
+  Update pms_sync_status = 'synced'
+       ↓
+  Navigate to /booking/confirm?ref=BK-XXXXXX
+
+Flow for Non-Instant Property:
+  Checkout Submit
+       ↓
+  useCompleteBooking
+       ↓
+  Insert booking (status: 'pending')
+       ↓
+  Insert price breakdown + addons
+       ↓
+  (No PMS sync yet)
+       ↓
+  Navigate to /booking/confirm?ref=BK-XXXXXX
+       ↓
+  Admin confirms in dashboard
+       ↓
+  Call advancecm-sync (create-booking)
+       ↓
+  Update pms_sync_status = 'synced'
+```
+
+#### Files to Modify
+
+**2. `src/pages/Checkout.tsx`**
+- Import and use `useCompleteBooking` hook
+- Replace placeholder `handleProceedToPayment` with actual booking submission
+- Pass all collected data (guestInfo, addons, priceBreakdown, coupon, paymentType)
+- On success: Navigate to `/booking/confirm` with booking reference as URL param
+- On error: Show toast and keep user on checkout page
+
+**3. `src/pages/BookingConfirm.tsx`**
+- Accept booking reference from URL params (not just location state)
+- Fetch booking details from database using reference
+- Display confirmation number prominently
+- Show different messaging for instant (confirmed) vs request (pending) bookings
+- Add "What happens next?" section appropriate to booking status
+
+**4. `src/hooks/useBookings.ts`**
+- Add `useConfirmBookingWithPMS` mutation hook
+- When admin confirms a pending booking, this hook:
+  1. Updates booking status to 'confirmed'
+  2. Fetches the property mapping to get `external_property_id`
+  3. Calls `advancecm-sync` with `create-booking` action
+  4. Updates `pms_sync_status` and `external_booking_id`
+
+**5. `src/pages/admin/AdminBookings.tsx`**
+- Update confirm button to use new `useConfirmBookingWithPMS` hook
+- Show loading state while PMS sync is in progress
+- Toast feedback on success/failure
+
+**6. `src/components/admin/BookingDetailDialog.tsx`**
+- Implement `handleRetrySync` function (currently placeholder)
+- Call `advancecm-sync` with `create-booking` action for retry
+
+---
+
+### Technical Implementation Details
+
+#### AvailabilityCalendar Compact Variant
+
+```tsx
+// New props interface
+interface AvailabilityCalendarProps {
+  propertyId: string;
+  selectedCheckIn?: Date | null;
+  selectedCheckOut?: Date | null;
+  onDateSelect: (date: Date, type: 'checkIn' | 'checkOut') => void;
+  minStay?: number;
+  className?: string;
+  variant?: 'full' | 'compact';  // NEW
+  showPrices?: boolean;           // NEW
+}
+```
+
+Changes for compact variant:
+- Hide legend row (Selected/In Range/Unavailable indicators)
+- Hide per-day price displays below dates
+- Reduce padding/margins for dialog fit
+- Single month on mobile, dual on desktop (existing behavior)
+
+#### useCompleteBooking Hook Interface
+
+```tsx
+interface CompleteBookingParams {
+  propertyId: string;
+  property: {
+    id: string;
+    name: string;
+    slug: string;
+    instant_booking: boolean;
+  };
+  checkIn: Date;
+  checkOut: Date;
+  nights: number;
+  guests: number;
+  adults: number;
+  children: number;
+  guestInfo: BookingGuestWithCounts;
+  selectedAddons: SelectedAddon[];
+  priceBreakdown: PriceBreakdown;
+  appliedCoupon?: CouponPromo;
+  paymentType: PaymentType;
+  holdId?: string;
+  sessionId: string;
+}
+
+interface CompleteBookingResult {
+  bookingId: string;
+  bookingReference: string;
+  status: 'confirmed' | 'pending';
+  pmsSyncStatus: 'synced' | 'pending' | 'failed';
+  externalBookingId?: string;
+}
+```
+
+#### PMS Sync Integration
+
+The existing `advancecm-sync` edge function already has a `create-booking` action. The hook will call it with:
+
+```typescript
+await supabase.functions.invoke('advancecm-sync', {
+  body: {
+    action: 'create-booking',
+    externalPropertyId: propertyMapping.external_property_id,
+    bookingReference: booking.booking_reference,
+    checkIn: booking.check_in,
+    checkOut: booking.check_out,
+    guests: booking.guests,
+    adults: booking.adults,
+    children: booking.children,
+    guestInfo: {
+      firstName: guestInfo.firstName,
+      lastName: guestInfo.lastName,
+      email: guestInfo.email,
+      phone: guestInfo.phone,
+      country: guestInfo.country,
+    },
+    totalPrice: priceBreakdown.total,
+    currency: 'EUR',
+    priceBreakdownNotes: formatBreakdownForPMS(priceBreakdown),
+  },
+});
 ```
 
 ---
 
-### Implementation Steps
+### Database Interaction Flow
 
-#### Step 1: Create Scheduled Sync Edge Function
-
-Create a new edge function `pms-sync-cron` that:
-1. Fetches all active property mappings
-2. Syncs availability for each property from PMS
-3. Logs sync run results to `pms_sync_runs` table
-4. Can be called by pg_cron or manually
-
-**File:** `supabase/functions/pms-sync-cron/index.ts`
-
-This function will use the service role key (no user auth required for cron jobs).
-
-#### Step 2: Enable pg_cron and Schedule Sync
-
-Create a database migration to:
-1. Enable `pg_cron` and `pg_net` extensions
-2. Schedule the sync function to run every 5 minutes
-3. Store the cron job configuration
-
-**SQL needed:**
-```sql
--- Enable extensions
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS pg_net;
-
--- Schedule availability sync every 5 minutes
-SELECT cron.schedule(
-  'pms-availability-sync',
-  '*/5 * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://xavjbiuhcmupsoocrmhf.supabase.co/functions/v1/pms-sync-cron',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer <anon_key>"}'::jsonb,
-    body := '{"action": "sync-all-availability"}'::jsonb
-  );
-  $$
-);
-```
-
-#### Step 3: Create Database Trigger for Booking Changes
-
-Create a trigger on the `bookings` table that fires on INSERT, UPDATE, DELETE to:
-1. Detect booking status changes (confirmed, cancelled)
-2. Call the edge function to sync with PMS
-3. Handle the async nature (use pg_net for non-blocking calls)
-
-**Trigger logic:**
-- On INSERT with status = 'confirmed' → Push booking to PMS
-- On UPDATE where status changes to 'cancelled' → Cancel in PMS
-- On DELETE → Cancel in PMS if external_booking_id exists
-
-#### Step 4: Create Webhook Handler Edge Function
-
-Create `pms-webhook` edge function to receive callbacks from Tokeet when:
-1. A new booking is made via OTA (Airbnb, Booking.com)
-2. A booking is modified in PMS
-3. A booking is cancelled in PMS
-
-**File:** `supabase/functions/pms-webhook/index.ts`
-
-This function will:
-1. Verify webhook signature (if Tokeet provides one)
-2. Parse the booking/availability event
-3. Update local `availability` table
-4. Optionally create/update local booking record for OTA bookings
-
-#### Step 5: Add Sync Settings to Admin Dashboard
-
-Update Admin PMS Health page with:
-1. "Auto Sync" toggle (enable/disable scheduled sync)
-2. Sync interval selector (5, 10, 15, 30 minutes)
-3. Last scheduled sync timestamp
-4. Webhook URL display for configuring in Tokeet
-
-#### Step 6: Add Retry Mechanism for Failed Syncs
-
-Create a retry system for failed PMS syncs:
-1. Add `retry_count` and `last_error` columns to track failures
-2. Scheduled job to retry failed syncs (max 3 retries)
-3. Admin notification for repeated failures
-
----
-
-### Technical Details
-
-#### New Edge Functions
-
-| Function | Purpose | Trigger |
-|----------|---------|---------|
-| `pms-sync-cron` | Scheduled availability pull from PMS | pg_cron every 5 min |
-| `pms-webhook` | Handle incoming PMS events | HTTP POST from Tokeet |
-
-#### Database Changes
-
-| Table | Change |
-|-------|--------|
-| `pms_connections` | Add `auto_sync_enabled` (boolean), `sync_interval_minutes` (integer) |
-| `pms_sync_runs` | Add `trigger_type` ('manual', 'scheduled', 'webhook', 'booking') |
-| `bookings` | Add `pms_retry_count` (integer), `pms_last_error` (text) |
-
-#### Config.toml Updates
-
-Add new functions to the Supabase config:
-```toml
-[functions.pms-sync-cron]
-verify_jwt = false  # Called by pg_cron, no user token
-
-[functions.pms-webhook]  
-verify_jwt = false  # Called by external PMS webhook
-```
-
----
-
-### Sync Flow Details
-
-**Scheduled Sync (Pull):**
 ```text
-1. pg_cron triggers every 5 minutes
-2. pms-sync-cron function starts
-3. Fetch all property mappings where sync_enabled = true
-4. For each property, call Tokeet availability API
-5. Parse blocked date ranges
-6. Upsert to local availability table
-7. Update last_availability_sync_at
-8. Log to pms_sync_runs
-```
+1. INSERT booking → bookings table
+   - booking_reference: auto-generated BK-YYYYMM-XXXX
+   - status: 'confirmed' (instant) or 'pending' (request)
+   - pms_sync_status: 'pending'
 
-**Local Booking → PMS (Push):**
-```text
-1. User completes checkout, booking inserted with status='confirmed'
-2. DB trigger fires on INSERT
-3. Trigger calls pg_net.http_post to advancecm-sync
-4. Edge function creates booking in Tokeet
-5. Returns external_booking_id
-6. Trigger updates booking with external_booking_id, pms_sync_status='synced'
-```
+2. INSERT price breakdown → booking_price_breakdown table
+   - One row per line item (accommodation, fees, taxes, addons, discount)
 
-**PMS Booking → Local (Webhook):**
-```text
-1. OTA booking made in Airbnb/Booking.com
-2. Tokeet receives booking, sends webhook to our endpoint
-3. pms-webhook function parses event
-4. Creates local booking record with source='airbnb'/'booking_com'
-5. Updates availability table to block those dates
-6. Logs event to pms_raw_events
+3. INSERT addons → booking_addons table
+   - One row per selected addon with quantity
+
+4. IF instant_booking:
+   - Call advancecm-sync create-booking
+   - UPDATE bookings SET external_booking_id, pms_sync_status='synced'
+
+5. UPDATE checkout_holds SET released=true
 ```
 
 ---
 
-### Webhook Configuration (For Tokeet)
+### Files Summary
 
-After implementation, you'll need to configure the webhook URL in Tokeet:
-```
-https://xavjbiuhcmupsoocrmhf.supabase.co/functions/v1/pms-webhook
-```
-
-Events to subscribe to:
-- `booking.created`
-- `booking.updated`
-- `booking.cancelled`
-- `availability.updated`
-
----
-
-### Admin UI Additions
-
-**New Settings Card in PMS Health:**
-- Auto-Sync toggle (ON/OFF)
-- Sync Interval dropdown (5/10/15/30 minutes)
-- Webhook URL (copyable) for Tokeet configuration
-- "Test Webhook" button to verify connectivity
-
-**Enhanced Sync History:**
-- Show trigger type (manual/scheduled/webhook/booking)
-- Filter by trigger type
-- Show pending retries count
-
----
-
-### Error Handling & Monitoring
-
-1. **Failed sync retries**: Auto-retry up to 3 times with exponential backoff
-2. **Webhook validation**: Verify Tokeet signature if available
-3. **Conflict detection**: Log when local and PMS availability disagree
-4. **Admin alerts**: Toast notifications for sync failures in dashboard
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/components/booking/AvailabilityCalendar.tsx` | Modify | Add compact variant |
+| `src/components/booking/UnifiedBookingDialog.tsx` | Modify | Use AvailabilityCalendar + realtime |
+| `src/hooks/useCompleteBooking.ts` | Create | Orchestrate full booking submission |
+| `src/pages/Checkout.tsx` | Modify | Connect to useCompleteBooking |
+| `src/pages/BookingConfirm.tsx` | Modify | Fetch by reference, show status |
+| `src/hooks/useBookings.ts` | Modify | Add useConfirmBookingWithPMS |
+| `src/pages/admin/AdminBookings.tsx` | Modify | Use new confirm hook |
+| `src/components/admin/BookingDetailDialog.tsx` | Modify | Implement retry sync |
 
 ---
 
 ### Benefits
 
-1. **Always in sync**: Availability updated every 5 minutes automatically
-2. **Instant updates**: Local bookings pushed to PMS immediately
-3. **OTA coverage**: Bookings from Airbnb/Booking.com reflected in local system
-4. **Visibility**: Clear logging of all sync operations and their sources
-5. **Resilience**: Retry mechanism handles temporary failures
-
----
-
-### Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| `supabase/functions/pms-sync-cron/index.ts` | Create |
-| `supabase/functions/pms-webhook/index.ts` | Create |
-| `supabase/config.toml` | Update (add functions) |
-| Database migration | Create (pg_cron, triggers, columns) |
-| `src/pages/admin/AdminPMSHealth.tsx` | Update (sync settings UI) |
-| `src/hooks/useAdminPMSHealth.ts` | Update (sync settings hooks) |
+1. **Early visibility**: Guests see blocked dates from the first search step
+2. **Real-time updates**: If another user books while browsing, calendar updates instantly
+3. **Complete flow**: Booking data actually saved to database with full breakdown
+4. **PMS integration**: Instant bookings pushed to Tokeet immediately
+5. **Admin control**: Non-instant properties require approval before PMS sync
+6. **Audit trail**: Price breakdown and addons stored for records
+7. **Resilience**: Failed syncs can be retried from admin dashboard
 
