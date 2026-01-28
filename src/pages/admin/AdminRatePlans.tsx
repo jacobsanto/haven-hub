@@ -37,7 +37,7 @@ const RATE_TYPES = [
 ];
 
 const MEMBER_TIERS = [
-  { value: '', label: 'No Requirement' },
+  { value: 'none', label: 'No Requirement' },
   { value: 'bronze', label: 'Bronze' },
   { value: 'silver', label: 'Silver' },
   { value: 'gold', label: 'Gold' },
@@ -982,8 +982,8 @@ export default function AdminRatePlans() {
               <div className="space-y-2">
                 <Label>Member Tier Required</Label>
                 <Select
-                  value={formData.member_tier_required || ''}
-                  onValueChange={(v) => setFormData({ ...formData, member_tier_required: v || null })}
+                  value={formData.member_tier_required || 'none'}
+                  onValueChange={(v) => setFormData({ ...formData, member_tier_required: v === 'none' ? null : v })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="No requirement" />
