@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Loader2, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, Loader2, ArrowRight, GripHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PropertySelectorDialog } from './PropertySelectorDialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
@@ -8,6 +8,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useProperties } from '@/hooks/useProperties';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Haptic feedback utility using Web Vibration API
+const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
+  if ('vibrate' in navigator) {
+    const patterns = {
+      light: [10],
+      medium: [20],
+      success: [10, 50, 20],
+    };
+    navigator.vibrate(patterns[pattern]);
+  }
+};
 
 export function FloatingBookButton() {
   const navigate = useNavigate();
@@ -18,16 +30,30 @@ export function FloatingBookButton() {
   
   const { data: properties, isLoading } = useProperties();
 
-  const handleSelectProperty = (slug: string) => {
-    setSelectedPropertySlug(slug);
-  };
+  const handleOpenDrawer = useCallback(() => {
+    triggerHaptic('light');
+    setShowMobileDrawer(true);
+  }, []);
 
-  const handleMobileProceed = () => {
+  const handleDrawerChange = useCallback((open: boolean) => {
+    if (!open) {
+      triggerHaptic('light');
+    }
+    setShowMobileDrawer(open);
+  }, []);
+
+  const handleSelectProperty = useCallback((slug: string) => {
+    triggerHaptic('medium');
+    setSelectedPropertySlug(slug);
+  }, []);
+
+  const handleMobileProceed = useCallback(() => {
     if (selectedPropertySlug) {
+      triggerHaptic('success');
       setShowMobileDrawer(false);
       navigate(`/checkout?property=${selectedPropertySlug}`);
     }
-  };
+  }, [selectedPropertySlug, navigate]);
 
   return (
     <>
@@ -66,7 +92,11 @@ export function FloatingBookButton() {
 
       {/* Mobile Floating Button with Drawer */}
       <div className="fixed bottom-4 right-4 z-50 lg:hidden">
-        <Drawer open={showMobileDrawer} onOpenChange={setShowMobileDrawer}>
+        <Drawer 
+          open={showMobileDrawer} 
+          onOpenChange={handleDrawerChange}
+          shouldScaleBackground
+        >
           <DrawerTrigger asChild>
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
@@ -75,14 +105,23 @@ export function FloatingBookButton() {
             >
               <Button
                 size="lg"
-                className="h-14 w-14 rounded-full shadow-lg"
+                className="h-14 w-14 rounded-full shadow-lg active:scale-95 transition-transform"
+                onClick={handleOpenDrawer}
               >
                 <Calendar className="h-6 w-6" />
               </Button>
             </motion.div>
           </DrawerTrigger>
-          <DrawerContent className="max-h-[85vh]">
-            <DrawerHeader className="border-b border-border pb-4">
+          <DrawerContent className="max-h-[85vh] focus:outline-none">
+            {/* Enhanced swipe handle indicator */}
+            <div className="mx-auto mt-3 mb-2 flex flex-col items-center gap-1">
+              <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+              <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">
+                Swipe down to close
+              </span>
+            </div>
+            
+            <DrawerHeader className="border-b border-border pb-4 pt-2">
               <DrawerTitle className="font-serif text-xl">Choose Your Property</DrawerTitle>
             </DrawerHeader>
             
@@ -92,18 +131,19 @@ export function FloatingBookButton() {
               </div>
             ) : (
               <>
-                <ScrollArea className="flex-1 px-4 py-4" style={{ maxHeight: 'calc(85vh - 180px)' }}>
+                <ScrollArea className="flex-1 px-4 py-4" style={{ maxHeight: 'calc(85vh - 200px)' }}>
                   <div className="space-y-3">
                     {properties?.map((property) => (
-                      <button
+                      <motion.button
                         key={property.id}
                         type="button"
                         onClick={() => handleSelectProperty(property.slug)}
+                        whileTap={{ scale: 0.98 }}
                         className={cn(
                           'w-full flex gap-3 p-3 rounded-xl border-2 transition-all text-left',
                           selectedPropertySlug === property.slug
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
+                            ? 'border-primary bg-primary/5 shadow-sm'
+                            : 'border-border active:border-primary/50 active:bg-muted/50'
                         )}
                       >
                         {property.hero_image_url ? (
@@ -125,21 +165,39 @@ export function FloatingBookButton() {
                             From €{property.base_price}/night
                           </div>
                         </div>
-                      </button>
+                        {/* Selection indicator */}
+                        <AnimatePresence>
+                          {selectedPropertySlug === property.slug && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0 }}
+                              className="self-center w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0"
+                            >
+                              <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
                     ))}
                   </div>
                 </ScrollArea>
 
-                <div className="flex gap-3 p-4 border-t border-border bg-background">
+                <div className="flex gap-3 p-4 border-t border-border bg-background safe-area-inset-bottom">
                   <Button
                     variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowMobileDrawer(false)}
+                    className="flex-1 h-12 active:scale-[0.98] transition-transform"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setShowMobileDrawer(false);
+                    }}
                   >
                     Cancel
                   </Button>
                   <Button
-                    className="flex-1 gap-2"
+                    className="flex-1 h-12 gap-2 active:scale-[0.98] transition-transform"
                     onClick={handleMobileProceed}
                     disabled={!selectedPropertySlug}
                   >
