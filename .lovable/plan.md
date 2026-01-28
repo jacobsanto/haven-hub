@@ -1,78 +1,99 @@
 
-# Fix BookingDetailDialog Issues
 
-## Problems Identified
+# Restructure Destinations to Santorini Villages
 
-1. **React Warning**: "Function components cannot be given refs" - The Badge component doesn't use `forwardRef` but receives refs when used inside certain shadcn/ui components
-2. **"Booking Not Found" Flash**: Dialog briefly shows "not found" state during query refetches because it checks `!booking` without considering the loading/stale state
+## Current State
 
-## Solutions
+- **1 destination**: "Santorini" (island-level)
+- **Properties** have `city` field with village names: Oia, Fira, Thira, Imerovigli, Megalochori, Emporio, Vothonas, Perissa, Mesaria
+- **Linking**: Currently matches `property.country` to `destination.country` (too broad)
 
-### Fix 1: Add forwardRef to Badge component
+## Goal
 
-**File**: `src/components/ui/badge.tsx`
+Destinations = Santorini villages (Oia, Fira, Imerovigli, etc.) so guests can browse properties by specific village
 
-Wrap the Badge component with `React.forwardRef` to properly handle ref forwarding:
+## Implementation Plan
 
-```typescript
-const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
-  ({ className, variant, ...props }, ref) => {
-    return <div ref={ref} className={cn(badgeVariants({ variant }), className)} {...props} />;
-  }
-);
-Badge.displayName = "Badge";
-```
+### Step 1: Create Village Destinations
 
-### Fix 2: Improve query stability in useBookingDetails
+Create new destination records for each Santorini village where you have properties:
 
-**File**: `src/hooks/useBookings.ts`
+| Village | Slug | Description |
+|---------|------|-------------|
+| Oia | oia | Famous for sunsets, blue domes, luxury boutiques |
+| Fira | fira | Island capital, vibrant nightlife, caldera views |
+| Imerovigli | imerovigli | "Balcony of the Aegean", quietest caldera village |
+| Megalochori | megalochori | Traditional wine village, authentic Cycladic charm |
+| Emporio | emporio | Medieval fortress village, local atmosphere |
+| Vothonas | vothonas | Cave houses, peaceful countryside setting |
+| Perissa | perissa | Black sand beach, family-friendly |
+| Mesaria | mesaria | Central location, traditional wineries |
+| Thira | thira | Historic center, walking distance to Fira |
 
-Add `staleTime` and `gcTime` to prevent unnecessary refetches that cause the "not found" flash:
+Each destination will have:
+- `name`: Village name
+- `slug`: URL-friendly name
+- `country`: "Greece"
+- `description`: Short village description
+- `is_featured`: true for main villages (Oia, Fira, Imerovigli)
+- `status`: "active"
 
-```typescript
-return useQuery({
-  queryKey: ['admin', 'booking-detail', bookingId],
-  queryFn: async (): Promise<BookingDetails> => {
-    // ... existing code
-  },
-  enabled: !!bookingId,
-  staleTime: 30000, // 30 seconds
-  gcTime: 5 * 60 * 1000, // 5 minutes
-});
-```
+### Step 2: Update Property-Destination Linking Logic
 
-### Fix 3: Better loading state handling in BookingDetailDialog
+Modify how properties connect to destinations:
 
-**File**: `src/components/admin/BookingDetailDialog.tsx`
+**Option A (Recommended)**: Use the existing `destination_id` foreign key
+- Update each property's `destination_id` to link to its village destination
+- Most reliable approach, proper relational data
 
-Add check for `isFetching` state to prevent showing "not found" during background refetches:
+**Option B**: Match by city name
+- Update `DestinationCard`, `Destinations.tsx`, and `DestinationDetail.tsx` to match `property.city` to `destination.name`
+- Faster to implement but less structured
 
-```typescript
-const { data, isLoading, isFetching } = useBookingDetails(bookingId);
-
-// Show skeleton during initial load OR background refetch when no data
-if (isLoading || (isFetching && !data?.booking)) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <Skeleton />
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
-## Files to Modify
+### Step 3: Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/ui/badge.tsx` | Add `forwardRef` wrapper |
-| `src/hooks/useBookings.ts` | Add `staleTime` and `gcTime` options |
-| `src/components/admin/BookingDetailDialog.tsx` | Improve loading state handling with `isFetching` |
+| `src/pages/Destinations.tsx` | Update `getPropertyCount()` to filter by city or destination_id |
+| `src/pages/DestinationDetail.tsx` | Update `destinationProperties` filter to use city or destination_id |
+| `src/components/destinations/DestinationCard.tsx` | No changes needed (receives count as prop) |
 
-## Expected Results
+### Step 4: Delete or Archive Old Destination
 
-After these fixes:
-- No more React ref warnings in console
-- Dialog will not flash "Booking Not Found" during refetches
-- Data will remain visible during background updates
+Remove or set to "draft" the old "Santorini" island-level destination after village destinations are created
+
+## Data Changes Required
+
+1. **Insert** 9 new village destinations into `destinations` table
+2. **Update** each property's `destination_id` to match its village (or update linking logic)
+3. **Delete** or set `status='draft'` on the old "Santorini" destination
+
+## Technical Details
+
+### Updated getPropertyCount in Destinations.tsx
+
+```typescript
+// Match by city (village name) instead of country
+const getPropertyCount = (destinationName: string) => {
+  if (!properties) return 0;
+  return properties.filter(p => 
+    p.city.toLowerCase() === destinationName.toLowerCase()
+  ).length;
+};
+```
+
+### Updated filter in DestinationDetail.tsx
+
+```typescript
+// Filter properties for this destination (by city/village)
+const destinationProperties = allProperties?.filter(
+  p => destination && p.city.toLowerCase() === destination.name.toLowerCase()
+) || [];
+```
+
+## Expected Result
+
+- Homepage and Destinations page will show village cards: Oia (2 properties), Fira (4 properties), etc.
+- Clicking a village shows only properties in that village
+- Guests can browse by specific Santorini location
+
