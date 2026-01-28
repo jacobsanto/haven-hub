@@ -152,12 +152,38 @@ export class AdvanceCMAdapter implements PMSAdapter {
 
   async fetchRates(
     externalPropertyId: string,
-    _startDate: string,
-    _endDate: string
+    startDate: string,
+    endDate: string
   ): Promise<PMSRate[]> {
-    // TODO: Implement when Tokeet rates endpoint is available
-    console.log("fetchRates not yet implemented for AdvanceCM", externalPropertyId);
-    return [];
+    try {
+      const result = await callEdgeFunction<{
+        success: boolean;
+        rates: Array<{
+          externalId: string;
+          nightly: number;
+          minStay: number;
+          validFrom?: string;
+          validTo?: string;
+          currency: string;
+        }>;
+      }>("fetch-rates", { externalId: externalPropertyId });
+
+      return result.rates
+        .filter((r) => {
+          if (!r.validFrom || !r.validTo) return true;
+          return r.validFrom <= endDate && r.validTo >= startDate;
+        })
+        .map((r) => ({
+          propertyId: externalPropertyId,
+          date: r.validFrom || startDate,
+          baseRate: r.nightly,
+          currency: r.currency,
+          minStay: r.minStay,
+        }));
+    } catch (error) {
+      console.error("Failed to fetch rates:", error);
+      return [];
+    }
   }
 
   async fetchFees(_externalPropertyId: string): Promise<PMSFee[]> {

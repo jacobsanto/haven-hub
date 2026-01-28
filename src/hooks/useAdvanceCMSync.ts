@@ -128,6 +128,60 @@ export function useBatchImportProperties() {
   });
 }
 
+// Sync rates for a specific property
+export function useSyncPropertyRates() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      externalId,
+      propertyId,
+    }: {
+      externalId: string;
+      propertyId: string;
+    }) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("Authentication required");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/advancecm-sync`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            action: "sync-rates",
+            externalId,
+            propertyId,
+          }),
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Failed to sync rates");
+      }
+
+      return data as {
+        success: boolean;
+        basePrice: number;
+        seasonalRatesCreated: number;
+        ratePlansCreated: number;
+        message: string;
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["seasonal-rates"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "rate-plans"] });
+    },
+  });
+}
+
 // Create or ensure PMS connection exists for AdvanceCM
 export function useEnsureAdvanceCMConnection() {
   const queryClient = useQueryClient();
