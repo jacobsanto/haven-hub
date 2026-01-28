@@ -8,8 +8,9 @@ const corsHeaders = {
 
 interface TokeetRental {
   pkey: string;
-  name: string;
+  name?: string;
   display_name?: string;
+  nickname?: string;
   description?: string;
   bedrooms?: number;
   bathrooms?: number;
@@ -22,6 +23,7 @@ interface TokeetRental {
     state?: string;
     zip?: string;
     CC?: string;
+    country_code?: string;
   };
   gps?: {
     lat?: number;
@@ -187,34 +189,42 @@ Deno.serve(async (req) => {
         }
         const data = await response.json();
         
-        // Tokeet API returns {"data": [...]} format
+        // Tokeet API returns {"data": [...]} format - extract rentals array
         let rentals: TokeetRental[] = [];
-        if (Array.isArray(data)) {
+        
+        if (data && typeof data === 'object') {
+          if (data.error) {
+            throw new Error(`Tokeet API error: ${data.error}`);
+          }
+          
+          // Try different possible array locations
+          if (Array.isArray(data)) {
+            rentals = data;
+          } else if (Array.isArray(data.data)) {
+            rentals = data.data;
+          } else if (Array.isArray(data.rentals)) {
+            rentals = data.rentals;
+          } else if (Array.isArray(data.results)) {
+            rentals = data.results;
+          }
+        } else if (Array.isArray(data)) {
           rentals = data;
-        } else if (data && Array.isArray(data.data)) {
-          rentals = data.data;
-        } else if (data && Array.isArray(data.rentals)) {
-          rentals = data.rentals;
-        } else if (data && Array.isArray(data.results)) {
-          rentals = data.results;
-        } else if (data && typeof data === 'object' && data.error) {
-          throw new Error(`Tokeet API error: ${data.error}`);
         }
 
-        // Transform to our format
-        const properties = rentals.map((rental) => ({
+        // Transform to our format - ensure rentals is always an array
+        const properties = (rentals || []).map((rental: TokeetRental) => ({
           externalId: rental.pkey,
-          name: rental.name || rental.display_name || "Unnamed Property",
+          name: rental.name || rental.display_name || rental.nickname || "Unnamed Property",
           description: rental.description || null,
           bedrooms: rental.bedrooms || 1,
           bathrooms: rental.bathrooms || 1,
           maxGuests: rental.sleep_max || 2,
           city: rental.address?.city || "Unknown",
           region: rental.address?.state || null,
-          country: mapCountryCode(rental.address?.CC),
+          country: mapCountryCode(rental.address?.CC || rental.address?.country_code),
           propertyType: mapPropertyType(rental.type),
           highlights: rental.tags || [],
-          images: rental.images?.map((img) => img.url) || [],
+          images: rental.images?.map((img: { url: string }) => img.url) || [],
           coordinates: rental.gps
             ? { lat: rental.gps.lat, lng: rental.gps.long }
             : null,
