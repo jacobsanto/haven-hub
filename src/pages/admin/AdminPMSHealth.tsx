@@ -68,6 +68,7 @@ export default function AdminPMSHealth() {
   const { toast } = useToast();
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [syncingPropertyId, setSyncingPropertyId] = useState<string | null>(null);
 
   // Data hooks
   const { data: connection, isLoading: connectionLoading } = usePMSConnectionStatus();
@@ -144,6 +145,7 @@ export default function AdminPMSHealth() {
 
   const handleSyncPropertyNow = async (externalPropertyId: string) => {
     if (!connection) return;
+    setSyncingPropertyId(externalPropertyId);
     try {
       const result = await syncPropertyNow.mutateAsync({ 
         connectionId: connection.id, 
@@ -162,6 +164,8 @@ export default function AdminPMSHealth() {
         description: error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
+    } finally {
+      setSyncingPropertyId(null);
     }
   };
 
@@ -316,9 +320,9 @@ export default function AdminPMSHealth() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleSyncPropertyNow(mapping.external_property_id)}
-                                disabled={syncPropertyNow.isPending || !mapping.sync_enabled}
+                                disabled={syncingPropertyId !== null || !mapping.sync_enabled}
                               >
-                                <RefreshCw className={`h-4 w-4 mr-1 ${syncPropertyNow.isPending ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`h-4 w-4 mr-1 ${syncingPropertyId === mapping.external_property_id ? 'animate-spin' : ''}`} />
                                 Sync
                               </Button>
                             </TableCell>
