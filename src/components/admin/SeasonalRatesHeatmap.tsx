@@ -138,6 +138,7 @@ export function SeasonalRatesHeatmap({ property, seasonalRates, className }: Sea
               variant="outline"
               size="icon"
               onClick={() => setSelectedYear(y => y - 1)}
+              aria-label="Previous year"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -146,6 +147,7 @@ export function SeasonalRatesHeatmap({ property, seasonalRates, className }: Sea
               variant="outline"
               size="icon"
               onClick={() => setSelectedYear(y => y + 1)}
+              aria-label="Next year"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -161,11 +163,11 @@ export function SeasonalRatesHeatmap({ property, seasonalRates, className }: Sea
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Min Rate</p>
-            <p className="font-semibold text-green-600">{formatCurrency(priceData.minPrice)}</p>
+            <p className="font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(priceData.minPrice)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Max Rate</p>
-            <p className="font-semibold text-red-600">{formatCurrency(priceData.maxPrice)}</p>
+            <p className="font-semibold text-destructive">{formatCurrency(priceData.maxPrice)}</p>
           </div>
           <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
             <Info className="h-4 w-4" />
@@ -287,7 +289,7 @@ export function SeasonalRatesHeatmap({ property, seasonalRates, className }: Sea
                     <span className="text-primary">{formatCurrency(rate.nightly_rate)}</span>
                   ) : (
                     <span className={cn(
-                      rate.price_multiplier > 1 ? 'text-red-600' : 'text-green-600'
+                      rate.price_multiplier > 1 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'
                     )}>
                       {rate.price_multiplier}x
                     </span>

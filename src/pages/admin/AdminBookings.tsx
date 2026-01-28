@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Search, Check, X, Clock } from 'lucide-react';
+import { getStatusColors } from '@/lib/utils';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminBookings, useUpdateBookingStatus } from '@/hooks/useBookings';
@@ -68,18 +69,7 @@ export default function AdminBookings() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-700';
-      case 'pending':
-        return 'bg-amber-100 text-amber-700';
-      case 'cancelled':
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
+  const getStatusBadge = (status: string) => getStatusColors(status);
 
   return (
     <AdminGuard>
@@ -199,22 +189,22 @@ export default function AdminBookings() {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-100"
+                                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
                                 onClick={() =>
                                   handleStatusUpdate(booking.id, 'confirmed')
                                 }
-                                title="Confirm"
+                                aria-label="Confirm booking"
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                 onClick={() =>
                                   handleStatusUpdate(booking.id, 'cancelled')
                                 }
-                                title="Cancel"
+                                aria-label="Cancel booking"
                               >
                                 <X className="h-4 w-4" />
                               </Button>
@@ -224,11 +214,11 @@ export default function AdminBookings() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-100"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                               onClick={() =>
                                 handleStatusUpdate(booking.id, 'cancelled')
                               }
-                              title="Cancel"
+                              aria-label="Cancel booking"
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -237,11 +227,11 @@ export default function AdminBookings() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-100"
+                              className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/30"
                               onClick={() =>
                                 handleStatusUpdate(booking.id, 'pending')
                               }
-                              title="Reopen"
+                              aria-label="Reopen booking"
                             >
                               <Clock className="h-4 w-4" />
                             </Button>

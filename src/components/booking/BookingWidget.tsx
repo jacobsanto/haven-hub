@@ -181,6 +181,7 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
                 size="icon"
                 className="h-8 w-8 rounded-full"
                 onClick={() => setGuests(Math.max(1, guests - 1))}
+                aria-label="Decrease guests"
               >
                 -
               </Button>
@@ -190,6 +191,7 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
                 size="icon"
                 className="h-8 w-8 rounded-full"
                 onClick={() => setGuests(Math.min(property.max_guests, guests + 1))}
+                aria-label="Increase guests"
               >
                 +
               </Button>
@@ -270,7 +272,7 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
             <span>{formatPrice(baseTotal)}</span>
           </div>
           {specialOffer && discountAmount > 0 && (
-            <div className="flex justify-between text-sm text-green-600">
+            <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
               <span>
                 {specialOffer.title} (-{specialOffer.discount_percent}%)
               </span>

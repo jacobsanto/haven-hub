@@ -183,7 +183,7 @@ export default function AdminNewsletterSubscribers() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleToggleStatus(subscriber.id, subscriber.is_active)}
-                              title={subscriber.is_active ? 'Unsubscribe' : 'Reactivate'}
+                              aria-label={subscriber.is_active ? 'Unsubscribe user' : 'Reactivate user'}
                             >
                               {subscriber.is_active ? (
                                 <UserX className="h-4 w-4 text-muted-foreground" />
@@ -193,7 +193,7 @@ export default function AdminNewsletterSubscribers() {
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon">
+                                <Button variant="ghost" size="icon" aria-label="Delete subscriber">
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </AlertDialogTrigger>

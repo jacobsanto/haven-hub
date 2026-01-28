@@ -134,6 +134,7 @@ export function PropertyGallery({ images, heroImage, propertyName }: PropertyGal
                 size="icon"
                 className="text-background hover:bg-background/20"
                 onClick={() => setLightboxOpen(false)}
+                aria-label="Close gallery"
               >
                 <X className="h-6 w-6" />
               </Button>
@@ -149,6 +150,7 @@ export function PropertyGallery({ images, heroImage, propertyName }: PropertyGal
                     size="icon"
                     className="absolute left-2 md:left-4 z-10 text-background hover:bg-background/20 w-12 h-12"
                     onClick={handlePrevious}
+                    aria-label="Previous image"
                   >
                     <ChevronLeft className="h-8 w-8" />
                   </Button>
@@ -157,6 +159,7 @@ export function PropertyGallery({ images, heroImage, propertyName }: PropertyGal
                     size="icon"
                     className="absolute right-2 md:right-4 z-10 text-background hover:bg-background/20 w-12 h-12"
                     onClick={handleNext}
+                    aria-label="Next image"
                   >
                     <ChevronRight className="h-8 w-8" />
                   </Button>
@@ -185,6 +188,7 @@ export function PropertyGallery({ images, heroImage, propertyName }: PropertyGal
                   <button
                     key={index}
                     onClick={() => setCurrentIndex(index)}
+                    aria-label={`View image ${index + 1}`}
                     className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden transition-all ${
                       currentIndex === index 
                         ? 'ring-2 ring-background scale-105' 

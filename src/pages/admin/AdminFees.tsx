@@ -270,12 +270,13 @@ export default function AdminFees() {
                               variant="ghost"
                               size="icon"
                               onClick={() => openEditDialog(fee)}
+                              aria-label="Edit tax"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon">
+                                <Button variant="ghost" size="icon" aria-label="Delete tax">
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -358,12 +359,13 @@ export default function AdminFees() {
                               variant="ghost"
                               size="icon"
                               onClick={() => openEditDialog(fee)}
+                              aria-label="Edit fee"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon">
+                                <Button variant="ghost" size="icon" aria-label="Delete fee">
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </AlertDialogTrigger>

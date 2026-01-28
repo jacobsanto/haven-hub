@@ -15,8 +15,7 @@ export function useRealtimeBookings() {
           schema: 'public',
           table: 'bookings',
         },
-        (payload) => {
-          console.log('[Realtime] Booking change:', payload.eventType);
+        () => {
           // Invalidate relevant queries
           queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
           queryClient.invalidateQueries({ queryKey: ['admin', 'analytics'] });
@@ -30,8 +29,7 @@ export function useRealtimeBookings() {
           schema: 'public',
           table: 'checkout_holds',
         },
-        (payload) => {
-          console.log('[Realtime] Checkout hold change:', payload.eventType);
+        () => {
           queryClient.invalidateQueries({ queryKey: ['admin', 'analytics', 'checkout-holds'] });
         }
       )
@@ -42,8 +40,7 @@ export function useRealtimeBookings() {
           schema: 'public',
           table: 'availability',
         },
-        (payload) => {
-          console.log('[Realtime] Availability change:', payload.eventType);
+        () => {
           queryClient.invalidateQueries({ queryKey: ['availability'] });
           queryClient.invalidateQueries({ queryKey: ['admin', 'availability'] });
         }
@@ -55,8 +52,7 @@ export function useRealtimeBookings() {
           schema: 'public',
           table: 'pms_sync_runs',
         },
-        (payload) => {
-          console.log('[Realtime] PMS sync run change:', payload.eventType);
+        () => {
           queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
         }
       )
@@ -85,8 +81,7 @@ export function useRealtimeBooking(bookingId: string) {
           table: 'bookings',
           filter: `id=eq.${bookingId}`,
         },
-        (payload) => {
-          console.log('[Realtime] Booking updated:', bookingId);
+        () => {
           queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
         }
       )
