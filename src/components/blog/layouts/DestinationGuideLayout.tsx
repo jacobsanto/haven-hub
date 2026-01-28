@@ -54,7 +54,7 @@ export function DestinationGuideLayout({
       {isMobile && headings.length > 0 && <MobileTableOfContents headings={headings} />}
 
       {/* Hero Image with Parallax */}
-      <section ref={heroRef} className="relative h-[35vh] md:h-[40vh] overflow-hidden">
+      <section ref={heroRef} className="relative h-[35vh] overflow-hidden">
         {post.featured_image_url ? (
           <motion.img
             src={post.featured_image_url}
@@ -67,13 +67,14 @@ export function DestinationGuideLayout({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
         
+        {/* Back Button - Consistent Style */}
         <div className="absolute top-4 left-4 z-10">
           <Link
             to="/blog"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Blog
+            Back to Blog
           </Link>
         </div>
       </section>
@@ -92,7 +93,7 @@ export function DestinationGuideLayout({
             </Badge>
           )}
 
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif text-foreground mb-6 leading-tight">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-medium text-foreground mb-6 leading-tight">
             {post.title}
           </h1>
 
@@ -123,7 +124,7 @@ export function DestinationGuideLayout({
       {/* Article Content with ToC Sidebar */}
       <div className="container mx-auto px-4 py-12 md:py-16">
         <div className="flex gap-8 lg:gap-16 max-w-6xl mx-auto">
-          <article className="flex-1 max-w-4xl">
+          <article className="flex-1 max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -135,7 +136,7 @@ export function DestinationGuideLayout({
                 </p>
               )}
 
-              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-blockquote:border-l-primary/50 prose-blockquote:text-muted-foreground prose-blockquote:italic">
+              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-blockquote:border-l-primary/50 prose-blockquote:text-muted-foreground prose-blockquote:italic">
                 {post.content ? (
                   <MarkdownRenderer content={post.content} style="destination-guide" />
                 ) : (
@@ -157,7 +158,7 @@ export function DestinationGuideLayout({
               )}
 
               <div className="mt-8 pt-8 border-t border-border">
-                <p className="text-sm text-muted-foreground mb-4">Enjoyed this article? Share it with others:</p>
+                <p className="text-sm text-muted-foreground mb-4">Share this article:</p>
                 <SocialShareButtons title={post.title} />
               </div>
 
@@ -179,8 +180,8 @@ export function DestinationGuideLayout({
         <section className="py-16 md:py-20 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl md:text-3xl font-serif text-foreground">
-                Continue Your Journey
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground">
+                You May Also Enjoy
               </h2>
               <Button variant="ghost" asChild className="hidden sm:inline-flex">
                 <Link to="/blog" className="gap-2">

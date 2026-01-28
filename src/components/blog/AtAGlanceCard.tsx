@@ -44,7 +44,7 @@ export function AtAGlanceCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20 rounded-xl p-6 md:p-8 mb-10"
+      className="bg-card border border-border rounded-2xl p-6 md:p-8 mb-10 shadow-sm"
     >
       <div className="flex items-center gap-2 mb-6">
         <ClipboardList className="h-5 w-5 text-primary" />
