@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Search, Check, X, Clock, Eye } from 'lucide-react';
+import { Search, Check, X, Clock, Eye, RefreshCw, Loader2 } from 'lucide-react';
 import { getStatusColors } from '@/lib/utils';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminBookings, useUpdateBookingStatus } from '@/hooks/useBookings';
+import { useConfirmBookingWithPMS } from '@/hooks/useCompleteBooking';
 import { useAdminProperties } from '@/hooks/useProperties';
 import { BookingDetailDialog } from '@/components/admin/BookingDetailDialog';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ export default function AdminBookings() {
   });
   const { data: properties } = useAdminProperties();
   const updateStatus = useUpdateBookingStatus();
+  const confirmWithPMS = useConfirmBookingWithPMS();
   const { toast } = useToast();
 
   const filteredBookings = bookings?.filter(
@@ -66,6 +68,23 @@ export default function AdminBookings() {
       toast({
         title: 'Error',
         description: 'Failed to update booking status.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Confirm booking with PMS sync
+  const handleConfirmWithPMS = async (id: string) => {
+    try {
+      await confirmWithPMS.mutateAsync(id);
+      toast({
+        title: 'Booking Confirmed',
+        description: 'Booking confirmed and synced to PMS.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Confirmation Error',
+        description: error instanceof Error ? error.message : 'Failed to confirm booking.',
         variant: 'destructive',
       });
     }
@@ -201,12 +220,15 @@ export default function AdminBookings() {
                                 size="icon"
                                 variant="ghost"
                                 className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
-                                onClick={() =>
-                                  handleStatusUpdate(booking.id, 'confirmed')
-                                }
-                                aria-label="Confirm booking"
+                                onClick={() => handleConfirmWithPMS(booking.id)}
+                                disabled={confirmWithPMS.isPending}
+                                aria-label="Confirm booking and sync to PMS"
                               >
-                                <Check className="h-4 w-4" />
+                                {confirmWithPMS.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Check className="h-4 w-4" />
+                                )}
                               </Button>
                               <Button
                                 size="icon"

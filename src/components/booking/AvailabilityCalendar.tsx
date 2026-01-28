@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { AvailabilityCalendarDay } from '@/types/booking-engine';
 import { useAvailabilityCalendar } from '@/hooks/useCheckoutFlow';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AvailabilityCalendarProps {
   propertyId: string;
@@ -14,6 +15,10 @@ interface AvailabilityCalendarProps {
   onDateSelect: (date: Date, type: 'checkIn' | 'checkOut') => void;
   minStay?: number;
   className?: string;
+  /** Variant: 'full' (checkout page) or 'compact' (dialog/search) */
+  variant?: 'full' | 'compact';
+  /** Show prices below dates (default: true for full, false for compact) */
+  showPrices?: boolean;
 }
 
 export function AvailabilityCalendar({
@@ -24,7 +29,11 @@ export function AvailabilityCalendar({
   onDateSelect,
   minStay = 2,
   className,
+  variant = 'full',
+  showPrices,
 }: AvailabilityCalendarProps) {
+  const isMobile = useIsMobile();
+  const shouldShowPrices = showPrices ?? (variant === 'full');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectingCheckOut, setSelectingCheckOut] = useState(false);
 
@@ -45,9 +54,16 @@ export function AvailabilityCalendar({
     return map;
   }, [availabilityData]);
 
+  // Show 1 month on mobile, 2 on desktop (for compact variant, always show based on screen size)
+  const monthCount = isMobile ? 1 : 2;
+  
   const months = useMemo(() => {
-    return [currentMonth, addMonths(currentMonth, 1)];
-  }, [currentMonth]);
+    const result = [currentMonth];
+    if (monthCount > 1) {
+      result.push(addMonths(currentMonth, 1));
+    }
+    return result;
+  }, [currentMonth, monthCount]);
 
   const handlePrevMonth = () => setCurrentMonth(prev => addMonths(prev, -1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
@@ -144,7 +160,7 @@ export function AvailabilityCalendar({
                 disabled={!dayData?.available || isBefore(day, startOfDay(new Date()))}
               >
                 <span>{format(day, 'd')}</span>
-                {dayData?.price && dayData.available && (
+                {shouldShowPrices && dayData?.price && dayData.available && (
                   <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[9px] text-muted-foreground">
                     €{dayData.price}
                   </span>
@@ -159,8 +175,12 @@ export function AvailabilityCalendar({
 
   if (isLoading) {
     return (
-      <div className={cn('bg-card rounded-xl border p-6', className)}>
-        <div className="h-80 flex items-center justify-center">
+      <div className={cn(
+        'bg-card rounded-xl border',
+        variant === 'compact' ? 'p-4' : 'p-6',
+        className
+      )}>
+        <div className={cn(variant === 'compact' ? 'h-64' : 'h-80', 'flex items-center justify-center')}>
           <div className="animate-pulse text-muted-foreground">Loading availability...</div>
         </div>
       </div>
@@ -168,31 +188,41 @@ export function AvailabilityCalendar({
   }
 
   return (
-    <div className={cn('bg-card rounded-xl border p-6', className)}>
-      <div className="flex items-center justify-between mb-6">
+    <div className={cn(
+      'bg-card rounded-xl border',
+      variant === 'compact' ? 'p-4' : 'p-6',
+      className
+    )}>
+      <div className={cn(
+        'flex items-center justify-between',
+        variant === 'compact' ? 'mb-4' : 'mb-6'
+      )}>
         <Button variant="ghost" size="icon" onClick={handlePrevMonth} aria-label="Previous month">
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-2 text-sm">
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-primary" />
-            <span>Selected</span>
+        {/* Legend - only show for full variant */}
+        {variant === 'full' && (
+          <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-full bg-primary" />
+              <span>Selected</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-full bg-secondary" />
+              <span>In Range</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="w-3 h-3 rounded-full bg-muted-foreground/20 line-through text-xs">X</span>
+              <span>Unavailable</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-secondary" />
-            <span>In Range</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-muted-foreground/20 line-through text-xs">X</span>
-            <span>Unavailable</span>
-          </div>
-        </div>
+        )}
         <Button variant="ghost" size="icon" onClick={handleNextMonth} aria-label="Next month">
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
 
-      <div className="flex gap-8">
+      <div className={cn('flex', variant === 'compact' ? 'gap-4' : 'gap-8')}>
         {months.map(month => renderMonth(month))}
       </div>
 

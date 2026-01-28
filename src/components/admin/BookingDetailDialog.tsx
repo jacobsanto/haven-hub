@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useBookingDetails } from '@/hooks/useBookings';
 import { useUpdateBookingStatus } from '@/hooks/useBookings';
+import { useConfirmBookingWithPMS, useRetryPMSSync } from '@/hooks/useCompleteBooking';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -52,6 +53,8 @@ export function BookingDetailDialog({
 }: BookingDetailDialogProps) {
   const { data, isLoading, isFetching } = useBookingDetails(bookingId);
   const updateStatus = useUpdateBookingStatus();
+  const confirmWithPMS = useConfirmBookingWithPMS();
+  const retrySync = useRetryPMSSync();
   const { toast } = useToast();
 
   const booking = data?.booking;
@@ -100,12 +103,38 @@ export function BookingDetailDialog({
     }
   };
 
-  const handleRetrySync = () => {
-    toast({
-      title: 'Sync Initiated',
-      description: 'PMS sync has been triggered. Please wait...',
-    });
-    // TODO: Implement actual PMS sync mutation
+  const handleRetrySync = async () => {
+    if (!booking) return;
+    try {
+      await retrySync.mutateAsync(booking.id);
+      toast({
+        title: 'Sync Successful',
+        description: 'Booking has been synced to PMS.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Sync Failed',
+        description: error instanceof Error ? error.message : 'Failed to sync with PMS.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleConfirmWithPMS = async () => {
+    if (!booking) return;
+    try {
+      await confirmWithPMS.mutateAsync(booking.id);
+      toast({
+        title: 'Booking Confirmed',
+        description: 'Booking confirmed and synced to PMS.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Confirmation Error',
+        description: error instanceof Error ? error.message : 'Failed to confirm booking.',
+        variant: 'destructive',
+      });
+    }
   };
 
   // Group price breakdown by type
@@ -533,9 +562,14 @@ export function BookingDetailDialog({
                   size="sm"
                   variant="outline"
                   onClick={handleRetrySync}
+                  disabled={retrySync.isPending}
                   className="h-7"
                 >
-                  <RefreshCw className="h-3 w-3 mr-1" />
+                  {retrySync.isPending ? (
+                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                  )}
                   Retry
                 </Button>
               )}
@@ -548,11 +582,15 @@ export function BookingDetailDialog({
               {booking.status === 'pending' && (
                 <Button
                   variant="default"
-                  onClick={() => handleStatusUpdate('confirmed')}
-                  disabled={updateStatus.isPending}
+                  onClick={handleConfirmWithPMS}
+                  disabled={confirmWithPMS.isPending}
                 >
-                  <Check className="h-4 w-4 mr-2" />
-                  Confirm Booking
+                  {confirmWithPMS.isPending ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4 mr-2" />
+                  )}
+                  Confirm & Sync to PMS
                 </Button>
               )}
               {booking.status !== 'cancelled' && (

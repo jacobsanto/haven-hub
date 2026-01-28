@@ -26,10 +26,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
+import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { useProperties } from '@/hooks/useProperties';
 import { useCheckAvailability } from '@/hooks/useAvailability';
 import { useBooking } from '@/contexts/BookingContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Property } from '@/types/database';
@@ -62,6 +64,9 @@ export function UnifiedBookingDialog() {
   } = useBooking();
 
   const { data: properties, isLoading } = useProperties();
+  
+  // Real-time availability subscription for selected property
+  useRealtimeAvailability(selectedProperty?.id);
   
   // Determine initial step based on mode
   const getInitialStep = (): Step => {
@@ -334,7 +339,7 @@ export function UnifiedBookingDialog() {
           </motion.div>
         )}
 
-        {/* Date Selection Step */}
+        {/* Date Selection Step - with real availability */}
         {step === 'dates' && (
           <motion.div
             key="dates"
@@ -362,16 +367,35 @@ export function UnifiedBookingDialog() {
               </div>
             )}
 
-            <div className="flex justify-center">
-              <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={handleDateSelect}
-                numberOfMonths={isMobile ? 1 : 2}
-                disabled={(date) => date < new Date()}
-                className="rounded-md border pointer-events-auto"
+            {/* Real-time availability calendar */}
+            {selectedProperty ? (
+              <AvailabilityCalendar
+                propertyId={selectedProperty.id}
+                variant="compact"
+                showPrices={false}
+                selectedCheckIn={dateRange?.from}
+                selectedCheckOut={dateRange?.to}
+                onDateSelect={(date, type) => {
+                  if (type === 'checkIn') {
+                    handleDateSelect({ from: date, to: undefined });
+                  } else {
+                    handleDateSelect({ from: dateRange?.from, to: date });
+                  }
+                }}
+                minStay={2}
               />
-            </div>
+            ) : (
+              <div className="flex justify-center">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDateSelect}
+                  numberOfMonths={isMobile ? 1 : 2}
+                  disabled={(date) => date < new Date()}
+                  className="rounded-md border pointer-events-auto"
+                />
+              </div>
+            )}
 
             {/* Date summary */}
             <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
