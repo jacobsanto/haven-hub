@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
 import { HeaderSearchToggle } from '@/components/booking/HeaderSearchToggle';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+const navItems = [
+  { label: 'Properties', path: '/properties' },
+  { label: 'Destinations', path: '/destinations' },
+  { label: 'Experiences', path: '/experiences' },
+  { label: 'Blog', path: '/blog' },
+  { label: 'About', path: '/about' },
+];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -39,6 +48,12 @@ export function Header() {
   const primaryPart = nameParts[0] || brandName;
   const secondaryPart = nameParts.slice(1).join(' ');
 
+  // Check if a path is currently active
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -46,7 +61,7 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-      <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <nav role="navigation" aria-label="Main navigation" className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <motion.div
@@ -70,24 +85,24 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          <Link
-            to="/properties"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Properties
-          </Link>
-          <Link
-            to="/about"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            About
-          </Link>
-          <Link
-            to="/contact"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Contact
-          </Link>
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              aria-current={isActive(item.path) ? 'page' : undefined}
+              className={cn(
+                "text-sm font-medium transition-colors relative",
+                "after:absolute after:bottom-[-4px] after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300",
+                "hover:after:w-full focus-visible:after:w-full",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm",
+                isActive(item.path)
+                  ? "text-foreground after:w-full"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
 
         {/* Search & Auth */}
@@ -131,6 +146,7 @@ export function Header() {
           className="md:hidden p-2"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileMenuOpen}
         >
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -159,33 +175,37 @@ export function Header() {
 
             <div className="border-t border-border my-2" />
 
-            <Link
-              to="/properties"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Properties
-            </Link>
-            <Link
-              to="/about"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              About
-            </Link>
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                aria-current={isActive(item.path) ? 'page' : undefined}
+                className={cn(
+                  "text-sm font-medium py-2",
+                  isActive(item.path)
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+
             <Link
               to="/contact"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
               Contact
             </Link>
+
             {user ? (
               <>
                 {isAdmin && (
                   <Link
                     to="/admin"
-                    className="text-sm font-medium text-primary"
+                    className="text-sm font-medium text-primary py-2"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Admin Dashboard
@@ -196,7 +216,7 @@ export function Header() {
                     handleSignOut();
                     setMobileMenuOpen(false);
                   }}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground text-left"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground text-left py-2"
                 >
                   Sign Out
                 </button>
