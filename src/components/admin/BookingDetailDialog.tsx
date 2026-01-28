@@ -50,7 +50,7 @@ export function BookingDetailDialog({
   open,
   onOpenChange,
 }: BookingDetailDialogProps) {
-  const { data, isLoading } = useBookingDetails(bookingId);
+  const { data, isLoading, isFetching } = useBookingDetails(bookingId);
   const updateStatus = useUpdateBookingStatus();
   const { toast } = useToast();
 
@@ -124,7 +124,8 @@ export function BookingDetailDialog({
     discount: 'Discounts',
   };
 
-  if (isLoading) {
+  // Show skeleton during initial load OR background refetch when no data yet
+  if (isLoading || (isFetching && !data?.booking)) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">

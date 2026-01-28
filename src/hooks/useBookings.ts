@@ -88,6 +88,8 @@ export function useBookingDetails(bookingId: string | null) {
       };
     },
     enabled: !!bookingId,
+    staleTime: 30000, // 30 seconds - prevents unnecessary refetches
+    gcTime: 5 * 60 * 1000, // 5 minutes - keeps data in cache longer
   });
 }
 
