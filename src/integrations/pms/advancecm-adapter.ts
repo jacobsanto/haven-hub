@@ -151,39 +151,12 @@ export class AdvanceCMAdapter implements PMSAdapter {
   }
 
   async fetchRates(
-    externalPropertyId: string,
-    startDate: string,
-    endDate: string
+    _externalPropertyId: string,
+    _startDate: string,
+    _endDate: string
   ): Promise<PMSRate[]> {
-    try {
-      const result = await callEdgeFunction<{
-        success: boolean;
-        rates: Array<{
-          externalId: string;
-          nightly: number;
-          minStay: number;
-          validFrom?: string;
-          validTo?: string;
-          currency: string;
-        }>;
-      }>("fetch-rates", { externalId: externalPropertyId });
-
-      return result.rates
-        .filter((r) => {
-          if (!r.validFrom || !r.validTo) return true;
-          return r.validFrom <= endDate && r.validTo >= startDate;
-        })
-        .map((r) => ({
-          propertyId: externalPropertyId,
-          date: r.validFrom || startDate,
-          baseRate: r.nightly,
-          currency: r.currency,
-          minStay: r.minStay,
-        }));
-    } catch (error) {
-      console.error("Failed to fetch rates:", error);
-      return [];
-    }
+    // Rates are managed locally - not imported from PMS
+    return [];
   }
 
   async fetchFees(_externalPropertyId: string): Promise<PMSFee[]> {
@@ -255,7 +228,7 @@ export class AdvanceCMAdapter implements PMSAdapter {
   }
 
   async syncRates(_externalPropertyId: string): Promise<PMSSyncResult> {
-    // TODO: Implement when Tokeet rates endpoint is available
+    // Rates are managed locally via CSV import or admin UI
     return {
       success: true,
       recordsProcessed: 0,
