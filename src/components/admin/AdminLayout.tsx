@@ -267,7 +267,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </Link>
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground truncate max-w-[140px]">{user?.email}</span>
-          <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-10 w-10">
+          <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-10 w-10" aria-label="Sign out">
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
@@ -292,7 +292,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <div className="flex items-center gap-2">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10">
+                <Button variant="ghost" size="icon" className="h-10 w-10" aria-label="Open menu">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>

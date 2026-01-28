@@ -184,20 +184,17 @@ export class MockPMSAdapter implements PMSAdapter {
 
   async testConnection(): Promise<boolean> {
     await this.delay();
-    console.log('[MockPMS] Connection test successful');
     return true;
   }
 
   async fetchProperties(): Promise<PMSProperty[]> {
     await this.delay();
-    console.log('[MockPMS] Fetched properties:', MOCK_PROPERTIES.length);
     return MOCK_PROPERTIES;
   }
 
   async fetchProperty(externalId: string): Promise<PMSProperty | null> {
     await this.delay();
     const property = MOCK_PROPERTIES.find(p => p.externalId === externalId);
-    console.log('[MockPMS] Fetched property:', externalId, property ? 'found' : 'not found');
     return property || null;
   }
 
@@ -211,7 +208,6 @@ export class MockPMSAdapter implements PMSAdapter {
     if (!property) return [];
     
     const availability = generateMockAvailability(property.id, startDate, endDate);
-    console.log('[MockPMS] Fetched availability for', externalPropertyId, ':', availability.length, 'days');
     return availability;
   }
 
@@ -225,13 +221,11 @@ export class MockPMSAdapter implements PMSAdapter {
     if (!property) return [];
     
     const rates = generateMockRates(property.id, startDate, endDate);
-    console.log('[MockPMS] Fetched rates for', externalPropertyId, ':', rates.length, 'days');
     return rates;
   }
 
-  async fetchFees(externalPropertyId: string): Promise<PMSFee[]> {
+  async fetchFees(_externalPropertyId: string): Promise<PMSFee[]> {
     await this.delay();
-    console.log('[MockPMS] Fetched fees for', externalPropertyId);
     return MOCK_FEES;
   }
 
@@ -254,8 +248,6 @@ export class MockPMSAdapter implements PMSAdapter {
       status: 'confirmed'
     });
     
-    console.log('[MockPMS] Created booking:', confirmationCode);
-    
     return {
       success: true,
       externalBookingId,
@@ -272,7 +264,6 @@ export class MockPMSAdapter implements PMSAdapter {
     }
     
     booking.status = 'cancelled';
-    console.log('[MockPMS] Cancelled booking:', request.externalBookingId);
     
     return {
       success: true,
@@ -282,7 +273,6 @@ export class MockPMSAdapter implements PMSAdapter {
 
   async syncAll(): Promise<PMSSyncResult> {
     await this.delay();
-    console.log('[MockPMS] Full sync completed');
     return {
       success: true,
       recordsProcessed: MOCK_PROPERTIES.length * 90, // ~90 days of data
@@ -290,9 +280,8 @@ export class MockPMSAdapter implements PMSAdapter {
     };
   }
 
-  async syncAvailability(externalPropertyId: string): Promise<PMSSyncResult> {
+  async syncAvailability(_externalPropertyId: string): Promise<PMSSyncResult> {
     await this.delay();
-    console.log('[MockPMS] Availability sync for', externalPropertyId);
     return {
       success: true,
       recordsProcessed: 90,
@@ -300,9 +289,8 @@ export class MockPMSAdapter implements PMSAdapter {
     };
   }
 
-  async syncRates(externalPropertyId: string): Promise<PMSSyncResult> {
+  async syncRates(_externalPropertyId: string): Promise<PMSSyncResult> {
     await this.delay();
-    console.log('[MockPMS] Rates sync for', externalPropertyId);
     return {
       success: true,
       recordsProcessed: 90,

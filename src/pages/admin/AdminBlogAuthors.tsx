@@ -130,7 +130,7 @@ export default function AdminBlogAuthors() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(author)}>
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(author)} aria-label="Edit author">
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button 
@@ -138,6 +138,7 @@ export default function AdminBlogAuthors() {
                             size="icon" 
                             onClick={() => setDeleteId(author.id)}
                             className="text-destructive hover:text-destructive"
+                            aria-label="Delete author"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

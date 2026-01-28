@@ -60,7 +60,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
             <div className="absolute top-3 left-3 flex flex-col gap-2">
               {property.instant_booking && <InstantBookingBadge size="sm" />}
               {specialOffer && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium">
                   <Percent className="h-4 w-4" />
                   <span>{specialOffer.discount_percent}% off</span>
                 </div>

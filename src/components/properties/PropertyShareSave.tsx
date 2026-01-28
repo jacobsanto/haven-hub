@@ -69,6 +69,7 @@ export function PropertyShareSave({ propertyName, propertyUrl }: PropertyShareSa
           whileTap={{ scale: 0.95 }}
           onClick={handleShare}
           className="w-12 h-12 rounded-full bg-background border border-border shadow-lg flex items-center justify-center"
+          aria-label="Share property"
         >
           <Share2 className="h-5 w-5 text-foreground" />
         </motion.button>
@@ -76,6 +77,7 @@ export function PropertyShareSave({ propertyName, propertyUrl }: PropertyShareSa
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleSave}
+          aria-label={isSaved ? 'Remove from wishlist' : 'Save to wishlist'}
           className={`w-12 h-12 rounded-full border shadow-lg flex items-center justify-center transition-colors ${
             isSaved 
               ? 'bg-destructive border-destructive' 
@@ -106,6 +108,7 @@ export function PropertyShareSave({ propertyName, propertyUrl }: PropertyShareSa
           whileTap={{ scale: 0.95 }}
           onClick={handleShare}
           className="w-11 h-11 rounded-full bg-background border border-border shadow-lg flex items-center justify-center hover:bg-secondary transition-colors group relative"
+          aria-label="Share property"
         >
           <Share2 className="h-5 w-5 text-foreground" />
           <span className="absolute right-full mr-3 px-2 py-1 bg-foreground text-background text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
@@ -116,6 +119,7 @@ export function PropertyShareSave({ propertyName, propertyUrl }: PropertyShareSa
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleSave}
+          aria-label={isSaved ? 'Saved' : 'Save to wishlist'}
           className={`w-11 h-11 rounded-full border shadow-lg flex items-center justify-center transition-colors group relative ${
             isSaved 
               ? 'bg-destructive border-destructive hover:bg-destructive/90' 
@@ -155,6 +159,7 @@ export function PropertyShareSave({ propertyName, propertyUrl }: PropertyShareSa
                 <button
                   onClick={() => setShowShareMenu(false)}
                   className="p-1 rounded-full hover:bg-secondary transition-colors"
+                  aria-label="Close share menu"
                 >
                   <X className="h-5 w-5 text-muted-foreground" />
                 </button>

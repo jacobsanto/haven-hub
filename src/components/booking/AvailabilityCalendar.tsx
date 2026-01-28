@@ -170,7 +170,7 @@ export function AvailabilityCalendar({
   return (
     <div className={cn('bg-card rounded-xl border p-6', className)}>
       <div className="flex items-center justify-between mb-6">
-        <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
+        <Button variant="ghost" size="icon" onClick={handlePrevMonth} aria-label="Previous month">
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-2 text-sm">
@@ -187,7 +187,7 @@ export function AvailabilityCalendar({
             <span>Unavailable</span>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleNextMonth}>
+        <Button variant="ghost" size="icon" onClick={handleNextMonth} aria-label="Next month">
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, Eye, MoreVertical } from 'lucide-react';
+import { getStatusColors } from '@/lib/utils';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminProperties, useDeleteProperty } from '@/hooks/useProperties';
@@ -75,18 +76,7 @@ export default function AdminProperties() {
     setDeleteId(null);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-700';
-      case 'draft':
-        return 'bg-amber-100 text-amber-700';
-      case 'archived':
-        return 'bg-gray-100 text-gray-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
+  const getStatusBadge = (status: string) => getStatusColors(status);
 
   return (
     <AdminGuard>
@@ -184,7 +174,7 @@ export default function AdminProperties() {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" aria-label="Property options">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

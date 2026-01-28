@@ -21,7 +21,7 @@ export function SpecialOfferBadge({
     return (
       <span
         className={cn(
-          'inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400',
+          'inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400',
           className
         )}
       >
@@ -35,7 +35,7 @@ export function SpecialOfferBadge({
     return (
       <div
         className={cn(
-          'inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium',
+          'inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium',
           className
         )}
       >
@@ -54,20 +54,20 @@ export function SpecialOfferBadge({
   return (
     <div
       className={cn(
-        'card-organic p-4 border-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10',
+        'card-organic p-4 border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/10',
         className
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30">
-          <Percent className="h-6 w-6 text-green-600 dark:text-green-400" />
+        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+          <Percent className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h4 className="font-medium text-green-700 dark:text-green-400">
+            <h4 className="font-medium text-emerald-700 dark:text-emerald-400">
               {offer.title}
             </h4>
-            <span className="px-2 py-0.5 bg-green-600 text-white text-xs font-bold rounded">
+            <span className="px-2 py-0.5 bg-emerald-600 text-white text-xs font-bold rounded">
               {offer.discount_percent}% OFF
             </span>
           </div>
