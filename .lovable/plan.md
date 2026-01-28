@@ -1,113 +1,137 @@
 
-# Expand Font Options to 25 Per Category
 
-## Overview
+# Fix Admin Dashboard Access Issue
 
-Increase the font selection options from the current 6 heading fonts and 7 body fonts to **25 fonts each**, giving users extensive typography customization options.
+## Problem Summary
 
----
+The admin user (`iakovos@ariviagroup.com`) is logged in but the "Admin Dashboard" link is not appearing in the navigation dropdown. Investigation confirmed:
 
-## Current State
+1. The user is properly authenticated and logged in
+2. The user has the `admin` role in the `user_roles` table
+3. RLS policies are correctly configured
+4. The `has_role()` function works properly
 
-| Category | Count |
-|----------|-------|
-| Heading Fonts | 6 |
-| Body Fonts | 7 |
-| **Total** | **13** |
+The issue is in the frontend code's handling of the admin role check.
 
 ---
 
-## New Font Lists
+## Root Cause Analysis
 
-### Heading Fonts (25 Serif/Display Fonts)
+### Issue 1: Silent Error Handling
 
-| # | Font Name | Style |
-|---|-----------|-------|
-| 1 | Playfair Display | Transitional serif |
-| 2 | Cormorant Garamond | Elegant serif |
-| 3 | Lora | Contemporary serif |
-| 4 | Merriweather | Screen-optimized serif |
-| 5 | Crimson Text | Old-style serif |
-| 6 | Libre Baskerville | Classic serif |
-| 7 | Georgia | System serif |
-| 8 | DM Serif Display | Modern display |
-| 9 | Spectral | Elegant serif |
-| 10 | Fraunces | Variable display |
-| 11 | Abril Fatface | Bold display |
-| 12 | Josefin Slab | Slab serif |
-| 13 | EB Garamond | Classic Garamond |
-| 14 | Sorts Mill Goudy | Old-style serif |
-| 15 | Bitter | Slab serif |
-| 16 | Vollkorn | Baroque serif |
-| 17 | Cardo | Classical serif |
-| 18 | Neuton | Contemporary serif |
-| 19 | Alegreya | Calligraphic serif |
-| 20 | Gentium Book Plus | Humanist serif |
-| 21 | Source Serif Pro | Adobe serif |
-| 22 | PT Serif | ParaType serif |
-| 23 | Noto Serif | Google serif |
-| 24 | IBM Plex Serif | IBM design |
-| 25 | Zilla Slab | Mozilla slab |
+In `src/hooks/useAuth.tsx`, the admin role check uses `.single()` which throws an error if no row is found:
 
-### Body Fonts (25 Sans-Serif Fonts)
+```typescript
+const { data: roles } = await supabase
+  .from('user_roles')
+  .select('role')
+  .eq('user_id', session.user.id)
+  .eq('role', 'admin')
+  .single();  // Throws PGRST116 error if no row found
 
-| # | Font Name | Style |
-|---|-----------|-------|
-| 1 | Lato | Humanist sans |
-| 2 | Montserrat | Geometric sans |
-| 3 | Inter | UI-optimized |
-| 4 | Open Sans | Humanist sans |
-| 5 | Source Sans Pro | Adobe sans |
-| 6 | Nunito | Rounded sans |
-| 7 | Roboto | Neo-grotesque |
-| 8 | Work Sans | Geometric sans |
-| 9 | Poppins | Geometric sans |
-| 10 | Raleway | Elegant sans |
-| 11 | Karla | Grotesque sans |
-| 12 | Cabin | Humanist sans |
-| 13 | Rubik | Rounded sans |
-| 14 | DM Sans | Geometric sans |
-| 15 | Plus Jakarta Sans | Modern sans |
-| 16 | Outfit | Modern sans |
-| 17 | Mulish | Minimalist sans |
-| 18 | Quicksand | Rounded sans |
-| 19 | Barlow | Rounded grotesque |
-| 20 | Manrope | Modern sans |
-| 21 | Sora | Geometric sans |
-| 22 | Space Grotesk | Display sans |
-| 23 | Albert Sans | Geometric sans |
-| 24 | Red Hat Display | Red Hat design |
-| 25 | Figtree | Modern sans |
+setIsAdmin(!!roles);  // If error occurs, roles is null, isAdmin stays false
+```
+
+The error is not being caught or logged, so if anything fails, `isAdmin` silently remains `false`.
+
+### Issue 2: Race Condition
+
+Both `onAuthStateChange` and `getSession()` run admin checks simultaneously:
+- `onAuthStateChange` sets up a listener that may fire immediately
+- `getSession()` also checks for admin role
+- Both update `isAdmin` state, potentially overwriting each other
+
+### Issue 3: Redundant Loading State
+
+The `setLoading(false)` is called in multiple places, potentially causing premature rendering before the admin check completes.
 
 ---
 
-## Implementation
+## Solution
 
-### File to Modify
-`src/pages/admin/AdminSettings.tsx`
+### 1. Improve Error Handling
 
-### Changes
+Add proper error handling and logging to the admin role check. Use `.maybeSingle()` instead of `.single()` to avoid throwing when no row exists.
 
-**Update HEADING_FONTS array (lines 15-22):**
-Replace 6 fonts with 25 serif/display fonts.
+### 2. Consolidate Admin Check Logic
 
-**Update BODY_FONTS array (lines 24-32):**
-Replace 7 fonts with 25 sans-serif fonts.
+Create a reusable function that properly handles the admin check with error logging.
+
+### 3. Fix Race Condition
+
+Use a single source of truth for the admin check instead of running it in parallel from both `onAuthStateChange` and `getSession()`.
 
 ---
 
-## Technical Details
+## Implementation Details
 
-### Google Fonts Compatibility
-All 50 fonts are available on Google Fonts and will be dynamically loaded by the existing `loadGoogleFont()` function in `BrandContext.tsx` when selected.
+### File: `src/hooks/useAuth.tsx`
 
-### Files Changed
-- `src/pages/admin/AdminSettings.tsx` (1 file)
+**Changes:**
 
-### Final Count
+1. Create a helper function `checkAdminRole` that:
+   - Uses `.maybeSingle()` instead of `.single()`
+   - Logs errors for debugging
+   - Returns boolean result
 
-| Category | Before | After |
-|----------|--------|-------|
-| Heading Fonts | 6 | 25 |
-| Body Fonts | 7 | 25 |
-| **Total** | **13** | **50** |
+2. Refactor the auth state handling:
+   - Remove duplicate admin checks
+   - Ensure `setLoading(false)` only happens after all checks complete
+   - Use defer logic in `onAuthStateChange` to prevent blocking the auth listener
+
+3. Add error boundary for failed queries
+
+**Code Changes:**
+
+```typescript
+// Add helper function
+const checkAdminRole = async (userId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error checking admin role:', error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (err) {
+    console.error('Exception checking admin role:', err);
+    return false;
+  }
+};
+```
+
+Then update both the `onAuthStateChange` handler and `getSession()` callback to use this helper function.
+
+---
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/hooks/useAuth.tsx` | Fix admin role check with proper error handling |
+
+---
+
+## Technical Notes
+
+- `.maybeSingle()` returns `null` if no row is found (instead of throwing an error)
+- Using `setTimeout` with 0ms delay in `onAuthStateChange` prevents Supabase deadlock warnings
+- Error logging helps debug RLS policy issues in the future
+
+---
+
+## Testing Steps
+
+After implementation:
+1. Refresh the page
+2. Click the user icon in the header
+3. Verify "Admin Dashboard" option appears in the dropdown
+4. Click "Admin Dashboard" to confirm navigation works
+
