@@ -30,9 +30,10 @@ export function BlogSecondaryCard({ post, index = 0 }: BlogSecondaryCardProps) {
     >
       <Link 
         to={`/blog/${post.slug}`} 
-        className="flex flex-col h-full overflow-hidden rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+        className="flex flex-col md:flex-row h-full overflow-hidden rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300"
       >
-        <div className="relative aspect-[16/9] overflow-hidden">
+        {/* Image - Left side on tablet+ */}
+        <div className="relative aspect-[16/9] md:aspect-auto md:w-2/5 overflow-hidden shrink-0">
           {post.featured_image_url ? (
             <img
               src={post.featured_image_url}
@@ -54,13 +55,14 @@ export function BlogSecondaryCard({ post, index = 0 }: BlogSecondaryCardProps) {
           )}
         </div>
         
-        <div className="flex flex-col flex-1 p-6">
-          <h3 className="text-xl font-serif text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+        {/* Content - Right side on tablet+ */}
+        <div className="flex flex-col flex-1 p-5 md:p-6">
+          <h3 className="text-lg md:text-xl font-serif text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors leading-snug">
             {post.title}
           </h3>
           
           {post.excerpt && (
-            <p className="text-muted-foreground text-sm mb-4 line-clamp-2 flex-1">
+            <p className="text-muted-foreground text-sm mb-4 line-clamp-2 flex-1 leading-relaxed">
               {post.excerpt}
             </p>
           )}
@@ -69,13 +71,13 @@ export function BlogSecondaryCard({ post, index = 0 }: BlogSecondaryCardProps) {
             <div className="flex items-center gap-3">
               {post.author && (
                 <div className="flex items-center gap-2">
-                  <Avatar className="h-6 w-6">
+                  <Avatar className="h-7 w-7">
                     <AvatarImage src={post.author.avatar_url || undefined} alt={post.author.name} />
                     <AvatarFallback className="text-[10px]">
                       {post.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-xs text-muted-foreground">{post.author.name}</span>
+                  <span className="text-xs text-muted-foreground hidden sm:inline">{post.author.name}</span>
                 </div>
               )}
               <span className="flex items-center gap-1 text-xs text-muted-foreground">

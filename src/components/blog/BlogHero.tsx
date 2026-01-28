@@ -5,6 +5,8 @@ import { format } from 'date-fns';
 import { BlogPost } from '@/types/blog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+
 interface BlogHeroProps {
   post: BlogPost;
 }
@@ -25,10 +27,11 @@ export function BlogHero({ post }: BlogHeroProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="relative group overflow-hidden rounded-3xl bg-card"
+      className="relative group overflow-hidden"
     >
       <Link to={`/blog/${post.slug}`} className="block">
-        <div className="relative aspect-[21/9] md:aspect-[3/1] overflow-hidden">
+        {/* Full-width immersive hero */}
+        <div className="relative h-[60vh] md:h-[70vh] overflow-hidden">
           {post.featured_image_url ? (
             <img
               src={post.featured_image_url}
@@ -37,55 +40,64 @@ export function BlogHero({ post }: BlogHeroProps) {
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <span className="text-muted-foreground">Featured Story</span>
+              <span className="text-muted-foreground text-lg">Featured Story</span>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
           
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 lg:p-12">
-            <div className="max-w-3xl">
-              {post.category && (
-                <Badge 
-                  variant="secondary" 
-                  className="mb-4 bg-white/20 text-white border-0 backdrop-blur-sm"
-                >
-                  {post.category.name}
-                </Badge>
-              )}
-              
-              <h2 className="text-2xl md:text-4xl lg:text-5xl font-serif text-white mb-4 group-hover:text-primary-foreground/90 transition-colors">
-                {post.title}
-              </h2>
-              
-              {post.excerpt && (
-                <p className="text-white/80 text-sm md:text-base lg:text-lg mb-6 line-clamp-2 max-w-2xl">
-                  {post.excerpt}
-                </p>
-              )}
-              
-              <div className="flex flex-wrap items-center gap-4 md:gap-6">
-                {post.author && (
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8 border border-white/20">
-                      <AvatarImage src={post.author.avatar_url || undefined} alt={post.author.name} />
-                      <AvatarFallback className="text-xs bg-white/20 text-white">
-                        {post.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-white/90 text-sm font-medium">{post.author.name}</span>
-                  </div>
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
+          
+          {/* Content positioned at bottom */}
+          <div className="absolute inset-x-0 bottom-0 p-6 md:p-10 lg:p-16">
+            <div className="container mx-auto">
+              <div className="max-w-3xl">
+                {post.category && (
+                  <Badge 
+                    variant="secondary" 
+                    className="mb-4 bg-white/20 text-white border-0 backdrop-blur-sm"
+                  >
+                    {post.category.name}
+                  </Badge>
                 )}
-                <span className="flex items-center gap-2 text-white/70 text-sm">
-                  <Calendar className="h-4 w-4" />
-                  {format(publishedDate, 'MMM d, yyyy')}
-                </span>
-                <span className="flex items-center gap-2 text-white/70 text-sm">
-                  <Clock className="h-4 w-4" />
-                  {readTime} min read
-                </span>
-                <span className="inline-flex items-center gap-2 text-white font-medium group-hover:gap-3 transition-all ml-auto">
-                  Read Story <ArrowRight className="h-4 w-4" />
-                </span>
+                
+                <h2 className="text-2xl md:text-4xl lg:text-5xl font-serif text-white mb-4 leading-tight group-hover:text-white/90 transition-colors">
+                  {post.title}
+                </h2>
+                
+                {post.excerpt && (
+                  <p className="text-white/80 text-base md:text-lg lg:text-xl mb-6 line-clamp-2 max-w-2xl leading-relaxed">
+                    {post.excerpt}
+                  </p>
+                )}
+                
+                <div className="flex flex-wrap items-center gap-4 md:gap-6">
+                  {post.author && (
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border-2 border-white/30">
+                        <AvatarImage src={post.author.avatar_url || undefined} alt={post.author.name} />
+                        <AvatarFallback className="text-xs bg-white/20 text-white">
+                          {post.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-white font-medium">{post.author.name}</span>
+                    </div>
+                  )}
+                  <span className="flex items-center gap-2 text-white/70 text-sm">
+                    <Calendar className="h-4 w-4" />
+                    {format(publishedDate, 'MMM d, yyyy')}
+                  </span>
+                  <span className="flex items-center gap-2 text-white/70 text-sm">
+                    <Clock className="h-4 w-4" />
+                    {readTime} min read
+                  </span>
+                </div>
+                
+                <Button 
+                  variant="secondary" 
+                  className="mt-6 gap-2 group-hover:gap-3 transition-all"
+                >
+                  Read Article <ArrowRight className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
