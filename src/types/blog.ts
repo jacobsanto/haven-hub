@@ -23,6 +23,13 @@ export interface BlogAuthor {
   updated_at: string;
 }
 
+export interface InlineImage {
+  url: string;
+  alt: string;
+  caption?: string;
+  position: string; // e.g., 'after-heading-1', 'after-section-2'
+}
+
 export interface BlogPost {
   id: string;
   title: string;
@@ -38,6 +45,7 @@ export interface BlogPost {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  inline_images?: InlineImage[] | null;
   category?: BlogCategory;
   author?: BlogAuthor;
 }

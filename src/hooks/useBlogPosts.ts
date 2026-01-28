@@ -24,8 +24,11 @@ export function useBlogPosts(options?: { status?: BlogStatus; categorySlug?: str
       
       if (error) throw error;
       
-      // Filter by category slug if provided
-      let posts = data as BlogPost[];
+      // Filter by category slug if provided and map inline_images
+      let posts = (data || []).map(p => ({
+        ...p,
+        inline_images: Array.isArray(p.inline_images) ? p.inline_images : [],
+      })) as unknown as BlogPost[];
       if (options?.categorySlug) {
         posts = posts.filter(p => p.category?.slug === options.categorySlug);
       }
@@ -81,8 +84,13 @@ export function usePaginatedBlogPosts(options?: {
       
       if (error) throw error;
       
+      const posts = (data || []).map(p => ({
+        ...p,
+        inline_images: Array.isArray(p.inline_images) ? p.inline_images : [],
+      })) as unknown as BlogPost[];
+      
       return {
-        posts: data as BlogPost[],
+        posts,
         totalCount: count || 0,
         totalPages: Math.ceil((count || 0) / POSTS_PER_PAGE),
         currentPage: page,
@@ -108,7 +116,12 @@ export function useBlogPost(slug: string) {
         .maybeSingle();
       
       if (error) throw error;
-      return data as BlogPost | null;
+      if (!data) return null;
+      
+      return {
+        ...data,
+        inline_images: Array.isArray(data.inline_images) ? data.inline_images : [],
+      } as unknown as BlogPost;
     },
     enabled: !!slug,
   });
@@ -132,7 +145,12 @@ export function useFeaturedBlogPost() {
         .maybeSingle();
       
       if (error) throw error;
-      return data as BlogPost | null;
+      if (!data) return null;
+      
+      return {
+        ...data,
+        inline_images: Array.isArray(data.inline_images) ? data.inline_images : [],
+      } as unknown as BlogPost;
     },
   });
 }
@@ -142,10 +160,15 @@ export function useCreateBlogPost() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (post: Omit<BlogPost, 'id' | 'created_at' | 'updated_at' | 'category'>) => {
+    mutationFn: async (post: Omit<BlogPost, 'id' | 'created_at' | 'updated_at' | 'category' | 'author'>) => {
+      const { inline_images, ...rest } = post;
+      const insertData = {
+        ...rest,
+        inline_images: (inline_images || []) as unknown,
+      };
       const { data, error } = await supabase
         .from('blog_posts')
-        .insert(post)
+        .insert(insertData as any)
         .select()
         .single();
       
