@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, Copy, Calendar, Users, Tag, Crown, Sun, Snowflake, TrendingUp } from 'lucide-react';
+import { Plus, Pencil, Trash2, Copy, Calendar, Users, Tag, Crown, Sun, Snowflake, TrendingUp, BarChart3 } from 'lucide-react';
 import { format, parseISO, isWithinInterval, isBefore, isAfter } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
@@ -8,6 +8,7 @@ import { useAdminRatePlans, useCreateRatePlan, useUpdateRatePlan, useDeleteRateP
 import { useSeasonalRates, useCreateSeasonalRate, useUpdateSeasonalRate, useDeleteSeasonalRate } from '@/hooks/useSeasonalRates';
 import { useAdminProperties } from '@/hooks/useProperties';
 import { SeasonalRateFormDialog } from '@/components/admin/SeasonalRateFormDialog';
+import { SeasonalRatesHeatmap } from '@/components/admin/SeasonalRatesHeatmap';
 import { SeasonalRate } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -303,7 +304,7 @@ export default function AdminRatePlans() {
           </div>
 
           <Tabs defaultValue="rate-plans" className="space-y-6">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsList className="grid w-full max-w-lg grid-cols-3">
               <TabsTrigger value="rate-plans" className="flex items-center gap-2">
                 <Tag className="h-4 w-4" />
                 Rate Plans
@@ -311,6 +312,10 @@ export default function AdminRatePlans() {
               <TabsTrigger value="seasonal-rates" className="flex items-center gap-2">
                 <Sun className="h-4 w-4" />
                 Seasonal Rates
+              </TabsTrigger>
+              <TabsTrigger value="heatmap" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Price Heatmap
               </TabsTrigger>
             </TabsList>
 
@@ -750,6 +755,51 @@ export default function AdminRatePlans() {
                       </p>
                       <p className="text-sm text-muted-foreground">
                         Seasonal rates allow you to automatically adjust pricing based on high/low season periods.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* Heatmap Tab */}
+            <TabsContent value="heatmap" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 max-w-xs">
+                  <Select
+                    value={selectedPropertyForSeasons}
+                    onValueChange={setSelectedPropertyForSeasons}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a property" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      {properties?.map((property) => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {selectedProperty && seasonalRates ? (
+                <SeasonalRatesHeatmap 
+                  property={selectedProperty} 
+                  seasonalRates={seasonalRates} 
+                />
+              ) : (
+                <Card className="card-organic">
+                  <CardContent className="py-12">
+                    <div className="text-center">
+                      <BarChart3 className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-2">
+                        Select a property to view its price heatmap.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        The heatmap provides a visual overview of nightly rates throughout the year,
+                        helping you identify pricing patterns and gaps.
                       </p>
                     </div>
                   </CardContent>
