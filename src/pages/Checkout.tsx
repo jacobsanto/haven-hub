@@ -225,6 +225,8 @@ export default function Checkout() {
           propertyId: property.id,
           propertyName: property.name,
           propertySlug: property.slug,
+          propertyCity: property.city,
+          propertyCountry: property.country,
           checkIn: format(checkIn, 'yyyy-MM-dd'),
           checkOut: format(checkOut, 'yyyy-MM-dd'),
           nights,
