@@ -14,7 +14,7 @@ import { PaymentOptions } from '@/components/booking/PaymentOptions';
 import { useProperty } from '@/hooks/useProperties';
 import { useFeesTaxes, calculatePriceBreakdown } from '@/hooks/useBookingEngine';
 import { useCreateCheckoutHold, useReleaseCheckoutHold, generateSessionId } from '@/hooks/useCheckoutFlow';
-import { SelectedAddon, CouponPromo, BookingGuest, PaymentType, PriceBreakdown } from '@/types/booking-engine';
+import { SelectedAddon, CouponPromo, BookingGuestWithCounts, PaymentType, PriceBreakdown } from '@/types/booking-engine';
 import { toast } from '@/hooks/use-toast';
 
 type CheckoutStep = 'dates' | 'addons' | 'guest' | 'payment';
@@ -36,9 +36,11 @@ export default function Checkout() {
   const [checkIn, setCheckIn] = useState<Date | null>(initialCheckIn ? parseISO(initialCheckIn) : null);
   const [checkOut, setCheckOut] = useState<Date | null>(initialCheckOut ? parseISO(initialCheckOut) : null);
   const [guests, setGuests] = useState(initialGuests);
+  const [adults, setAdults] = useState(Math.min(initialGuests, 2));
+  const [children, setChildren] = useState(0);
   const [selectedAddons, setSelectedAddons] = useState<SelectedAddon[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<CouponPromo | null>(null);
-  const [guestInfo, setGuestInfo] = useState<BookingGuest | null>(null);
+  const [guestInfo, setGuestInfo] = useState<BookingGuestWithCounts | null>(null);
   const [paymentType, setPaymentType] = useState<PaymentType>('full');
   const [holdId, setHoldId] = useState<string | null>(null);
   const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
@@ -318,6 +320,9 @@ export default function Checkout() {
                   <GuestForm
                     onSubmit={(data) => {
                       setGuestInfo(data);
+                      setAdults(data.adults);
+                      setChildren(data.children);
+                      setGuests(data.adults + data.children);
                       setCurrentStep('payment');
                     }}
                     defaultValues={guestInfo ? {
@@ -327,7 +332,14 @@ export default function Checkout() {
                       phone: guestInfo.phone,
                       country: guestInfo.country,
                       specialRequests: guestInfo.specialRequests,
-                    } : undefined}
+                      adults: guestInfo.adults,
+                      children: guestInfo.children,
+                    } : {
+                      adults,
+                      children,
+                    }}
+                    maxGuests={property.max_guests}
+                    initialGuests={guests}
                   />
 
                   <div className="flex gap-4">
@@ -405,7 +417,11 @@ export default function Checkout() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{guests} guest{guests > 1 ? 's' : ''}, {nights} night{nights > 1 ? 's' : ''}</span>
+                    <span>
+                      {adults} adult{adults !== 1 ? 's' : ''}
+                      {children > 0 && `, ${children} child${children !== 1 ? 'ren' : ''}`}
+                      {' · '}{nights} night{nights > 1 ? 's' : ''}
+                    </span>
                   </div>
                 </div>
               )}

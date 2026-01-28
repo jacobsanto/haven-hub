@@ -438,46 +438,123 @@ export type Database = {
           },
         ]
       }
+      booking_price_breakdown: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          label: string
+          line_type: string
+          quantity: number | null
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          label: string
+          line_type: string
+          quantity?: number | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          label?: string
+          line_type?: string
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_price_breakdown_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
+          adults: number | null
+          booking_reference: string | null
           check_in: string
+          check_in_time: string | null
           check_out: string
+          check_out_time: string | null
+          children: number | null
           created_at: string
+          external_booking_id: string | null
+          guest_country: string | null
           guest_email: string
           guest_name: string
           guest_phone: string | null
           guests: number
           id: string
           nights: number
+          payment_status: string | null
+          pms_sync_status: string | null
+          pms_synced_at: string | null
           property_id: string
+          source: string | null
+          special_requests: string | null
           status: Database["public"]["Enums"]["booking_status"]
           total_price: number
         }
         Insert: {
+          adults?: number | null
+          booking_reference?: string | null
           check_in: string
+          check_in_time?: string | null
           check_out: string
+          check_out_time?: string | null
+          children?: number | null
           created_at?: string
+          external_booking_id?: string | null
+          guest_country?: string | null
           guest_email: string
           guest_name: string
           guest_phone?: string | null
           guests?: number
           id?: string
           nights: number
+          payment_status?: string | null
+          pms_sync_status?: string | null
+          pms_synced_at?: string | null
           property_id: string
+          source?: string | null
+          special_requests?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_price: number
         }
         Update: {
+          adults?: number | null
+          booking_reference?: string | null
           check_in?: string
+          check_in_time?: string | null
           check_out?: string
+          check_out_time?: string | null
+          children?: number | null
           created_at?: string
+          external_booking_id?: string | null
+          guest_country?: string | null
           guest_email?: string
           guest_name?: string
           guest_phone?: string | null
           guests?: number
           id?: string
           nights?: number
+          payment_status?: string | null
+          pms_sync_status?: string | null
+          pms_synced_at?: string | null
           property_id?: string
+          source?: string | null
+          special_requests?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number
         }
@@ -1122,6 +1199,8 @@ export type Database = {
           bathrooms: number
           bedrooms: number
           cancellation_policy: string | null
+          check_in_time: string | null
+          check_out_time: string | null
           city: string
           country: string
           created_at: string
@@ -1143,6 +1222,7 @@ export type Database = {
           rooms: Json
           slug: string
           status: Database["public"]["Enums"]["property_status"]
+          timezone: string | null
           updated_at: string
           video_url: string | null
           virtual_tour_url: string | null
@@ -1153,6 +1233,8 @@ export type Database = {
           bathrooms?: number
           bedrooms?: number
           cancellation_policy?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
           city: string
           country: string
           created_at?: string
@@ -1174,6 +1256,7 @@ export type Database = {
           rooms?: Json
           slug: string
           status?: Database["public"]["Enums"]["property_status"]
+          timezone?: string | null
           updated_at?: string
           video_url?: string | null
           virtual_tour_url?: string | null
@@ -1184,6 +1267,8 @@ export type Database = {
           bathrooms?: number
           bedrooms?: number
           cancellation_policy?: string | null
+          check_in_time?: string | null
+          check_out_time?: string | null
           city?: string
           country?: string
           created_at?: string
@@ -1205,6 +1290,7 @@ export type Database = {
           rooms?: Json
           slug?: string
           status?: Database["public"]["Enums"]["property_status"]
+          timezone?: string | null
           updated_at?: string
           video_url?: string | null
           virtual_tour_url?: string | null
@@ -1318,6 +1404,53 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_deposits: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string | null
+          currency: string | null
+          held_at: string | null
+          id: string
+          notes: string | null
+          released_at: string | null
+          status: string | null
+          stripe_charge_id: string | null
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string | null
+          currency?: string | null
+          held_at?: string | null
+          id?: string
+          notes?: string | null
+          released_at?: string | null
+          status?: string | null
+          stripe_charge_id?: string | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string | null
+          currency?: string | null
+          held_at?: string | null
+          id?: string
+          notes?: string | null
+          released_at?: string | null
+          status?: string | null
+          stripe_charge_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_deposits_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
         ]

@@ -102,6 +102,13 @@ export interface BookingGuest {
   specialRequests?: string;
 }
 
+export interface BookingGuestWithCounts extends BookingGuest {
+  adults: number;
+  children: number;
+  marketingConsent: boolean;
+  termsAccepted: boolean;
+}
+
 export interface CheckoutHold {
   id: string;
   propertyId: string;
@@ -117,6 +124,8 @@ export interface BookingRequest {
   checkIn: string;
   checkOut: string;
   guests: number;
+  adults: number;
+  children: number;
   guestInfo: BookingGuest;
   selectedAddons: SelectedAddon[];
   couponCode?: string;

@@ -38,7 +38,6 @@ export interface Property {
   status: PropertyStatus;
   created_at: string;
   updated_at: string;
-  // New fields
   destination_id: string | null;
   video_url: string | null;
   virtual_tour_url: string | null;
@@ -53,6 +52,10 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   property_type: PropertyType;
+  // New timing/timezone fields
+  timezone: string;
+  check_in_time: string;
+  check_out_time: string;
 }
 
 export interface SeasonalRate {
@@ -80,20 +83,68 @@ export interface SpecialOffer {
   updated_at: string;
 }
 
+export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'refunded';
+export type PMSSyncStatus = 'pending' | 'synced' | 'failed';
+export type BookingSource = 'direct' | 'booking_com' | 'airbnb' | 'expedia' | 'vrbo' | 'manual';
+
 export interface Booking {
   id: string;
   property_id: string;
+  booking_reference: string | null;
   guest_name: string;
   guest_email: string;
   guest_phone: string | null;
+  guest_country: string | null;
   check_in: string;
   check_out: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
   nights: number;
   guests: number;
+  adults: number;
+  children: number;
   total_price: number;
   status: BookingStatus;
+  source: BookingSource;
+  payment_status: PaymentStatus;
+  special_requests: string | null;
+  external_booking_id: string | null;
+  pms_sync_status: PMSSyncStatus;
+  pms_synced_at: string | null;
   created_at: string;
-  property?: Property;
+}
+
+export interface BookingWithProperty extends Booking {
+  property: {
+    id: string;
+    name: string;
+    slug: string;
+    hero_image_url: string | null;
+  };
+}
+
+export interface BookingPriceBreakdown {
+  id: string;
+  booking_id: string;
+  line_type: 'accommodation' | 'addon' | 'fee' | 'tax' | 'discount';
+  label: string;
+  amount: number;
+  quantity: number;
+  details: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface SecurityDeposit {
+  id: string;
+  booking_id: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'held' | 'released' | 'claimed';
+  held_at: string | null;
+  released_at: string | null;
+  stripe_charge_id: string | null;
+  notes: string | null;
+  created_at: string;
 }
 
 export interface Availability {
