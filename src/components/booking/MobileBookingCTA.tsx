@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Zap, ArrowRight, Percent } from 'lucide-react';
+import { Calendar, Zap, Percent, Users, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { BookingWidget } from './BookingWidget';
@@ -29,6 +29,8 @@ interface MobileBookingCTAProps {
 export function MobileBookingCTA({ property, priceDisplay, specialOffer }: MobileBookingCTAProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [guests, setGuests] = useState(2);
+  const [showGuestSelector, setShowGuestSelector] = useState(false);
 
   const discountedPrice = specialOffer 
     ? property.base_price * (1 - specialOffer.discount_percent / 100)
@@ -56,8 +58,18 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
 
   const handleQuickBook = useCallback(() => {
     triggerHaptic('success');
-    navigate(`/checkout?property=${property.slug}`);
-  }, [navigate, property.slug]);
+    navigate(`/checkout?property=${property.slug}&guests=${guests}`);
+  }, [navigate, property.slug, guests]);
+
+  const handleGuestChange = useCallback((delta: number) => {
+    triggerHaptic('light');
+    setGuests(prev => Math.max(1, Math.min(property.max_guests, prev + delta)));
+  }, [property.max_guests]);
+
+  const toggleGuestSelector = useCallback(() => {
+    triggerHaptic('light');
+    setShowGuestSelector(prev => !prev);
+  }, []);
 
   return (
     <>
@@ -66,9 +78,51 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 25 }}
-        className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border p-4 z-50 lg:hidden safe-area-inset-bottom"
+        className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50 lg:hidden safe-area-inset-bottom"
       >
-        <div className="flex items-center justify-between gap-4">
+        {/* Guest Selector Drawer */}
+        <AnimatePresence>
+          {showGuestSelector && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="border-b border-border overflow-hidden"
+            >
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Guests</span>
+                  <span className="text-xs text-muted-foreground">(max {property.max_guests})</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => handleGuestChange(-1)}
+                    disabled={guests <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-lg font-semibold w-6 text-center">{guests}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => handleGuestChange(1)}
+                    disabled={guests >= property.max_guests}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="p-4 flex items-center justify-between gap-3">
           {/* Price Section */}
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2">
@@ -96,7 +150,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
                   exit={{ opacity: 0, height: 0 }}
                   className="flex items-center gap-1.5 mt-1"
                 >
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent text-accent-foreground rounded-full text-xs font-medium">
                     <Percent className="h-3 w-3" />
                     {specialOffer.discount_percent}% off
                   </span>
@@ -106,27 +160,38 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
 
             {/* Instant booking indicator */}
             {property.instant_booking && !specialOffer && (
-              <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1">
+              <div className="flex items-center gap-1 text-xs text-primary mt-1">
                 <Zap className="h-3 w-3 fill-current" />
                 <span>Instant confirmation</span>
               </div>
             )}
           </div>
 
+          {/* Guest Selector Toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleGuestSelector}
+            className={cn(
+              "h-10 px-3 rounded-xl gap-1.5 shrink-0",
+              showGuestSelector && "ring-2 ring-primary"
+            )}
+          >
+            <Users className="h-4 w-4" />
+            <span>{guests}</span>
+          </Button>
+
           {/* Action Buttons */}
           <div className="flex gap-2">
             {property.instant_booking ? (
-              <>
-                {/* Quick book for instant booking properties */}
-                <Button
-                  size="lg"
-                  onClick={handleQuickBook}
-                  className="min-h-[48px] px-6 rounded-xl gap-2 active:scale-[0.98] transition-transform"
-                >
-                  <Zap className="h-4 w-4 fill-current" />
-                  Book Now
-                </Button>
-              </>
+              <Button
+                size="lg"
+                onClick={handleQuickBook}
+                className="min-h-[48px] px-6 rounded-xl gap-2 active:scale-[0.98] transition-transform"
+              >
+                <Zap className="h-4 w-4 fill-current" />
+                Book Now
+              </Button>
             ) : (
               <Sheet open={open} onOpenChange={handleSheetChange}>
                 <SheetTrigger asChild>
