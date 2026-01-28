@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { BlogPost } from '@/types/blog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ArticleStyleBadge } from './ArticleStyleBadge';
 interface BlogPostCardProps {
   post: BlogPost;
   featured?: boolean;
@@ -141,6 +142,10 @@ export function BlogPostCard({ post, featured = false }: BlogPostCardProps) {
               <Clock className="h-3 w-3" />
               {readTime} min
             </span>
+            <ArticleStyleBadge 
+              categorySlug={post.category?.slug} 
+              variant="compact" 
+            />
           </div>
         </div>
       </Link>

@@ -6,6 +6,7 @@ import { BlogPost } from '@/types/blog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { ArticleStyleBadge } from './ArticleStyleBadge';
 
 interface BlogHeroProps {
   post: BlogPost;
@@ -51,14 +52,21 @@ export function BlogHero({ post }: BlogHeroProps) {
           <div className="absolute inset-x-0 bottom-0 p-6 md:p-10 lg:p-16">
             <div className="container mx-auto">
               <div className="max-w-3xl">
-                {post.category && (
-                  <Badge 
-                    variant="secondary" 
-                    className="mb-4 bg-white/20 text-white border-0 backdrop-blur-sm"
-                  >
-                    {post.category.name}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-3 mb-4">
+                  {post.category && (
+                    <Badge 
+                      variant="secondary" 
+                      className="bg-white/20 text-white border-0 backdrop-blur-sm"
+                    >
+                      {post.category.name}
+                    </Badge>
+                  )}
+                  <ArticleStyleBadge 
+                    categorySlug={post.category?.slug} 
+                    variant="overlay"
+                    className="text-white/90"
+                  />
+                </div>
                 
                 <h2 className="text-2xl md:text-4xl lg:text-5xl font-serif text-white mb-4 leading-tight group-hover:text-white/90 transition-colors">
                   {post.title}
