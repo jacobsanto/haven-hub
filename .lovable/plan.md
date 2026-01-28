@@ -1,126 +1,285 @@
 
 
-# Unify Lifestyle Layout Hero Section
+# Add Visual Style Indicators to Blog Listing Cards
 
-## Current State
+## Overview
 
-The **LifestyleLayout** currently uses a magazine-style split hero (image 50% / content 50% in a grid) which is inconsistent with the other two layouts.
+All blog categories already exist in the database and posts are assigned to them:
+- **Destination Guides** (slug: `destination-guides`) - "The Ultimate Santorini Guide..."
+- **Lifestyle** (slug: `lifestyle`) - "2026's Most Coveted Luxury Hotel Trends..."
+- **Travel Tips** (slug: `travel-tips`) - "10 Insider Tips for Elevating Your Luxury Travel Experience"
 
-**Current Lifestyle Hero:**
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  ← Back to Blog (in container, not on hero)                 │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┬───────────────────────────────────┐   │
-│  │   [HERO IMAGE]  │  Badge                            │   │
-│  │   (50% width)   │  Title                            │   │
-│  │   in grid       │  Excerpt                          │   │
-│  │                 │  Author • Date                    │   │
-│  └─────────────────┴───────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Target Hero (matching DestinationGuide/TravelTips):**
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  ← Back to Blog (absolute positioned on hero)               │
-│                                                             │
-│  [FULL-WIDTH HERO IMAGE - 35vh]                            │
-│  with gradient overlay                                      │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  LIFTED HEADER CARD (negative margin overlap)       │   │
-│  │  Badge • Title • Excerpt • Author • Date • Time     │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
+This plan adds visual indicators to blog cards so users can see which layout type each article uses before clicking.
 
 ---
 
-## Changes to LifestyleLayout.tsx
+## Design Concept
 
-### 1. Replace Split Hero with Full-Width Hero
+Each article layout will have a subtle visual indicator showing its style:
 
-**Remove:**
-- The container-based back link (lines 56-65)
-- The split grid hero section (lines 67-133)
+| Layout Type | Icon | Color Accent | Label |
+|-------------|------|--------------|-------|
+| Destination Guide | `Map` | Primary (warm terracotta) | "Guide" |
+| Lifestyle | `Sparkles` | Secondary (sage green) | "Lifestyle" |
+| Travel Tips | `Lightbulb` | Amber/Gold | "Tips" |
 
-**Add:**
-- Full-width hero section with 35vh height (matching DestinationGuide)
-- Absolutely positioned back button on the hero
-- Gradient overlay for readability
-- Lifted header card with negative margin
+The indicator will appear as a small pill/badge near the category badge or in the card footer, providing a quick visual cue about the reading experience.
 
-### 2. Updated Hero Structure
+---
+
+## Implementation Details
+
+### 1. Create ArticleStyleBadge Component
+
+Create a new reusable component that displays the layout style indicator:
+
+**File:** `src/components/blog/ArticleStyleBadge.tsx`
 
 ```tsx
-{/* Hero Image with gradient */}
-<section className="relative h-[35vh] overflow-hidden">
-  {post.featured_image_url ? (
-    <img
-      src={post.featured_image_url}
-      alt={post.title}
-      className="w-full h-full object-cover"
-    />
-  ) : (
-    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
-  )}
-  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-  
-  {/* Back Button - Consistent Style */}
-  <div className="absolute top-4 left-4 z-10">
-    <Link
-      to="/blog"
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors"
+import { Map, Sparkles, Lightbulb } from 'lucide-react';
+import { getArticleStyle, ArticleStyle } from '@/types/article-styles';
+import { cn } from '@/lib/utils';
+
+interface ArticleStyleBadgeProps {
+  categorySlug?: string;
+  variant?: 'default' | 'compact' | 'overlay';
+  className?: string;
+}
+
+const styleConfig: Record<ArticleStyle, {
+  icon: typeof Map;
+  label: string;
+  bgClass: string;
+  textClass: string;
+}> = {
+  'destination-guide': {
+    icon: Map,
+    label: 'Guide',
+    bgClass: 'bg-primary/10',
+    textClass: 'text-primary',
+  },
+  'lifestyle': {
+    icon: Sparkles,
+    label: 'Lifestyle',
+    bgClass: 'bg-secondary/20',
+    textClass: 'text-secondary-foreground',
+  },
+  'travel-tips': {
+    icon: Lightbulb,
+    label: 'Tips',
+    bgClass: 'bg-amber-500/10',
+    textClass: 'text-amber-600 dark:text-amber-400',
+  },
+};
+
+export function ArticleStyleBadge({ 
+  categorySlug, 
+  variant = 'default',
+  className 
+}: ArticleStyleBadgeProps) {
+  const style = getArticleStyle(categorySlug);
+  const config = styleConfig[style];
+  const Icon = config.icon;
+
+  if (variant === 'compact') {
+    return (
+      <span 
+        className={cn(
+          "inline-flex items-center gap-1 text-[10px] font-medium",
+          config.textClass,
+          className
+        )}
+        title={`${config.label} layout`}
+      >
+        <Icon className="h-3 w-3" />
+      </span>
+    );
+  }
+
+  if (variant === 'overlay') {
+    return (
+      <span 
+        className={cn(
+          "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium",
+          "bg-background/80 backdrop-blur-sm",
+          config.textClass,
+          className
+        )}
+      >
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </span>
+    );
+  }
+
+  return (
+    <span 
+      className={cn(
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+        config.bgClass,
+        config.textClass,
+        className
+      )}
     >
-      <ArrowLeft className="h-4 w-4" />
-      Back to Blog
-    </Link>
-  </div>
-</section>
+      <Icon className="h-3.5 w-3.5" />
+      {config.label}
+    </span>
+  );
+}
 ```
 
-### 3. Updated Header Card
+### 2. Update BlogPostCard Component
+
+Add the style indicator to the regular blog post card (grid layout).
+
+**File:** `src/components/blog/BlogPostCard.tsx`
+
+**Changes:**
+- Import `ArticleStyleBadge`
+- Add the badge in the card's metadata section (footer area)
+- Display next to read time for visual balance
 
 ```tsx
-{/* Article Header Card */}
-<div className="container mx-auto px-4 -mt-24 relative z-10">
-  <motion.div
-    initial={{ opacity: 0, y: 30 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6 }}
-    className="bg-card rounded-2xl p-6 md:p-10 shadow-xl max-w-4xl mx-auto border border-border/50"
-  >
-    {/* Badge, Title, Excerpt, Author/Meta - same structure as DestinationGuide */}
-  </motion.div>
+// Add to imports
+import { ArticleStyleBadge } from './ArticleStyleBadge';
+
+// In the regular card render (non-featured), add to the footer:
+<div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
+  {post.author && (
+    <div className="flex items-center gap-1.5">
+      {/* existing author avatar */}
+    </div>
+  )}
+  <span className="flex items-center gap-1">
+    <Clock className="h-3 w-3" />
+    {readTime} min
+  </span>
+  {/* NEW: Article style indicator */}
+  <ArticleStyleBadge 
+    categorySlug={post.category?.slug} 
+    variant="compact" 
+  />
+</div>
+```
+
+### 3. Update BlogSecondaryCard Component
+
+Add the style indicator to the horizontal secondary cards.
+
+**File:** `src/components/blog/BlogSecondaryCard.tsx`
+
+**Changes:**
+- Import `ArticleStyleBadge`
+- Position the badge in the image overlay area (next to category badge) or in footer
+
+```tsx
+// Add to imports
+import { ArticleStyleBadge } from './ArticleStyleBadge';
+
+// In the image area, add alongside category badge:
+<div className="absolute top-4 left-4 flex items-center gap-2">
+  {post.category && (
+    <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">
+      {post.category.name}
+    </Badge>
+  )}
+  <ArticleStyleBadge 
+    categorySlug={post.category?.slug} 
+    variant="overlay" 
+  />
+</div>
+```
+
+### 4. Update BlogHero Component
+
+Add the style indicator to the featured hero section.
+
+**File:** `src/components/blog/BlogHero.tsx`
+
+**Changes:**
+- Import `ArticleStyleBadge`
+- Position next to the category badge in the hero overlay
+
+```tsx
+// Add to imports
+import { ArticleStyleBadge } from './ArticleStyleBadge';
+
+// In the hero content area, add next to category badge:
+<div className="flex items-center gap-3 mb-4">
+  {post.category && (
+    <Badge variant="secondary" className="bg-white/20 text-white border-0 backdrop-blur-sm">
+      {post.category.name}
+    </Badge>
+  )}
+  <ArticleStyleBadge 
+    categorySlug={post.category?.slug} 
+    variant="overlay"
+    className="text-white/90"
+  />
 </div>
 ```
 
 ---
 
-## File to Modify
+## Visual Result
 
-| File | Changes |
-|------|---------|
-| `src/components/blog/layouts/LifestyleLayout.tsx` | Replace split hero grid with full-width hero image + lifted header card pattern |
+After implementation, each blog card will show:
+
+**Hero Card:**
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  [HERO IMAGE]                                               │
+│                                                             │
+│  [Destination Guides] [🗺 Guide]  ← Both badges visible     │
+│  Title of the Article                                       │
+│  Excerpt text...                                            │
+│  Author • Date • Read time                                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Secondary Card:**
+```text
+┌────────────────────────────────────────────────┐
+│  [IMAGE]          │  Title                     │
+│  [Lifestyle] [✨] │  Excerpt...                │
+│                   │  Author • 5 min  [Read →]  │
+└────────────────────────────────────────────────┘
+```
+
+**Grid Card:**
+```text
+┌─────────────────────────────┐
+│  [IMAGE]                    │
+│  [Travel Tips]              │
+│  Title                      │
+│  Excerpt...                 │
+│  Author • 3 min • 💡        │  ← Compact icon indicator
+└─────────────────────────────┘
+```
 
 ---
 
-## Visual Result
+## Files to Create/Modify
 
-After the change, all three layouts will share the same hero pattern:
+| File | Action |
+|------|--------|
+| `src/components/blog/ArticleStyleBadge.tsx` | **Create** - New component for style indicators |
+| `src/components/blog/BlogPostCard.tsx` | **Modify** - Add compact style badge to footer |
+| `src/components/blog/BlogSecondaryCard.tsx` | **Modify** - Add overlay style badge near category |
+| `src/components/blog/BlogHero.tsx` | **Modify** - Add overlay style badge next to category |
 
-| Element | DestinationGuide | Lifestyle | TravelTips |
-|---------|------------------|-----------|------------|
-| Hero height | 35vh | 35vh | 25vh |
-| Hero style | Full-width with parallax | Full-width (no parallax) | Full-width |
-| Back button | Absolute on hero | Absolute on hero | Absolute on hero |
-| Header card | Lifted with -mt-24 | Lifted with -mt-24 | Lifted with -mt-16 |
-| Card styling | Same shadow/border | Same shadow/border | Same shadow/border |
+---
 
-The only remaining differentiator for Lifestyle will be:
-- No parallax effect (simpler animation)
-- Excerpt displayed in the header card
-- No sticky Table of Contents sidebar (centered content only)
+## Technical Notes
+
+1. **Consistent with Design System**: Uses existing color tokens (`primary`, `secondary`, `amber`) and styling patterns (`rounded-full`, `backdrop-blur-sm`)
+
+2. **Three Variants**:
+   - `default` - Full pill with icon + label (standalone use)
+   - `compact` - Icon only, smaller (for tight spaces like card footers)
+   - `overlay` - Semi-transparent with backdrop blur (for image overlays)
+
+3. **Accessibility**: Each badge has a `title` attribute explaining the layout type
+
+4. **Reusable**: The `ArticleStyleBadge` component can be used anywhere article style indication is needed
 
