@@ -1,285 +1,276 @@
 
 
-# Add Visual Style Indicators to Blog Listing Cards
+# AdvanceCM PMS Integration - Property Sync Implementation
 
 ## Overview
 
-All blog categories already exist in the database and posts are assigned to them:
-- **Destination Guides** (slug: `destination-guides`) - "The Ultimate Santorini Guide..."
-- **Lifestyle** (slug: `lifestyle`) - "2026's Most Coveted Luxury Hotel Trends..."
-- **Travel Tips** (slug: `travel-tips`) - "10 Insider Tips for Elevating Your Luxury Travel Experience"
-
-This plan adds visual indicators to blog cards so users can see which layout type each article uses before clicking.
+This plan implements the **AdvanceCM (Tokeet) API integration** to pull properties directly from the PMS, eliminating manual property entry. The integration will sync rental listings with all relevant fields into the local database.
 
 ---
 
-## Design Concept
+## Tokeet API Reference
 
-Each article layout will have a subtle visual indicator showing its style:
+Based on the official Tokeet Client API documentation:
 
-| Layout Type | Icon | Color Accent | Label |
-|-------------|------|--------------|-------|
-| Destination Guide | `Map` | Primary (warm terracotta) | "Guide" |
-| Lifestyle | `Sparkles` | Secondary (sage green) | "Lifestyle" |
-| Travel Tips | `Lightbulb` | Amber/Gold | "Tips" |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `GET /v1/rental?account={account}` | GET | Retrieve all rentals |
+| `GET /v1/rental/{rental_pkey}?account={account}` | GET | Retrieve single rental |
+| `GET /v1/rental/{rental_pkey}/availability?account={account}` | GET | Get rental availability |
 
-The indicator will appear as a small pill/badge near the category badge or in the card footer, providing a quick visual cue about the reading experience.
+**Authentication**: HTTP Basic Auth via `Authorization` header with API key
+**Base URL**: `https://capi.tokeet.com/v1`
 
 ---
 
-## Implementation Details
+## Tokeet Rental Fields → Local Property Mapping
 
-### 1. Create ArticleStyleBadge Component
+| Tokeet Field | Local Property Field | Notes |
+|--------------|---------------------|-------|
+| `pkey` | `external_property_id` | Stored in pms_property_map |
+| `name` | `name` | Direct mapping |
+| `display_name` | Used for slug generation | Fallback to `name` |
+| `description` | `description` | Direct mapping |
+| `bedrooms` | `bedrooms` | Number |
+| `bathrooms` | `bathrooms` | Number |
+| `sleep_max` | `max_guests` | Maximum guests |
+| `address.city` | `city` | Nested in address object |
+| `address.state` | `region` | State/province |
+| `address.CC` | `country` | Country code, needs lookup |
+| `gps.lat`, `gps.long` | `nearby_attractions` coordinates | GPS coordinates |
+| `type` | `property_type` | Villa, House, Apartment, etc. |
+| `size` | — | Could add to description |
+| `tags` | `highlights` | Array of feature tags |
+| `images` | `gallery` | If available in extended API |
 
-Create a new reusable component that displays the layout style indicator:
+---
 
-**File:** `src/components/blog/ArticleStyleBadge.tsx`
+## Implementation Components
 
-```tsx
-import { Map, Sparkles, Lightbulb } from 'lucide-react';
-import { getArticleStyle, ArticleStyle } from '@/types/article-styles';
-import { cn } from '@/lib/utils';
+### 1. Database: Store API Credentials
 
-interface ArticleStyleBadgeProps {
-  categorySlug?: string;
-  variant?: 'default' | 'compact' | 'overlay';
-  className?: string;
+Add Tokeet API credentials as secrets:
+- `TOKEET_API_KEY` - The Tokeet account API key
+- `TOKEET_ACCOUNT_ID` - The Tokeet account ID
+
+### 2. Edge Function: `advancecm-sync`
+
+Create a new edge function to handle PMS API calls server-side:
+
+```
+supabase/functions/advancecm-sync/index.ts
+```
+
+**Capabilities:**
+- `action: 'test'` - Test API connection
+- `action: 'fetch-properties'` - Fetch all rentals from Tokeet
+- `action: 'fetch-property'` - Fetch single rental details
+- `action: 'fetch-availability'` - Fetch availability for a rental
+- `action: 'sync-all'` - Full sync (properties + availability + rates)
+- `action: 'import-property'` - Import a Tokeet rental as a local property
+
+### 3. Real AdvanceCM Adapter
+
+Replace the mock adapter with a real implementation:
+
+```
+src/integrations/pms/advancecm-adapter.ts
+```
+
+This adapter will:
+- Call the edge function for all API operations
+- Transform Tokeet response format to our PMSProperty interface
+- Handle pagination for large property lists
+
+### 4. Admin UI: PMS Health Dashboard Enhancements
+
+Update `AdminPMSHealth.tsx` to add:
+- **Configuration panel** for API credentials (stored via secrets)
+- **"Import Properties" button** to fetch and display available Tokeet rentals
+- **Import dialog** showing unlinked Tokeet properties with checkbox selection
+- **Field mapping preview** before import
+- **Import progress** with status indicators
+
+### 5. Property Import Flow
+
+```text
+User Flow:
+┌─────────────────────────────────────────────────────────────────┐
+│  Admin → PMS Health → "Import Properties from AdvanceCM"        │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Click "Fetch Properties" → Edge function calls Tokeet API   │
+│  2. Display list of Tokeet rentals not yet linked locally       │
+│  3. User selects properties to import (checkbox list)           │
+│  4. Click "Import Selected" → Creates local properties          │
+│  5. Automatically creates pms_property_map entries              │
+│  6. Status shows success/failure per property                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `supabase/functions/advancecm-sync/index.ts` | Edge function for Tokeet API calls |
+| `src/integrations/pms/advancecm-adapter.ts` | Real PMS adapter implementation |
+| `src/components/admin/PMSConfigDialog.tsx` | Dialog for API credential configuration |
+| `src/components/admin/PMSPropertyImportDialog.tsx` | Dialog to preview and import properties |
+| `src/hooks/useAdvanceCMSync.ts` | React hooks for PMS sync operations |
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/integrations/pms/index.ts` | Switch to real adapter when credentials available |
+| `src/pages/admin/AdminPMSHealth.tsx` | Add configuration and import UI |
+| `src/hooks/useAdminPMSHealth.ts` | Add hooks for import operations |
+
+---
+
+## Technical Details
+
+### Edge Function: advancecm-sync
+
+```typescript
+// Key operations:
+interface SyncRequest {
+  action: 'test' | 'fetch-properties' | 'fetch-property' | 'fetch-availability' | 'import-property';
+  externalId?: string;
+  startDate?: string;
+  endDate?: string;
+  propertyData?: TokeetRental; // For import
 }
 
-const styleConfig: Record<ArticleStyle, {
-  icon: typeof Map;
-  label: string;
-  bgClass: string;
-  textClass: string;
-}> = {
-  'destination-guide': {
-    icon: Map,
-    label: 'Guide',
-    bgClass: 'bg-primary/10',
-    textClass: 'text-primary',
-  },
-  'lifestyle': {
-    icon: Sparkles,
-    label: 'Lifestyle',
-    bgClass: 'bg-secondary/20',
-    textClass: 'text-secondary-foreground',
-  },
-  'travel-tips': {
-    icon: Lightbulb,
-    label: 'Tips',
-    bgClass: 'bg-amber-500/10',
-    textClass: 'text-amber-600 dark:text-amber-400',
-  },
-};
-
-export function ArticleStyleBadge({ 
-  categorySlug, 
-  variant = 'default',
-  className 
-}: ArticleStyleBadgeProps) {
-  const style = getArticleStyle(categorySlug);
-  const config = styleConfig[style];
-  const Icon = config.icon;
-
-  if (variant === 'compact') {
-    return (
-      <span 
-        className={cn(
-          "inline-flex items-center gap-1 text-[10px] font-medium",
-          config.textClass,
-          className
-        )}
-        title={`${config.label} layout`}
-      >
-        <Icon className="h-3 w-3" />
-      </span>
-    );
-  }
-
-  if (variant === 'overlay') {
-    return (
-      <span 
-        className={cn(
-          "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium",
-          "bg-background/80 backdrop-blur-sm",
-          config.textClass,
-          className
-        )}
-      >
-        <Icon className="h-3 w-3" />
-        {config.label}
-      </span>
-    );
-  }
-
-  return (
-    <span 
-      className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-        config.bgClass,
-        config.textClass,
-        className
-      )}
-    >
-      <Icon className="h-3.5 w-3.5" />
-      {config.label}
-    </span>
-  );
+// Tokeet rental response structure (based on API docs):
+interface TokeetRental {
+  pkey: string;
+  name: string;
+  display_name?: string;
+  description?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  sleep_min?: number;
+  sleep_max?: number;
+  type?: string; // Villa, House, Apartment, etc.
+  address?: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    CC?: string; // Country code
+  };
+  gps?: {
+    lat?: number;
+    long?: number;
+  };
+  tags?: string[];
+  images?: Array<{ url: string }>;
+  // Additional fields from API
 }
 ```
 
-### 2. Update BlogPostCard Component
+### Property Import Logic
 
-Add the style indicator to the regular blog post card (grid layout).
+When importing a Tokeet rental:
 
-**File:** `src/components/blog/BlogPostCard.tsx`
+1. **Map fields** to local property schema:
+   ```typescript
+   const localProperty = {
+     name: rental.name || rental.display_name,
+     slug: generateSlug(rental.name),
+     description: rental.description || null,
+     city: rental.address?.city || 'Unknown',
+     region: rental.address?.state || null,
+     country: mapCountryCode(rental.address?.CC) || 'Unknown',
+     bedrooms: rental.bedrooms || 1,
+     bathrooms: rental.bathrooms || 1,
+     max_guests: rental.sleep_max || 2,
+     property_type: mapPropertyType(rental.type),
+     highlights: rental.tags || [],
+     base_price: 0, // Will be synced from rates
+     status: 'draft', // Start as draft for review
+   };
+   ```
 
-**Changes:**
-- Import `ArticleStyleBadge`
-- Add the badge in the card's metadata section (footer area)
-- Display next to read time for visual balance
+2. **Create property** in `properties` table
 
-```tsx
-// Add to imports
-import { ArticleStyleBadge } from './ArticleStyleBadge';
+3. **Create mapping** in `pms_property_map`:
+   ```typescript
+   {
+     pms_connection_id: connectionId,
+     property_id: newProperty.id,
+     external_property_id: rental.pkey,
+     external_property_name: rental.name,
+     sync_enabled: true,
+   }
+   ```
 
-// In the regular card render (non-featured), add to the footer:
-<div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
-  {post.author && (
-    <div className="flex items-center gap-1.5">
-      {/* existing author avatar */}
-    </div>
-  )}
-  <span className="flex items-center gap-1">
-    <Clock className="h-3 w-3" />
-    {readTime} min
-  </span>
-  {/* NEW: Article style indicator */}
-  <ArticleStyleBadge 
-    categorySlug={post.category?.slug} 
-    variant="compact" 
-  />
-</div>
-```
+4. **Trigger initial availability/rate sync** for the new property
 
-### 3. Update BlogSecondaryCard Component
+### Admin UI Components
 
-Add the style indicator to the horizontal secondary cards.
+**PMS Configuration Panel:**
+- Input for Tokeet API Key
+- Input for Tokeet Account ID
+- "Test Connection" button
+- Connection status indicator
 
-**File:** `src/components/blog/BlogSecondaryCard.tsx`
-
-**Changes:**
-- Import `ArticleStyleBadge`
-- Position the badge in the image overlay area (next to category badge) or in footer
-
-```tsx
-// Add to imports
-import { ArticleStyleBadge } from './ArticleStyleBadge';
-
-// In the image area, add alongside category badge:
-<div className="absolute top-4 left-4 flex items-center gap-2">
-  {post.category && (
-    <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">
-      {post.category.name}
-    </Badge>
-  )}
-  <ArticleStyleBadge 
-    categorySlug={post.category?.slug} 
-    variant="overlay" 
-  />
-</div>
-```
-
-### 4. Update BlogHero Component
-
-Add the style indicator to the featured hero section.
-
-**File:** `src/components/blog/BlogHero.tsx`
-
-**Changes:**
-- Import `ArticleStyleBadge`
-- Position next to the category badge in the hero overlay
-
-```tsx
-// Add to imports
-import { ArticleStyleBadge } from './ArticleStyleBadge';
-
-// In the hero content area, add next to category badge:
-<div className="flex items-center gap-3 mb-4">
-  {post.category && (
-    <Badge variant="secondary" className="bg-white/20 text-white border-0 backdrop-blur-sm">
-      {post.category.name}
-    </Badge>
-  )}
-  <ArticleStyleBadge 
-    categorySlug={post.category?.slug} 
-    variant="overlay"
-    className="text-white/90"
-  />
-</div>
+**Property Import Dialog:**
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  Import Properties from AdvanceCM                               │
+├─────────────────────────────────────────────────────────────────┤
+│  Found 4 properties in your Tokeet account:                     │
+│                                                                 │
+│  ☑ Villa Caldera Sunset (tok_123456) - 4 bed, 8 guests         │
+│      Location: Oia, Santorini, Greece                           │
+│      → Will create as: villa-caldera-sunset (draft)             │
+│                                                                 │
+│  ☑ Villa Aegean Blue (tok_234567) - 3 bed, 6 guests            │
+│      Location: Fira, Santorini, Greece                          │
+│      → Will create as: villa-aegean-blue (draft)                │
+│                                                                 │
+│  ☐ Beach House Miami (tok_345678) - Already linked             │
+│      ✓ Linked to: beach-house-miami                             │
+│                                                                 │
+│  [Cancel]                        [Import 2 Selected Properties] │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Visual Result
+## Secrets Required
 
-After implementation, each blog card will show:
+The user will need to provide:
 
-**Hero Card:**
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  [HERO IMAGE]                                               │
-│                                                             │
-│  [Destination Guides] [🗺 Guide]  ← Both badges visible     │
-│  Title of the Article                                       │
-│  Excerpt text...                                            │
-│  Author • Date • Read time                                  │
-└─────────────────────────────────────────────────────────────┘
-```
+| Secret Name | Description |
+|-------------|-------------|
+| `TOKEET_API_KEY` | API key from Tokeet Settings → Account Info |
+| `TOKEET_ACCOUNT_ID` | Account ID from Tokeet Settings → Account Info |
 
-**Secondary Card:**
-```text
-┌────────────────────────────────────────────────┐
-│  [IMAGE]          │  Title                     │
-│  [Lifestyle] [✨] │  Excerpt...                │
-│                   │  Author • 5 min  [Read →]  │
-└────────────────────────────────────────────────┘
-```
-
-**Grid Card:**
-```text
-┌─────────────────────────────┐
-│  [IMAGE]                    │
-│  [Travel Tips]              │
-│  Title                      │
-│  Excerpt...                 │
-│  Author • 3 min • 💡        │  ← Compact icon indicator
-└─────────────────────────────┘
-```
+These will be stored via the Lovable secrets system and accessed by the edge function using `Deno.env.get()`.
 
 ---
 
-## Files to Create/Modify
+## Error Handling
 
-| File | Action |
-|------|--------|
-| `src/components/blog/ArticleStyleBadge.tsx` | **Create** - New component for style indicators |
-| `src/components/blog/BlogPostCard.tsx` | **Modify** - Add compact style badge to footer |
-| `src/components/blog/BlogSecondaryCard.tsx` | **Modify** - Add overlay style badge near category |
-| `src/components/blog/BlogHero.tsx` | **Modify** - Add overlay style badge next to category |
+| Scenario | Handling |
+|----------|----------|
+| Missing API credentials | Show configuration prompt |
+| API connection failed | Display error with retry option |
+| Rate limiting (429) | Implement exponential backoff |
+| Partial import failure | Show per-property status, allow retry |
+| Duplicate property | Skip with warning, show as "already linked" |
 
 ---
 
-## Technical Notes
+## Future Enhancements (Not in This Plan)
 
-1. **Consistent with Design System**: Uses existing color tokens (`primary`, `secondary`, `amber`) and styling patterns (`rounded-full`, `backdrop-blur-sm`)
-
-2. **Three Variants**:
-   - `default` - Full pill with icon + label (standalone use)
-   - `compact` - Icon only, smaller (for tight spaces like card footers)
-   - `overlay` - Semi-transparent with backdrop blur (for image overlays)
-
-3. **Accessibility**: Each badge has a `title` attribute explaining the layout type
-
-4. **Reusable**: The `ArticleStyleBadge` component can be used anywhere article style indication is needed
+- Webhook handler for real-time updates from Tokeet
+- Scheduled sync (cron job) for availability/rates
+- Bidirectional sync (push bookings back to Tokeet)
+- Image import from Tokeet CDN
+- Rate import with seasonal pricing mapping
 
