@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { ExitIntentModal } from '@/components/booking/ExitIntentModal';
+import { FloatingBookButton } from '@/components/booking/FloatingBookButton';
 import { useExitIntent } from '@/hooks/useExitIntent';
 
 interface PageLayoutProps {
@@ -36,6 +37,9 @@ export function PageLayout({ children, hideFooter = false }: PageLayoutProps) {
       
       {/* Exit Intent Modal */}
       <ExitIntentModal isOpen={showExitIntent} onClose={dismiss} />
+      
+      {/* Floating Book Button */}
+      <FloatingBookButton />
     </div>
   );
 }
