@@ -6,14 +6,17 @@ import { BlogPost } from '@/types/blog';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { ReadingProgress } from '@/components/blog/ReadingProgress';
 import { FloatingShareBar } from '@/components/blog/FloatingShareBar';
+import { MobileTableOfContents } from '@/components/blog/MobileTableOfContents';
 import { SocialShareButtons } from '@/components/blog/SocialShareButtons';
 import { AuthorBio } from '@/components/blog/AuthorBio';
 import { NewsletterSignup } from '@/components/blog/NewsletterSignup';
 import { MarkdownRenderer } from '@/components/blog/MarkdownRenderer';
+import { extractHeadings } from '@/components/blog/MarkdownRenderer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMemo } from 'react';
 
 interface LifestyleLayoutProps {
   post: BlogPost;
@@ -32,6 +35,11 @@ export function LifestyleLayout({
 }: LifestyleLayoutProps) {
   const isMobile = useIsMobile();
 
+  const headings = useMemo(() => {
+    if (!post.content) return [];
+    return extractHeadings(post.content);
+  }, [post.content]);
+
   const authorInitials = author.name
     .split(' ')
     .map((n) => n[0])
@@ -43,12 +51,13 @@ export function LifestyleLayout({
     <>
       <ReadingProgress />
       {!isMobile && <FloatingShareBar title={post.title} />}
+      {isMobile && headings.length > 0 && <MobileTableOfContents headings={headings} />}
 
-      {/* Back Link */}
+      {/* Back Link - Consistent Style */}
       <div className="container mx-auto px-4 pt-6">
         <Link
           to="/blog"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 hover:bg-muted text-foreground text-sm font-medium transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Blog
@@ -84,12 +93,12 @@ export function LifestyleLayout({
             className="order-1 md:order-2"
           >
             {post.category && (
-              <Badge variant="outline" className="mb-4 uppercase tracking-wider text-xs border-primary text-primary">
+              <Badge variant="secondary" className="mb-4">
                 {post.category.name}
               </Badge>
             )}
 
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif text-foreground mb-6 leading-tight">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-medium text-foreground mb-6 leading-tight">
               {post.title}
             </h1>
 
@@ -99,12 +108,12 @@ export function LifestyleLayout({
               </p>
             )}
 
-            {/* Author & Meta */}
+            {/* Author & Meta - Consistent Styling */}
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-6 border-t border-border">
               <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10 border-2 border-border">
+                <Avatar className="h-8 w-8 border border-border">
                   <AvatarImage src={author.avatar_url || undefined} alt={author.name} />
-                  <AvatarFallback className="text-xs bg-accent text-accent-foreground">
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
                     {authorInitials}
                   </AvatarFallback>
                 </Avatar>
@@ -131,7 +140,7 @@ export function LifestyleLayout({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground">
+            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground">
               {post.content ? (
                 <MarkdownRenderer content={post.content} style="lifestyle" />
               ) : (
@@ -168,8 +177,8 @@ export function LifestyleLayout({
         <section className="py-16 md:py-20 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl md:text-3xl font-serif text-foreground">
-                More to Explore
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground">
+                You May Also Enjoy
               </h2>
               <Button variant="ghost" asChild className="hidden sm:inline-flex">
                 <Link to="/blog" className="gap-2">

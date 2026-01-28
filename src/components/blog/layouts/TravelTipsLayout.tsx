@@ -1,18 +1,22 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, ArrowLeft, Tag, ChevronRight, Share2 } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, Tag, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { useMemo } from 'react';
 import { BlogPost } from '@/types/blog';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { ReadingProgress } from '@/components/blog/ReadingProgress';
+import { FloatingShareBar } from '@/components/blog/FloatingShareBar';
+import { MobileTableOfContents } from '@/components/blog/MobileTableOfContents';
 import { SocialShareButtons } from '@/components/blog/SocialShareButtons';
 import { AuthorBio } from '@/components/blog/AuthorBio';
 import { NewsletterSignup } from '@/components/blog/NewsletterSignup';
-import { MarkdownRenderer } from '@/components/blog/MarkdownRenderer';
+import { MarkdownRenderer, extractHeadings } from '@/components/blog/MarkdownRenderer';
 import { AtAGlanceCard } from '@/components/blog/AtAGlanceCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TravelTipsLayoutProps {
   post: BlogPost;
@@ -29,6 +33,13 @@ export function TravelTipsLayout({
   author,
   relatedPosts,
 }: TravelTipsLayoutProps) {
+  const isMobile = useIsMobile();
+
+  const headings = useMemo(() => {
+    if (!post.content) return [];
+    return extractHeadings(post.content);
+  }, [post.content]);
+
   const authorInitials = author.name
     .split(' ')
     .map((n) => n[0])
@@ -39,76 +50,85 @@ export function TravelTipsLayout({
   return (
     <>
       <ReadingProgress />
+      {!isMobile && <FloatingShareBar title={post.title} />}
+      {isMobile && headings.length > 0 && <MobileTableOfContents headings={headings} />}
 
-      {/* Compact Header */}
-      <section className="border-b border-border">
-        <div className="container mx-auto px-4 py-6">
-          {/* Top Bar */}
-          <div className="flex items-center justify-between mb-6">
-            <Link
-              to="/blog"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Blog
-            </Link>
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-          </div>
-
-          {/* Title Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-4xl"
+      {/* Compact Hero with Gradient */}
+      <section className="relative h-[25vh] overflow-hidden">
+        {post.featured_image_url ? (
+          <img
+            src={post.featured_image_url}
+            alt={post.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/10" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+        
+        {/* Back Button - Consistent Style */}
+        <div className="absolute top-4 left-4 z-10">
+          <Link
+            to="/blog"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors"
           >
-            {post.category && (
-              <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20 uppercase tracking-wider text-xs">
-                {post.category.name}
-              </Badge>
-            )}
-
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4 leading-tight">
-              {post.title}
-            </h1>
-
-            {post.excerpt && (
-              <p className="text-lg text-muted-foreground mb-6">
-                {post.excerpt}
-              </p>
-            )}
-
-            {/* Meta */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-7 w-7 border border-border">
-                  <AvatarImage src={author.avatar_url || undefined} alt={author.name} />
-                  <AvatarFallback className="text-[10px] bg-muted">
-                    {authorInitials}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="font-medium text-foreground">{author.name}</span>
-              </div>
-              <span className="text-border">•</span>
-              <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {format(publishedDate, 'MMM d, yyyy')}
-              </span>
-              <span className="text-border">•</span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {readTime} min read
-              </span>
-            </div>
-          </motion.div>
+            <ArrowLeft className="h-4 w-4" />
+            Back to Blog
+          </Link>
         </div>
       </section>
 
+      {/* Header Card */}
+      <div className="container mx-auto px-4 -mt-16 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-card rounded-2xl p-6 md:p-10 shadow-xl max-w-4xl mx-auto border border-border/50"
+        >
+          {post.category && (
+            <Badge variant="secondary" className="mb-4">
+              {post.category.name}
+            </Badge>
+          )}
+
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-medium text-foreground mb-4 leading-tight">
+            {post.title}
+          </h1>
+
+          {post.excerpt && (
+            <p className="text-lg text-muted-foreground mb-6">
+              {post.excerpt}
+            </p>
+          )}
+
+          {/* Meta - Consistent Styling */}
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8 border border-border">
+                <AvatarImage src={author.avatar_url || undefined} alt={author.name} />
+                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                  {authorInitials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium text-foreground">{author.name}</span>
+            </div>
+            <span className="hidden sm:inline text-border">•</span>
+            <span className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              {format(publishedDate, 'MMMM d, yyyy')}
+            </span>
+            <span className="hidden sm:inline text-border">•</span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              {readTime} min read
+            </span>
+          </div>
+        </motion.div>
+      </div>
+
       {/* Article Content */}
-      <div className="container mx-auto px-4 py-10 md:py-14">
+      <div className="container mx-auto px-4 py-12 md:py-16">
         <div className="max-w-3xl mx-auto">
           {/* At a Glance Summary */}
           <AtAGlanceCard
@@ -124,7 +144,7 @@ export function TravelTipsLayout({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground">
+            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-li:text-muted-foreground">
               {post.content ? (
                 <MarkdownRenderer content={post.content} style="travel-tips" />
               ) : (
@@ -146,7 +166,7 @@ export function TravelTipsLayout({
             )}
 
             <div className="mt-8 pt-8 border-t border-border">
-              <p className="text-sm text-muted-foreground mb-4">Found these tips helpful? Share with friends:</p>
+              <p className="text-sm text-muted-foreground mb-4">Share this article:</p>
               <SocialShareButtons title={post.title} />
             </div>
 
@@ -161,8 +181,8 @@ export function TravelTipsLayout({
         <section className="py-16 md:py-20 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                More Tips & Guides
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground">
+                You May Also Enjoy
               </h2>
               <Button variant="ghost" asChild className="hidden sm:inline-flex">
                 <Link to="/blog" className="gap-2">
