@@ -1,105 +1,155 @@
 
+# Fix AbortError in Payment Flow
 
-# Add Property Location to Stripe Payment Metadata
+## Root Cause Analysis
 
-Enhance the Stripe payment integration to include property location (city, country) for better transaction identification in the Stripe Dashboard.
+The error `AbortError: signal is aborted without reason` occurs during the booking creation process in `handleProceedToPayment`. Based on the investigation:
+
+### Flow Analysis
+
+```text
+User clicks "Proceed to Payment"
+       |
+       v
+1. setIsProcessing(true)
+       |
+       v  
+2. completeBooking.mutateAsync() ← BOOKING CREATED HERE
+       |
+       v
+3. Supabase inserts booking record
+       |
+       v
+4. Realtime subscription fires (useRealtimeAvailability)
+       |
+       v
+5. queryClient.invalidateQueries(['bookings'])
+       |
+       v
+6. Component re-renders with new query state
+       |
+       v
+7. AbortError - fetch cancelled mid-operation
+```
+
+### Why It Happens
+
+1. The `useRealtimeAvailability` hook subscribes to `bookings` table changes
+2. When `completeBooking.mutateAsync()` inserts a new booking, the realtime listener fires
+3. The listener calls `queryClient.invalidateQueries({ queryKey: ['bookings'] })`
+4. This triggers background refetches and component re-renders
+5. During this re-render, the ongoing fetch (from `supabase.from().insert()`) gets aborted
 
 ---
 
-## Current State
+## Solution Strategy
 
-The `create-payment-intent` edge function receives property details but **missing location data**:
-- ✅ `propertyId`, `propertyName`, `propertySlug`
-- ❌ `propertyCity`, `propertyCountry` ← Not currently passed
+### Option A: Deferred Booking Creation (Recommended)
+Change the payment flow to create the booking AFTER payment succeeds, not before. This is also a safer pattern for production:
+
+- Create Payment Intent first (no booking record yet)
+- Only create booking after Stripe confirms payment
+- Prevents orphaned unpaid booking records
+
+### Option B: Debounce Button Clicks
+Add double-click protection to prevent multiple submissions.
+
+### Option C: Suspend Realtime During Checkout
+Temporarily pause realtime subscriptions while the payment flow is processing.
+
+### Option D: Isolate Mutation (Quick Fix)
+Wrap the mutation call to prevent abort signals from propagating.
 
 ---
 
-## Changes Required
+## Recommended Implementation: Option A + B Combined
 
-### 1. Update Checkout.tsx
+### Changes Required
 
-**File:** `src/pages/Checkout.tsx`
+#### 1. Update Checkout.tsx - Move booking creation to after payment success
 
-Add `propertyCity` and `propertyCountry` to the payload sent to `create-payment-intent`:
-
-```typescript
-// Lines 223-253: Update supabase.functions.invoke call
-const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-  body: {
-    propertyId: property.id,
-    propertyName: property.name,
-    propertySlug: property.slug,
-    propertyCity: property.city,      // ← ADD
-    propertyCountry: property.country, // ← ADD
-    // ... rest of fields
-  },
-});
+**Current flow:**
+```text
+Click → Create Booking → Create Payment Intent → Show Stripe Form → Payment → Confirm
 ```
 
-### 2. Update create-payment-intent Edge Function
-
-**File:** `supabase/functions/create-payment-intent/index.ts`
-
-**A. Extend the request interface:**
-```typescript
-interface CreatePaymentIntentRequest {
-  // Property details
-  propertyId: string;
-  propertyName: string;
-  propertySlug: string;
-  propertyCity: string;     // ← ADD
-  propertyCountry: string;  // ← ADD
-  // ... rest of fields
-}
+**New flow:**
+```text
+Click → Create Payment Intent → Show Stripe Form → Payment → Create Booking → Confirm
 ```
 
-**B. Add to metadata object:**
+Modify `handleProceedToPayment`:
+- Remove `completeBooking.mutateAsync()` call
+- Pass guest info and booking details directly to payment intent
+- Store booking data in state for later use
+
+Modify `handlePaymentSuccess`:
+- Create booking record HERE after payment succeeds
+- Link booking to the successful payment intent
+
+#### 2. Update create-payment-intent Edge Function
+
+Already receives all booking details in metadata - no changes needed.
+
+#### 3. Update confirm-payment Edge Function
+
+Modify to accept full booking payload and create booking atomically after payment verification.
+
+#### 4. Add Button Debounce Protection
+
+Add a ref to track if mutation is in-flight to prevent double-clicks:
 ```typescript
-const metadata: Record<string, string> = {
-  // ... existing fields
-  
-  // Property location (NEW)
-  property_city: body.propertyCity || "",
-  property_country: body.propertyCountry || "",
-  
-  // ... rest of fields
+const isSubmittingRef = useRef(false);
+
+const handleProceedToPayment = async () => {
+  if (isSubmittingRef.current) return;
+  isSubmittingRef.current = true;
+  // ... existing code
+  // finally: isSubmittingRef.current = false;
 };
 ```
 
-**C. Update payment description to include location:**
-```typescript
-description: `Booking at ${body.propertyName}, ${body.propertyCity} - ${body.checkIn} to ${body.checkOut}`,
-```
+---
+
+## Technical Details
+
+### File: src/pages/Checkout.tsx
+
+**Remove from `handleProceedToPayment`:**
+- Lines 197-218: The `completeBooking.mutateAsync()` call
+- Lines 220: `setCreatedBookingId()` call
+
+**Move to `handlePaymentSuccess`:**
+- Create booking after payment is confirmed
+- Use the booking details already passed to the function
+
+**Add:**
+- `isSubmittingRef` to prevent double-clicks
+- Store booking payload in state before payment
+
+### File: supabase/functions/confirm-payment/index.ts
+
+**Update to:**
+- Accept optional booking creation payload
+- If booking data provided, create booking record atomically
+- Return created booking ID in response
 
 ---
 
-## Stripe Dashboard Visibility
+## Benefits
 
-After implementation, each payment will display:
-
-| Metadata Key | Example Value |
-|--------------|---------------|
-| `property_name` | "Villa Amalfi" |
-| `property_city` | "Positano" |
-| `property_country` | "Italy" |
-| `check_in` | "2025-06-15" |
-| `check_out` | "2025-06-22" |
-| `booking_reference` | "BK-202506-AB12" |
-
-The payment description will show:
-```
-Booking at Villa Amalfi, Positano - 2025-06-15 to 2025-06-22
-```
+1. **No orphaned bookings**: Bookings only created after successful payment
+2. **No race conditions**: Realtime subscription won't fire during payment setup
+3. **Cleaner data**: Database only contains confirmed/paid bookings
+4. **Better UX**: Simpler error recovery - failed payment = no cleanup needed
 
 ---
 
-## Testing Plan
+## Implementation Steps
 
-After implementation:
-1. Navigate to a property with instant booking enabled
-2. Select dates and proceed through checkout
-3. Complete a test payment
-4. Check Stripe Dashboard → Payments → View payment details
-5. Verify `property_city` and `property_country` appear in metadata
-6. Verify description includes the city name
-
+1. Update `confirm-payment` edge function to accept and create booking
+2. Modify `handleProceedToPayment` to skip booking creation
+3. Pass full booking payload to payment flow state
+4. Create booking in `handlePaymentSuccess` via confirm-payment
+5. Add double-click protection with ref
+6. Test end-to-end payment flow
