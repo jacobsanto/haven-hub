@@ -371,7 +371,8 @@ export default function PropertyDetail() {
         {/* Mobile Booking CTA */}
         <MobileBookingCTA 
           property={property} 
-          priceDisplay={formatPrice(property.base_price)} 
+          priceDisplay={formatPrice(property.base_price)}
+          specialOffer={activeOffer}
         />
       </div>
     </PageLayout>
