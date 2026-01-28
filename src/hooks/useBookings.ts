@@ -1,7 +1,95 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Booking, BookingFormData, BookingStatus, BookingWithProperty } from '@/types/database';
+import { 
+  Booking, 
+  BookingFormData, 
+  BookingStatus, 
+  BookingWithProperty,
+  BookingPayment,
+  BookingAddon,
+  BookingPriceBreakdown,
+  SecurityDeposit 
+} from '@/types/database';
 import { differenceInDays } from 'date-fns';
+
+// Booking details with all related data
+export interface BookingDetails {
+  booking: BookingWithProperty | null;
+  priceBreakdown: BookingPriceBreakdown[];
+  payments: BookingPayment[];
+  addons: BookingAddon[];
+  deposits: SecurityDeposit[];
+}
+
+// Fetch complete booking details with all related entities
+export function useBookingDetails(bookingId: string | null) {
+  return useQuery({
+    queryKey: ['admin', 'booking-detail', bookingId],
+    queryFn: async (): Promise<BookingDetails> => {
+      if (!bookingId) {
+        return { booking: null, priceBreakdown: [], payments: [], addons: [], deposits: [] };
+      }
+
+      // Fetch booking with property
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          property:properties(id, name, slug, hero_image_url)
+        `)
+        .eq('id', bookingId)
+        .maybeSingle();
+
+      if (bookingError) throw bookingError;
+
+      // Fetch price breakdown
+      const { data: priceBreakdown, error: breakdownError } = await supabase
+        .from('booking_price_breakdown')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .order('created_at', { ascending: true });
+
+      if (breakdownError) throw breakdownError;
+
+      // Fetch payments
+      const { data: payments, error: paymentsError } = await supabase
+        .from('booking_payments')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .order('created_at', { ascending: true });
+
+      if (paymentsError) throw paymentsError;
+
+      // Fetch addons with catalog info
+      const { data: addons, error: addonsError } = await supabase
+        .from('booking_addons')
+        .select(`
+          *,
+          addon:addons_catalog(name, category)
+        `)
+        .eq('booking_id', bookingId);
+
+      if (addonsError) throw addonsError;
+
+      // Fetch security deposits
+      const { data: deposits, error: depositsError } = await supabase
+        .from('security_deposits')
+        .select('*')
+        .eq('booking_id', bookingId);
+
+      if (depositsError) throw depositsError;
+
+      return {
+        booking: booking as BookingWithProperty | null,
+        priceBreakdown: (priceBreakdown || []) as BookingPriceBreakdown[],
+        payments: (payments || []) as BookingPayment[],
+        addons: (addons || []) as BookingAddon[],
+        deposits: (deposits || []) as SecurityDeposit[],
+      };
+    },
+    enabled: !!bookingId,
+  });
+}
 
 // Generate a unique booking reference
 function generateBookingReference(): string {
