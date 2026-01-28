@@ -1,161 +1,253 @@
 
-## Preset Cancellation Policies for Vacation Rentals
+## Customizable Cancellation Policies with Admin Management
 
-This plan implements Option B: simple preset cancellation policies stored in code and linked to rate plans. This is the standard approach for vacation rentals (unlike hotels that have complex per-night policies).
+This plan transforms the current hardcoded preset cancellation policies into a fully customizable system. Admins will be able to create, edit, and delete custom policies with specific cutoff days and refund percentages through a dedicated management dialog.
 
 ---
 
-### Policy Definitions
+### Current State vs Target State
 
-Four standard policies aligned with vacation rental industry norms:
+| Aspect | Current | Target |
+|--------|---------|--------|
+| Policy Storage | Hardcoded in `src/lib/cancellation-policies.ts` | Database table `cancellation_policies` |
+| Policy Count | 4 fixed presets | Unlimited custom policies |
+| Cutoff Days | Fixed (7, 14, 30 days) | Admin-configurable per rule |
+| Refund Percentages | Fixed (100%, 50%, 0%) | Admin-configurable per rule |
+| Management UI | None | Dedicated dialog with rule builder |
+| Rate Plan Link | Stores policy key (`flexible`, etc.) | Stores policy UUID |
 
-| Policy Key | Label | Rules | Use Case |
-|------------|-------|-------|----------|
-| `flexible` | Flexible | Full refund up to 7 days before check-in; 50% refund 3-7 days; No refund within 3 days | Standard bookings, encourages last-minute bookings |
-| `moderate` | Moderate | Full refund up to 14 days before check-in; 50% refund 7-14 days; No refund within 7 days | Default for most rate plans |
-| `strict` | Strict | Full refund up to 30 days before check-in; 50% refund 14-30 days; No refund within 14 days | Peak season, special events |
-| `non_refundable` | Non-Refundable | No refund at any time | Promotional rates, lowest price |
+---
+
+### Database Design
+
+**New Table: `cancellation_policies`**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid | Primary key |
+| `name` | text | Display name (e.g., "Flexible", "Holiday Special") |
+| `description` | text | Optional longer description |
+| `color` | text | Badge color (green, yellow, orange, red) |
+| `is_default` | boolean | One of the system presets (cannot delete) |
+| `is_active` | boolean | Available for selection |
+| `rules` | jsonb | Array of `{daysBeforeCheckIn, refundPercentage}` |
+| `created_at` | timestamptz | Creation timestamp |
+| `updated_at` | timestamptz | Last modification |
+
+**Rules JSONB Structure:**
+```json
+[
+  {"daysBeforeCheckIn": 14, "refundPercentage": 100},
+  {"daysBeforeCheckIn": 7, "refundPercentage": 50},
+  {"daysBeforeCheckIn": 0, "refundPercentage": 0}
+]
+```
+
+**Migration includes:**
+1. Create `cancellation_policies` table
+2. Insert 4 default policies (Flexible, Moderate, Strict, Non-Refundable)
+3. Update `rate_plans.cancellation_policy` to reference policy ID
+4. Update `bookings.cancellation_policy` to store policy ID
 
 ---
 
 ### Implementation Steps
 
-#### Step 1: Create Cancellation Policy Utility
+#### Step 1: Database Migration
 
-**File:** `src/lib/cancellation-policies.ts` (New)
+Create `cancellation_policies` table with:
+- RLS policies for admin management
+- Public read access for active policies
+- Seed data with 4 default presets (marked `is_default: true`)
 
-Define policy types and refund calculation logic:
+Update foreign key references:
+- `rate_plans.cancellation_policy` becomes UUID reference
+- `bookings.cancellation_policy` becomes UUID reference
 
-```typescript
-export type CancellationPolicyKey = 'flexible' | 'moderate' | 'strict' | 'non_refundable';
+#### Step 2: Create Policy Management Hook
 
-export interface CancellationPolicy {
-  key: CancellationPolicyKey;
-  label: string;
-  description: string;
-  shortDescription: string;
-  rules: CancellationRule[];
-}
-
-export interface CancellationRule {
-  daysBeforeCheckIn: number;  // Cutoff days (e.g., 7 means "7+ days before")
-  refundPercentage: number;   // 100 = full, 50 = half, 0 = none
-  label: string;              // Human-readable description
-}
-
-// Calculate refund amount based on policy, check-in date, and cancellation time
-export function calculateRefund(
-  policyKey: CancellationPolicyKey,
-  checkInDate: Date,
-  cancellationDate: Date,
-  totalAmount: number
-): { refundAmount: number; refundPercentage: number; message: string }
-```
-
-#### Step 2: Add Cancellation Policy to Rate Plans
-
-**Database Migration:**
-
-Add `cancellation_policy` column to `rate_plans` table:
-
-```sql
-ALTER TABLE rate_plans 
-ADD COLUMN cancellation_policy text NOT NULL DEFAULT 'moderate';
-
--- Add constraint for valid values
-ALTER TABLE rate_plans 
-ADD CONSTRAINT valid_cancellation_policy 
-CHECK (cancellation_policy IN ('flexible', 'moderate', 'strict', 'non_refundable'));
-```
-
-#### Step 3: Update Rate Plan Types and Hooks
-
-**File:** `src/hooks/useAdminRatePlans.ts`
-
-Add `cancellation_policy` to the RatePlan interface:
+**File:** `src/hooks/useCancellationPolicies.ts` (New)
 
 ```typescript
-export interface RatePlan {
-  // ... existing fields
-  cancellation_policy: 'flexible' | 'moderate' | 'strict' | 'non_refundable';
+interface CancellationPolicyDB {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  is_default: boolean;
+  is_active: boolean;
+  rules: { daysBeforeCheckIn: number; refundPercentage: number }[];
+  created_at: string;
+  updated_at: string;
 }
+
+export function useCancellationPolicies()
+export function useCreateCancellationPolicy()
+export function useUpdateCancellationPolicy()
+export function useDeleteCancellationPolicy()
 ```
 
-#### Step 4: Update Admin Rate Plans UI
+#### Step 3: Create Cancellation Policy Form Dialog
+
+**File:** `src/components/admin/CancellationPolicyFormDialog.tsx` (New)
+
+Features:
+- Policy name and description inputs
+- Color selector (green, yellow, orange, red badges)
+- **Dynamic Rules Builder:**
+  - Add/remove refund tiers
+  - For each tier: days before check-in + refund percentage
+  - Drag to reorder (or auto-sort by days descending)
+  - Visual preview of policy terms
+- Validation: rules must be in descending day order, percentages 0-100
+
+UI Layout:
+```text
+┌────────────────────────────────────────────────────────────┐
+│  Create Cancellation Policy                                │
+├────────────────────────────────────────────────────────────┤
+│  Name: [Holiday Flexible                              ]    │
+│  Description: [Great for holiday bookings             ]    │
+│  Badge Color: [🟢 Green ▼]                                 │
+│                                                            │
+│  ─── Refund Rules ──────────────────────────────────────   │
+│                                                            │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ 🗑️  [21] days before check-in → [100]% refund       │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ 🗑️  [10] days before check-in → [50]% refund        │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ 🗑️  [0] days before check-in → [0]% refund (final)  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                            │
+│  [+ Add Refund Tier]                                       │
+│                                                            │
+│  ─── Preview ───────────────────────────────────────────   │
+│  • Full refund if cancelled 21+ days before check-in      │
+│  • 50% refund if cancelled 10-21 days before check-in     │
+│  • No refund within 10 days of check-in                   │
+│                                                            │
+├────────────────────────────────────────────────────────────┤
+│                               [Cancel]  [Save Policy]      │
+└────────────────────────────────────────────────────────────┘
+```
+
+#### Step 4: Add Policy Management Tab to Rate Plans Page
 
 **File:** `src/pages/admin/AdminRatePlans.tsx`
 
-Add cancellation policy selector to the rate plan form:
+Add a new tab "Cancellation Policies" alongside Rate Plans, Seasonal Rates, and Heatmap:
 
-- Add dropdown with 4 policy options
-- Show policy description when selected
-- Display policy badge in rate plans table
-- Include in form data for create/update
+```tsx
+<TabsList className="grid w-full max-w-2xl grid-cols-4">
+  <TabsTrigger value="rate-plans">Rate Plans</TabsTrigger>
+  <TabsTrigger value="seasonal-rates">Seasonal Rates</TabsTrigger>
+  <TabsTrigger value="cancellation-policies">Policies</TabsTrigger>  // NEW
+  <TabsTrigger value="heatmap">Price Heatmap</TabsTrigger>
+</TabsList>
+```
 
-Changes:
-- Add `CANCELLATION_POLICIES` constant with labels/descriptions
-- Add policy selector in the dialog form (between rate type and min stay)
-- Add policy column to the rate plans table
-- Show colored badge based on policy (green=flexible, yellow=moderate, orange=strict, red=non-refundable)
+Tab content shows:
+- Summary cards (Total Policies, Active, Custom)
+- Table listing all policies with columns:
+  - Name (with color badge)
+  - Rules summary (e.g., "21d → 100%, 10d → 50%, No refund")
+  - Default badge (for system presets)
+  - Active toggle
+  - Actions (Edit, Duplicate, Delete - delete disabled for defaults)
 
-#### Step 5: Display Policy at Checkout
+#### Step 5: Update Rate Plan Form Dialog
 
-**File:** `src/pages/Checkout.tsx`
+**File:** `src/pages/admin/AdminRatePlans.tsx`
 
-Add cancellation policy display in the payment step:
+Change the cancellation policy selector from hardcoded presets to database-driven dropdown:
 
-- Fetch the applicable rate plan for the booking dates
-- Display policy summary before payment button
-- Link to full terms for legal compliance
+```tsx
+// Before: Uses CANCELLATION_POLICIES constant
+// After: Uses useCancellationPolicies() hook data
 
-**File:** `src/components/booking/CancellationPolicyDisplay.tsx` (New)
+<Select value={formData.cancellation_policy_id}>
+  <SelectTrigger>
+    <SelectValue />
+  </SelectTrigger>
+  <SelectContent>
+    {policies?.map((policy) => (
+      <SelectItem key={policy.id} value={policy.id}>
+        <div className="flex items-center gap-2">
+          <Badge className={getBadgeClass(policy.color)}>{policy.name}</Badge>
+        </div>
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+```
 
-Create component to show policy terms:
+#### Step 6: Update Utility Functions
+
+**File:** `src/lib/cancellation-policies.ts`
+
+Keep the utility functions but modify to work with database policies:
+
+```typescript
+// New: Calculate refund from database policy object
+export function calculateRefundFromPolicy(
+  policy: { rules: CancellationRule[] },
+  checkInDate: Date,
+  cancellationDate: Date,
+  totalAmount: number
+): RefundCalculation
+
+// New: Generate summary from database policy
+export function getPolicySummaryFromRules(
+  rules: CancellationRule[],
+  checkInDate: Date
+): string[]
+
+// Keep: Badge color utilities
+export function getPolicyBadgeClassByColor(color: string): string
+```
+
+#### Step 7: Update Display Components
+
+**File:** `src/components/booking/CancellationPolicyDisplay.tsx`
+
+Accept policy object from database instead of just key:
 
 ```tsx
 interface CancellationPolicyDisplayProps {
-  policyKey: CancellationPolicyKey;
+  policy: {
+    id: string;
+    name: string;
+    color: string;
+    rules: { daysBeforeCheckIn: number; refundPercentage: number }[];
+  };
   checkInDate: Date;
   compact?: boolean;
 }
 ```
 
-Features:
-- Shows policy name and description
-- Highlights current refund eligibility based on today's date
-- Compact mode for booking widget, full mode for checkout
+#### Step 8: Update Checkout Flow
 
-#### Step 6: Store Policy with Booking
+**File:** `src/pages/Checkout.tsx`
 
-**File:** `src/hooks/useCompleteBooking.ts`
+- Fetch the policy by ID from the selected rate plan
+- Display policy details from database record
+- Store policy ID with booking
 
-Update to capture the cancellation policy at time of booking:
+#### Step 9: Update Refund Calculation Hook
 
-- Accept `cancellationPolicy` parameter
-- Store in booking record (for historical reference)
+**File:** `src/hooks/useCancellationRefund.ts`
 
-**Database Migration:**
-
-Add `cancellation_policy` to `bookings` table:
-
-```sql
-ALTER TABLE bookings 
-ADD COLUMN cancellation_policy text DEFAULT 'moderate';
-```
-
-This captures the policy at time of booking so it can't be changed retroactively.
-
-#### Step 7: Create Refund Calculation Hook
-
-**File:** `src/hooks/useCancellationRefund.ts` (New)
-
-Hook for admin to calculate refunds when processing cancellations:
+Modify to fetch policy by ID and calculate refund:
 
 ```typescript
-export function useCancellationRefund(booking: Booking) {
-  // Returns current refund amount based on stored policy
-  // Used in admin booking detail when processing cancellation
-}
+export function useCancellationRefund(booking: {
+  cancellationPolicyId: string | null;
+  checkIn: string | Date;
+  totalPrice: number;
+}): RefundCalculation | null
 ```
 
 ---
@@ -164,64 +256,34 @@ export function useCancellationRefund(booking: Booking) {
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/lib/cancellation-policies.ts` | Create | Policy definitions + refund calculator |
-| `src/hooks/useAdminRatePlans.ts` | Modify | Add cancellation_policy to types |
-| `src/pages/admin/AdminRatePlans.tsx` | Modify | Add policy selector to form + display |
-| `src/components/booking/CancellationPolicyDisplay.tsx` | Create | Display policy at checkout |
-| `src/pages/Checkout.tsx` | Modify | Show policy before payment |
-| `src/hooks/useCompleteBooking.ts` | Modify | Store policy with booking |
-| `src/hooks/useCancellationRefund.ts` | Create | Calculate refunds for admin |
-| Database migration | Create | Add cancellation_policy to rate_plans and bookings |
+| Database migration | Create | Create `cancellation_policies` table, seed defaults, update FKs |
+| `src/hooks/useCancellationPolicies.ts` | Create | CRUD hooks for policies |
+| `src/components/admin/CancellationPolicyFormDialog.tsx` | Create | Policy editor with rule builder |
+| `src/pages/admin/AdminRatePlans.tsx` | Modify | Add Policies tab, update rate plan form |
+| `src/lib/cancellation-policies.ts` | Modify | Add database-aware calculation functions |
+| `src/components/booking/CancellationPolicyDisplay.tsx` | Modify | Accept policy object |
+| `src/pages/Checkout.tsx` | Modify | Fetch and display policy from DB |
+| `src/hooks/useCancellationRefund.ts` | Modify | Fetch policy by ID for refund calc |
+| `src/hooks/useAdminRatePlans.ts` | Modify | Update types for policy ID reference |
 
 ---
 
-### Policy Display Examples
+### Key Features
 
-**At Checkout (before payment):**
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  Cancellation Policy: Moderate                              │
-│                                                             │
-│  • Free cancellation until Jan 15 (14 days before)         │
-│  • 50% refund if cancelled Jan 15-22                       │
-│  • No refund after Jan 22                                  │
-│                                                             │
-│  Your check-in: January 29, 2026                           │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**In Admin Rate Plan Table:**
-
-| Rate Plan | Type | Base Rate | Min Stay | Policy | Status |
-|-----------|------|-----------|----------|--------|--------|
-| Standard Rate | Standard | €450/night | 2 nights | 🟡 Moderate | Active |
-| Early Bird | Early Bird | €380/night | 3 nights | 🟢 Flexible | Active |
-| Peak Season | Standard | €650/night | 5 nights | 🟠 Strict | Active |
-| Flash Sale | Promotional | €299/night | 2 nights | 🔴 Non-Refundable | Active |
-
----
-
-### Stripe Integration Consideration
-
-When we implement Stripe, the refund logic will work as follows:
-
-1. Guest requests cancellation (via email/phone for now)
-2. Admin opens booking in dashboard
-3. System calculates refund based on stored `cancellation_policy` + check-in date
-4. Admin clicks "Process Refund" 
-5. `confirm-booking-payment` edge function calls Stripe Refund API with calculated amount
-6. Booking status updated to `cancelled`, payment status to `refunded`
-
-The cancellation policy does NOT get sent to Stripe - we simply calculate the refund amount locally and tell Stripe "refund X amount".
+1. **Dynamic Rule Builder**: Add/remove refund tiers with any cutoff days and percentages
+2. **Visual Preview**: See exactly how the policy will be displayed to guests
+3. **Color-Coded Badges**: Choose badge color for visual distinction in tables
+4. **Protected Defaults**: System presets (Flexible, Moderate, Strict, Non-Refundable) cannot be deleted
+5. **Audit Trail**: Policies stored with bookings for historical accuracy
+6. **Validation**: Ensures rules are logically ordered (highest days first)
 
 ---
 
 ### Benefits
 
-1. **Simplicity**: 4 preset policies cover 99% of vacation rental scenarios
-2. **No database overhead**: Policies defined in code, only key stored in DB
-3. **Legal compliance**: Policy shown at checkout before payment
-4. **Audit trail**: Policy captured at booking time, can't be changed retroactively
-5. **Admin visibility**: Easy to see which policy applies to each rate plan
-6. **Stripe-ready**: Refund calculation logic ready for payment integration
+1. **Flexibility**: Create policies for any scenario (holiday specials, peak periods)
+2. **Granular Control**: Set exact cutoff days (not just 7/14/30)
+3. **Custom Percentages**: Any refund percentage (75%, 25%, etc.)
+4. **Multiple Tiers**: Add as many refund tiers as needed
+5. **Centralized Management**: One place to manage all policies
+6. **Consistency**: Same policy can apply to multiple rate plans
