@@ -1,24 +1,46 @@
 import { motion } from 'framer-motion';
-import { Building2, Calendar, TrendingUp, Clock } from 'lucide-react';
+import { Building2, Calendar, TrendingUp, Clock, Users, ArrowUpRight, ArrowDownRight, Timer, LogIn, LogOut, Sparkles } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminProperties } from '@/hooks/useProperties';
 import { useBookingStats, useAdminBookings } from '@/hooks/useBookings';
+import { useCheckoutHoldsStats, useTodayActivity, useRevenueStats } from '@/hooks/useAdminAnalytics';
+import { useRealtimeBookings } from '@/hooks/useRealtimeBookings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 export default function AdminDashboard() {
   const { data: properties } = useAdminProperties();
   const { data: stats } = useBookingStats();
   const { data: recentBookings } = useAdminBookings();
+  const { data: holdsStats } = useCheckoutHoldsStats();
+  const { data: todayActivity } = useTodayActivity();
+  
+  // Revenue comparison: this month vs last month
+  const thisMonthStart = startOfMonth(new Date());
+  const thisMonthEnd = endOfMonth(new Date());
+  const lastMonthStart = startOfMonth(subMonths(new Date(), 1));
+  const lastMonthEnd = endOfMonth(subMonths(new Date(), 1));
+  
+  const { data: thisMonthRevenue } = useRevenueStats({ start: thisMonthStart, end: thisMonthEnd });
+  const { data: lastMonthRevenue } = useRevenueStats({ start: lastMonthStart, end: lastMonthEnd });
+  
+  // Enable real-time updates
+  useRealtimeBookings();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'EUR',
       minimumFractionDigits: 0,
     }).format(price);
   };
+
+  // Calculate revenue trend
+  const revenueTrend = thisMonthRevenue && lastMonthRevenue && lastMonthRevenue.totalRevenue > 0
+    ? ((thisMonthRevenue.totalRevenue - lastMonthRevenue.totalRevenue) / lastMonthRevenue.totalRevenue) * 100
+    : 0;
 
   const statCards = [
     {
@@ -63,6 +85,74 @@ export default function AdminDashboard() {
             </p>
           </div>
 
+          {/* Real-time Activity Strip */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          >
+            {/* Active Checkout Holds */}
+            <Card className="border-2 border-dashed border-amber-300 bg-amber-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Timer className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm font-medium text-amber-700">Active Holds</span>
+                  </div>
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-700 animate-pulse">
+                    Live
+                  </Badge>
+                </div>
+                <p className="text-2xl font-bold text-amber-800 mt-2">
+                  {holdsStats?.activeHolds || 0}
+                </p>
+                <p className="text-xs text-amber-600 mt-1">Checkouts in progress</p>
+              </CardContent>
+            </Card>
+
+            {/* Today's Check-ins */}
+            <Card className="border-2 border-dashed border-green-300 bg-green-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <LogIn className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-700">Check-ins Today</span>
+                </div>
+                <p className="text-2xl font-bold text-green-800 mt-2">
+                  {todayActivity?.checkInsToday || 0}
+                </p>
+                <p className="text-xs text-green-600 mt-1">Arrivals expected</p>
+              </CardContent>
+            </Card>
+
+            {/* Today's Check-outs */}
+            <Card className="border-2 border-dashed border-blue-300 bg-blue-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <LogOut className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-700">Check-outs Today</span>
+                </div>
+                <p className="text-2xl font-bold text-blue-800 mt-2">
+                  {todayActivity?.checkOutsToday || 0}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">Departures expected</p>
+              </CardContent>
+            </Card>
+
+            {/* New Bookings Today */}
+            <Card className="border-2 border-dashed border-purple-300 bg-purple-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm font-medium text-purple-700">New Today</span>
+                </div>
+                <p className="text-2xl font-bold text-purple-800 mt-2">
+                  {todayActivity?.newBookingsToday || 0}
+                </p>
+                <p className="text-xs text-purple-600 mt-1">Bookings received</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {statCards.map((stat, index) => (
@@ -90,6 +180,55 @@ export default function AdminDashboard() {
               </motion.div>
             ))}
           </div>
+
+          {/* Revenue Trend Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="card-organic bg-gradient-to-br from-primary/5 to-accent/5">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">This Month's Revenue</p>
+                    <p className="text-3xl font-bold">
+                      {formatPrice(thisMonthRevenue?.totalRevenue || 0)}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {thisMonthRevenue?.confirmedBookings || 0} confirmed bookings
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className={`flex items-center gap-1 ${revenueTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {revenueTrend >= 0 ? (
+                        <ArrowUpRight className="h-5 w-5" />
+                      ) : (
+                        <ArrowDownRight className="h-5 w-5" />
+                      )}
+                      <span className="text-lg font-semibold">
+                        {Math.abs(revenueTrend).toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">vs last month</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Last: {formatPrice(lastMonthRevenue?.totalRevenue || 0)}
+                    </p>
+                  </div>
+                </div>
+                {(thisMonthRevenue?.pendingRevenue || 0) > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Pending revenue</span>
+                      <span className="font-medium text-amber-600">
+                        {formatPrice(thisMonthRevenue?.pendingRevenue || 0)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Recent Bookings */}
           <Card className="card-organic">
