@@ -1,16 +1,18 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, Copy, Calendar, Users, Tag, Crown, Sun, Snowflake, TrendingUp, BarChart3, Shield } from 'lucide-react';
+import { Plus, Pencil, Trash2, Copy, Calendar, Users, Tag, Crown, Sun, Snowflake, TrendingUp, BarChart3, Shield, FileText } from 'lucide-react';
 import { format, parseISO, isWithinInterval, isBefore, isAfter } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminRatePlans, useCreateRatePlan, useUpdateRatePlan, useDeleteRatePlan, useDuplicateRatePlan, RatePlan, RatePlanFormData } from '@/hooks/useAdminRatePlans';
 import { useSeasonalRates, useCreateSeasonalRate, useUpdateSeasonalRate, useDeleteSeasonalRate } from '@/hooks/useSeasonalRates';
+import { useCancellationPolicies, useCreateCancellationPolicy, useUpdateCancellationPolicy, useDeleteCancellationPolicy, useDuplicateCancellationPolicy, CancellationPolicyDB, CancellationPolicyFormData } from '@/hooks/useCancellationPolicies';
 import { useAdminProperties } from '@/hooks/useProperties';
 import { SeasonalRateFormDialog } from '@/components/admin/SeasonalRateFormDialog';
 import { SeasonalRatesHeatmap } from '@/components/admin/SeasonalRatesHeatmap';
+import { CancellationPolicyFormDialog } from '@/components/admin/CancellationPolicyFormDialog';
 import { SeasonalRate } from '@/types/database';
-import { CANCELLATION_POLICIES, CancellationPolicyKey, getPolicyBadgeClass } from '@/lib/cancellation-policies';
+import { CANCELLATION_POLICIES, CancellationPolicyKey, getPolicyBadgeClass, getPolicyBadgeClassByColor } from '@/lib/cancellation-policies';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,10 +50,15 @@ const MEMBER_TIERS = [
 export default function AdminRatePlans() {
   const { data: ratePlans, isLoading } = useAdminRatePlans();
   const { data: properties } = useAdminProperties();
+  const { data: cancellationPolicies } = useCancellationPolicies();
   const createRatePlan = useCreateRatePlan();
   const updateRatePlan = useUpdateRatePlan();
   const deleteRatePlan = useDeleteRatePlan();
   const duplicateRatePlan = useDuplicateRatePlan();
+  const createCancellationPolicy = useCreateCancellationPolicy();
+  const updateCancellationPolicy = useUpdateCancellationPolicy();
+  const deleteCancellationPolicy = useDeleteCancellationPolicy();
+  const duplicateCancellationPolicy = useDuplicateCancellationPolicy();
   const { toast } = useToast();
 
   // Rate Plan Dialog State
@@ -65,6 +72,10 @@ export default function AdminRatePlans() {
   const [seasonalDialogOpen, setSeasonalDialogOpen] = useState(false);
   const [editingSeasonalRate, setEditingSeasonalRate] = useState<SeasonalRate | null>(null);
 
+  // Cancellation Policy State
+  const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
+  const [editingPolicy, setEditingPolicy] = useState<CancellationPolicyDB | null>(null);
+
   // Seasonal rate hooks - only fetch when a property is selected
   const { data: seasonalRates } = useSeasonalRates(selectedPropertyForSeasons);
   const createSeasonalRate = useCreateSeasonalRate();
@@ -73,6 +84,9 @@ export default function AdminRatePlans() {
 
   const today = new Date();
   const nextYear = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+
+  // Find default policy ID for form
+  const defaultPolicyId = cancellationPolicies?.find(p => p.name === 'Moderate')?.id || cancellationPolicies?.[0]?.id || '';
 
   const [formData, setFormData] = useState<RatePlanFormData>({
     property_id: '',
@@ -229,6 +243,56 @@ export default function AdminRatePlans() {
     }
   };
 
+  // Cancellation Policy Handlers
+  const openPolicyCreateDialog = () => {
+    setEditingPolicy(null);
+    setPolicyDialogOpen(true);
+  };
+
+  const openPolicyEditDialog = (policy: CancellationPolicyDB) => {
+    setEditingPolicy(policy);
+    setPolicyDialogOpen(true);
+  };
+
+  const handlePolicySubmit = async (data: CancellationPolicyFormData) => {
+    try {
+      if (editingPolicy) {
+        await updateCancellationPolicy.mutateAsync({ id: editingPolicy.id, ...data });
+        toast({ title: 'Policy updated successfully' });
+      } else {
+        await createCancellationPolicy.mutateAsync(data);
+        toast({ title: 'Policy created successfully' });
+      }
+      setPolicyDialogOpen(false);
+      setEditingPolicy(null);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to save policy',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  const handlePolicyDelete = async (id: string) => {
+    try {
+      await deleteCancellationPolicy.mutateAsync(id);
+      toast({ title: 'Policy deleted successfully' });
+    } catch (error) {
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to delete policy', variant: 'destructive' });
+    }
+  };
+
+  const handlePolicyDuplicate = async (id: string) => {
+    try {
+      await duplicateCancellationPolicy.mutateAsync(id);
+      toast({ title: 'Policy duplicated successfully' });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to duplicate policy', variant: 'destructive' });
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -308,7 +372,7 @@ export default function AdminRatePlans() {
           </div>
 
           <Tabs defaultValue="rate-plans" className="space-y-6">
-            <TabsList className="grid w-full max-w-lg grid-cols-3">
+            <TabsList className="grid w-full max-w-2xl grid-cols-4">
               <TabsTrigger value="rate-plans" className="flex items-center gap-2">
                 <Tag className="h-4 w-4" />
                 Rate Plans
@@ -317,9 +381,13 @@ export default function AdminRatePlans() {
                 <Sun className="h-4 w-4" />
                 Seasonal Rates
               </TabsTrigger>
+              <TabsTrigger value="cancellation-policies" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Policies
+              </TabsTrigger>
               <TabsTrigger value="heatmap" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
-                Price Heatmap
+                Heatmap
               </TabsTrigger>
             </TabsList>
 
@@ -773,6 +841,182 @@ export default function AdminRatePlans() {
               )}
             </TabsContent>
 
+            {/* Cancellation Policies Tab */}
+            <TabsContent value="cancellation-policies" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Manage refund rules and terms applied to rate plans
+                  </p>
+                </div>
+                <Button onClick={openPolicyCreateDialog}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Policy
+                </Button>
+              </div>
+
+              {/* Policy Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                  <Card className="card-organic">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-primary/10">
+                          <FileText className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Total Policies</p>
+                          <p className="text-2xl font-semibold">{cancellationPolicies?.length || 0}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                  <Card className="card-organic">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-green-100 dark:bg-green-900/30">
+                          <Shield className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Active</p>
+                          <p className="text-2xl font-semibold">{cancellationPolicies?.filter(p => p.is_active).length || 0}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                  <Card className="card-organic">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-xl bg-accent/20">
+                          <Plus className="h-6 w-6 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Custom</p>
+                          <p className="text-2xl font-semibold">{cancellationPolicies?.filter(p => !p.is_default).length || 0}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </div>
+
+              {/* Policies Table */}
+              <Card className="card-organic">
+                <CardHeader>
+                  <CardTitle className="font-serif">Cancellation Policies</CardTitle>
+                  <CardDescription>
+                    Define refund rules for different booking scenarios
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {cancellationPolicies && cancellationPolicies.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Policy</TableHead>
+                          <TableHead>Rules Summary</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Active</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {cancellationPolicies.map((policy) => {
+                          const rulesSummary = policy.rules
+                            .sort((a, b) => b.daysBeforeCheckIn - a.daysBeforeCheckIn)
+                            .map(r => `${r.daysBeforeCheckIn}d → ${r.refundPercentage}%`)
+                            .join(', ');
+
+                          return (
+                            <TableRow key={policy.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Badge className={getPolicyBadgeClassByColor(policy.color)}>
+                                    {policy.name}
+                                  </Badge>
+                                </div>
+                                {policy.description && (
+                                  <p className="text-xs text-muted-foreground mt-1 max-w-xs truncate">
+                                    {policy.description}
+                                  </p>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-sm font-mono">{rulesSummary || 'No rules'}</span>
+                              </TableCell>
+                              <TableCell>
+                                {policy.is_default ? (
+                                  <Badge variant="secondary">Default</Badge>
+                                ) : (
+                                  <Badge variant="outline">Custom</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Switch checked={policy.is_active} disabled />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handlePolicyDuplicate(policy.id)}
+                                    title="Duplicate"
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => openPolicyEditDialog(policy)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  {!policy.is_default && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Policy?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This will permanently delete "{policy.name}". This action cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handlePolicyDelete(policy.id)}>
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="py-12 text-center">
+                      <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                      <p className="text-muted-foreground">No policies found.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             {/* Heatmap Tab */}
             <TabsContent value="heatmap" className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1073,6 +1317,15 @@ export default function AdminRatePlans() {
           propertyBasePrice={selectedProperty?.base_price || 0}
           onSubmit={handleSeasonalSubmit}
           isSubmitting={createSeasonalRate.isPending || updateSeasonalRate.isPending}
+        />
+
+        {/* Cancellation Policy Dialog */}
+        <CancellationPolicyFormDialog
+          open={policyDialogOpen}
+          onOpenChange={setPolicyDialogOpen}
+          policy={editingPolicy}
+          onSubmit={handlePolicySubmit}
+          isSubmitting={createCancellationPolicy.isPending || updateCancellationPolicy.isPending}
         />
       </AdminLayout>
     </AdminGuard>
