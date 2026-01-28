@@ -241,6 +241,7 @@ Deno.serve(async (req) => {
         }
 
         // Transform to our format - ensure rentals is always an array
+        // Include baserate for rate syncing
         const properties = (rentals || []).map((rental: TokeetRental) => ({
           externalId: rental.pkey,
           name: rental.name || rental.display_name || rental.nickname || "Unnamed Property",
@@ -257,6 +258,14 @@ Deno.serve(async (req) => {
           coordinates: rental.gps
             ? { lat: rental.gps.lat, lng: rental.gps.long }
             : null,
+          // Include baserate data for rate syncing
+          baserate: rental.baserate ? {
+            nightly: rental.baserate.nightly || 0,
+            weekly: rental.baserate.weekly,
+            monthly: rental.baserate.monthly,
+            minStay: rental.baserate.minimum || 1,
+            maxStay: rental.baserate.maximum,
+          } : null,
         }));
 
         return new Response(
@@ -388,111 +397,83 @@ Deno.serve(async (req) => {
           throw new Error("externalId and propertyId are required");
         }
 
-        // Fetch rates from Tokeet
-        const response = await callTokeetAPI(
-          `/rental/${externalId}/rate`,
-          apiKey,
-          accountId
-        );
-
-        let rates: TokeetRate[] = [];
+        // First try to get the rental from the list (which includes baserate)
+        const listResponse = await callTokeetAPI("/rental", apiKey, accountId);
+        
         let basePrice = 0;
-
-        if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            rates = data;
-          } else if (data?.data && Array.isArray(data.data)) {
-            rates = data.data;
-          } else if (data?.rates && Array.isArray(data.rates)) {
-            rates = data.rates;
-          }
-        }
-
-        // Also try to get baserate from the rental itself
-        const rentalResponse = await callTokeetAPI(
-          `/rental/${externalId}`,
-          apiKey,
-          accountId
-        );
-
-        if (rentalResponse.ok) {
-          const rental = await rentalResponse.json();
-          if (rental?.baserate?.nightly) {
-            basePrice = rental.baserate.nightly;
-          }
-        }
-
-        // Find base rate from rates if not found in rental
-        if (basePrice === 0 && rates.length > 0) {
-          // Look for a rate without date restrictions (the default rate)
-          const defaultRate = rates.find((r: TokeetRate) => !r.start && !r.end && !r.from && !r.to);
-          if (defaultRate?.nightly) {
-            basePrice = defaultRate.nightly;
-          } else if (rates[0]?.nightly) {
-            basePrice = rates[0].nightly;
-          }
-        }
-
-        // Update property base_price
-        if (basePrice > 0) {
-          await supabase
-            .from("properties")
-            .update({ base_price: basePrice })
-            .eq("id", propertyId);
-        }
-
-        // Create seasonal rates for date-specific pricing
         let seasonalRatesCreated = 0;
         let ratePlansCreated = 0;
 
-        for (const rate of rates) {
-          const hasDateRange = rate.start || rate.end || rate.from || rate.to;
+        if (listResponse.ok) {
+          const listData = await listResponse.json();
+          let rentals: TokeetRental[] = [];
           
-          if (hasDateRange && rate.nightly) {
-            const startDate = rate.start 
-              ? new Date(rate.start * 1000).toISOString().split('T')[0]
-              : rate.from;
-            const endDate = rate.end
-              ? new Date(rate.end * 1000).toISOString().split('T')[0]
-              : rate.to;
+          if (Array.isArray(listData)) {
+            rentals = listData;
+          } else if (Array.isArray(listData?.data)) {
+            rentals = listData.data;
+          }
+          
+          // Find the rental matching our external ID
+          const rental = rentals.find((r: TokeetRental) => r.pkey === externalId);
+          
+          if (rental?.baserate?.nightly) {
+            basePrice = rental.baserate.nightly;
+            
+            // Update property base_price
+            await supabase
+              .from("properties")
+              .update({ base_price: basePrice })
+              .eq("id", propertyId);
 
-            if (startDate && endDate) {
-              const { error } = await supabase.from("seasonal_rates").insert({
+            // Create rate plan if min_stay > 1
+            if (rental.baserate.minimum && rental.baserate.minimum > 1) {
+              const today = new Date().toISOString().split('T')[0];
+              const nextYear = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+              const { error } = await supabase.from("rate_plans").insert({
                 property_id: propertyId,
-                name: rate.name || "Seasonal Rate",
-                start_date: startDate,
-                end_date: endDate,
-                nightly_rate: rate.nightly,
-                price_multiplier: 1.0,
+                name: "Standard Rate",
+                base_rate: basePrice,
+                min_stay: rental.baserate.minimum,
+                max_stay: rental.baserate.maximum,
+                valid_from: today,
+                valid_until: nextYear,
+                rate_type: "standard",
+                is_active: true,
               });
 
-              if (!error) seasonalRatesCreated++;
+              if (!error) ratePlansCreated++;
             }
-          }
 
-          // Create rate plan if it has min/max stay requirements
-          if (rate.minimum && rate.minimum > 1) {
-            const validFrom = rate.start
-              ? new Date(rate.start * 1000).toISOString().split('T')[0]
-              : rate.from || new Date().toISOString().split('T')[0];
-            const validUntil = rate.end
-              ? new Date(rate.end * 1000).toISOString().split('T')[0]
-              : rate.to || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            // Check if rental has embedded rates array for seasonal rates
+            if (rental.rates && Array.isArray(rental.rates)) {
+              for (const rate of rental.rates) {
+                const hasDateRange = rate.start || rate.end || rate.from || rate.to;
+                
+                if (hasDateRange && rate.nightly) {
+                  const startDate = rate.start 
+                    ? new Date(rate.start * 1000).toISOString().split('T')[0]
+                    : rate.from;
+                  const endDate = rate.end
+                    ? new Date(rate.end * 1000).toISOString().split('T')[0]
+                    : rate.to;
 
-            const { error } = await supabase.from("rate_plans").insert({
-              property_id: propertyId,
-              name: rate.name || "Standard Rate",
-              base_rate: rate.nightly || basePrice,
-              min_stay: rate.minimum || 1,
-              max_stay: rate.maximum,
-              valid_from: validFrom,
-              valid_until: validUntil,
-              rate_type: rate.type || "standard",
-              is_active: true,
-            });
+                  if (startDate && endDate) {
+                    const { error } = await supabase.from("seasonal_rates").insert({
+                      property_id: propertyId,
+                      name: rate.name || "Seasonal Rate",
+                      start_date: startDate,
+                      end_date: endDate,
+                      nightly_rate: rate.nightly,
+                      price_multiplier: 1.0,
+                    });
 
-            if (!error) ratePlansCreated++;
+                    if (!error) seasonalRatesCreated++;
+                  }
+                }
+              }
+            }
           }
         }
 
