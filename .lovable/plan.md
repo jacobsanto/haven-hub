@@ -1,133 +1,90 @@
 
 
-## PMS Availability Sync Implementation Plan
+## Fix Individual Property Sync Buttons
 
-This plan connects the PMS availability (Tokeet/AdvanceCM) to the booking engine so that the calendar reflects real availability from your source of truth.
-
----
-
-### Current State
-
-**What exists:**
-- Edge function `advancecm-sync` with `fetch-availability` action that calls Tokeet API
-- `AdvanceCMAdapter.fetchAvailability()` that calls the edge function
-- Local `availability` table in the database
-- `useAvailabilityCalendar` hook that reads availability data
-
-**The gap:**
-- No mechanism to sync PMS availability to the local database
-- Booking calendar uses mock adapter, not the real AdvanceCM adapter
-- No scheduled or manual sync for availability data
+The issue is that when you click "Sync" on any single property, ALL sync buttons in the Property Mappings table show the loading spinner and become disabled. This happens because `syncPropertyNow.isPending` is a global state that applies to the entire mutation, not to individual rows.
 
 ---
 
-### Implementation Steps
+### The Problem
 
-#### Step 1: Add `sync-availability` Action to Edge Function
+**Current behavior:**
+- Click "Sync" on Property A
+- Property A, B, C, D buttons ALL show spinning icon and become disabled
+- User can't tell which property is actually syncing
 
-Extend `advancecm-sync/index.ts` to add a new action that:
-1. Fetches availability from Tokeet for a specific property
-2. Writes/upserts the data to the local `availability` table
-3. Returns sync statistics
+**Expected behavior:**
+- Click "Sync" on Property A
+- Only Property A's button shows the spinning icon
+- Other properties remain clickable
 
-**New action logic:**
-- Fetch availability from Tokeet API: `/rental/{pkey}/availability?from={start}&to={end}`
-- For each date received, upsert to the `availability` table
-- Mark dates as `available: false` where Tokeet says blocked/booked
+---
 
-#### Step 2: Create Availability Sync Hook
+### Solution
 
-Add a new hook `useSyncPropertyAvailability` in `useAdvanceCMSync.ts` that:
-1. Looks up the `external_property_id` from `pms_property_map`
-2. Calls the edge function with `action: 'sync-availability'`
-3. Returns success/failure status
+Track the currently-syncing property ID in local state and use it to conditionally show the loading state only for that specific row.
 
-#### Step 3: Update Calendar to Use Real Data
+---
 
-Modify `useAvailabilityCalendar` in `useCheckoutFlow.ts` to:
-1. Get the `external_property_id` from `pms_property_map` automatically
-2. Prioritize reading from the local `availability` table (which is now synced from PMS)
-3. Remove dependency on mock adapter for production
+### Implementation
 
-#### Step 4: Add Sync Controls to Admin PMS Dashboard
+**File to modify:** `src/pages/admin/AdminPMSHealth.tsx`
 
-Update the Admin PMS Health page to:
-1. Add a "Sync Availability" button per mapped property
-2. Add a "Sync All Availability" button for all mapped properties
-3. Show last availability sync timestamp per property
+1. **Add state to track which property is syncing:**
+   ```tsx
+   const [syncingPropertyId, setSyncingPropertyId] = useState<string | null>(null);
+   ```
 
-#### Step 5: Update Property Map Table
+2. **Update the sync handler to track the property:**
+   ```tsx
+   const handleSyncPropertyNow = async (externalPropertyId: string) => {
+     if (!connection) return;
+     setSyncingPropertyId(externalPropertyId); // Track which one is syncing
+     try {
+       const result = await syncPropertyNow.mutateAsync({ 
+         connectionId: connection.id, 
+         externalPropertyId 
+       });
+       // toast notifications...
+     } catch (error) {
+       // error handling...
+     } finally {
+       setSyncingPropertyId(null); // Clear when done
+     }
+   };
+   ```
 
-Add `last_availability_sync_at` column to `pms_property_map` table to track when each property's availability was last synced.
+3. **Update the button to use row-specific loading state:**
+   ```tsx
+   <Button
+     variant="ghost"
+     size="sm"
+     onClick={() => handleSyncPropertyNow(mapping.external_property_id)}
+     disabled={syncingPropertyId !== null || !mapping.sync_enabled}
+   >
+     <RefreshCw className={`h-4 w-4 mr-1 ${
+       syncingPropertyId === mapping.external_property_id ? 'animate-spin' : ''
+     }`} />
+     Sync
+   </Button>
+   ```
 
 ---
 
 ### Technical Details
 
-**File changes:**
-
-| File | Change |
-|------|--------|
-| `supabase/functions/advancecm-sync/index.ts` | Add `sync-availability` action that upserts to `availability` table |
-| `src/hooks/useAdvanceCMSync.ts` | Add `useSyncPropertyAvailability` hook |
-| `src/hooks/useCheckoutFlow.ts` | Auto-lookup `external_property_id` from mapping |
-| `src/pages/admin/AdminPMSHealth.tsx` | Add sync availability buttons |
-| Database migration | Add `last_availability_sync_at` to `pms_property_map` |
-
-**Edge function sync-availability logic:**
-
-```text
-1. Receive: { action: "sync-availability", propertyId, startDate, endDate }
-2. Look up external_property_id from pms_property_map
-3. Call Tokeet: GET /rental/{pkey}/availability?from={start}&to={end}
-4. Parse response - Tokeet returns array of blocked date ranges
-5. Generate full date range, mark blocked dates as available: false
-6. Upsert to availability table
-7. Update pms_property_map.last_availability_sync_at
-8. Return { success: true, daysProcessed: N }
-```
-
-**Tokeet Availability Response Format:**
-
-```text
-The Tokeet API returns blocked/booked periods. The sync logic inverts this:
-- All dates default to available: true
-- Dates within blocked ranges become available: false
-```
-
----
-
-### Data Flow After Implementation
-
-```text
-┌─────────────────┐     ┌─────────────────────┐     ┌──────────────────┐
-│   Tokeet PMS    │────▶│  sync-availability  │────▶│ availability DB  │
-│ (Source of Truth)│     │    edge function    │     │    (synced)      │
-└─────────────────┘     └─────────────────────┘     └──────────────────┘
-                                                            │
-                        ┌───────────────────────────────────┘
-                        ▼
-              ┌───────────────────┐     ┌──────────────────┐
-              │ useAvailability   │────▶│ Booking Calendar │
-              │  Calendar hook    │     │    Component     │
-              └───────────────────┘     └──────────────────┘
-```
+| Change | Description |
+|--------|-------------|
+| Add `syncingPropertyId` state | Tracks the `external_property_id` currently being synced |
+| Wrap mutation in try/finally | Ensures state is cleared even on errors |
+| Button spinner condition | Only spin if this row's ID matches `syncingPropertyId` |
+| Button disabled condition | Disabled if any sync is in progress OR sync is disabled for this property |
 
 ---
 
 ### Benefits
 
-1. **Single source of truth**: PMS availability is synced to local database
-2. **Faster calendar loading**: Reads from local DB instead of calling PMS API per request
-3. **Works with realtime**: Local `availability` table changes trigger realtime updates
-4. **Admin visibility**: See when each property's availability was last synced
-5. **Manual control**: Sync individual properties or all at once from admin dashboard
-
----
-
-### Future Enhancements (Not in This Plan)
-
-- Scheduled sync via Supabase pg_cron or external scheduler
-- Webhook handler for real-time PMS updates
-- Conflict detection when local bookings don't match PMS
+1. **Clear feedback**: Users see exactly which property is syncing
+2. **Prevents double-clicks**: All buttons disabled during any sync operation
+3. **Proper cleanup**: State is cleared even if the sync fails
 
