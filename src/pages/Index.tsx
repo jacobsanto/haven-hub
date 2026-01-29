@@ -9,6 +9,7 @@ import { ExperienceCard } from '@/components/experiences/ExperienceCard';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
 import { UrgencyBanner } from '@/components/booking/UrgencyBanner';
+import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useDestinations } from '@/hooks/useDestinations';
 import { useActiveExperiences } from '@/hooks/useExperiences';
@@ -40,8 +41,8 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center justify-center hero-gradient texture-overlay overflow-hidden">
         {/* Decorative Elements */}
-        <div className="absolute top-20 left-10 w-64 h-64 bg-primary/5 organic-blob animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 organic-blob" />
+        <FloatingBlob position="top-left" variant="primary" size="md" animationVariant={1} />
+        <FloatingBlob position="bottom-right" variant="accent" size="lg" animationVariant={2} />
         
         <div className="container mx-auto px-4 py-20 relative z-10">
           <motion.div

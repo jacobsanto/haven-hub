@@ -3,6 +3,7 @@ import { MapPin, ArrowRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { DestinationCard } from '@/components/destinations/DestinationCard';
+import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useActiveDestinations } from '@/hooks/useDestinations';
 import { useProperties } from '@/hooks/useProperties';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,8 +26,8 @@ const Destinations = () => {
     <PageLayout>
       {/* Hero Section */}
       <section className="relative py-24 md:py-32 hero-gradient texture-overlay overflow-hidden">
-        <div className="absolute top-10 right-20 w-64 h-64 bg-primary/5 organic-blob animate-pulse" />
-        <div className="absolute bottom-10 left-10 w-48 h-48 bg-accent/10 organic-blob" />
+        <FloatingBlob position="top-right" variant="primary" size="md" animationVariant={1} />
+        <FloatingBlob position="bottom-left" variant="accent" size="sm" animationVariant={3} />
         
         <div className="container mx-auto px-4 relative z-10">
           <motion.div
