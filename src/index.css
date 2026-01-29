@@ -240,4 +240,37 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari, Opera */
   }
+
+  /* Floating blob animations for hero sections */
+  .animate-float-1 {
+    animation: float-diagonal-1 20s ease-in-out infinite;
+  }
+
+  .animate-float-2 {
+    animation: float-diagonal-2 25s ease-in-out infinite;
+  }
+
+  .animate-float-3 {
+    animation: float-diagonal-3 18s ease-in-out infinite;
+  }
+
+  @keyframes float-diagonal-1 {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(15px, -20px); }
+    50% { transform: translate(25px, 10px); }
+    75% { transform: translate(-10px, 20px); }
+  }
+
+  @keyframes float-diagonal-2 {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(-20px, 15px); }
+    50% { transform: translate(10px, 25px); }
+    75% { transform: translate(20px, -10px); }
+  }
+
+  @keyframes float-diagonal-3 {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(18px, 18px); }
+    66% { transform: translate(-15px, 12px); }
+  }
 }
