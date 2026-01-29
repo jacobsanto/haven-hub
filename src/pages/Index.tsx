@@ -407,7 +407,7 @@ const Index = () => {
                 </Button>
               </Link>
               <Link to="/contact">
-                <Button size="lg" variant="outline" className="rounded-full px-8 border-background/30 text-background hover:bg-background/10">
+                <Button size="lg" variant="secondary" className="rounded-full gap-2 px-8">
                   Contact Us
                 </Button>
               </Link>
