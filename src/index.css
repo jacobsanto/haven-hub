@@ -256,21 +256,21 @@
 
   @keyframes float-diagonal-1 {
     0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(15px, -20px); }
-    50% { transform: translate(25px, 10px); }
-    75% { transform: translate(-10px, 20px); }
+    25% { transform: translate(40px, -50px); }
+    50% { transform: translate(60px, 25px); }
+    75% { transform: translate(-30px, 45px); }
   }
 
   @keyframes float-diagonal-2 {
     0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(-20px, 15px); }
-    50% { transform: translate(10px, 25px); }
-    75% { transform: translate(20px, -10px); }
+    25% { transform: translate(-50px, 40px); }
+    50% { transform: translate(30px, 60px); }
+    75% { transform: translate(45px, -35px); }
   }
 
   @keyframes float-diagonal-3 {
     0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(18px, 18px); }
-    66% { transform: translate(-15px, 12px); }
+    33% { transform: translate(45px, 45px); }
+    66% { transform: translate(-40px, 30px); }
   }
 }
