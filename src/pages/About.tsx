@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Heart, Shield, Sparkles, Users, ArrowRight, CheckCircle } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
+import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useBrand } from '@/contexts/BrandContext';
 import { Button } from '@/components/ui/button';
 import { TrustBadges } from '@/components/booking/TrustBadges';
@@ -43,8 +44,8 @@ const About = () => {
     <PageLayout>
       {/* Hero Section */}
       <section className="relative py-24 md:py-32 hero-gradient texture-overlay overflow-hidden">
-        <div className="absolute top-20 right-10 w-64 h-64 bg-primary/5 organic-blob animate-pulse" />
-        <div className="absolute bottom-10 left-10 w-48 h-48 bg-accent/10 organic-blob" />
+        <FloatingBlob position="top-right" variant="primary" size="md" animationVariant={1} />
+        <FloatingBlob position="bottom-left" variant="accent" size="sm" animationVariant={2} />
         
         <div className="container mx-auto px-4 relative z-10">
           <motion.div

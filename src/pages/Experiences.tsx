@@ -4,6 +4,7 @@ import { Sparkles, Home, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { ExperienceCard } from '@/components/experiences/ExperienceCard';
+import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useActiveExperiences } from '@/hooks/useExperiences';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -23,8 +24,8 @@ const Experiences = () => {
     <PageLayout>
       {/* Hero Section */}
       <section className="relative py-24 md:py-32 hero-gradient texture-overlay overflow-hidden">
-        <div className="absolute top-10 left-20 w-64 h-64 bg-primary/5 organic-blob animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-48 h-48 bg-accent/10 organic-blob" />
+        <FloatingBlob position="top-left" variant="primary" size="md" animationVariant={2} />
+        <FloatingBlob position="bottom-right" variant="accent" size="sm" animationVariant={1} />
         
         <div className="container mx-auto px-4 relative z-10">
           <motion.div

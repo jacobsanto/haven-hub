@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
+import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { ContactForm } from '@/components/contact/ContactForm';
 import { useBrand } from '@/contexts/BrandContext';
 
@@ -38,8 +39,8 @@ const Contact = () => {
     <PageLayout>
       {/* Hero Section */}
       <section className="relative py-24 md:py-32 hero-gradient texture-overlay overflow-hidden">
-        <div className="absolute top-10 left-20 w-48 h-48 bg-primary/5 organic-blob animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-64 h-64 bg-accent/10 organic-blob" />
+        <FloatingBlob position="top-left" variant="primary" size="sm" animationVariant={3} />
+        <FloatingBlob position="bottom-right" variant="accent" size="md" animationVariant={2} />
         
         <div className="container mx-auto px-4 relative z-10">
           <motion.div

@@ -101,6 +101,23 @@ export default {
           from: { transform: "translateX(100%)" },
           to: { transform: "translateX(0)" },
         },
+        "float-diagonal-1": {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "25%": { transform: "translate(15px, -20px)" },
+          "50%": { transform: "translate(25px, 10px)" },
+          "75%": { transform: "translate(-10px, 20px)" },
+        },
+        "float-diagonal-2": {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "25%": { transform: "translate(-20px, 15px)" },
+          "50%": { transform: "translate(10px, 25px)" },
+          "75%": { transform: "translate(20px, -10px)" },
+        },
+        "float-diagonal-3": {
+          "0%, 100%": { transform: "translate(0, 0)" },
+          "33%": { transform: "translate(18px, 18px)" },
+          "66%": { transform: "translate(-15px, 12px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -109,6 +126,9 @@ export default {
         "fade-in": "fade-in 0.4s ease-out forwards",
         "scale-in": "scale-in 0.3s ease-out forwards",
         "slide-in-right": "slide-in-right 0.3s ease-out",
+        "float-1": "float-diagonal-1 20s ease-in-out infinite",
+        "float-2": "float-diagonal-2 25s ease-in-out infinite",
+        "float-3": "float-diagonal-3 18s ease-in-out infinite",
       },
       boxShadow: {
         organic: "0 4px 6px -1px hsl(244 42% 28% / 0.05), 0 10px 15px -3px hsl(244 42% 28% / 0.08)",
