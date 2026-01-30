@@ -1,10 +1,24 @@
 
 
-# Increase Floating Blob Animation Range
+# Fluid Floating Blob Animations
 
-## Overview
+## Problem
 
-Increase the movement range of the floating blob animations from the current subtle 15-25px to a more noticeable 40-60px range.
+The current animations have a "stop-start" feel because:
+
+1. **`ease-in-out` timing** creates deceleration/acceleration at each keyframe point
+2. **Sharp direction changes** at 25%, 50%, 75% keyframes cause visible pauses
+3. **Limited keyframe points** make the movement feel segmented rather than continuous
+
+---
+
+## Solution
+
+Create smooth, continuous circular/lemniscate (figure-8) motion paths using:
+
+1. **`linear` timing function** - eliminates acceleration/deceleration pauses
+2. **More keyframe points** - smoother path with gradual direction changes
+3. **Circular movement paths** - no abrupt direction reversals
 
 ---
 
@@ -12,50 +26,71 @@ Increase the movement range of the floating blob animations from the current sub
 
 ### File: `src/index.css`
 
-Update the three `@keyframes` definitions with larger translate values:
+Replace the current keyframes with fluid circular motion patterns:
 
-**float-diagonal-1** (lines 261-266):
 ```css
+.animate-float-1 {
+  animation: float-diagonal-1 20s linear infinite;
+}
+
+.animate-float-2 {
+  animation: float-diagonal-2 25s linear infinite;
+}
+
+.animate-float-3 {
+  animation: float-diagonal-3 18s linear infinite;
+}
+
 @keyframes float-diagonal-1 {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(40px, -50px); }
-  50% { transform: translate(60px, 25px); }
-  75% { transform: translate(-30px, 45px); }
+  0% { transform: translate(0, 0); }
+  10% { transform: translate(25px, -35px); }
+  25% { transform: translate(50px, -20px); }
+  40% { transform: translate(55px, 20px); }
+  50% { transform: translate(35px, 45px); }
+  60% { transform: translate(0px, 50px); }
+  75% { transform: translate(-30px, 25px); }
+  90% { transform: translate(-20px, -15px); }
+  100% { transform: translate(0, 0); }
 }
-```
 
-**float-diagonal-2** (lines 268-273):
-```css
 @keyframes float-diagonal-2 {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(-50px, 40px); }
-  50% { transform: translate(30px, 60px); }
-  75% { transform: translate(45px, -35px); }
+  0% { transform: translate(0, 0); }
+  12% { transform: translate(-30px, 20px); }
+  25% { transform: translate(-45px, 50px); }
+  37% { transform: translate(-20px, 60px); }
+  50% { transform: translate(20px, 45px); }
+  62% { transform: translate(45px, 15px); }
+  75% { transform: translate(35px, -25px); }
+  87% { transform: translate(10px, -20px); }
+  100% { transform: translate(0, 0); }
 }
-```
 
-**float-diagonal-3** (lines 275-279):
-```css
 @keyframes float-diagonal-3 {
-  0%, 100% { transform: translate(0, 0); }
-  33% { transform: translate(45px, 45px); }
-  66% { transform: translate(-40px, 30px); }
+  0% { transform: translate(0, 0); }
+  15% { transform: translate(30px, 25px); }
+  30% { transform: translate(50px, 40px); }
+  45% { transform: translate(40px, 55px); }
+  60% { transform: translate(10px, 45px); }
+  75% { transform: translate(-25px, 25px); }
+  90% { transform: translate(-15px, 5px); }
+  100% { transform: translate(0, 0); }
 }
 ```
 
 ---
 
-## Comparison
+## Key Changes
 
-| Keyframe | Before | After |
-|----------|--------|-------|
-| float-diagonal-1 | 15-25px range | 40-60px range |
-| float-diagonal-2 | 10-25px range | 35-60px range |
-| float-diagonal-3 | 12-18px range | 30-45px range |
+| Aspect | Before | After |
+|--------|--------|-------|
+| Timing function | `ease-in-out` (pauses) | `linear` (constant speed) |
+| Keyframe count | 4-5 points | 8-9 points |
+| Motion path | Zig-zag with stops | Smooth elliptical/organic loops |
+| Direction changes | Abrupt reversals | Gradual curved transitions |
 
 ---
 
-## Result
+## Visual Result
 
-The decorative blobs will now have more pronounced diagonal movement while maintaining smooth, ambient motion with the same 18-25 second animation durations.
+The blobs will now move in smooth, continuous organic paths - like leaves floating on water or clouds drifting - with no visible stops or direction-change pauses. The movement will feel fluid and "plastic" as requested.
 
