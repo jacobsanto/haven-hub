@@ -243,34 +243,49 @@
 
   /* Floating blob animations for hero sections */
   .animate-float-1 {
-    animation: float-diagonal-1 20s ease-in-out infinite;
+    animation: float-diagonal-1 20s linear infinite;
   }
 
   .animate-float-2 {
-    animation: float-diagonal-2 25s ease-in-out infinite;
+    animation: float-diagonal-2 25s linear infinite;
   }
 
   .animate-float-3 {
-    animation: float-diagonal-3 18s ease-in-out infinite;
+    animation: float-diagonal-3 18s linear infinite;
   }
 
   @keyframes float-diagonal-1 {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(40px, -50px); }
-    50% { transform: translate(60px, 25px); }
-    75% { transform: translate(-30px, 45px); }
+    0% { transform: translate(0, 0); }
+    10% { transform: translate(25px, -35px); }
+    25% { transform: translate(50px, -20px); }
+    40% { transform: translate(55px, 20px); }
+    50% { transform: translate(35px, 45px); }
+    60% { transform: translate(0px, 50px); }
+    75% { transform: translate(-30px, 25px); }
+    90% { transform: translate(-20px, -15px); }
+    100% { transform: translate(0, 0); }
   }
 
   @keyframes float-diagonal-2 {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(-50px, 40px); }
-    50% { transform: translate(30px, 60px); }
-    75% { transform: translate(45px, -35px); }
+    0% { transform: translate(0, 0); }
+    12% { transform: translate(-30px, 20px); }
+    25% { transform: translate(-45px, 50px); }
+    37% { transform: translate(-20px, 60px); }
+    50% { transform: translate(20px, 45px); }
+    62% { transform: translate(45px, 15px); }
+    75% { transform: translate(35px, -25px); }
+    87% { transform: translate(10px, -20px); }
+    100% { transform: translate(0, 0); }
   }
 
   @keyframes float-diagonal-3 {
-    0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(45px, 45px); }
-    66% { transform: translate(-40px, 30px); }
+    0% { transform: translate(0, 0); }
+    15% { transform: translate(30px, 25px); }
+    30% { transform: translate(50px, 40px); }
+    45% { transform: translate(40px, 55px); }
+    60% { transform: translate(10px, 45px); }
+    75% { transform: translate(-25px, 25px); }
+    90% { transform: translate(-15px, 5px); }
+    100% { transform: translate(0, 0); }
   }
 }
