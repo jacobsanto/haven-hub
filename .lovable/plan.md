@@ -1,133 +1,152 @@
 
 
-# Enhanced AI Content Styles & Targeting
+# AI Disclaimer Badge & Humanize Post-Processing
 
 ## Overview
 
-Expand the AI Content Generator with marketing-focused targeting options that let you tailor content to specific audiences, marketing goals, and travel preferences.
+Add two features to enhance the AI Content Generator:
+1. **AI Assisted Badge** - Optional disclaimer that can be appended to generated content
+2. **Humanize Post-Processing** - A refinement step that makes AI output sound more natural and less formulaic
 
 ---
 
-## New Targeting Dimensions
+## Feature 1: AI Assisted Badge/Disclaimer
 
-### 1. Traveler Personas
+### Options to Offer
 
-Target content to specific guest types:
+| Badge Style | Output |
+|-------------|--------|
+| **None** | No disclaimer (default) |
+| **Subtle Footer** | `*Content created with AI assistance*` |
+| **Badge Text** | `[AI Assisted]` prefix on content |
+| **Full Disclosure** | `This content was generated with AI assistance and reviewed by our editorial team.` |
 
-| Persona | Description |
-|---------|-------------|
-| **Honeymoon Couples** | Romantic language, privacy, intimate experiences |
-| **Luxury Families** | Multi-generational, kid-friendly, spacious accommodations |
-| **Solo Adventurers** | Independence, local immersion, unique experiences |
-| **Wellness Seekers** | Relaxation, spa, mindfulness, healthy living |
-| **Celebration Groups** | Events, gatherings, milestone moments |
-| **Business Travelers** | Connectivity, convenience, quiet workspaces |
-| **Retirees & Empty Nesters** | Comfort, cultural depth, slower pace |
+### Implementation
 
-### 2. Marketing Angles
+**UI Changes (`AIContentGenerator.tsx`)**:
+- Add a "Disclosure Options" section in the settings
+- Checkbox: "Add AI disclosure"
+- Dropdown: Select disclosure style
+- Preview: Show how disclaimer will appear
 
-Focus content on specific psychological triggers:
-
-| Angle | Use Case |
-|-------|----------|
-| **Aspirational/Dream** | Paint the ultimate lifestyle picture |
-| **FOMO/Urgency** | Limited availability, seasonal moments |
-| **Value Proposition** | Justify the investment, what's included |
-| **Social Proof** | References to acclaim, popularity, reviews |
-| **Exclusivity** | Private access, rare experiences, VIP treatment |
-| **Transformation** | Life-changing moments, personal growth |
-
-### 3. Travel Styles
-
-Align content with guest interests:
-
-| Style | Focus Areas |
-|-------|-------------|
-| **Adventure & Active** | Outdoor activities, exploration, thrills |
-| **Wellness & Spa** | Relaxation, health, rejuvenation |
-| **Cultural Immersion** | Local traditions, history, authentic experiences |
-| **Culinary & Wine** | Food, dining, wine tours, cooking |
-| **Romance & Celebration** | Special occasions, intimate moments |
-| **Beach & Relaxation** | Sun, sea, laid-back vibes |
+**Content Modification**:
+- When applying content, the selected disclaimer is appended based on style:
+  - For **blog posts**: Added as a footer note in the markdown content
+  - For **descriptions**: Added as a final sentence or omitted for short-form content
 
 ---
 
-## Updated UI Design
+## Feature 2: Humanize Post-Processing
 
-The generator will have an organized settings panel:
+### How It Works
+
+After initial content generation, the user can click a "Humanize" button that sends the generated content back through the AI with specific instructions to:
+
+1. **Remove AI-typical patterns** - Eliminate phrases like "nestled in", "boasts", "immerse yourself", "unforgettable"
+2. **Add natural variation** - Vary sentence structure and length
+3. **Inject personality** - Add subtle imperfections and conversational elements
+4. **Reduce superlatives** - Tone down "amazing", "incredible", "unparalleled"
+5. **Add specific details** - Replace generic phrases with concrete observations
+
+### Humanization Prompt
+
+The edge function will use a refinement prompt like:
+
+```text
+Refine the following marketing content to sound more naturally written by a human:
+
+1. Replace cliché travel writing phrases with fresh alternatives
+2. Vary sentence structure - mix short punchy sentences with longer flowing ones
+3. Add subtle imperfections that feel human (contractions, casual asides)
+4. Remove excessive superlatives and replace with specific, tangible details
+5. Keep the same meaning and tone, just make it feel less AI-generated
+
+Content to refine:
+[Generated content here]
+```
+
+### UI Flow
 
 ```text
 +------------------------------------------+
-|  AI Content Generator                    |
-+------------------------------------------+
-|  Target: [Select Destination ▼]          |
-|  Template: [Destination Guide ▼]         |
-+------------------------------------------+
-|  Style Settings                          |
-|  ┌────────────────────────────────────┐  |
-|  │ Tone:     [Luxury ▼]               │  |
-|  │ Length:   [Balanced ▼]             │  |
-|  └────────────────────────────────────┘  |
-+------------------------------------------+
-|  Audience & Marketing                    |
-|  ┌────────────────────────────────────┐  |
-|  │ Target Persona:  [Honeymoon ▼]     │  |
-|  │ Marketing Angle: [Aspirational ▼]  │  |
-|  │ Travel Style:    [Romance ▼]       │  |
-|  └────────────────────────────────────┘  |
-+------------------------------------------+
-|  [Custom Instructions ▼]                 |
-|  [Generate Content]                      |
+|  Generated Content                       |
+|  +------------------------------------+  |
+|  | AI-generated text appears here... |  |
+|  +------------------------------------+  |
+|                                          |
+|  [Regenerate] [Humanize ✨] [Apply]      |
+|                                          |
+|  ☐ Add AI disclosure  [Subtle Footer ▼] |
 +------------------------------------------+
 ```
 
+When "Humanize" is clicked:
+1. Content is sent back to the edge function with `humanize: true`
+2. Edge function runs the refinement prompt
+3. Updated content replaces the preview
+4. User can compare/toggle between original and humanized versions
+
 ---
 
-## Implementation
+## Technical Implementation
 
 ### File Changes
 
 **1. `src/hooks/useAIContent.ts`**
-- Add new types: `PersonaType`, `MarketingAngleType`, `TravelStyleType`
-- Extend `GenerateContentParams` with new optional fields
-- Export option arrays for UI consumption
+- Add `humanize` function that takes generated content and refines it
+- Add `humanizeContent` mutation state
+- Export disclosure options
 
 **2. `src/components/admin/AIContentGenerator.tsx`**
-- Add new state for persona, marketingAngle, travelStyle
-- Create "Audience & Marketing" collapsible section
-- Pass new parameters to generation function
+- Add disclosure checkbox and style dropdown
+- Add "Humanize" button next to Regenerate
+- Track original vs humanized content for comparison
+- Apply disclaimer when content is applied
 
 **3. `supabase/functions/generate-content/index.ts`**
-- Add descriptions for each new targeting option
-- Inject targeting context into system prompts
-- Combine persona + angle + style for nuanced content
+- Add `humanize` mode that accepts existing content
+- Add humanization system prompt
+- Return refined content with same structure
 
-### Prompt Enhancement Example
+### New Request Type
 
-When generating content for "Santorini Sunset Villa" with:
-- Persona: Honeymoon Couples
-- Angle: Aspirational
-- Style: Romance & Celebration
-
-The AI receives:
-
-```text
-Target Audience: Honeymoon couples seeking romantic, intimate experiences 
-with privacy and special touches for celebrating their new marriage.
-
-Marketing Angle: Create aspirational content that paints a picture of 
-the ultimate dream experience, evoking desire and longing.
-
-Travel Style Focus: Emphasize romantic elements, celebration moments, 
-couples activities, and intimate experiences.
+```typescript
+interface GenerateRequest {
+  // Existing fields...
+  humanize?: boolean;          // If true, refine existing content
+  contentToHumanize?: object;  // The content to refine
+}
 ```
+
+### Disclosure Types
+
+```typescript
+type DisclosureType = 'none' | 'subtle' | 'badge' | 'full';
+
+const disclosureTexts = {
+  none: '',
+  subtle: '*Content created with AI assistance*',
+  badge: '[AI Assisted] ',
+  full: '\n\n---\n*This content was generated with AI assistance and reviewed by our editorial team.*',
+};
+```
+
+---
+
+## User Experience
+
+1. **Generate content** as normal
+2. **Review output** - if it sounds too formulaic, click "Humanize"
+3. **Toggle comparison** - see original vs humanized side-by-side (optional)
+4. **Add disclosure** - check box and select style if desired
+5. **Apply** - content with optional disclaimer is saved to database
 
 ---
 
 ## Benefits
 
-- **More relevant content** - Tailored to actual guest segments
-- **Marketing efficiency** - Quick pivots between campaigns
-- **Consistent brand voice** - Structured options vs. freeform prompts
-- **A/B testing ready** - Generate variations for different audiences
+- **Transparency option** - Users who want to disclose AI involvement can do so easily
+- **Better quality** - Humanized content sounds more authentic
+- **Flexible workflow** - Use humanization only when needed
+- **Professional output** - Final content reads like it was human-written
 
