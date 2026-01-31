@@ -6,6 +6,61 @@ export type ContentType = 'blog' | 'destination' | 'experience' | 'property';
 export type ToneType = 'luxury' | 'warm' | 'professional';
 export type LengthType = 'short' | 'medium' | 'long';
 
+// New targeting types
+export type PersonaType = 
+  | 'honeymoon_couples'
+  | 'luxury_families'
+  | 'solo_adventurers'
+  | 'wellness_seekers'
+  | 'celebration_groups'
+  | 'business_travelers'
+  | 'retirees';
+
+export type MarketingAngleType = 
+  | 'aspirational'
+  | 'fomo_urgency'
+  | 'value_proposition'
+  | 'social_proof'
+  | 'exclusivity'
+  | 'transformation';
+
+export type TravelStyleType = 
+  | 'adventure_active'
+  | 'wellness_spa'
+  | 'cultural_immersion'
+  | 'culinary_wine'
+  | 'romance_celebration'
+  | 'beach_relaxation';
+
+// Option arrays for UI consumption
+export const personaOptions: { value: PersonaType; label: string; description: string }[] = [
+  { value: 'honeymoon_couples', label: 'Honeymoon Couples', description: 'Romantic, intimate experiences' },
+  { value: 'luxury_families', label: 'Luxury Families', description: 'Multi-generational, kid-friendly' },
+  { value: 'solo_adventurers', label: 'Solo Adventurers', description: 'Independence, local immersion' },
+  { value: 'wellness_seekers', label: 'Wellness Seekers', description: 'Relaxation, mindfulness' },
+  { value: 'celebration_groups', label: 'Celebration Groups', description: 'Events, gatherings, milestones' },
+  { value: 'business_travelers', label: 'Business Travelers', description: 'Connectivity, convenience' },
+  { value: 'retirees', label: 'Retirees & Empty Nesters', description: 'Comfort, cultural depth' },
+];
+
+export const marketingAngleOptions: { value: MarketingAngleType; label: string; description: string }[] = [
+  { value: 'aspirational', label: 'Aspirational/Dream', description: 'Paint the ultimate lifestyle' },
+  { value: 'fomo_urgency', label: 'FOMO/Urgency', description: 'Limited availability, seasonal' },
+  { value: 'value_proposition', label: 'Value Proposition', description: 'Justify the investment' },
+  { value: 'social_proof', label: 'Social Proof', description: 'Acclaim, popularity, reviews' },
+  { value: 'exclusivity', label: 'Exclusivity', description: 'Private access, VIP treatment' },
+  { value: 'transformation', label: 'Transformation', description: 'Life-changing moments' },
+];
+
+export const travelStyleOptions: { value: TravelStyleType; label: string; description: string }[] = [
+  { value: 'adventure_active', label: 'Adventure & Active', description: 'Outdoor activities, exploration' },
+  { value: 'wellness_spa', label: 'Wellness & Spa', description: 'Relaxation, health, rejuvenation' },
+  { value: 'cultural_immersion', label: 'Cultural Immersion', description: 'Local traditions, history' },
+  { value: 'culinary_wine', label: 'Culinary & Wine', description: 'Food, dining, wine tours' },
+  { value: 'romance_celebration', label: 'Romance & Celebration', description: 'Special occasions, intimate' },
+  { value: 'beach_relaxation', label: 'Beach & Relaxation', description: 'Sun, sea, laid-back vibes' },
+];
+
 export interface GenerateContentParams {
   contentType: ContentType;
   targetName: string;
@@ -14,6 +69,10 @@ export interface GenerateContentParams {
   tone?: ToneType;
   length?: LengthType;
   template?: string;
+  // New targeting parameters
+  persona?: PersonaType;
+  marketingAngle?: MarketingAngleType;
+  travelStyle?: TravelStyleType;
 }
 
 export interface BlogContent {

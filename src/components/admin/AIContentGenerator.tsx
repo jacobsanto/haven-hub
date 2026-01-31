@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Copy, Check, RefreshCw, ChevronDown, Wand2 } from 'lucide-react';
+import { Sparkles, Copy, Check, RefreshCw, ChevronDown, Wand2, Target, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -14,8 +14,14 @@ import {
   ContentType, 
   ToneType, 
   LengthType, 
+  PersonaType,
+  MarketingAngleType,
+  TravelStyleType,
   GeneratedContent,
   contentTemplates,
+  personaOptions,
+  marketingAngleOptions,
+  travelStyleOptions,
 } from '@/hooks/useAIContent';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +64,12 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
   const [length, setLength] = useState<LengthType>('medium');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showTargeting, setShowTargeting] = useState(false);
+  
+  // New targeting state
+  const [persona, setPersona] = useState<PersonaType | ''>('');
+  const [marketingAngle, setMarketingAngle] = useState<MarketingAngleType | ''>('');
+  const [travelStyle, setTravelStyle] = useState<TravelStyleType | ''>('');
 
   const { generateContent, isGenerating, generatedContent, clearContent } = useAIContent();
   const { toast } = useToast();
@@ -90,6 +102,9 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
       tone,
       length,
       template: selectedTemplate && selectedTemplate !== '_none' ? selectedTemplate : undefined,
+      persona: persona || undefined,
+      marketingAngle: marketingAngle || undefined,
+      travelStyle: travelStyle || undefined,
     });
   };
 
@@ -281,7 +296,90 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
             </div>
           </div>
 
-          {/* Advanced Options */}
+          {/* Audience & Marketing Targeting */}
+          <Collapsible open={showTargeting} onOpenChange={setShowTargeting}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full justify-between">
+                <span className="flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Audience & Marketing
+                </span>
+                <ChevronDown className={cn(
+                  "h-4 w-4 transition-transform",
+                  showTargeting && "rotate-180"
+                )} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3 space-y-4">
+              {/* Target Persona */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                  Target Persona
+                </Label>
+                <Select value={persona} onValueChange={(v) => setPersona(v as PersonaType | '')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select traveler type..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">No specific persona</SelectItem>
+                    {personaOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-muted-foreground text-xs">{opt.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Marketing Angle */}
+              <div className="space-y-2">
+                <Label>Marketing Angle</Label>
+                <Select value={marketingAngle} onValueChange={(v) => setMarketingAngle(v as MarketingAngleType | '')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select marketing approach..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">No specific angle</SelectItem>
+                    {marketingAngleOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-muted-foreground text-xs">{opt.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Travel Style */}
+              <div className="space-y-2">
+                <Label>Travel Style Focus</Label>
+                <Select value={travelStyle} onValueChange={(v) => setTravelStyle(v as TravelStyleType | '')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select travel style..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">No specific style</SelectItem>
+                    {travelStyleOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="text-muted-foreground text-xs">{opt.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Custom Instructions */}
           <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="w-full justify-between">
