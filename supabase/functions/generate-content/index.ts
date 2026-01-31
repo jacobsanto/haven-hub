@@ -14,7 +14,7 @@ type TravelStyleType = "adventure_active" | "wellness_spa" | "cultural_immersion
 
 interface GenerateRequest {
   contentType: ContentType;
-  targetName: string;
+  targetName?: string;
   existingData?: Record<string, unknown>;
   customInstructions?: string;
   tone?: ToneType;
@@ -23,6 +23,9 @@ interface GenerateRequest {
   persona?: PersonaType;
   marketingAngle?: MarketingAngleType;
   travelStyle?: TravelStyleType;
+  // Humanize mode
+  humanize?: boolean;
+  contentToHumanize?: Record<string, unknown>;
 }
 
 const toneDescriptions: Record<ToneType, string> = {
@@ -162,24 +165,97 @@ function buildToolDefinition(contentType: ContentType) {
   };
 }
 
+const humanizeSystemPrompt = `You are an expert editor specializing in making AI-generated marketing content sound more naturally human-written.
+
+Your task is to refine the provided content while keeping the same meaning, structure, and fields. Apply these transformations:
+
+1. **Remove AI-typical clichés** - Eliminate overused phrases like "nestled in", "boasts", "immerse yourself", "unforgettable", "unparalleled", "truly", "seamlessly"
+2. **Vary sentence structure** - Mix short punchy sentences with longer flowing ones. Break up repetitive patterns.
+3. **Add natural imperfections** - Use contractions, casual asides, and slightly informal touches where appropriate
+4. **Reduce superlatives** - Replace excessive "amazing", "incredible", "stunning" with specific, tangible details
+5. **Add concrete specifics** - Replace generic phrases with observations that feel firsthand
+6. **Maintain professionalism** - Keep the content polished and suitable for luxury marketing while making it feel authentic
+
+Return the EXACT same JSON structure with the same field names, just with humanized text in each field.`;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { contentType, targetName, existingData, customInstructions, tone = "luxury", length = "medium", template, persona, marketingAngle, travelStyle }: GenerateRequest = await req.json();
+    const requestData: GenerateRequest = await req.json();
+    const { contentType, targetName, existingData, customInstructions, tone = "luxury", length = "medium", template, persona, marketingAngle, travelStyle, humanize, contentToHumanize } = requestData;
 
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // Handle humanize mode
+    if (humanize && contentToHumanize && contentType) {
+      const tool = buildToolDefinition(contentType);
+      
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: humanizeSystemPrompt },
+            { role: "user", content: `Humanize this ${contentType} content. Return the same JSON structure with refined text:\n\n${JSON.stringify(contentToHumanize, null, 2)}` },
+          ],
+          tools: [tool],
+          tool_choice: { type: "function", function: { name: `generate_${contentType}_content` } },
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (response.status === 402) {
+          return new Response(
+            JSON.stringify({ error: "AI usage limit reached. Please add credits to your workspace." }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const errorText = await response.text();
+        console.error("AI gateway error:", response.status, errorText);
+        throw new Error(`AI gateway error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall) {
+        throw new Error("No tool call in response");
+      }
+
+      const humanizedContent = JSON.parse(toolCall.function.arguments);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          content: humanizedContent,
+          contentType,
+          humanized: true,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Standard generation mode
     if (!contentType || !targetName) {
       return new Response(
         JSON.stringify({ error: "Missing required fields: contentType and targetName" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const promptConfig = contentTypePrompts[contentType];

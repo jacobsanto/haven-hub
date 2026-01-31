@@ -1,13 +1,15 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Copy, Check, RefreshCw, ChevronDown, Wand2, Target, Users } from 'lucide-react';
+import { Sparkles, Copy, Check, RefreshCw, ChevronDown, Wand2, Target, Users, Feather, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { 
   useAIContent, 
@@ -17,11 +19,15 @@ import {
   PersonaType,
   MarketingAngleType,
   TravelStyleType,
+  DisclosureType,
   GeneratedContent,
+  BlogContent,
   contentTemplates,
   personaOptions,
   marketingAngleOptions,
   travelStyleOptions,
+  disclosureOptions,
+  disclosureTexts,
 } from '@/hooks/useAIContent';
 import { cn } from '@/lib/utils';
 
@@ -66,12 +72,16 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showTargeting, setShowTargeting] = useState(false);
   
-  // New targeting state
+  // Targeting state
   const [persona, setPersona] = useState<PersonaType | ''>('');
   const [marketingAngle, setMarketingAngle] = useState<MarketingAngleType | ''>('');
   const [travelStyle, setTravelStyle] = useState<TravelStyleType | ''>('');
 
-  const { generateContent, isGenerating, generatedContent, clearContent } = useAIContent();
+  // Disclosure state
+  const [addDisclosure, setAddDisclosure] = useState(false);
+  const [disclosureType, setDisclosureType] = useState<DisclosureType>('subtle');
+
+  const { generateContent, humanizeContent, isGenerating, isHumanizing, generatedContent, clearContent } = useAIContent();
   const { toast } = useToast();
 
   const selectedItem = useMemo(() => 
@@ -108,6 +118,15 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
     });
   };
 
+  const handleHumanize = async () => {
+    if (!generatedContent) return;
+    
+    await humanizeContent({
+      contentType,
+      contentToHumanize: generatedContent,
+    });
+  };
+
   const handleCopy = async (field: string, value: string | string[]) => {
     const textToCopy = Array.isArray(value) ? value.join(', ') : value;
     await navigator.clipboard.writeText(textToCopy);
@@ -116,9 +135,53 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
     toast({ title: 'Copied to clipboard' });
   };
 
+  // Apply disclosure text to content before saving
+  const applyDisclosure = (content: GeneratedContent): GeneratedContent => {
+    if (!addDisclosure || disclosureType === 'none') return content;
+
+    const disclosureText = disclosureTexts[disclosureType];
+    
+    // For blog posts, append to content field
+    if (contentType === 'blog' && 'content' in content) {
+      const blogContent = content as BlogContent;
+      if (disclosureType === 'badge') {
+        return {
+          ...blogContent,
+          title: disclosureText + blogContent.title,
+        };
+      }
+      return {
+        ...blogContent,
+        content: blogContent.content + disclosureText,
+      };
+    }
+
+    // For other content types, append to long_description or description
+    if ('long_description' in content) {
+      return {
+        ...content,
+        long_description: disclosureType === 'badge' 
+          ? disclosureText + content.long_description 
+          : content.long_description + disclosureText,
+      };
+    }
+
+    if ('description' in content) {
+      return {
+        ...content,
+        description: disclosureType === 'badge'
+          ? disclosureText + content.description
+          : content.description + disclosureText,
+      };
+    }
+
+    return content;
+  };
+
   const handleApply = () => {
     if (selectedItemId && generatedContent && onApplyContent) {
-      onApplyContent(selectedItemId, generatedContent);
+      const contentWithDisclosure = applyDisclosure(generatedContent);
+      onApplyContent(selectedItemId, contentWithDisclosure);
       toast({
         title: 'Content Applied',
         description: `Generated content has been applied to ${selectedItem?.name}.`,
@@ -433,18 +496,36 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
           >
             <Card>
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle className="text-lg">Generated Content</CardTitle>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleGenerate()}
-                      disabled={isGenerating}
+                      disabled={isGenerating || isHumanizing}
                     >
                       <RefreshCw className={cn("h-4 w-4 mr-1", isGenerating && "animate-spin")} />
                       Regenerate
                     </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleHumanize}
+                            disabled={isGenerating || isHumanizing}
+                          >
+                            <Feather className={cn("h-4 w-4 mr-1", isHumanizing && "animate-pulse")} />
+                            {isHumanizing ? 'Humanizing...' : 'Humanize ✨'}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Refine the content to sound more natural and less AI-generated</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     {onApplyContent && (
                       <Button size="sm" onClick={handleApply}>
                         Apply to {selectedItem?.name}
@@ -456,8 +537,52 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
                   Review and edit the generated content before applying.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 {renderGeneratedContent()}
+                
+                {/* Disclosure Options */}
+                <div className="border-t pt-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Checkbox 
+                      id="add-disclosure" 
+                      checked={addDisclosure}
+                      onCheckedChange={(checked) => setAddDisclosure(checked === true)}
+                    />
+                    <Label htmlFor="add-disclosure" className="flex items-center gap-2 cursor-pointer">
+                      Add AI disclosure
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>Add a disclosure note indicating this content was created with AI assistance</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                  </div>
+                  
+                  {addDisclosure && (
+                    <div className="ml-6 space-y-2">
+                      <Select value={disclosureType} onValueChange={(v) => setDisclosureType(v as DisclosureType)}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {disclosureOptions.filter(opt => opt.value !== 'none').map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground italic">
+                        Preview: {disclosureOptions.find(o => o.value === disclosureType)?.preview}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </motion.div>
