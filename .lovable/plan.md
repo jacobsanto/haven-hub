@@ -1,179 +1,133 @@
 
 
-# AI Content Generator for Admin
+# Enhanced AI Content Styles & Targeting
 
 ## Overview
 
-Create a dedicated AI-powered content generation hub in the Admin Content section that enables automated creation and optimization of written content across all content types: blog posts, destinations, experiences, and properties.
+Expand the AI Content Generator with marketing-focused targeting options that let you tailor content to specific audiences, marketing goals, and travel preferences.
 
 ---
 
-## Content Types to Support
+## New Targeting Dimensions
 
-| Content Type | Generated Fields |
-|--------------|------------------|
-| **Blog Posts** | Title, excerpt, full content (markdown), meta description, tags |
-| **Destinations** | Short description, long description, highlights, best time to visit, climate info |
-| **Experiences** | Short description, long description, what's included list |
-| **Properties** | Description, highlights, neighborhood description |
+### 1. Traveler Personas
 
----
+Target content to specific guest types:
 
-## Feature Suggestions
+| Persona | Description |
+|---------|-------------|
+| **Honeymoon Couples** | Romantic language, privacy, intimate experiences |
+| **Luxury Families** | Multi-generational, kid-friendly, spacious accommodations |
+| **Solo Adventurers** | Independence, local immersion, unique experiences |
+| **Wellness Seekers** | Relaxation, spa, mindfulness, healthy living |
+| **Celebration Groups** | Events, gatherings, milestone moments |
+| **Business Travelers** | Connectivity, convenience, quiet workspaces |
+| **Retirees & Empty Nesters** | Comfort, cultural depth, slower pace |
 
-### 1. Content Generation Modes
+### 2. Marketing Angles
 
-**Quick Generate** - One-click generation with smart defaults
-- Select content type + target item (e.g., "Santorini" destination)
-- AI generates all relevant fields based on existing data
-- Review and apply with one click
+Focus content on specific psychological triggers:
 
-**Custom Prompt** - Full control over generation
-- Write custom instructions for specific tone, style, or focus
-- Useful for seasonal content or marketing campaigns
+| Angle | Use Case |
+|-------|----------|
+| **Aspirational/Dream** | Paint the ultimate lifestyle picture |
+| **FOMO/Urgency** | Limited availability, seasonal moments |
+| **Value Proposition** | Justify the investment, what's included |
+| **Social Proof** | References to acclaim, popularity, reviews |
+| **Exclusivity** | Private access, rare experiences, VIP treatment |
+| **Transformation** | Life-changing moments, personal growth |
 
-**Batch Generation** - Generate content for multiple items
-- Select multiple destinations/experiences without descriptions
-- Queue AI to generate content for all at once
+### 3. Travel Styles
 
-### 2. Content Templates
+Align content with guest interests:
 
-Pre-built templates for common content needs:
-- "Destination Guide Blog Post" - Auto-generates full article from destination data
-- "Experience Spotlight" - Creates engaging experience descriptions
-- "Property Welcome Email" - Guest communication copy
-- "Seasonal Promotion" - Marketing copy for special offers
-
-### 3. Content Enhancement Tools
-
-- **Improve Existing** - Enhance current descriptions with richer language
-- **Translate** - Multi-language content support
-- **SEO Optimize** - Add keywords, improve meta descriptions
-- **Tone Adjustment** - Shift between luxury/casual/informative
-
-### 4. Content History
-
-- Track all AI-generated content
-- Compare versions before/after AI enhancement
-- Rollback capability
+| Style | Focus Areas |
+|-------|-------------|
+| **Adventure & Active** | Outdoor activities, exploration, thrills |
+| **Wellness & Spa** | Relaxation, health, rejuvenation |
+| **Cultural Immersion** | Local traditions, history, authentic experiences |
+| **Culinary & Wine** | Food, dining, wine tours, cooking |
+| **Romance & Celebration** | Special occasions, intimate moments |
+| **Beach & Relaxation** | Sun, sea, laid-back vibes |
 
 ---
 
-## Recommended Implementation
+## Updated UI Design
 
-### Phase 1: Core AI Content Page
+The generator will have an organized settings panel:
 
-**New Files:**
-- `src/pages/admin/AdminAIContent.tsx` - Main page with tabs for each content type
-- `src/components/admin/AIContentGenerator.tsx` - Reusable generation component
-- `src/hooks/useAIContent.ts` - Hook for AI generation logic
-- `supabase/functions/generate-content/index.ts` - Edge function using Lovable AI
-
-**Page Structure:**
 ```text
 +------------------------------------------+
 |  AI Content Generator                    |
 +------------------------------------------+
-|  [Blog] [Destinations] [Experiences] [Properties]
-+------------------------------------------+
-|                                          |
-|  Content Type: Destination               |
 |  Target: [Select Destination ▼]          |
-|                                          |
 |  Template: [Destination Guide ▼]         |
-|                                          |
-|  Custom Instructions (optional):         |
-|  [                                    ]  |
-|                                          |
++------------------------------------------+
+|  Style Settings                          |
+|  ┌────────────────────────────────────┐  |
+|  │ Tone:     [Luxury ▼]               │  |
+|  │ Length:   [Balanced ▼]             │  |
+|  └────────────────────────────────────┘  |
++------------------------------------------+
+|  Audience & Marketing                    |
+|  ┌────────────────────────────────────┐  |
+|  │ Target Persona:  [Honeymoon ▼]     │  |
+|  │ Marketing Angle: [Aspirational ▼]  │  |
+|  │ Travel Style:    [Romance ▼]       │  |
+|  └────────────────────────────────────┘  |
++------------------------------------------+
+|  [Custom Instructions ▼]                 |
 |  [Generate Content]                      |
-|                                          |
-+------------------------------------------+
-|  Preview:                                |
-|  +------------------------------------+  |
-|  | Generated content appears here... |  |
-|  +------------------------------------+  |
-|                                          |
-|  [Copy] [Apply to Destination] [Regenerate]
 +------------------------------------------+
 ```
 
-### Phase 2: Inline AI Buttons
-
-Add "AI Generate" buttons directly in existing form dialogs:
-- Blog post form: AI button next to content field
-- Destination form: AI button next to descriptions
-- Experience form: AI button next to descriptions
-
-### Phase 3: Automation & Scheduling
-
-- Auto-generate blog post drafts weekly
-- Content suggestions based on trending topics
-- AI-powered content calendar
-
 ---
 
-## Technical Architecture
+## Implementation
 
-### Edge Function: `generate-content`
+### File Changes
 
-Uses Lovable AI (google/gemini-3-flash-preview) with structured prompts:
+**1. `src/hooks/useAIContent.ts`**
+- Add new types: `PersonaType`, `MarketingAngleType`, `TravelStyleType`
+- Extend `GenerateContentParams` with new optional fields
+- Export option arrays for UI consumption
 
-```typescript
-// Prompt templates by content type
-const prompts = {
-  destination: {
-    system: "You are a luxury travel copywriter...",
-    fields: ["description", "long_description", "highlights"]
-  },
-  experience: {
-    system: "You are an experience curator...",
-    fields: ["description", "long_description", "includes"]
-  },
-  blog: {
-    system: "You are a travel editor...",
-    fields: ["title", "excerpt", "content", "tags"]
-  }
-};
-```
+**2. `src/components/admin/AIContentGenerator.tsx`**
+- Add new state for persona, marketingAngle, travelStyle
+- Create "Audience & Marketing" collapsible section
+- Pass new parameters to generation function
 
-### AI Response Format
+**3. `supabase/functions/generate-content/index.ts`**
+- Add descriptions for each new targeting option
+- Inject targeting context into system prompts
+- Combine persona + angle + style for nuanced content
 
-Use Lovable AI's tool calling for structured output:
-- Blog: Returns `{ title, excerpt, content, tags }`
-- Destination: Returns `{ description, long_description, highlights }`
-- Experience: Returns `{ description, long_description, includes }`
+### Prompt Enhancement Example
 
-### Admin Sidebar Update
+When generating content for "Santorini Sunset Villa" with:
+- Persona: Honeymoon Couples
+- Angle: Aspirational
+- Style: Romance & Celebration
 
-Add to Content section in `AdminLayout.tsx`:
-```typescript
-{ href: '/admin/ai-content', icon: Sparkles, label: 'AI Generator' }
+The AI receives:
+
+```text
+Target Audience: Honeymoon couples seeking romantic, intimate experiences 
+with privacy and special touches for celebrating their new marriage.
+
+Marketing Angle: Create aspirational content that paints a picture of 
+the ultimate dream experience, evoking desire and longing.
+
+Travel Style Focus: Emphasize romantic elements, celebration moments, 
+couples activities, and intimate experiences.
 ```
 
 ---
 
-## UI/UX Considerations
+## Benefits
 
-- **Real-time streaming** - Show AI generating content word-by-word
-- **Edit before apply** - Always allow editing generated content
-- **Tone selector** - "Luxury", "Warm & Inviting", "Professional"
-- **Length control** - Short/Medium/Long content options
-- **Copy to clipboard** - Quick copy for external use
-
----
-
-## Questions for You
-
-Before proceeding with implementation, I'd like to clarify:
-
-1. **Priority content types** - Should we start with blog posts, or focus on destinations/experiences first?
-
-2. **Integration approach** - Do you prefer:
-   - A standalone AI Content page (recommended for Phase 1)
-   - Inline AI buttons within existing forms
-   - Both approaches
-
-3. **Content templates** - Any specific content formats you frequently need? (e.g., seasonal guides, property descriptions, email copy)
-
-4. **Automation** - Is scheduled/automated content generation important, or is manual generation sufficient for now?
+- **More relevant content** - Tailored to actual guest segments
+- **Marketing efficiency** - Quick pivots between campaigns
+- **Consistent brand voice** - Structured options vs. freeform prompts
+- **A/B testing ready** - Generate variations for different audiences
 
