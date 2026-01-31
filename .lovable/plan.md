@@ -1,62 +1,171 @@
-# Scheduled Promotional Pop-up Offers System
 
-## Status: ✅ IMPLEMENTED
+
+# Exit Intent Modal Admin Dashboard
 
 ## Overview
 
-A comprehensive promotional pop-up system that allows admins to schedule rich, storytelling-based offers that appear as pop-ups when visitors enter the website. Each offer includes visual artwork, compelling copy, scheduling, and flexible discount methods (coupon codes OR automatic price adjustments).
+Create an admin interface to configure and monitor the Exit Intent Modal, giving administrators control over its behavior and visibility into its performance.
 
 ---
 
-## Completed Implementation
+## Current Situation
 
-### Database
-- ✅ `promotional_campaigns` table with content, discount config, scheduling, display rules, targeting, and analytics fields
-- ✅ RLS policies for admin management and public read of active campaigns
-- ✅ Index for efficient active campaign queries
+The Exit Intent Modal currently:
+- Is hardcoded with fixed offers (10% discount, price drop alerts)
+- Has no on/off toggle accessible from admin
+- Cannot be customized (timing, cooldown period, offers)
+- Collects data into `newsletter_subscribers` but has no dedicated analytics view
 
-### New Files Created
+---
+
+## Proposed Solution
+
+Create a new admin page for Exit Intent settings with two sections:
+1. **Configuration** - Enable/disable and customize the modal behavior
+2. **Analytics** - View performance metrics (impressions, conversions, offer preferences)
+
+---
+
+## Implementation Details
+
+### 1. Database Changes
+
+Create a new table to store exit intent settings:
+
+```sql
+CREATE TABLE exit_intent_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  is_enabled BOOLEAN DEFAULT true,
+  delay_seconds INTEGER DEFAULT 1,
+  cooldown_days INTEGER DEFAULT 7,
+  discount_offer_enabled BOOLEAN DEFAULT true,
+  discount_percent INTEGER DEFAULT 10,
+  price_drop_offer_enabled BOOLEAN DEFAULT true,
+  headline TEXT DEFAULT 'Don''t miss out on your dream getaway',
+  subheadline TEXT DEFAULT 'Choose an exclusive offer just for you',
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### 2. New Files
+
 | File | Purpose |
 |------|---------|
-| `src/components/promotions/PromotionalPopup.tsx` | Animated popup with image, storytelling, countdown, coupon display |
-| `src/hooks/useActivePromotion.ts` | Fetches current active campaign with priority logic |
-| `src/hooks/usePromotionalCampaigns.ts` | Admin CRUD hooks |
-| `src/contexts/PromotionContext.tsx` | State management, dismiss handling, impression tracking |
-| `src/pages/admin/AdminPromotionalCampaigns.tsx` | Admin management page with stats |
-| `src/components/admin/PromotionalCampaignFormDialog.tsx` | Tabbed form for creating/editing |
+| `src/pages/admin/AdminExitIntent.tsx` | Main admin page with settings and analytics |
+| `src/hooks/useExitIntentSettings.ts` | Hook to fetch/update settings |
 
-### Modified Files
-| File | Changes |
-|------|---------|
-| `src/components/layout/PageLayout.tsx` | Added PromotionProvider and PromotionalPopup |
-| `src/components/admin/AdminLayout.tsx` | Added "Campaigns" nav link |
-| `src/App.tsx` | Added `/admin/campaigns` route |
+### 3. Admin Page Features
+
+**Settings Tab:**
+- Toggle to enable/disable exit intent modal
+- Delay before trigger (seconds after page load)
+- Cooldown period (days before showing again)
+- Individual offer toggles (discount / price drop alerts)
+- Customizable discount percentage
+- Editable headline and subheadline text
+
+**Analytics Tab:**
+- Total impressions (estimated from subscriber counts)
+- Conversions by offer type (pie chart)
+- Recent sign-ups from exit intent
+- Conversion trend over time
+
+### 4. Navigation Update
+
+Add to AdminLayout.tsx under "Booking Engine" section:
+```typescript
+{ href: '/admin/exit-intent', icon: LogOut, label: 'Exit Intent' },
+```
+
+### 5. Connect Settings to Modal
+
+Update `useExitIntent.ts` and `ExitIntentModal.tsx` to:
+- Fetch settings from database
+- Respect enabled/disabled state
+- Use configured timing and cooldown
+- Display customized offers and text
 
 ---
 
-## Features
+## Visual Layout
 
-### Discount Methods
-- **Coupon-Based**: Links to existing coupons, code displayed and copied on CTA click
-- **Automatic**: Stores percentage for future pricing integration
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  Exit Intent Modal Settings                                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  [Settings]  [Analytics]                                        │
+│  ───────────────────────                                        │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  Enable Exit Intent Modal              [Toggle: ON]     │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  Timing & Behavior                                              │
+│  ─────────────────                                              │
+│  Delay before trigger:  [___3___] seconds                       │
+│  Cooldown period:       [___7___] days                          │
+│                                                                 │
+│  Offers                                                         │
+│  ──────                                                         │
+│  ☑ Discount offer         Discount: [__10__] %                  │
+│  ☑ Price drop alerts                                            │
+│                                                                 │
+│  Content                                                        │
+│  ───────                                                        │
+│  Headline:    [Don't miss out on your dream getaway____]        │
+│  Subheadline: [Choose an exclusive offer just for you__]        │
+│                                                                 │
+│                                        [Save Settings]          │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-### Trigger Types
-| Trigger | Behavior |
-|---------|----------|
-| Entry | Shows after optional delay when user lands on site |
-| Exit | Shows when user attempts to leave (coordinates with exit intent) |
-| Both | Shows on entry AND exit (if not dismissed) |
-| Timed | Shows after specified delay in seconds |
+---
 
-### Admin Features
-- Campaign stats (active, scheduled, total impressions)
-- Status badges (Active, Scheduled, Expired, Paused)
-- Quick toggle for active/inactive
-- Full CRUD with tabbed form (Content, Discount, Settings)
+## Analytics View
 
-### Visitor Experience
-- Beautiful animated modal with backdrop blur
-- Countdown timer showing time remaining
-- Coupon code display with copy button
-- Dismiss prevents re-showing for 1 day
-- Mobile-responsive
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  Exit Intent Analytics                                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ Total Leads  │  │ Discount     │  │ Price Drop   │          │
+│  │    127       │  │    89 (70%)  │  │    38 (30%)  │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│                                                                 │
+│  Recent Sign-ups                                                │
+│  ───────────────                                                │
+│  │ Email               │ Offer Type │ Date          │          │
+│  │ john@example.com    │ Discount   │ Jan 31, 2026  │          │
+│  │ jane@example.com    │ Price Drop │ Jan 30, 2026  │          │
+│  └─────────────────────────────────────────────────┘           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## File Changes Summary
+
+### New Files
+- `src/pages/admin/AdminExitIntent.tsx` - Settings and analytics page
+- `src/hooks/useExitIntentSettings.ts` - Settings CRUD hook
+
+### Modified Files
+- `src/App.tsx` - Add route for `/admin/exit-intent`
+- `src/components/admin/AdminLayout.tsx` - Add nav link
+- `src/hooks/useExitIntent.ts` - Integrate settings from database
+- `src/components/booking/ExitIntentModal.tsx` - Use dynamic settings
+
+### Database
+- New `exit_intent_settings` table with RLS policies
+
+---
+
+## Benefits
+
+- **Control** - Enable/disable without code changes
+- **Customization** - Adjust offers and messaging
+- **Analytics** - See what's working
+- **Flexibility** - Fine-tune timing and cooldown
+
