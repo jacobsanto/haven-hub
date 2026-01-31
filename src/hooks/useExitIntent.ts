@@ -1,14 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useExitIntentSettings, ExitIntentSettings } from '@/hooks/useExitIntentSettings';
 
 interface UseExitIntentOptions {
   threshold?: number;
-  delay?: number;
-  cookieExpiry?: number; // days
 }
 
 export function useExitIntent(options: UseExitIntentOptions = {}) {
-  const { threshold = 10, delay = 1000, cookieExpiry = 7 } = options;
+  const { threshold = 10 } = options;
   const [showExitIntent, setShowExitIntent] = useState(false);
+  const { data: settings, isLoading } = useExitIntentSettings();
+
+  // Use settings from DB or defaults
+  const delay = (settings?.delay_seconds ?? 1) * 1000;
+  const cookieExpiry = settings?.cooldown_days ?? 7;
+  const isEnabled = settings?.is_enabled ?? true;
 
   const hasShownRecently = useCallback(() => {
     const lastShown = localStorage.getItem('exit_intent_shown');
@@ -31,6 +36,8 @@ export function useExitIntent(options: UseExitIntentOptions = {}) {
   }, [markAsShown]);
 
   useEffect(() => {
+    // Don't do anything while loading or if disabled
+    if (isLoading || !isEnabled) return;
     if (hasShownRecently()) return;
 
     let timeoutId: NodeJS.Timeout;
@@ -56,7 +63,7 @@ export function useExitIntent(options: UseExitIntentOptions = {}) {
       clearTimeout(timeoutId);
       document.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [threshold, delay, hasShownRecently, markAsShown]);
+  }, [threshold, delay, hasShownRecently, markAsShown, isLoading, isEnabled]);
 
-  return { showExitIntent, dismiss, setShowExitIntent };
+  return { showExitIntent, dismiss, setShowExitIntent, settings, isEnabled };
 }

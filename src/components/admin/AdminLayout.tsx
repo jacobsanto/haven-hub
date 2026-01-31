@@ -68,6 +68,7 @@ const navSections: NavSection[] = [
       { href: '/admin/addons', icon: Package, label: 'Add-ons' },
       { href: '/admin/promotions', icon: Tag, label: 'Promotions' },
       { href: '/admin/campaigns', icon: Megaphone, label: 'Campaigns' },
+      { href: '/admin/exit-intent', icon: LogOut, label: 'Exit Intent' },
       { href: '/admin/fees', icon: Receipt, label: 'Fees & Taxes' },
       { href: '/admin/rate-plans', icon: DollarSign, label: 'Rate Plans' },
       { href: '/admin/seasonal-rates-import', icon: Upload, label: 'Import Rates' },

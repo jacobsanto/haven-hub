@@ -48,6 +48,7 @@ import AdminSeasonalRatesImport from "./pages/admin/AdminSeasonalRatesImport";
 import AdminAIContent from "./pages/admin/AdminAIContent";
 import AdminContentCalendar from "./pages/admin/AdminContentCalendar";
 import AdminPromotionalCampaigns from "./pages/admin/AdminPromotionalCampaigns";
+import AdminExitIntent from "./pages/admin/AdminExitIntent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -104,6 +105,7 @@ const App = () => (
                 <Route path="/admin/ai-content" element={<AdminAIContent />} />
                 <Route path="/admin/content-calendar" element={<AdminContentCalendar />} />
                 <Route path="/admin/campaigns" element={<AdminPromotionalCampaigns />} />
+                <Route path="/admin/exit-intent" element={<AdminExitIntent />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
