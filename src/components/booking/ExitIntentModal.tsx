@@ -7,22 +7,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { ExitIntentSettings } from '@/hooks/useExitIntentSettings';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 
 interface ExitIntentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  settings?: ExitIntentSettings | null;
 }
 
 type OfferType = 'discount' | 'price-drop' | null;
 
-export function ExitIntentModal({ isOpen, onClose }: ExitIntentModalProps) {
+export function ExitIntentModal({ isOpen, onClose, settings }: ExitIntentModalProps) {
   const [email, setEmail] = useState('');
   const [selectedOffer, setSelectedOffer] = useState<OfferType>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const { toast } = useToast();
+
+  // Use settings or defaults
+  const discountPercent = settings?.discount_percent ?? 10;
+  const discountOfferEnabled = settings?.discount_offer_enabled ?? true;
+  const priceDropOfferEnabled = settings?.price_drop_offer_enabled ?? true;
+  const headline = settings?.headline ?? "Don't miss out on your dream getaway";
+  const subheadline = settings?.subheadline ?? 'Choose an exclusive offer just for you';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +77,7 @@ export function ExitIntentModal({ isOpen, onClose }: ExitIntentModalProps) {
       } else {
         setIsSubscribed(true);
         toast({
-          title: selectedOffer === 'discount' ? '10% discount unlocked!' : 'Price alerts activated!',
+          title: selectedOffer === 'discount' ? `${discountPercent}% discount unlocked!` : 'Price alerts activated!',
           description: 'Check your inbox for your exclusive offer.',
         });
       }
@@ -136,7 +145,7 @@ export function ExitIntentModal({ isOpen, onClose }: ExitIntentModalProps) {
                   </h2>
                   <p className="text-muted-foreground mb-6">
                     {selectedOffer === 'discount' 
-                      ? "Your 10% discount code has been sent to your inbox. Happy booking!"
+                      ? `Your ${discountPercent}% discount code has been sent to your inbox. Happy booking!`
                       : "We'll notify you when prices drop on properties you've viewed."}
                   </p>
                   <Button onClick={handleClose} className="w-full">
@@ -155,65 +164,68 @@ export function ExitIntentModal({ isOpen, onClose }: ExitIntentModalProps) {
                       </span>
                     </div>
                     <h2 className="text-2xl md:text-3xl font-serif text-foreground mb-2">
-                      Don't miss out on your dream getaway
+                      {headline}
                     </h2>
                     <p className="text-muted-foreground">
-                      Choose an exclusive offer just for you
+                      {subheadline}
                     </p>
                   </div>
 
-                  {/* Offer Selection */}
                   <form onSubmit={handleSubmit} className="p-8 pt-6 space-y-6">
                     <div className="grid gap-3">
                       {/* Discount Option */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedOffer('discount')}
-                        className={`flex items-start gap-4 rounded-xl border-2 p-4 text-left transition-all ${
-                          selectedOffer === 'discount'
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-                          selectedOffer === 'discount' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                        }`}>
-                          <Gift className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-foreground">
-                            Get 10% off your first booking
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Exclusive discount code sent to your inbox instantly
-                          </p>
-                        </div>
-                      </button>
+                      {discountOfferEnabled && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOffer('discount')}
+                          className={`flex items-start gap-4 rounded-xl border-2 p-4 text-left transition-all ${
+                            selectedOffer === 'discount'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+                            selectedOffer === 'discount' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                          }`}>
+                            <Gift className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground">
+                              Get {discountPercent}% off your first booking
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Exclusive discount code sent to your inbox instantly
+                            </p>
+                          </div>
+                        </button>
+                      )}
 
                       {/* Price Drop Option */}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedOffer('price-drop')}
-                        className={`flex items-start gap-4 rounded-xl border-2 p-4 text-left transition-all ${
-                          selectedOffer === 'price-drop'
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-                          selectedOffer === 'price-drop' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                        }`}>
-                          <Bell className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-foreground">
-                            Get notified when prices drop
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Be the first to know about deals on properties you love
-                          </p>
-                        </div>
-                      </button>
+                      {priceDropOfferEnabled && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOffer('price-drop')}
+                          className={`flex items-start gap-4 rounded-xl border-2 p-4 text-left transition-all ${
+                            selectedOffer === 'price-drop'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+                            selectedOffer === 'price-drop' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                          }`}>
+                            <Bell className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground">
+                              Get notified when prices drop
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Be the first to know about deals on properties you love
+                            </p>
+                          </div>
+                        </button>
+                      )}
                     </div>
 
                     {/* Email Input */}

@@ -855,6 +855,45 @@ export type Database = {
         }
         Relationships: []
       }
+      exit_intent_settings: {
+        Row: {
+          cooldown_days: number | null
+          delay_seconds: number | null
+          discount_offer_enabled: boolean | null
+          discount_percent: number | null
+          headline: string | null
+          id: string
+          is_enabled: boolean | null
+          price_drop_offer_enabled: boolean | null
+          subheadline: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cooldown_days?: number | null
+          delay_seconds?: number | null
+          discount_offer_enabled?: boolean | null
+          discount_percent?: number | null
+          headline?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          price_drop_offer_enabled?: boolean | null
+          subheadline?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cooldown_days?: number | null
+          delay_seconds?: number | null
+          discount_offer_enabled?: boolean | null
+          discount_percent?: number | null
+          headline?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          price_drop_offer_enabled?: boolean | null
+          subheadline?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       experience_enquiries: {
         Row: {
           created_at: string

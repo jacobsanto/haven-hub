@@ -22,8 +22,8 @@ const pageVariants = {
 function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
   const { activePromotion, triggerPromotion, hasBeenDismissed } = usePromotion();
   
-  // Exit intent with coordination for promotional campaigns
-  const { showExitIntent, dismiss: dismissExitIntent } = useExitIntent({ delay: 3000, cookieExpiry: 7 });
+  // Exit intent with settings from database
+  const { showExitIntent, dismiss: dismissExitIntent, settings: exitIntentSettings, isEnabled: exitIntentEnabled } = useExitIntent();
 
   // Check if we should show exit intent OR promotional popup for exit trigger
   const shouldShowExitPromo = activePromotion && 
@@ -58,9 +58,9 @@ function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
       </motion.main>
       {!hideFooter && <Footer />}
       
-      {/* Exit Intent Modal - only show if no promotional campaign for exit */}
-      {!shouldShowExitPromo && (
-        <ExitIntentModal isOpen={showExitIntent} onClose={dismissExitIntent} />
+      {/* Exit Intent Modal - only show if no promotional campaign for exit and exit intent is enabled */}
+      {exitIntentEnabled && !shouldShowExitPromo && (
+        <ExitIntentModal isOpen={showExitIntent} onClose={dismissExitIntent} settings={exitIntentSettings} />
       )}
       
       {/* Promotional Campaign Popup */}
