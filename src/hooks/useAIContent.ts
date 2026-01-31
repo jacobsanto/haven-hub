@@ -6,7 +6,7 @@ export type ContentType = 'blog' | 'destination' | 'experience' | 'property';
 export type ToneType = 'luxury' | 'warm' | 'professional';
 export type LengthType = 'short' | 'medium' | 'long';
 
-// New targeting types
+// Targeting types
 export type PersonaType = 
   | 'honeymoon_couples'
   | 'luxury_families'
@@ -31,6 +31,23 @@ export type TravelStyleType =
   | 'culinary_wine'
   | 'romance_celebration'
   | 'beach_relaxation';
+
+// Disclosure types
+export type DisclosureType = 'none' | 'subtle' | 'badge' | 'full';
+
+export const disclosureOptions: { value: DisclosureType; label: string; preview: string }[] = [
+  { value: 'none', label: 'None', preview: '' },
+  { value: 'subtle', label: 'Subtle Footer', preview: '*Content created with AI assistance*' },
+  { value: 'badge', label: 'Badge Prefix', preview: '[AI Assisted] ' },
+  { value: 'full', label: 'Full Disclosure', preview: 'This content was generated with AI assistance and reviewed by our editorial team.' },
+];
+
+export const disclosureTexts: Record<DisclosureType, string> = {
+  none: '',
+  subtle: '\n\n*Content created with AI assistance*',
+  badge: '[AI Assisted] ',
+  full: '\n\n---\n*This content was generated with AI assistance and reviewed by our editorial team.*',
+};
 
 // Option arrays for UI consumption
 export const personaOptions: { value: PersonaType; label: string; description: string }[] = [
@@ -69,10 +86,14 @@ export interface GenerateContentParams {
   tone?: ToneType;
   length?: LengthType;
   template?: string;
-  // New targeting parameters
   persona?: PersonaType;
   marketingAngle?: MarketingAngleType;
   travelStyle?: TravelStyleType;
+}
+
+export interface HumanizeContentParams {
+  contentType: ContentType;
+  contentToHumanize: GeneratedContent;
 }
 
 export interface BlogContent {
@@ -120,6 +141,7 @@ export const contentTemplates = [
 
 export function useAIContent() {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isHumanizing, setIsHumanizing] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -167,6 +189,52 @@ export function useAIContent() {
     }
   };
 
+  const humanizeContent = async (params: HumanizeContentParams): Promise<GeneratedContent | null> => {
+    setIsHumanizing(true);
+    setError(null);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('generate-content', {
+        body: {
+          humanize: true,
+          contentType: params.contentType,
+          contentToHumanize: params.contentToHumanize,
+        },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message);
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to humanize content');
+      }
+
+      const content = data.content as GeneratedContent;
+      setGeneratedContent(content);
+      
+      toast({
+        title: 'Content Humanized',
+        description: 'The content has been refined to sound more natural.',
+      });
+
+      return content;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to humanize content';
+      setError(message);
+      
+      toast({
+        title: 'Humanization Failed',
+        description: message,
+        variant: 'destructive',
+      });
+
+      return null;
+    } finally {
+      setIsHumanizing(false);
+    }
+  };
+
   const clearContent = () => {
     setGeneratedContent(null);
     setError(null);
@@ -174,7 +242,9 @@ export function useAIContent() {
 
   return {
     generateContent,
+    humanizeContent,
     isGenerating,
+    isHumanizing,
     generatedContent,
     error,
     clearContent,
