@@ -26,6 +26,7 @@ import {
   Activity,
   DollarSign,
   Upload,
+  Megaphone,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -66,6 +67,7 @@ const navSections: NavSection[] = [
       { href: '/admin/availability', icon: CalendarDays, label: 'Availability' },
       { href: '/admin/addons', icon: Package, label: 'Add-ons' },
       { href: '/admin/promotions', icon: Tag, label: 'Promotions' },
+      { href: '/admin/campaigns', icon: Megaphone, label: 'Campaigns' },
       { href: '/admin/fees', icon: Receipt, label: 'Fees & Taxes' },
       { href: '/admin/rate-plans', icon: DollarSign, label: 'Rate Plans' },
       { href: '/admin/seasonal-rates-import', icon: Upload, label: 'Import Rates' },
