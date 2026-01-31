@@ -1,96 +1,179 @@
 
 
-# Fluid Floating Blob Animations
+# AI Content Generator for Admin
 
-## Problem
+## Overview
 
-The current animations have a "stop-start" feel because:
-
-1. **`ease-in-out` timing** creates deceleration/acceleration at each keyframe point
-2. **Sharp direction changes** at 25%, 50%, 75% keyframes cause visible pauses
-3. **Limited keyframe points** make the movement feel segmented rather than continuous
+Create a dedicated AI-powered content generation hub in the Admin Content section that enables automated creation and optimization of written content across all content types: blog posts, destinations, experiences, and properties.
 
 ---
 
-## Solution
+## Content Types to Support
 
-Create smooth, continuous circular/lemniscate (figure-8) motion paths using:
-
-1. **`linear` timing function** - eliminates acceleration/deceleration pauses
-2. **More keyframe points** - smoother path with gradual direction changes
-3. **Circular movement paths** - no abrupt direction reversals
+| Content Type | Generated Fields |
+|--------------|------------------|
+| **Blog Posts** | Title, excerpt, full content (markdown), meta description, tags |
+| **Destinations** | Short description, long description, highlights, best time to visit, climate info |
+| **Experiences** | Short description, long description, what's included list |
+| **Properties** | Description, highlights, neighborhood description |
 
 ---
 
-## Implementation
+## Feature Suggestions
 
-### File: `src/index.css`
+### 1. Content Generation Modes
 
-Replace the current keyframes with fluid circular motion patterns:
+**Quick Generate** - One-click generation with smart defaults
+- Select content type + target item (e.g., "Santorini" destination)
+- AI generates all relevant fields based on existing data
+- Review and apply with one click
 
-```css
-.animate-float-1 {
-  animation: float-diagonal-1 20s linear infinite;
-}
+**Custom Prompt** - Full control over generation
+- Write custom instructions for specific tone, style, or focus
+- Useful for seasonal content or marketing campaigns
 
-.animate-float-2 {
-  animation: float-diagonal-2 25s linear infinite;
-}
+**Batch Generation** - Generate content for multiple items
+- Select multiple destinations/experiences without descriptions
+- Queue AI to generate content for all at once
 
-.animate-float-3 {
-  animation: float-diagonal-3 18s linear infinite;
-}
+### 2. Content Templates
 
-@keyframes float-diagonal-1 {
-  0% { transform: translate(0, 0); }
-  10% { transform: translate(25px, -35px); }
-  25% { transform: translate(50px, -20px); }
-  40% { transform: translate(55px, 20px); }
-  50% { transform: translate(35px, 45px); }
-  60% { transform: translate(0px, 50px); }
-  75% { transform: translate(-30px, 25px); }
-  90% { transform: translate(-20px, -15px); }
-  100% { transform: translate(0, 0); }
-}
+Pre-built templates for common content needs:
+- "Destination Guide Blog Post" - Auto-generates full article from destination data
+- "Experience Spotlight" - Creates engaging experience descriptions
+- "Property Welcome Email" - Guest communication copy
+- "Seasonal Promotion" - Marketing copy for special offers
 
-@keyframes float-diagonal-2 {
-  0% { transform: translate(0, 0); }
-  12% { transform: translate(-30px, 20px); }
-  25% { transform: translate(-45px, 50px); }
-  37% { transform: translate(-20px, 60px); }
-  50% { transform: translate(20px, 45px); }
-  62% { transform: translate(45px, 15px); }
-  75% { transform: translate(35px, -25px); }
-  87% { transform: translate(10px, -20px); }
-  100% { transform: translate(0, 0); }
-}
+### 3. Content Enhancement Tools
 
-@keyframes float-diagonal-3 {
-  0% { transform: translate(0, 0); }
-  15% { transform: translate(30px, 25px); }
-  30% { transform: translate(50px, 40px); }
-  45% { transform: translate(40px, 55px); }
-  60% { transform: translate(10px, 45px); }
-  75% { transform: translate(-25px, 25px); }
-  90% { transform: translate(-15px, 5px); }
-  100% { transform: translate(0, 0); }
-}
+- **Improve Existing** - Enhance current descriptions with richer language
+- **Translate** - Multi-language content support
+- **SEO Optimize** - Add keywords, improve meta descriptions
+- **Tone Adjustment** - Shift between luxury/casual/informative
+
+### 4. Content History
+
+- Track all AI-generated content
+- Compare versions before/after AI enhancement
+- Rollback capability
+
+---
+
+## Recommended Implementation
+
+### Phase 1: Core AI Content Page
+
+**New Files:**
+- `src/pages/admin/AdminAIContent.tsx` - Main page with tabs for each content type
+- `src/components/admin/AIContentGenerator.tsx` - Reusable generation component
+- `src/hooks/useAIContent.ts` - Hook for AI generation logic
+- `supabase/functions/generate-content/index.ts` - Edge function using Lovable AI
+
+**Page Structure:**
+```text
++------------------------------------------+
+|  AI Content Generator                    |
++------------------------------------------+
+|  [Blog] [Destinations] [Experiences] [Properties]
++------------------------------------------+
+|                                          |
+|  Content Type: Destination               |
+|  Target: [Select Destination ▼]          |
+|                                          |
+|  Template: [Destination Guide ▼]         |
+|                                          |
+|  Custom Instructions (optional):         |
+|  [                                    ]  |
+|                                          |
+|  [Generate Content]                      |
+|                                          |
++------------------------------------------+
+|  Preview:                                |
+|  +------------------------------------+  |
+|  | Generated content appears here... |  |
+|  +------------------------------------+  |
+|                                          |
+|  [Copy] [Apply to Destination] [Regenerate]
++------------------------------------------+
+```
+
+### Phase 2: Inline AI Buttons
+
+Add "AI Generate" buttons directly in existing form dialogs:
+- Blog post form: AI button next to content field
+- Destination form: AI button next to descriptions
+- Experience form: AI button next to descriptions
+
+### Phase 3: Automation & Scheduling
+
+- Auto-generate blog post drafts weekly
+- Content suggestions based on trending topics
+- AI-powered content calendar
+
+---
+
+## Technical Architecture
+
+### Edge Function: `generate-content`
+
+Uses Lovable AI (google/gemini-3-flash-preview) with structured prompts:
+
+```typescript
+// Prompt templates by content type
+const prompts = {
+  destination: {
+    system: "You are a luxury travel copywriter...",
+    fields: ["description", "long_description", "highlights"]
+  },
+  experience: {
+    system: "You are an experience curator...",
+    fields: ["description", "long_description", "includes"]
+  },
+  blog: {
+    system: "You are a travel editor...",
+    fields: ["title", "excerpt", "content", "tags"]
+  }
+};
+```
+
+### AI Response Format
+
+Use Lovable AI's tool calling for structured output:
+- Blog: Returns `{ title, excerpt, content, tags }`
+- Destination: Returns `{ description, long_description, highlights }`
+- Experience: Returns `{ description, long_description, includes }`
+
+### Admin Sidebar Update
+
+Add to Content section in `AdminLayout.tsx`:
+```typescript
+{ href: '/admin/ai-content', icon: Sparkles, label: 'AI Generator' }
 ```
 
 ---
 
-## Key Changes
+## UI/UX Considerations
 
-| Aspect | Before | After |
-|--------|--------|-------|
-| Timing function | `ease-in-out` (pauses) | `linear` (constant speed) |
-| Keyframe count | 4-5 points | 8-9 points |
-| Motion path | Zig-zag with stops | Smooth elliptical/organic loops |
-| Direction changes | Abrupt reversals | Gradual curved transitions |
+- **Real-time streaming** - Show AI generating content word-by-word
+- **Edit before apply** - Always allow editing generated content
+- **Tone selector** - "Luxury", "Warm & Inviting", "Professional"
+- **Length control** - Short/Medium/Long content options
+- **Copy to clipboard** - Quick copy for external use
 
 ---
 
-## Visual Result
+## Questions for You
 
-The blobs will now move in smooth, continuous organic paths - like leaves floating on water or clouds drifting - with no visible stops or direction-change pauses. The movement will feel fluid and "plastic" as requested.
+Before proceeding with implementation, I'd like to clarify:
+
+1. **Priority content types** - Should we start with blog posts, or focus on destinations/experiences first?
+
+2. **Integration approach** - Do you prefer:
+   - A standalone AI Content page (recommended for Phase 1)
+   - Inline AI buttons within existing forms
+   - Both approaches
+
+3. **Content templates** - Any specific content formats you frequently need? (e.g., seasonal guides, property descriptions, email copy)
+
+4. **Automation** - Is scheduled/automated content generation important, or is manual generation sufficient for now?
 
