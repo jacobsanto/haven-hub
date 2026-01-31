@@ -89,6 +89,7 @@ const navSections: NavSection[] = [
   {
     title: 'Content',
     items: [
+      { href: '/admin/ai-content', icon: Sparkles, label: 'AI Generator' },
       { href: '/admin/blog', icon: FileText, label: 'Blog Posts' },
       { href: '/admin/blog/authors', icon: Users, label: 'Authors' },
       { href: '/admin/blog/categories', icon: FolderOpen, label: 'Categories' },
