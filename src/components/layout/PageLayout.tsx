@@ -4,6 +4,8 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { ExitIntentModal } from '@/components/booking/ExitIntentModal';
 import { FloatingBookButton } from '@/components/booking/FloatingBookButton';
+import { PromotionalPopup } from '@/components/promotions/PromotionalPopup';
+import { PromotionProvider, usePromotion } from '@/contexts/PromotionContext';
 import { useExitIntent } from '@/hooks/useExitIntent';
 
 interface PageLayoutProps {
@@ -17,8 +19,29 @@ const pageVariants = {
   exit: { opacity: 0, y: -20 },
 };
 
-export function PageLayout({ children, hideFooter = false }: PageLayoutProps) {
-  const { showExitIntent, dismiss } = useExitIntent({ delay: 3000, cookieExpiry: 7 });
+function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
+  const { activePromotion, triggerPromotion, hasBeenDismissed } = usePromotion();
+  
+  // Exit intent with coordination for promotional campaigns
+  const { showExitIntent, dismiss: dismissExitIntent } = useExitIntent({ delay: 3000, cookieExpiry: 7 });
+
+  // Check if we should show exit intent OR promotional popup for exit trigger
+  const shouldShowExitPromo = activePromotion && 
+    (activePromotion.trigger_type === 'exit' || activePromotion.trigger_type === 'both') &&
+    !hasBeenDismissed;
+
+  // Handle exit intent - prefer promotional campaign if configured for exit
+  const handleExitIntent = () => {
+    if (shouldShowExitPromo) {
+      triggerPromotion();
+    }
+  };
+
+  // Use exit intent but redirect to promo if applicable
+  if (showExitIntent && shouldShowExitPromo) {
+    handleExitIntent();
+    dismissExitIntent();
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -35,11 +58,24 @@ export function PageLayout({ children, hideFooter = false }: PageLayoutProps) {
       </motion.main>
       {!hideFooter && <Footer />}
       
-      {/* Exit Intent Modal */}
-      <ExitIntentModal isOpen={showExitIntent} onClose={dismiss} />
+      {/* Exit Intent Modal - only show if no promotional campaign for exit */}
+      {!shouldShowExitPromo && (
+        <ExitIntentModal isOpen={showExitIntent} onClose={dismissExitIntent} />
+      )}
+      
+      {/* Promotional Campaign Popup */}
+      <PromotionalPopup />
       
       {/* Floating Book Button */}
       <FloatingBookButton />
     </div>
+  );
+}
+
+export function PageLayout(props: PageLayoutProps) {
+  return (
+    <PromotionProvider>
+      <PageLayoutContent {...props} />
+    </PromotionProvider>
   );
 }

@@ -1252,6 +1252,92 @@ export type Database = {
         }
         Relationships: []
       }
+      promotional_campaigns: {
+        Row: {
+          applicable_pages: string[] | null
+          applicable_properties: string[] | null
+          auto_discount_percent: number | null
+          coupon_id: string | null
+          created_at: string | null
+          cta_link: string | null
+          cta_text: string | null
+          description: string | null
+          discount_method: string
+          ends_at: string
+          id: string
+          image_url: string | null
+          impressions_count: number | null
+          is_active: boolean | null
+          max_impressions: number | null
+          priority: number | null
+          show_on_mobile: boolean | null
+          starts_at: string
+          subtitle: string | null
+          title: string
+          trigger_delay_seconds: number | null
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          applicable_pages?: string[] | null
+          applicable_properties?: string[] | null
+          auto_discount_percent?: number | null
+          coupon_id?: string | null
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          description?: string | null
+          discount_method?: string
+          ends_at: string
+          id?: string
+          image_url?: string | null
+          impressions_count?: number | null
+          is_active?: boolean | null
+          max_impressions?: number | null
+          priority?: number | null
+          show_on_mobile?: boolean | null
+          starts_at: string
+          subtitle?: string | null
+          title: string
+          trigger_delay_seconds?: number | null
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          applicable_pages?: string[] | null
+          applicable_properties?: string[] | null
+          auto_discount_percent?: number | null
+          coupon_id?: string | null
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          description?: string | null
+          discount_method?: string
+          ends_at?: string
+          id?: string
+          image_url?: string | null
+          impressions_count?: number | null
+          is_active?: boolean | null
+          max_impressions?: number | null
+          priority?: number | null
+          show_on_mobile?: boolean | null
+          starts_at?: string
+          subtitle?: string | null
+          title?: string
+          trigger_delay_seconds?: number | null
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotional_campaigns_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons_promos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       properties: {
         Row: {
           amenities: string[] | null
