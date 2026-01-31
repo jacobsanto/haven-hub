@@ -8,6 +8,9 @@ const corsHeaders = {
 type ContentType = "blog" | "destination" | "experience" | "property";
 type ToneType = "luxury" | "warm" | "professional";
 type LengthType = "short" | "medium" | "long";
+type PersonaType = "honeymoon_couples" | "luxury_families" | "solo_adventurers" | "wellness_seekers" | "celebration_groups" | "business_travelers" | "retirees";
+type MarketingAngleType = "aspirational" | "fomo_urgency" | "value_proposition" | "social_proof" | "exclusivity" | "transformation";
+type TravelStyleType = "adventure_active" | "wellness_spa" | "cultural_immersion" | "culinary_wine" | "romance_celebration" | "beach_relaxation";
 
 interface GenerateRequest {
   contentType: ContentType;
@@ -17,6 +20,9 @@ interface GenerateRequest {
   tone?: ToneType;
   length?: LengthType;
   template?: string;
+  persona?: PersonaType;
+  marketingAngle?: MarketingAngleType;
+  travelStyle?: TravelStyleType;
 }
 
 const toneDescriptions: Record<ToneType, string> = {
@@ -29,6 +35,37 @@ const lengthGuidelines: Record<LengthType, string> = {
   short: "Keep descriptions concise (2-3 sentences for short fields, 1-2 paragraphs for long descriptions)",
   medium: "Provide moderate detail (3-4 sentences for short fields, 2-3 paragraphs for long descriptions)",
   long: "Write comprehensive content (4-5 sentences for short fields, 4-5 paragraphs for long descriptions)",
+};
+
+// Persona descriptions for targeting
+const personaDescriptions: Record<PersonaType, string> = {
+  honeymoon_couples: "Honeymoon couples seeking romantic, intimate experiences with privacy and special touches for celebrating their new marriage. Focus on romance, seclusion, couples activities, and creating unforgettable memories together.",
+  luxury_families: "Affluent families traveling with children across multiple generations. Emphasize spacious accommodations, kid-friendly amenities, family bonding activities, and experiences that delight both adults and children.",
+  solo_adventurers: "Independent travelers seeking authentic experiences and personal growth. Highlight opportunities for self-discovery, local immersion, unique adventures, and the freedom to explore at their own pace.",
+  wellness_seekers: "Health-conscious travelers prioritizing relaxation and rejuvenation. Focus on spa facilities, mindfulness activities, healthy dining options, yoga, meditation, and holistic wellness experiences.",
+  celebration_groups: "Groups celebrating milestone events like birthdays, anniversaries, or reunions. Emphasize group accommodations, celebration amenities, event planning capabilities, and creating memorable shared experiences.",
+  business_travelers: "Professionals who blend work with luxury leisure. Highlight high-speed connectivity, quiet workspaces, business amenities, convenient locations, and opportunities for productive relaxation.",
+  retirees: "Mature travelers with time and resources for meaningful experiences. Focus on comfort, cultural depth, slower-paced exploration, accessibility, and enriching experiences that offer new perspectives.",
+};
+
+// Marketing angle descriptions
+const marketingAngleDescriptions: Record<MarketingAngleType, string> = {
+  aspirational: "Create aspirational content that paints a picture of the ultimate dream experience. Evoke desire and longing by describing the pinnacle of luxury and the lifestyle guests will enjoy.",
+  fomo_urgency: "Emphasize limited availability, seasonal moments, and the fear of missing out. Create urgency through exclusive access, time-sensitive opportunities, and once-in-a-lifetime experiences.",
+  value_proposition: "Focus on justifying the investment by highlighting everything that's included. Emphasize value, unique offerings, and why this experience is worth every penny.",
+  social_proof: "Reference acclaim, popularity, and guest satisfaction. Include mentions of awards, recognition, repeat guests, and why discerning travelers choose this experience.",
+  exclusivity: "Emphasize private access, rare experiences, and VIP treatment. Highlight what makes this offering unique, limited, and available only to select guests.",
+  transformation: "Focus on life-changing moments and personal growth. Describe how this experience transforms guests, creates lasting memories, and offers new perspectives on life.",
+};
+
+// Travel style descriptions
+const travelStyleDescriptions: Record<TravelStyleType, string> = {
+  adventure_active: "Emphasize outdoor activities, exploration, and thrilling experiences. Highlight hiking, water sports, expeditions, and active adventures that get the heart racing.",
+  wellness_spa: "Focus on relaxation, health, and rejuvenation. Describe spa treatments, yoga sessions, meditation spaces, and facilities designed for physical and mental wellness.",
+  cultural_immersion: "Highlight local traditions, history, and authentic experiences. Emphasize connections with local culture, artisans, traditions, and meaningful cultural exchanges.",
+  culinary_wine: "Focus on food, dining, wine tours, and cooking experiences. Describe local cuisine, fine dining, wine tastings, cooking classes, and gastronomic adventures.",
+  romance_celebration: "Emphasize special occasions and intimate moments. Highlight romantic settings, couples experiences, celebration amenities, and creating magical memories.",
+  beach_relaxation: "Focus on sun, sea, and laid-back vibes. Describe pristine beaches, ocean views, water activities, and the ultimate in coastal relaxation.",
 };
 
 const contentTypePrompts: Record<ContentType, { system: string; fields: string[] }> = {
@@ -131,7 +168,7 @@ serve(async (req) => {
   }
 
   try {
-    const { contentType, targetName, existingData, customInstructions, tone = "luxury", length = "medium", template }: GenerateRequest = await req.json();
+    const { contentType, targetName, existingData, customInstructions, tone = "luxury", length = "medium", template, persona, marketingAngle, travelStyle }: GenerateRequest = await req.json();
 
     if (!contentType || !targetName) {
       return new Response(
@@ -157,6 +194,19 @@ serve(async (req) => {
     let systemPrompt = promptConfig.system;
     systemPrompt += `\n\nTone: Write in a ${toneDescriptions[tone]} style.`;
     systemPrompt += `\n\nLength guidelines: ${lengthGuidelines[length]}`;
+
+    // Add targeting context if specified
+    if (persona) {
+      systemPrompt += `\n\nTarget Audience: ${personaDescriptions[persona]}`;
+    }
+
+    if (marketingAngle) {
+      systemPrompt += `\n\nMarketing Angle: ${marketingAngleDescriptions[marketingAngle]}`;
+    }
+
+    if (travelStyle) {
+      systemPrompt += `\n\nTravel Style Focus: ${travelStyleDescriptions[travelStyle]}`;
+    }
 
     if (template && templatePrompts[template]) {
       systemPrompt += `\n\nTemplate instructions:\n${templatePrompts[template]}`;
