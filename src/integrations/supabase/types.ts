@@ -258,6 +258,7 @@ export type Database = {
           inline_images: Json | null
           is_featured: boolean
           published_at: string | null
+          scheduled_publish_at: string | null
           slug: string
           status: Database["public"]["Enums"]["blog_status"]
           tags: string[] | null
@@ -275,6 +276,7 @@ export type Database = {
           inline_images?: Json | null
           is_featured?: boolean
           published_at?: string | null
+          scheduled_publish_at?: string | null
           slug: string
           status?: Database["public"]["Enums"]["blog_status"]
           tags?: string[] | null
@@ -292,6 +294,7 @@ export type Database = {
           inline_images?: Json | null
           is_featured?: boolean
           published_at?: string | null
+          scheduled_publish_at?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["blog_status"]
           tags?: string[] | null
@@ -1420,6 +1423,83 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_blog_posts: {
+        Row: {
+          author_id: string | null
+          auto_publish: boolean
+          category_id: string | null
+          created_at: string
+          error_message: string | null
+          generated_post_id: string | null
+          generation_settings: Json
+          id: string
+          processed_at: string | null
+          scheduled_for: string
+          status: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          auto_publish?: boolean
+          category_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          generated_post_id?: string | null
+          generation_settings?: Json
+          id?: string
+          processed_at?: string | null
+          scheduled_for: string
+          status?: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          auto_publish?: boolean
+          category_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          generated_post_id?: string | null
+          generation_settings?: Json
+          id?: string
+          processed_at?: string | null
+          scheduled_for?: string
+          status?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_blog_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "blog_authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_blog_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "blog_authors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_blog_posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "blog_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_blog_posts_generated_post_id_fkey"
+            columns: ["generated_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
             referencedColumns: ["id"]
           },
         ]
