@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Copy, Check, RefreshCw, ChevronDown, Wand2, Target, Users, Feather, Info } from 'lucide-react';
+import { Sparkles, Copy, Check, RefreshCw, ChevronDown, Wand2, Target, Users, Feather, Info, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { 
   useAIContent, 
@@ -81,6 +82,11 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
   const [addDisclosure, setAddDisclosure] = useState(false);
   const [disclosureType, setDisclosureType] = useState<DisclosureType>('subtle');
 
+  // Comparison state
+  const [originalContent, setOriginalContent] = useState<GeneratedContent | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
+  const [hasBeenHumanized, setHasBeenHumanized] = useState(false);
+
   const { generateContent, humanizeContent, isGenerating, isHumanizing, generatedContent, clearContent } = useAIContent();
   const { toast } = useToast();
 
@@ -104,6 +110,11 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
       return;
     }
 
+    // Reset comparison state on new generation
+    setOriginalContent(null);
+    setShowComparison(false);
+    setHasBeenHumanized(false);
+
     await generateContent({
       contentType,
       targetName: selectedItem.name,
@@ -121,10 +132,42 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
   const handleHumanize = async () => {
     if (!generatedContent) return;
     
-    await humanizeContent({
+    // Save original before humanizing
+    setOriginalContent(generatedContent);
+    
+    const result = await humanizeContent({
       contentType,
       contentToHumanize: generatedContent,
     });
+    
+    if (result) {
+      setHasBeenHumanized(true);
+      setShowComparison(true);
+    }
+  };
+
+  const handleUseOriginal = () => {
+    if (originalContent) {
+      clearContent();
+      // Re-set the original content as the active content
+      // We need to trigger a re-generation simulation or just use the stored original
+      setShowComparison(false);
+      setHasBeenHumanized(false);
+      // Apply the original content back
+      if (selectedItemId && onApplyContent) {
+        const contentWithDisclosure = applyDisclosure(originalContent);
+        onApplyContent(selectedItemId, contentWithDisclosure);
+        toast({
+          title: 'Original Applied',
+          description: `Original content has been applied to ${selectedItem?.name}.`,
+        });
+      }
+    }
+  };
+
+  const handleUseHumanized = () => {
+    setShowComparison(false);
+    handleApply();
   };
 
   const handleCopy = async (field: string, value: string | string[]) => {
@@ -230,43 +273,78 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
     );
   };
 
-  const renderGeneratedContent = () => {
-    if (!generatedContent) return null;
+  const fieldLabels: Record<ContentType, Record<string, string>> = {
+    blog: {
+      title: 'Title',
+      excerpt: 'Excerpt',
+      content: 'Content',
+      tags: 'Tags',
+    },
+    destination: {
+      description: 'Short Description',
+      long_description: 'Full Description',
+      highlights: 'Highlights',
+      best_time_to_visit: 'Best Time to Visit',
+      climate: 'Climate',
+    },
+    experience: {
+      description: 'Short Description',
+      long_description: 'Full Description',
+      includes: "What's Included",
+    },
+    property: {
+      description: 'Description',
+      highlights: 'Highlights',
+      neighborhood_description: 'Neighborhood',
+    },
+  };
 
-    const fieldLabels: Record<ContentType, Record<string, string>> = {
-      blog: {
-        title: 'Title',
-        excerpt: 'Excerpt',
-        content: 'Content',
-        tags: 'Tags',
-      },
-      destination: {
-        description: 'Short Description',
-        long_description: 'Full Description',
-        highlights: 'Highlights',
-        best_time_to_visit: 'Best Time to Visit',
-        climate: 'Climate',
-      },
-      experience: {
-        description: 'Short Description',
-        long_description: 'Full Description',
-        includes: "What's Included",
-      },
-      property: {
-        description: 'Description',
-        highlights: 'Highlights',
-        neighborhood_description: 'Neighborhood',
-      },
-    };
-
+  const renderContentPanel = (content: GeneratedContent, prefix: string = '') => {
     const labels = fieldLabels[contentType];
-    const content = generatedContent as unknown as Record<string, string | string[]>;
+    const contentObj = content as unknown as Record<string, string | string[]>;
 
     return (
       <div className="space-y-4">
-        {Object.entries(content).map(([field, value]) => 
-          renderContentField(labels[field] || field, field, value)
+        {Object.entries(contentObj).map(([field, value]) => 
+          renderContentField(labels[field] || field, `${prefix}${field}`, value)
         )}
+      </div>
+    );
+  };
+
+  const renderGeneratedContent = () => {
+    if (!generatedContent) return null;
+    return renderContentPanel(generatedContent);
+  };
+
+  const renderComparisonView = () => {
+    if (!originalContent || !generatedContent) return null;
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Original Column */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <Badge variant="secondary" className="text-xs">
+              Original
+            </Badge>
+          </div>
+          <div className="bg-muted/30 rounded-lg p-4">
+            {renderContentPanel(originalContent, 'original-')}
+          </div>
+        </div>
+
+        {/* Humanized Column */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 pb-2 border-b border-primary/30">
+            <Badge className="text-xs bg-primary/10 text-primary border-primary/20">
+              Humanized ✨
+            </Badge>
+          </div>
+          <div className="bg-primary/5 rounded-lg p-4 ring-1 ring-primary/10">
+            {renderContentPanel(generatedContent, 'humanized-')}
+          </div>
+        </div>
       </div>
     );
   };
@@ -497,7 +575,22 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
             <Card>
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <CardTitle className="text-lg">Generated Content</CardTitle>
+                  <div className="flex items-center gap-4">
+                    <CardTitle className="text-lg">Generated Content</CardTitle>
+                    {hasBeenHumanized && (
+                      <div className="flex items-center gap-2">
+                        <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor="compare-toggle" className="text-sm text-muted-foreground cursor-pointer">
+                          Compare
+                        </Label>
+                        <Switch
+                          id="compare-toggle"
+                          checked={showComparison}
+                          onCheckedChange={setShowComparison}
+                        />
+                      </div>
+                    )}
+                  </div>
                   <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
@@ -526,19 +619,31 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    {onApplyContent && (
+                    {onApplyContent && !showComparison && (
                       <Button size="sm" onClick={handleApply}>
                         Apply to {selectedItem?.name}
                       </Button>
                     )}
+                    {onApplyContent && showComparison && hasBeenHumanized && (
+                      <>
+                        <Button variant="outline" size="sm" onClick={handleUseOriginal}>
+                          Use Original
+                        </Button>
+                        <Button size="sm" onClick={handleUseHumanized}>
+                          Use Humanized
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
                 <CardDescription>
-                  Review and edit the generated content before applying.
+                  {showComparison 
+                    ? "Compare the original and humanized versions, then choose which to apply."
+                    : "Review and edit the generated content before applying."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {renderGeneratedContent()}
+                {showComparison && hasBeenHumanized ? renderComparisonView() : renderGeneratedContent()}
                 
                 {/* Disclosure Options */}
                 <div className="border-t pt-4 space-y-3">
