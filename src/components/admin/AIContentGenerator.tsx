@@ -89,7 +89,7 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
       customInstructions: customInstructions || undefined,
       tone,
       length,
-      template: selectedTemplate || undefined,
+      template: selectedTemplate && selectedTemplate !== '_none' ? selectedTemplate : undefined,
     });
   };
 
@@ -232,8 +232,8 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a template..." />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No template</SelectItem>
+              <SelectContent>
+                  <SelectItem value="_none">No template</SelectItem>
                   {availableTemplates.map(template => (
                     <SelectItem key={template.value} value={template.value}>
                       {template.label}
