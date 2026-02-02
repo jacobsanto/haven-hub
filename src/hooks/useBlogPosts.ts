@@ -12,7 +12,7 @@ export function useBlogPosts(options?: { status?: BlogStatus; categorySlug?: str
         .select(`
           *,
           category:blog_categories(*),
-          author:blog_authors(*)
+          author:blog_authors_public(*)
         `)
         .order('published_at', { ascending: false, nullsFirst: false });
       
@@ -57,7 +57,7 @@ export function usePaginatedBlogPosts(options?: {
         .select(`
           *,
           category:blog_categories(*),
-          author:blog_authors(*)
+          author:blog_authors_public(*)
         `, { count: 'exact' })
         .order('published_at', { ascending: false, nullsFirst: false });
       
@@ -110,7 +110,7 @@ export function useBlogPost(slug: string) {
         .select(`
           *,
           category:blog_categories(*),
-          author:blog_authors(*)
+          author:blog_authors_public(*)
         `)
         .eq('slug', slug)
         .maybeSingle();
@@ -136,7 +136,7 @@ export function useFeaturedBlogPost() {
         .select(`
           *,
           category:blog_categories(*),
-          author:blog_authors(*)
+          author:blog_authors_public(*)
         `)
         .eq('status', 'published')
         .eq('is_featured', true)
