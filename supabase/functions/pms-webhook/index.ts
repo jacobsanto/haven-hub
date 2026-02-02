@@ -2,6 +2,8 @@
 // Receives webhook events from Tokeet/AdvanceCM for OTA bookings and availability changes
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
+import { encodeHex } from "https://deno.land/std@0.208.0/encoding/hex.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,13 +69,96 @@ function generateBookingReference(): string {
   return `BK-${year}${month}-${random}`;
 }
 
+/**
+ * Verify webhook signature using HMAC-SHA256
+ * Returns true if signature is valid or if no secret is configured (allowing gradual rollout)
+ */
+async function verifyWebhookSignature(
+  payload: string,
+  signature: string | null,
+  secret: string | undefined
+): Promise<{ valid: boolean; reason?: string }> {
+  // If no secret is configured, log warning but allow (for gradual rollout)
+  if (!secret) {
+    console.warn("PMS_WEBHOOK_SECRET not configured - webhook signature verification skipped");
+    return { valid: true, reason: "no_secret_configured" };
+  }
+
+  // If secret is configured but no signature provided, reject
+  if (!signature) {
+    return { valid: false, reason: "missing_signature" };
+  }
+
+  try {
+    // Create HMAC signature using Deno's crypto
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const messageData = encoder.encode(payload);
+    
+    const key = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signatureArrayBuffer = await crypto.subtle.sign("HMAC", key, messageData);
+    const expectedSignature = encodeHex(new Uint8Array(signatureArrayBuffer));
+
+    // Timing-safe comparison
+    if (signature.length !== expectedSignature.length) {
+      return { valid: false, reason: "signature_length_mismatch" };
+    }
+
+    let match = true;
+    for (let i = 0; i < signature.length; i++) {
+      if (signature[i] !== expectedSignature[i]) {
+        match = false;
+      }
+    }
+
+    if (!match) {
+      return { valid: false, reason: "signature_mismatch" };
+    }
+
+    return { valid: true };
+  } catch (error) {
+    console.error("Signature verification error:", error);
+    return { valid: false, reason: "verification_error" };
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Get raw body for signature verification
+  const rawBody = await req.text();
+
   try {
+    // Verify webhook signature
+    const signature = req.headers.get("x-tokeet-signature");
+    const webhookSecret = Deno.env.get("PMS_WEBHOOK_SECRET");
+
+    const verification = await verifyWebhookSignature(rawBody, signature, webhookSecret);
+    
+    if (!verification.valid) {
+      console.error(`Webhook signature verification failed: ${verification.reason}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Unauthorized", 
+          reason: verification.reason 
+        }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
     // Create admin client (no user auth for webhooks)
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -81,7 +166,7 @@ Deno.serve(async (req) => {
     );
 
     // Parse webhook payload
-    const payload: TokeetWebhookEvent = await req.json();
+    const payload: TokeetWebhookEvent = JSON.parse(rawBody);
     const eventType = payload.event || payload.type || "unknown";
 
     console.log(`Received webhook event: ${eventType}`, JSON.stringify(payload).slice(0, 500));
