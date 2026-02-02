@@ -188,6 +188,18 @@ export default function Checkout() {
       return;
     }
 
+    // Check Stripe is configured
+    const stripeInstance = await getStripe();
+    if (!stripeInstance) {
+      console.error('Stripe not initialized - check VITE_STRIPE_PUBLISHABLE_KEY');
+      toast({
+        title: 'Payment system unavailable',
+        description: 'Unable to initialize payment. Please try again later.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     isSubmittingRef.current = true;
     setIsProcessing(true);
 
@@ -195,6 +207,8 @@ export default function Checkout() {
       // Generate booking reference upfront
       const newBookingReference = generateBookingReference();
       setBookingReference(newBookingReference);
+
+      console.log('Creating payment intent for booking:', newBookingReference);
 
       // Create Payment Intent via edge function (NO booking created yet)
       const { data, error } = await supabase.functions.invoke('create-payment-intent', {
@@ -231,13 +245,24 @@ export default function Checkout() {
         },
       });
 
+      // Handle edge function errors
       if (error) {
+        console.error('Edge function error:', error);
         throw new Error(error.message || 'Failed to create payment');
       }
 
-      if (!data?.clientSecret) {
-        throw new Error('No client secret received');
+      // Handle missing or invalid response
+      if (!data) {
+        console.error('No data returned from create-payment-intent');
+        throw new Error('Payment service returned empty response');
       }
+
+      if (!data.clientSecret) {
+        console.error('No client secret in response:', data);
+        throw new Error(data.error || 'No client secret received');
+      }
+
+      console.log('Payment intent created successfully:', data.paymentIntentId);
 
       setClientSecret(data.clientSecret);
       setPaymentIntentId(data.paymentIntentId);
@@ -249,6 +274,10 @@ export default function Checkout() {
         description: error instanceof Error ? error.message : 'Please try again.',
         variant: 'destructive',
       });
+      // Reset state on error
+      setClientSecret(null);
+      setPaymentIntentId(null);
+      setShowStripeForm(false);
     } finally {
       setIsProcessing(false);
       isSubmittingRef.current = false;
