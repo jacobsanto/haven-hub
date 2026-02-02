@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
-import { ArrowLeft, MapPin, Users, Calendar, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Calendar, Loader2, AlertCircle } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,7 @@ export default function Checkout() {
   const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
   const [sessionId] = useState(generateSessionId);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   
   // Stripe state
   const [showStripeForm, setShowStripeForm] = useState(false);
@@ -179,7 +180,11 @@ export default function Checkout() {
     // Double-click protection
     if (isSubmittingRef.current) return;
     
+    // Clear any previous errors
+    setPaymentError(null);
+    
     if (!property || !checkIn || !checkOut || !guestInfo || !priceBreakdown) {
+      setPaymentError('Please complete all required fields before proceeding to payment.');
       toast({
         title: 'Missing information',
         description: 'Please complete all required fields.',
@@ -192,6 +197,7 @@ export default function Checkout() {
     const stripeInstance = await getStripe();
     if (!stripeInstance) {
       console.error('Stripe not initialized - check VITE_STRIPE_PUBLISHABLE_KEY');
+      setPaymentError('Payment system is temporarily unavailable. Please try again later or contact support.');
       toast({
         title: 'Payment system unavailable',
         description: 'Unable to initialize payment. Please try again later.',
@@ -267,11 +273,14 @@ export default function Checkout() {
       setClientSecret(data.clientSecret);
       setPaymentIntentId(data.paymentIntentId);
       setShowStripeForm(true);
+      setPaymentError(null);
     } catch (error) {
       console.error('Payment setup error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+      setPaymentError(errorMessage);
       toast({
         title: 'Payment setup failed',
-        description: error instanceof Error ? error.message : 'Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
       // Reset state on error
@@ -612,8 +621,43 @@ export default function Checkout() {
                     checkInDate={checkIn}
                   />
 
+                  {/* Payment Error Alert */}
+                  {paymentError && !isProcessing && (
+                    <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-medium text-destructive">Payment initialization failed</p>
+                        <p className="text-sm text-destructive/80">{paymentError}</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={() => {
+                            setPaymentError(null);
+                            handleProceedToPayment();
+                          }}
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Loading state while initializing payment */}
+                  {isProcessing && (
+                    <div className="bg-card rounded-xl border p-8 flex flex-col items-center justify-center gap-4">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                      <div className="text-center">
+                        <h3 className="font-serif text-lg font-medium">Preparing Payment</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Securely connecting to payment provider...
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Show Stripe form if client secret is available */}
-                  {showStripeForm && clientSecret ? (
+                  {showStripeForm && clientSecret && !isProcessing ? (
                     <div className="bg-card rounded-xl border p-6">
                       <h3 className="font-serif text-lg font-medium mb-4">Complete Payment</h3>
                       <Elements
@@ -634,7 +678,7 @@ export default function Checkout() {
                         />
                       </Elements>
                     </div>
-                  ) : (
+                  ) : !isProcessing && !paymentError ? (
                     <PaymentOptions
                       breakdown={priceBreakdown!}
                       depositPercentage={30}
@@ -644,9 +688,9 @@ export default function Checkout() {
                       isProcessing={isProcessing}
                       holdExpiresAt={holdExpiresAt || undefined}
                     />
-                  )}
+                  ) : null}
 
-                  {!showStripeForm && (
+                  {!showStripeForm && !isProcessing && (
                     <Button
                       variant="outline"
                       size="lg"
