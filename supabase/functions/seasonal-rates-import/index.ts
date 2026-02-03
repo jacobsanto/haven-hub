@@ -106,6 +106,24 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Verify admin role - this is an admin-only edge function
+  const { data: adminRole } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userData.user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  if (!adminRole) {
+    return new Response(
+      JSON.stringify({ error: "Forbidden: Admin access required" }),
+      {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
     const { action, csvContent } = await req.json();
 
