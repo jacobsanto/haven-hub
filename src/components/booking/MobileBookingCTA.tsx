@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, Zap, Percent, Users, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Calendar } from '@/components/ui/calendar';
+import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { BookingWidget } from './BookingWidget';
 import { Property, SpecialOffer } from '@/types/database';
+import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
-import { DateRange } from 'react-day-picker';
 
 // Haptic feedback utility
 const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
@@ -35,14 +35,18 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
   const [guests, setGuests] = useState(2);
   const [showGuestSelector, setShowGuestSelector] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [checkIn, setCheckIn] = useState<Date | undefined>();
+  const [checkOut, setCheckOut] = useState<Date | undefined>();
+
+  // Real-time availability subscription
+  useRealtimeAvailability(property.id);
 
   const discountedPrice = specialOffer 
     ? property.base_price * (1 - specialOffer.discount_percent / 100)
     : null;
 
-  const nights = dateRange?.from && dateRange?.to 
-    ? differenceInDays(dateRange.to, dateRange.from) 
+  const nights = checkIn && checkOut 
+    ? differenceInDays(checkOut, checkIn) 
     : 0;
 
   const formatPrice = (price: number) => {
@@ -68,10 +72,10 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
   const handleQuickBook = useCallback(() => {
     triggerHaptic('success');
     const params = new URLSearchParams({ property: property.slug, guests: String(guests) });
-    if (dateRange?.from) params.set('checkIn', format(dateRange.from, 'yyyy-MM-dd'));
-    if (dateRange?.to) params.set('checkOut', format(dateRange.to, 'yyyy-MM-dd'));
+    if (checkIn) params.set('checkIn', format(checkIn, 'yyyy-MM-dd'));
+    if (checkOut) params.set('checkOut', format(checkOut, 'yyyy-MM-dd'));
     navigate(`/checkout?${params.toString()}`);
-  }, [navigate, property.slug, guests, dateRange]);
+  }, [navigate, property.slug, guests, checkIn, checkOut]);
 
   const handleGuestChange = useCallback((delta: number) => {
     triggerHaptic('light');
@@ -90,9 +94,14 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
     if (!showDatePicker) setShowGuestSelector(false);
   }, [showDatePicker]);
 
-  const handleDateSelect = useCallback((range: DateRange | undefined) => {
+  const handleDateSelect = useCallback((date: Date, type: 'checkIn' | 'checkOut') => {
     triggerHaptic('light');
-    setDateRange(range);
+    if (type === 'checkIn') {
+      setCheckIn(date);
+      setCheckOut(undefined);
+    } else {
+      setCheckOut(date);
+    }
   }, []);
 
   return (
@@ -146,7 +155,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
           )}
         </AnimatePresence>
 
-        {/* Date Picker Panel */}
+        {/* Date Picker Panel - Now uses AvailabilityCalendar */}
         <AnimatePresence>
           {showDatePicker && (
             <motion.div
@@ -157,13 +166,14 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
               className="border-b border-border overflow-hidden"
             >
               <div className="p-3 flex flex-col items-center">
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={handleDateSelect}
-                  numberOfMonths={1}
-                  disabled={{ before: new Date() }}
-                  className="pointer-events-auto"
+                <AvailabilityCalendar
+                  propertyId={property.id}
+                  variant="compact"
+                  showPrices={false}
+                  selectedCheckIn={checkIn}
+                  selectedCheckOut={checkOut}
+                  onDateSelect={handleDateSelect}
+                  minStay={2}
                 />
                 {nights > 0 && (
                   <div className="text-sm text-muted-foreground mt-2">
@@ -232,8 +242,8 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
           >
             <CalendarIcon className="h-4 w-4" />
             <span className="text-xs">
-              {dateRange?.from && dateRange?.to 
-                ? `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d')}`
+              {checkIn && checkOut 
+                ? `${format(checkIn, 'MMM d')} - ${format(checkOut, 'MMM d')}`
                 : 'Dates'
               }
             </span>
@@ -272,7 +282,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
                     onClick={handleOpenSheet}
                     className="min-h-[48px] px-6 rounded-xl gap-2 active:scale-[0.98] transition-transform"
                   >
-                    <Calendar className="h-4 w-4" />
+                    <CalendarIcon className="h-4 w-4" />
                     Check Dates
                   </Button>
                 </SheetTrigger>

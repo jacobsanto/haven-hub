@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, addDays, differenceInDays } from 'date-fns';
-import { Calendar as CalendarIcon, MapPin, ArrowRight, ArrowLeft, Loader2, Check } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
+import { format, differenceInDays } from 'date-fns';
+import { MapPin, ArrowRight, ArrowLeft, Loader2, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,8 +10,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar } from '@/components/ui/calendar';
+import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { useProperties } from '@/hooks/useProperties';
+import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,17 +26,23 @@ type Step = 'property' | 'dates';
 export function PropertySelectorDialog({ open, onOpenChange }: PropertySelectorDialogProps) {
   const navigate = useNavigate();
   const { data: properties, isLoading } = useProperties();
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [selectedPropertySlug, setSelectedPropertySlug] = useState<string | null>(null);
   const [step, setStep] = useState<Step>('property');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [checkIn, setCheckIn] = useState<Date | undefined>(undefined);
+  const [checkOut, setCheckOut] = useState<Date | undefined>(undefined);
+
+  // Real-time availability subscription for selected property
+  useRealtimeAvailability(selectedPropertyId || undefined);
 
   const selectedProperty = properties?.find(p => p.slug === selectedPropertySlug);
-  const nights = dateRange?.from && dateRange?.to 
-    ? differenceInDays(dateRange.to, dateRange.from) 
+  const nights = checkIn && checkOut 
+    ? differenceInDays(checkOut, checkIn) 
     : 0;
 
-  const handleSelectProperty = (slug: string) => {
+  const handleSelectProperty = (slug: string, id: string) => {
     setSelectedPropertySlug(slug);
+    setSelectedPropertyId(id);
   };
 
   const handleNextStep = () => {
@@ -51,14 +57,23 @@ export function PropertySelectorDialog({ open, onOpenChange }: PropertySelectorD
     }
   };
 
+  const handleDateSelect = (date: Date, type: 'checkIn' | 'checkOut') => {
+    if (type === 'checkIn') {
+      setCheckIn(date);
+      setCheckOut(undefined);
+    } else {
+      setCheckOut(date);
+    }
+  };
+
   const handleProceed = () => {
     if (selectedPropertySlug) {
       const params = new URLSearchParams({ property: selectedPropertySlug });
-      if (dateRange?.from) {
-        params.set('checkIn', format(dateRange.from, 'yyyy-MM-dd'));
+      if (checkIn) {
+        params.set('checkIn', format(checkIn, 'yyyy-MM-dd'));
       }
-      if (dateRange?.to) {
-        params.set('checkOut', format(dateRange.to, 'yyyy-MM-dd'));
+      if (checkOut) {
+        params.set('checkOut', format(checkOut, 'yyyy-MM-dd'));
       }
       onOpenChange(false);
       navigate(`/checkout?${params.toString()}`);
@@ -71,7 +86,9 @@ export function PropertySelectorDialog({ open, onOpenChange }: PropertySelectorD
     setTimeout(() => {
       setStep('property');
       setSelectedPropertySlug(null);
-      setDateRange(undefined);
+      setSelectedPropertyId(null);
+      setCheckIn(undefined);
+      setCheckOut(undefined);
     }, 200);
   };
 
@@ -121,7 +138,7 @@ export function PropertySelectorDialog({ open, onOpenChange }: PropertySelectorD
                         <button
                           key={property.id}
                           type="button"
-                          onClick={() => handleSelectProperty(property.slug)}
+                          onClick={() => handleSelectProperty(property.slug, property.id)}
                           className={cn(
                             'w-full flex gap-4 p-3 rounded-xl border-2 transition-all text-left',
                             selectedPropertySlug === property.slug
@@ -193,17 +210,18 @@ export function PropertySelectorDialog({ open, onOpenChange }: PropertySelectorD
                     </div>
                   )}
 
-                  {/* Date picker */}
-                  <div className="flex justify-center">
-                    <Calendar
-                      mode="range"
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      numberOfMonths={2}
-                      disabled={(date) => date < new Date()}
-                      className="rounded-md border pointer-events-auto"
+                  {/* Real-time availability calendar */}
+                  {selectedPropertyId && (
+                    <AvailabilityCalendar
+                      propertyId={selectedPropertyId}
+                      variant="compact"
+                      showPrices={false}
+                      selectedCheckIn={checkIn}
+                      selectedCheckOut={checkOut}
+                      onDateSelect={handleDateSelect}
+                      minStay={2}
                     />
-                  </div>
+                  )}
 
                   {/* Date summary */}
                   <div className="flex items-center justify-between px-2 py-3 bg-muted/50 rounded-xl">
@@ -211,14 +229,14 @@ export function PropertySelectorDialog({ open, onOpenChange }: PropertySelectorD
                       <div>
                         <p className="text-xs text-muted-foreground">Check-in</p>
                         <p className="font-medium text-sm">
-                          {dateRange?.from ? format(dateRange.from, 'MMM d, yyyy') : 'Select date'}
+                          {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Select date'}
                         </p>
                       </div>
                       <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-xs text-muted-foreground">Check-out</p>
                         <p className="font-medium text-sm">
-                          {dateRange?.to ? format(dateRange.to, 'MMM d, yyyy') : 'Select date'}
+                          {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Select date'}
                         </p>
                       </div>
                     </div>
@@ -266,9 +284,9 @@ export function PropertySelectorDialog({ open, onOpenChange }: PropertySelectorD
                 <Button
                   className="flex-1 gap-2"
                   onClick={handleProceed}
-                  disabled={!dateRange?.from}
+                  disabled={!checkIn}
                 >
-                  {dateRange?.from && dateRange?.to ? 'Continue to Book' : 'Skip Dates & Continue'}
+                  {checkIn && checkOut ? 'Continue to Book' : 'Skip Dates & Continue'}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               )}

@@ -26,6 +26,7 @@ export function useRealtimeAvailability(propertyId: string | undefined) {
         () => {
           // Instant invalidation - zero perceived latency
           queryClient.invalidateQueries({ queryKey: ['availability', propertyId] });
+          queryClient.invalidateQueries({ queryKey: ['availability-calendar', propertyId] });
           queryClient.invalidateQueries({ queryKey: ['check-availability'] });
         }
       )
@@ -39,6 +40,7 @@ export function useRealtimeAvailability(propertyId: string | undefined) {
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['availability', propertyId] });
+          queryClient.invalidateQueries({ queryKey: ['availability-calendar', propertyId] });
           queryClient.invalidateQueries({ queryKey: ['bookings'] });
         }
       )
@@ -52,6 +54,7 @@ export function useRealtimeAvailability(propertyId: string | undefined) {
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['availability', propertyId] });
+          queryClient.invalidateQueries({ queryKey: ['availability-calendar', propertyId] });
           queryClient.invalidateQueries({ queryKey: ['checkout-holds'] });
         }
       )
@@ -82,6 +85,7 @@ export function useRealtimeAvailabilityGlobal() {
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['availability'] });
+          queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
           queryClient.invalidateQueries({ queryKey: ['admin', 'availability'] });
         }
       )
@@ -94,6 +98,7 @@ export function useRealtimeAvailabilityGlobal() {
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['availability'] });
+          queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
           queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
         }
       )

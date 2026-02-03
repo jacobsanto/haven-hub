@@ -5,8 +5,9 @@ import { Calendar, Users, Zap, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { useCreateBooking } from '@/hooks/useBookings';
+import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { useToast } from '@/hooks/use-toast';
 import { Property, SpecialOffer } from '@/types/database';
 import { cn } from '@/lib/utils';
@@ -20,10 +21,15 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const createBooking = useCreateBooking();
+  
+  // Real-time availability subscription
+  useRealtimeAvailability(property.id);
 
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
   const [guests, setGuests] = useState(1);
+  const [checkInOpen, setCheckInOpen] = useState(false);
+  const [checkOutOpen, setCheckOutOpen] = useState(false);
   
   // Request-based flow state (only used when instant_booking is false)
   const [guestName, setGuestName] = useState('');
@@ -42,6 +48,20 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
       currency: 'USD',
       minimumFractionDigits: 0,
     }).format(price);
+  };
+
+  // Handle date selection from AvailabilityCalendar
+  const handleDateSelect = (date: Date, type: 'checkIn' | 'checkOut') => {
+    if (type === 'checkIn') {
+      setCheckIn(date);
+      setCheckOut(undefined);
+      setCheckInOpen(false);
+      // Auto-open checkout picker after selecting check-in
+      setTimeout(() => setCheckOutOpen(true), 100);
+    } else {
+      setCheckOut(date);
+      setCheckOutOpen(false);
+    }
   };
 
   // Instant booking - route to checkout with Stripe payment
@@ -130,12 +150,12 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
     }
   };
 
-  // Shared date/guest picker component
+  // Shared date/guest picker component with real availability
   const DateGuestPicker = () => (
     <div className="space-y-4">
       {/* Date Selection */}
       <div className="grid grid-cols-2 gap-2">
-        <Popover>
+        <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -148,19 +168,20 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
               {checkIn ? format(checkIn, 'MMM d') : 'Check in'}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-card" align="start">
-            <CalendarComponent
-              mode="single"
-              selected={checkIn}
-              onSelect={setCheckIn}
-              disabled={(date) => date < new Date()}
-              initialFocus
-              className="pointer-events-auto"
+          <PopoverContent className="w-auto p-0 bg-card" align="start" sideOffset={4}>
+            <AvailabilityCalendar
+              propertyId={property.id}
+              variant="compact"
+              showPrices={false}
+              selectedCheckIn={checkIn}
+              selectedCheckOut={checkOut}
+              onDateSelect={handleDateSelect}
+              minStay={2}
             />
           </PopoverContent>
         </Popover>
 
-        <Popover>
+        <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -173,14 +194,15 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
               {checkOut ? format(checkOut, 'MMM d') : 'Check out'}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-card" align="start">
-            <CalendarComponent
-              mode="single"
-              selected={checkOut}
-              onSelect={setCheckOut}
-              disabled={(date) => date < (checkIn || new Date())}
-              initialFocus
-              className="pointer-events-auto"
+          <PopoverContent className="w-auto p-0 bg-card" align="start" sideOffset={4}>
+            <AvailabilityCalendar
+              propertyId={property.id}
+              variant="compact"
+              showPrices={false}
+              selectedCheckIn={checkIn}
+              selectedCheckOut={checkOut}
+              onDateSelect={handleDateSelect}
+              minStay={2}
             />
           </PopoverContent>
         </Popover>
