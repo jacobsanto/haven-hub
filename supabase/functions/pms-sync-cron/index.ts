@@ -407,14 +407,30 @@ async function syncPropertyAvailability(
       .filter((r: { from: string; to: string }) => r.from && r.to);
 
     // Build set of blocked dates
-    // IMPORTANT: Block check-in date through day BEFORE check-out (d < rangeEnd)
-    // This allows same-day turnovers where checkout = new check-in
+    // TOKEET FIX: The Availability API returns dates shifted -1 day from reality
+    // e.g., a booking for Feb 11-14 shows as from: "2026-02-10", to: "2026-02-11"
+    // We need to shift both dates by +1 day to get the actual blocked dates
+    // 
+    // Additionally, Tokeet returns "to" as the first day AFTER the block ends,
+    // so we include from (corrected) through to-1 (corrected, exclusive)
     const blockedDates = new Set<string>();
     for (const range of blockedRanges) {
-      const rangeStart = new Date(range.from);
-      const rangeEnd = new Date(range.to);
-      // Use < instead of <= to exclude checkout date (available for new check-ins)
-      for (let d = new Date(rangeStart); d < rangeEnd; d.setDate(d.getDate() + 1)) {
+      // Apply +1 day correction to Tokeet Availability API dates
+      const rawFrom = new Date(range.from);
+      const rawTo = new Date(range.to);
+      
+      // Shift dates by +1 day to match Tokeet UI reality
+      const correctedFrom = new Date(rawFrom);
+      correctedFrom.setDate(correctedFrom.getDate() + 1);
+      
+      const correctedTo = new Date(rawTo);
+      correctedTo.setDate(correctedTo.getDate() + 1);
+      
+      console.log(`Property: Date correction: raw ${range.from}-${range.to} -> corrected ${correctedFrom.toISOString().split("T")[0]}-${correctedTo.toISOString().split("T")[0]}`);
+      
+      // Block from corrected check-in through day BEFORE corrected check-out
+      // This allows same-day turnovers where checkout = new check-in
+      for (let d = new Date(correctedFrom); d < correctedTo; d.setDate(d.getDate() + 1)) {
         blockedDates.add(d.toISOString().split("T")[0]);
       }
     }
