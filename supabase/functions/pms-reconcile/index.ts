@@ -235,7 +235,14 @@ Deno.serve(async (req) => {
         throw new Error(`Tokeet API error: ${tokeetResponse.status} - ${errorText}`);
       }
 
-      const inquiries: TokeetInquiry[] = await tokeetResponse.json();
+      const responseData = await tokeetResponse.json();
+      
+      // Tokeet API returns { items: [...] } or directly an array depending on endpoint
+      const inquiries: TokeetInquiry[] = Array.isArray(responseData) 
+        ? responseData 
+        : (responseData.items || responseData.data || responseData.inquiries || []);
+      
+      console.log(`Received ${inquiries.length} inquiries from Tokeet`);
       
       // Filter to only booked/confirmed status
       const activeInquiries = inquiries.filter(
