@@ -1,11 +1,18 @@
-import { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isBefore } from 'date-fns';
+import { useState, useMemo } from 'react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminProperties } from '@/hooks/useProperties';
-import { usePropertyAvailability, useToggleAvailability } from '@/hooks/useAvailability';
+import { 
+  usePropertyAvailability, 
+  usePropertyBookingsForCalendar,
+  useAvailabilitySyncHealth,
+  useToggleAvailability 
+} from '@/hooks/useAvailability';
+import { useRealtimeAvailabilityGlobal } from '@/hooks/useRealtimeAvailability';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -14,29 +21,70 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import {
+  AvailabilityHealthCard,
+  AvailabilityLegend,
+  SyncStatusBadge,
+  AvailabilityCalendarGrid,
+  BookingContext,
+} from '@/components/admin/availability';
 
 export default function AdminAvailability() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   
   const { data: properties } = useAdminProperties();
-  const { data: availability } = usePropertyAvailability(
-    selectedPropertyId,
-    format(startOfMonth(currentMonth), 'yyyy-MM-dd'),
-    format(endOfMonth(currentMonth), 'yyyy-MM-dd')
-  );
+  const { data: syncHealth } = useAvailabilitySyncHealth();
+  
+  const startDate = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
+  const endDate = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
+  
+  const { data: availability } = usePropertyAvailability(selectedPropertyId, startDate, endDate);
+  const { data: bookings } = usePropertyBookingsForCalendar(selectedPropertyId, startDate, endDate);
+  
   const toggleAvailability = useToggleAvailability();
   const { toast } = useToast();
+
+  // Enable real-time updates for availability changes
+  useRealtimeAvailabilityGlobal();
 
   const days = eachDayOfInterval({
     start: startOfMonth(currentMonth),
     end: endOfMonth(currentMonth),
   });
 
-  const blockedDates = new Set(
-    availability?.filter((a) => !a.available).map((a) => a.date) || []
+  const blockedDates = useMemo(() => 
+    new Set(availability?.filter((a) => !a.available).map((a) => a.date) || []),
+    [availability]
   );
+
+  // Build a map of dates to booking context
+  const bookingsByDate = useMemo(() => {
+    const map = new Map<string, BookingContext>();
+    
+    bookings?.forEach((booking) => {
+      const checkIn = new Date(booking.check_in);
+      const checkOut = new Date(booking.check_out);
+      
+      // For each date from check-in to check-out (exclusive)
+      let current = new Date(checkIn);
+      while (current < checkOut) {
+        const dateStr = format(current, 'yyyy-MM-dd');
+        map.set(dateStr, {
+          date: dateStr,
+          guestName: booking.guest_name,
+          source: booking.source || 'direct',
+          bookingId: booking.id,
+        });
+        current.setDate(current.getDate() + 1);
+      }
+    });
+    
+    return map;
+  }, [bookings]);
+
+  const selectedProperty = properties?.find(p => p.id === selectedPropertyId);
+  const firstDayOfMonth = startOfMonth(currentMonth).getDay();
 
   const handlePrevMonth = () => {
     setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -80,8 +128,13 @@ export default function AdminAvailability() {
     }
   };
 
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const firstDayOfMonth = startOfMonth(currentMonth).getDay();
+  // Get sync info for selected property
+  const getPropertySyncInfo = () => {
+    if (!selectedPropertyId || !syncHealth?.mappings) return null;
+    return syncHealth.mappings.find(m => m.property_id === selectedPropertyId);
+  };
+
+  const propertySyncInfo = getPropertySyncInfo();
 
   return (
     <AdminGuard>
@@ -95,18 +148,47 @@ export default function AdminAvailability() {
                 Manage property availability and block dates
               </p>
             </div>
+          </div>
+
+          {/* Health Dashboard */}
+          {syncHealth && (
+            <AvailabilityHealthCard
+              totalProperties={syncHealth.totalProperties}
+              propertiesWithSync={syncHealth.propertiesWithSync}
+              propertiesWithErrors={syncHealth.propertiesWithErrors}
+              lastSyncTime={syncHealth.lastSyncTime}
+            />
+          )}
+
+          {/* Property Selector with Status Badge */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
-              <SelectTrigger className="w-[250px] input-organic">
+              <SelectTrigger className="w-full sm:w-[300px] input-organic">
                 <SelectValue placeholder="Select a property" />
               </SelectTrigger>
-              <SelectContent className="bg-card">
+              <SelectContent className="bg-card max-h-[300px]">
                 {properties?.map((property) => (
                   <SelectItem key={property.id} value={property.id}>
-                    {property.name}
+                    <div className="flex items-center gap-2">
+                      <span>{property.name}</span>
+                      <Badge 
+                        variant={property.status === 'active' ? 'default' : 'secondary'}
+                        className="text-xs"
+                      >
+                        {property.status}
+                      </Badge>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+
+            {propertySyncInfo && (
+              <SyncStatusBadge
+                lastSyncAt={propertySyncInfo.last_availability_sync_at}
+                syncStatus={syncHealth?.lastSyncStatus as 'idle' | 'syncing' | 'error' | 'success' || 'idle'}
+              />
+            )}
           </div>
 
           {/* Calendar */}
@@ -125,19 +207,8 @@ export default function AdminAvailability() {
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-6 mb-6 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-secondary" />
-                <span>Available</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-destructive/20 border-2 border-destructive" />
-                <span>Blocked</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-muted" />
-                <span>Past</span>
-              </div>
+            <div className="mb-6">
+              <AvailabilityLegend />
             </div>
 
             {!selectedPropertyId ? (
@@ -145,53 +216,14 @@ export default function AdminAvailability() {
                 Select a property to manage its availability
               </div>
             ) : (
-              <>
-                {/* Week Days Header */}
-                <div className="grid grid-cols-7 gap-2 mb-2">
-                  {weekDays.map((day) => (
-                    <div
-                      key={day}
-                      className="text-center text-sm font-medium text-muted-foreground py-2"
-                    >
-                      {day}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Calendar Grid */}
-                <div className="grid grid-cols-7 gap-2">
-                  {/* Empty cells for days before the first of the month */}
-                  {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-                    <div key={`empty-${index}`} className="aspect-square" />
-                  ))}
-
-                  {/* Calendar Days */}
-                  {days.map((day) => {
-                    const dateStr = format(day, 'yyyy-MM-dd');
-                    const isBlocked = blockedDates.has(dateStr);
-                    const isPast = isBefore(day, new Date()) && !isToday(day);
-
-                    return (
-                      <button
-                        key={dateStr}
-                        onClick={() => !isPast && handleToggleDate(day)}
-                        disabled={isPast || toggleAvailability.isPending}
-                        className={cn(
-                          'aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all',
-                          isPast
-                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                            : isBlocked
-                            ? 'bg-destructive/20 border-2 border-destructive text-destructive hover:bg-destructive/30'
-                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-                          isToday(day) && 'ring-2 ring-primary ring-offset-2'
-                        )}
-                      >
-                        {format(day, 'd')}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
+              <AvailabilityCalendarGrid
+                days={days}
+                firstDayOfMonth={firstDayOfMonth}
+                blockedDates={blockedDates}
+                bookingsByDate={bookingsByDate}
+                onToggleDate={handleToggleDate}
+                isToggling={toggleAvailability.isPending}
+              />
             )}
           </div>
 
@@ -200,8 +232,9 @@ export default function AdminAvailability() {
             <h3 className="font-medium mb-2">How to use</h3>
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Select a property from the dropdown above</li>
-              <li>• Click on any date to toggle its availability</li>
-              <li>• Blocked dates will not be available for booking</li>
+              <li>• <span className="inline-block w-3 h-3 rounded bg-red-500/20 border border-red-500 mr-1"></span> Red dates have guest bookings - hover to see guest name</li>
+              <li>• <span className="inline-block w-3 h-3 rounded bg-orange-500/20 border border-orange-500 mr-1"></span> Orange dates are PMS/owner blocks without a booking</li>
+              <li>• Click any available date to manually block it</li>
               <li>• Past dates cannot be modified</li>
             </ul>
           </div>

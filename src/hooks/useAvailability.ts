@@ -30,6 +30,77 @@ export function usePropertyAvailability(propertyId: string, startDate?: string, 
   });
 }
 
+// Fetch bookings for a property in a date range (for calendar context)
+export function usePropertyBookingsForCalendar(propertyId: string, startDate?: string, endDate?: string) {
+  return useQuery({
+    queryKey: ['calendar-bookings', propertyId, startDate, endDate],
+    queryFn: async () => {
+      let query = supabase
+        .from('bookings')
+        .select('id, check_in, check_out, guest_name, source, status')
+        .eq('property_id', propertyId)
+        .in('status', ['pending', 'confirmed']);
+
+      if (startDate && endDate) {
+        // Get bookings that overlap with the date range
+        query = query.or(`check_in.lte.${endDate},check_out.gte.${startDate}`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!propertyId && !!startDate && !!endDate,
+  });
+}
+
+// Fetch PMS sync health data for admin dashboard
+export function useAvailabilitySyncHealth() {
+  return useQuery({
+    queryKey: ['admin', 'availability-sync-health'],
+    queryFn: async () => {
+      // Get all properties
+      const { data: properties, error: propError } = await supabase
+        .from('properties')
+        .select('id, name, status');
+      
+      if (propError) throw propError;
+
+      // Get PMS property mappings with sync status
+      const { data: mappings, error: mapError } = await supabase
+        .from('pms_property_map')
+        .select('property_id, sync_enabled, last_availability_sync_at, external_property_name');
+      
+      if (mapError) throw mapError;
+
+      // Get latest sync run
+      const { data: syncRuns, error: syncError } = await supabase
+        .from('pms_sync_runs')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(1);
+      
+      if (syncError) throw syncError;
+
+      const totalProperties = properties?.length || 0;
+      const propertiesWithSync = mappings?.filter(m => m.sync_enabled).length || 0;
+      const lastSync = syncRuns?.[0];
+      const propertiesWithErrors = lastSync?.status === 'failed' ? 1 : 0;
+
+      return {
+        totalProperties,
+        propertiesWithSync,
+        propertiesWithErrors,
+        lastSyncTime: lastSync?.completed_at || lastSync?.started_at || null,
+        lastSyncStatus: lastSync?.status || 'idle',
+        mappings: mappings || [],
+        properties: properties || [],
+      };
+    },
+  });
+}
+
 // Check if dates are available for booking
 export function useCheckAvailability(propertyId: string, checkIn: string, checkOut: string) {
   return useQuery({
