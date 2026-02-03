@@ -1,147 +1,149 @@
 
-# Plan: Add PMS Webhook Tester to Admin PMS Health Page
+# Plan: Add Booking Import to PMS Availability Sync
 
-## Summary
-Add a built-in "Webhook Tester" card to the Admin PMS Health page that allows you to test all three webhook flows (booking.created, booking.cancelled, and daily reconciliation) directly from the UI without needing external tools like curl.
+## Problem Identified
+Currently, the scheduled PMS sync (`pms-sync-cron`) only imports **availability blocks** from Tokeet. While this correctly blocks dates in calendars, it doesn't create actual booking records for OTA bookings. This means:
+
+- Dates appear blocked but you don't know why
+- No guest information is visible for external bookings
+- No booking records for revenue tracking or management
+- Admin must manually trigger reconciliation to import bookings
+
+## Solution
+Integrate booking import into the scheduled availability sync so that when blocked date ranges are detected, the system also fetches and imports the corresponding booking/inquiry records from Tokeet.
 
 ---
 
-## What Will Be Built
+## Implementation Approach
 
-### New Component: WebhookTesterCard
-A collapsible card with three test buttons and real-time result display:
-
-1. **Test Booking Created** - Sends a mock `booking.created` payload to pms-webhook
-2. **Test Booking Cancelled** - Sends a mock `booking.cancelled` payload to pms-webhook  
-3. **Test Daily Reconciliation** - Triggers the pms-reconcile endpoint
-
-Each button will:
-- Show a loading spinner while running
-- Display success/error result with response details
-- Auto-refresh the Webhook Events tab to show the new event
-
-### UI Layout
+### 1. Enhance pms-sync-cron Edge Function
+Modify the existing scheduled sync to also fetch and import bookings:
 
 ```text
-+--------------------------------------------------+
-| 🧪 Webhook Endpoint Tester                       |
-|--------------------------------------------------|
-| Test your PMS webhook endpoints to verify they   |
-| are working correctly before going live.         |
-|                                                  |
-| Property: [Dropdown: Select a property]          |
-|                                                  |
-| +----------------+ +------------------+          |
-| | Test Booking   | | Test Cancellation|          |
-| |   Created ▶    | |      ▶          |          |
-| +----------------+ +------------------+          |
-|                                                  |
-| +------------------+                             |
-| | Test Reconcile ▶ |                             |
-| +------------------+                             |
-|                                                  |
-| Last Test Result:                                |
-| ✅ booking.created → Success (200)               |
-| Response: { "success": true, "booking_id": "..." }|
-+--------------------------------------------------+
+Current Flow:
+  [Cron Trigger] → Fetch Availability → Upsert Blocked Dates → Done
+
+New Flow:
+  [Cron Trigger] → Fetch Availability → Upsert Blocked Dates 
+                 → Fetch Inquiries → Create/Update Bookings → Done
+```
+
+### 2. Add Booking Fetch Logic
+For each mapped property, after syncing availability:
+- Call Tokeet's `/inquiry` endpoint with the property's rental_id
+- Filter for `status = booked` or `status = confirmed`
+- For each inquiry not already in local DB, create a booking record
+- For existing bookings, update dates if changed (like reconciliation does)
+
+### 3. Optimize for Performance
+To avoid hitting compute limits:
+- Only fetch inquiries for the next 6 months
+- Process one property at a time (already done for availability)
+- Skip properties that were recently synced (within last hour)
+- Batch database operations where possible
+
+---
+
+## Technical Changes
+
+### File: `supabase/functions/pms-sync-cron/index.ts`
+
+Add a new helper function `syncPropertyBookings` that:
+1. Fetches inquiries from Tokeet for the property
+2. Filters to active bookings only
+3. Upserts booking records (using external_booking_id for deduplication)
+4. Updates availability for booking date ranges
+
+Modify `syncPropertyAvailability` to also call `syncPropertyBookings` after syncing availability.
+
+### New Sync Summary
+The sync result will now include:
+- `synced` (properties with successful availability sync)
+- `failed` (properties with errors)
+- `bookingsCreated` (new OTA bookings imported)
+- `bookingsUpdated` (existing bookings with date changes)
+
+---
+
+## Data Flow Diagram
+
+```text
+┌─────────────────────┐
+│  pg_cron (5 min)    │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│   pms-sync-cron     │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────────────────────┐
+│  For each mapped property:          │
+│                                     │
+│  1. Fetch /rental/{id}/availability │
+│     └─► Upsert blocked dates        │
+│                                     │
+│  2. Fetch /inquiry?rental_id={id}   │ ◄── NEW
+│     └─► Filter booked/confirmed     │
+│     └─► Upsert booking records      │
+│     └─► Update availability dates   │
+└─────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────┐
+│  Update sync status │
+│  & timestamps       │
+└─────────────────────┘
 ```
 
 ---
 
-## Implementation Details
+## Booking Record Creation
 
-### 1. New Hook: useWebhookTester (in useAdminPMSHealth.ts)
+When a new Tokeet inquiry is found:
 
-Add three new mutation hooks:
-- `useTestWebhookBookingCreated` - POSTs test payload to pms-webhook with token
-- `useTestWebhookBookingCancelled` - POSTs cancellation payload to pms-webhook
-- `useTestReconciliation` - (Already exists as `useTriggerReconciliation`)
-
-Both webhook tests will use the PMS_WEBHOOK_TOKEN from secrets via an edge function proxy.
-
-### 2. New Edge Function: test-pms-webhook
-
-Since the frontend cannot access `PMS_WEBHOOK_TOKEN` directly, create a small edge function that:
-- Verifies admin auth
-- Reads `PMS_WEBHOOK_TOKEN` from secrets
-- Forwards the test payload to pms-webhook with the token
-- Returns the response
-
-### 3. New Component: WebhookTesterCard.tsx
-
-Features:
-- Property selector dropdown (from mapped properties)
-- Three test buttons with loading states
-- Result display area showing status code, success/failure, and response body
-- Automatic query invalidation to refresh webhook events after test
-
-### 4. Update AdminPMSHealth.tsx
-
-Add the new WebhookTesterCard between the Daily Reconciliation card and the Tabs section.
+| Haven Hub Field | Tokeet Source |
+|-----------------|---------------|
+| external_booking_id | inquiry.pkey |
+| property_id | via pms_property_map lookup |
+| check_in | inquiry.arrive (unix timestamp) |
+| check_out | inquiry.depart (unix timestamp) |
+| nights | calculated |
+| guest_name | inquiry.guest_name |
+| guest_email | inquiry.guest_email |
+| guest_phone | inquiry.guest_phone |
+| guests | inquiry.num_guests |
+| adults | inquiry.num_adults |
+| children | inquiry.num_child |
+| total_price | inquiry.booked_price |
+| source | inquiry.source (mapped to booking_com/airbnb/etc) |
+| status | "confirmed" |
+| payment_status | "paid" (OTA bookings are prepaid) |
+| pms_sync_status | "synced" |
 
 ---
 
-## Files to Create/Modify
+## Files to Modify
 
-| File | Action | Description |
-|------|--------|-------------|
-| `supabase/functions/test-pms-webhook/index.ts` | Create | Admin-only proxy to test webhook endpoints with token |
-| `src/components/admin/WebhookTesterCard.tsx` | Create | UI component for testing webhooks |
-| `src/hooks/useAdminPMSHealth.ts` | Modify | Add `useTestWebhookEndpoint` mutation hook |
-| `src/pages/admin/AdminPMSHealth.tsx` | Modify | Import and render WebhookTesterCard |
-| `supabase/config.toml` | Modify | Add config for new edge function |
+| File | Changes |
+|------|---------|
+| `supabase/functions/pms-sync-cron/index.ts` | Add `syncPropertyBookings` function and integrate with existing sync flow |
 
 ---
 
-## Technical Notes
+## Benefits After Implementation
 
-### Security
-- The test-pms-webhook edge function requires admin authentication
-- Token is never exposed to the frontend
-- Test payloads use clearly marked test IDs (e.g., `test-booking-{timestamp}`)
-
-### Test Payload Structure
-
-**Booking Created:**
-```json
-{
-  "event": "booking.created",
-  "data": {
-    "pkey": "test-{timestamp}",
-    "rental_id": "{selected_external_property_id}",
-    "check_in": "{tomorrow}",
-    "check_out": "{tomorrow+3}",
-    "guest": { "name": "Test Guest", "email": "test@example.com" },
-    "num_adults": 2,
-    "total": 500,
-    "source": "Test"
-  }
-}
-```
-
-**Booking Cancelled:**
-```json
-{
-  "event": "booking.cancelled",
-  "data": {
-    "pkey": "{external_booking_id_to_cancel}"
-  }
-}
-```
-
-### Cleanup Note
-Test bookings will be created with `source: "test"` and can be identified/deleted from the bookings table if needed.
+1. **Complete Visibility**: All OTA bookings appear in Admin Bookings page
+2. **Real-Time Sync**: Bookings imported every 5 minutes (or on manual trigger)
+3. **I DONT WANT Revenue Tracking**: Accurate booking revenue data from all channels
+4. **Guest Information**: Guest details available for all external bookings
+5. **Unified Calendar**: Calendar shows blocked dates with associated booking info
 
 ---
 
-## Expected Outcome
+## Fallback Behavior
 
-After implementation, you will be able to:
-1. Go to Admin > PMS Health
-2. Select a property from the dropdown
-3. Click "Test Booking Created" and see immediate success/failure feedback
-4. Check the Webhook Events tab to see the logged event
-5. Click "Test Booking Cancelled" to test cancellation flow
-6. Click "Test Reconciliation" to verify the daily sync
-
-This eliminates the need for external tools and provides immediate visual confirmation of whether your webhook endpoints are working.
+- If Tokeet inquiry API fails, availability sync still completes successfully
+- Booking import errors are logged but don't block availability updates
+- Duplicate bookings are prevented via `external_booking_id` matching
