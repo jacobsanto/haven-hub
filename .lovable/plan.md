@@ -1,124 +1,71 @@
 
-# Availability Calendar Sync Fix Plan
 
-## Problem Summary
+# Tokeet Availability API Date Interpretation Bug
 
-The calendars were showing all dates as unavailable because:
+## Problem Identified
 
-1. **Stale blocks accumulated in the database** - The `availability` table had 721 blocked entries when only ~620 should exist based on actual bookings
-2. **The PMS sync unblock logic wasn't running consistently** - Earlier sync runs showed "0 stale dates to unblock" when there were clearly stale blocks
-3. **The `sync_booking_to_availability` trigger is NOT attached** - The function exists but there's no trigger using it, causing inconsistency when local bookings are created/cancelled
+The Tokeet **Availability API** (`/rental/{id}/availability`) is returning different dates than what shows in Tokeet's UI:
 
-## Current Status (After Recent Sync)
+| Booking | Tokeet UI | Availability API Returns |
+|---------|-----------|--------------------------|
+| James | Feb 11 - Feb 14 | `from: Feb 10, to: Feb 11` |
+| STELLA | Feb 3 - Feb 4 | `from: Feb 3, to: Feb 4` |
 
-The database is now correct! The sync at 23:25 successfully:
-- Identified 100 stale dates to unblock
-- Cleaned up February availability (Feb 4-9 now correctly available)
-- Total blocked dates reduced from 721 to 621
+This suggests **one of two issues**:
 
-**Centro House February 2026 (Now Correct):**
-| Date Range | Status | Guest |
-|------------|--------|-------|
-| Feb 3 | Blocked | STELLA |
-| Feb 4-9 | Available | - |
-| Feb 10 | Blocked | James |
-| Feb 11-13 | Available | - |
-| Feb 14 - Mar 16 | Blocked | Manoj Katwal |
-| Mar 17-18 | Available | - |
-| Mar 19-28 | Blocked | Stanislav Natov |
+### Theory A: Timezone Conversion Bug
+The Tokeet API returns dates in a specific timezone (likely UTC), but we're parsing them as local dates, causing a 1-day shift.
 
-## Root Causes
+### Theory B: API Returns "Night Ranges" Not "Stay Dates"
+The availability API might return the **nights blocked** rather than check-in/check-out. For a 3-night stay (Feb 11-14), it might return `from: Feb 10, to: Feb 11` meaning "nights starting Feb 10".
 
-### Issue 1: Database Trigger Not Attached
-The `sync_booking_to_availability` function exists but is NOT triggered by any events on the `bookings` table. This means:
-- When local bookings are created → dates aren't blocked
-- When bookings are cancelled → dates aren't unblocked
-- This creates drift between `bookings` and `availability` tables
+## The Solution: Use Inquiry API Instead
 
-### Issue 2: Stale Cache in Frontend
-The user's browser cached old availability data from before the sync cleanup. The real-time subscription should trigger a refetch, but there may be a timing gap.
-
-## Fixes Required
-
-### Fix 1: Attach the Database Trigger (CRITICAL)
-
-Create a trigger to connect `sync_booking_to_availability` to the `bookings` table:
-
-```sql
-CREATE TRIGGER sync_booking_availability_trigger
-  AFTER INSERT OR UPDATE OR DELETE ON public.bookings
-  FOR EACH ROW
-  EXECUTE FUNCTION public.sync_booking_to_availability();
+Looking at `pms-reconcile/index.ts`, it uses the **Inquiry API** (`/inquiry`) which returns:
+```typescript
+arrive: number; // Unix timestamp for check-in
+depart: number; // Unix timestamp for check-out
 ```
 
-This ensures local booking changes immediately update the availability table.
+These timestamps are the **actual booking dates**, not the blocked calendar ranges.
 
-### Fix 2: Add Query Staleness Handling
+## Recommended Fix
 
-Reduce the `staleTime` in `useAvailabilityCalendar` to ensure fresher data:
+### Option 1: Primary Fix (Use Inquiry API for Booking Data)
 
-**Current:** `staleTime: 30000` (30 seconds)
-**Change to:** `staleTime: 10000` (10 seconds)
+Modify `pms-sync-cron` to:
+1. **Keep using Availability API** only for blocking calendar dates (its intended purpose)
+2. **Use Inquiry API** for extracting booking information (guest names, actual dates)
 
-Also add a `refetchInterval` for the booking flow pages:
+This separates concerns:
+- **Availability blocks** → from availability endpoint (for calendar display)
+- **Booking records** → from inquiry endpoint (for bookings table)
 
-```typescript
-refetchInterval: 60000, // Refetch every minute as backup
-```
+### Option 2: Quick Fix (Add Timezone Handling)
 
-### Fix 3: Improve Real-time Invalidation Logging
-
-Add console logging to the real-time subscription to verify it's working:
-
-```typescript
-.on('postgres_changes', { event: '*', ... }, (payload) => {
-  console.log('[RT] Availability change:', payload.eventType, payload.new?.date || payload.old?.date);
-  queryClient.invalidateQueries({ queryKey: ['availability-calendar', propertyId] });
-})
-```
-
-### Fix 4: Force Refetch After Sync Now
-
-When the admin triggers "Sync Now", ensure all connected calendars refetch:
+If the issue is timezone-related, we can force UTC interpretation in the sync:
 
 ```typescript
-onSuccess: () => {
-  // Broadcast to all tabs/windows
-  queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
-  queryClient.invalidateQueries({ queryKey: ['availability'] });
-}
+// Parse Tokeet dates as UTC explicitly
+const rangeStart = new Date(range.from + 'T00:00:00Z');
+const rangeEnd = new Date(range.to + 'T00:00:00Z');
 ```
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| Database Migration | Create trigger on `bookings` table |
-| `src/hooks/useCheckoutFlow.ts` | Reduce staleTime, add refetchInterval |
-| `src/hooks/useRealtimeAvailability.ts` | Add debug logging (optional) |
-| `src/hooks/useAdvanceCMSync.ts` | Ensure Sync Now invalidates all calendars |
+| File | Change |
+|------|--------|
+| `supabase/functions/pms-sync-cron/index.ts` | Either fetch from inquiry API for booking data, OR add timezone handling to date parsing |
 
-## Database Migration SQL
+## Implementation Steps
 
-```sql
--- Create trigger to sync booking changes to availability table
-CREATE TRIGGER sync_booking_availability_trigger
-  AFTER INSERT OR UPDATE OR DELETE ON public.bookings
-  FOR EACH ROW
-  EXECUTE FUNCTION public.sync_booking_to_availability();
-```
+1. **Test the theory** - Call the inquiry API for Centro House and log what dates it returns for James
+2. **If inquiry dates are correct** - Modify sync to use inquiry API for booking extraction
+3. **If both APIs return wrong dates** - Investigate Tokeet date timezone settings
 
-## Verification Steps
+## Verification
 
-After implementing:
-1. Create a test booking → verify availability table blocks those dates
-2. Cancel the booking → verify availability table unblocks those dates
-3. Trigger a PMS sync → verify calendar updates within seconds
-4. Open same property in two browser tabs → verify both update simultaneously
+After fix:
+- James booking should show Feb 11 check-in, Feb 14 check-out
+- Calendar should block Feb 11, 12, 13 (checkout day Feb 14 available)
 
-## Expected Outcome
-
-1. Local booking changes immediately reflected in availability
-2. PMS sync continues to be the primary source of truth
-3. Real-time updates propagate to all connected clients
-4. No more stale blocks accumulating in the database
