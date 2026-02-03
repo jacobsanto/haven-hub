@@ -319,11 +319,14 @@ async function syncPropertyAvailability(
       .filter((r: { from: string; to: string }) => r.from && r.to);
 
     // Build set of blocked dates
+    // IMPORTANT: Block check-in date through day BEFORE check-out (d < rangeEnd)
+    // This allows same-day turnovers where checkout = new check-in
     const blockedDates = new Set<string>();
     for (const range of blockedRanges) {
       const rangeStart = new Date(range.from);
       const rangeEnd = new Date(range.to);
-      for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
+      // Use < instead of <= to exclude checkout date (available for new check-ins)
+      for (let d = new Date(rangeStart); d < rangeEnd; d.setDate(d.getDate() + 1)) {
         blockedDates.add(d.toISOString().split("T")[0]);
       }
     }

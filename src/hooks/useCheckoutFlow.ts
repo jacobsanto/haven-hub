@@ -46,15 +46,35 @@ export function useAvailabilityCalendar(
         .eq('released', false)
         .gt('expires_at', new Date().toISOString());
 
-      // Merge PMS availability with local overrides and holds
+      // Get confirmed/pending bookings that may not yet be in availability table
+      const { data: directBookings } = await supabase
+        .from('bookings')
+        .select('check_in, check_out')
+        .eq('property_id', propertyId)
+        .in('status', ['pending', 'confirmed'])
+        .gte('check_out', startDate)
+        .lte('check_in', endDate);
+
+      // Merge PMS availability with local overrides, holds, and direct bookings
       const localBlocksMap = new Map(localBlocks?.map(b => [b.date, b]) || []);
       const heldDates = new Set<string>();
+      const bookedDates = new Set<string>();
       
       holds?.forEach(hold => {
         const start = parseISO(hold.check_in);
         const end = parseISO(hold.check_out);
+        // Block check-in through day BEFORE check-out (checkout day is available)
         const days = eachDayOfInterval({ start, end: addDays(end, -1) });
         days.forEach(d => heldDates.add(format(d, 'yyyy-MM-dd')));
+      });
+
+      // Mark dates from direct bookings as blocked (check-in to day before check-out)
+      directBookings?.forEach(booking => {
+        const start = parseISO(booking.check_in);
+        const end = parseISO(booking.check_out);
+        // Block check-in through day BEFORE check-out (checkout day is available)
+        const days = eachDayOfInterval({ start, end: addDays(end, -1) });
+        days.forEach(d => bookedDates.add(format(d, 'yyyy-MM-dd')));
       });
 
       // If no PMS data, generate from local data
@@ -74,29 +94,35 @@ export function useAvailabilityCalendar(
           const dateStr = format(d, 'yyyy-MM-dd');
           const localBlock = localBlocksMap.get(dateStr);
           const isHeld = heldDates.has(dateStr);
+          const isBooked = bookedDates.has(dateStr);
+          const isUnavailable = !localBlock?.available || isHeld || isBooked;
 
           return {
             date: dateStr,
-            available: localBlock ? localBlock.available : !isHeld,
+            available: localBlock ? localBlock.available && !isHeld && !isBooked : !isHeld && !isBooked,
             price: property?.base_price || 500,
             minStay: 2,
             checkInAllowed: true,
             checkOutAllowed: true,
-            isBlocked: !localBlock?.available || isHeld,
-            blockReason: isHeld ? 'held' : localBlock?.available === false ? 'blocked' : undefined,
+            isBlocked: isUnavailable,
+            blockReason: isHeld ? 'held' : isBooked ? 'booked' : localBlock?.available === false ? 'blocked' : undefined,
           };
         });
       } else {
-        // Merge with local overrides
+        // Merge with local overrides and direct bookings
         pmsAvailability = pmsAvailability.map(day => {
           const localBlock = localBlocksMap.get(day.date);
           const isHeld = heldDates.has(day.date);
+          const isBooked = bookedDates.has(day.date);
 
           if (localBlock && !localBlock.available) {
             return { ...day, available: false, isBlocked: true, blockReason: 'blocked' };
           }
           if (isHeld) {
             return { ...day, available: false, isBlocked: true, blockReason: 'held' };
+          }
+          if (isBooked) {
+            return { ...day, available: false, isBlocked: true, blockReason: 'booked' };
           }
           return day;
         });
