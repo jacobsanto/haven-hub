@@ -18,6 +18,5 @@ export function getPMSAdapter(useReal: boolean = false): PMSAdapter {
   return new MockPMSAdapter();
 }
 
-// Export a default adapter instance (mock for backward compatibility)
-// Use AdvanceCMAdapter directly for real API calls
-export const pmsAdapter = getPMSAdapter(false);
+// Export the real AdvanceCM adapter for production use
+export const pmsAdapter = new AdvanceCMAdapter();
