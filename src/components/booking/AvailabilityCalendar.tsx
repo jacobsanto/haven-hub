@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, isBefore, startOfDay, addDays } from 'date-fns';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, isBefore, startOfDay } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { AvailabilityCalendarDay } from '@/types/booking-engine';
-import { useAvailabilityCalendar } from '@/hooks/useCheckoutFlow';
+import { useAvailabilityCalendar, usePropertyTimezone } from '@/hooks/useCheckoutFlow';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AvailabilityCalendarProps {
@@ -36,6 +37,10 @@ export function AvailabilityCalendar({
   const shouldShowPrices = showPrices ?? (variant === 'full');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectingCheckOut, setSelectingCheckOut] = useState(false);
+
+  // Fetch property timezone
+  const { data: timezone } = usePropertyTimezone(propertyId);
+  const propertyTimezone = timezone || 'Europe/Athens';
 
   // Fetch 3 months of availability
   const startDate = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
@@ -98,10 +103,13 @@ export function AvailabilityCalendar({
     }
   };
 
-  const getDayClasses = (date: Date) => {
+  const getDayClasses = (date: Date, propertyTimezone: string) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayData = availabilityMap.get(dateStr);
-    const isPast = isBefore(date, startOfDay(new Date()));
+    
+    // Use property timezone for "today" comparison
+    const todayInPropertyTz = startOfDay(toZonedTime(new Date(), propertyTimezone));
+    const isPast = isBefore(date, todayInPropertyTz);
     const isUnavailable = !dayData?.available || isPast;
 
     const isCheckIn = selectedCheckIn && isSameDay(date, selectedCheckIn);
@@ -156,8 +164,8 @@ export function AvailabilityCalendar({
                 key={day.toISOString()}
                 type="button"
                 onClick={() => handleDateClick(day)}
-                className={getDayClasses(day)}
-                disabled={!dayData?.available || isBefore(day, startOfDay(new Date()))}
+                className={getDayClasses(day, propertyTimezone)}
+                disabled={!dayData?.available || isBefore(day, startOfDay(toZonedTime(new Date(), propertyTimezone)))}
               >
                 <span>{format(day, 'd')}</span>
                 {shouldShowPrices && dayData?.price && dayData.available && (

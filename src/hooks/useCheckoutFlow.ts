@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { pmsAdapter } from '@/integrations/pms';
 import { AvailabilityCalendarDay } from '@/types/booking-engine';
-import { format, eachDayOfInterval, parseISO, addDays } from 'date-fns';
+import { format, eachDayOfInterval, parseISO, addDays, startOfDay } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 // Generate a session ID for checkout holds
 export function generateSessionId(): string {
@@ -133,6 +134,30 @@ export function useAvailabilityCalendar(
     enabled: !!propertyId && !!startDate && !!endDate,
     staleTime: 30000, // 30 seconds
   });
+}
+
+// Get property timezone for date calculations
+export function usePropertyTimezone(propertyId: string) {
+  return useQuery({
+    queryKey: ['property-timezone', propertyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('timezone')
+        .eq('id', propertyId)
+        .single();
+
+      if (error) throw error;
+      return data?.timezone || 'Europe/Athens';
+    },
+    enabled: !!propertyId,
+    staleTime: 5 * 60 * 1000, // 5 minutes - timezone rarely changes
+  });
+}
+
+// Get "today" in a specific timezone
+export function getTodayInTimezone(timezone: string = 'Europe/Athens'): Date {
+  return startOfDay(toZonedTime(new Date(), timezone));
 }
 
 // Check if a date range is available
