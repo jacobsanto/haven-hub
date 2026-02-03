@@ -1,46 +1,55 @@
 
-# Plan: Add Booking Import to PMS Availability Sync
 
-## Problem Identified
-Currently, the scheduled PMS sync (`pms-sync-cron`) only imports **availability blocks** from Tokeet. While this correctly blocks dates in calendars, it doesn't create actual booking records for OTA bookings. This means:
+# Plan: Fix PMS Availability Sync Logic
 
-- Dates appear blocked but you don't know why
-- No guest information is visible for external bookings
-- No booking records for revenue tracking or management
-- Admin must manually trigger reconciliation to import bookings
+## Problem Summary
+The availability calendar is showing **all dates as blocked** for Centro House because:
 
-## Solution
-Integrate booking import into the scheduled availability sync so that when blocked date ranges are detected, the system also fetches and imports the corresponding booking/inquiry records from Tokeet.
+1. **The Tokeet API returns `available: 1` for BOOKED date ranges** (counterintuitive naming)
+2. **The sync correctly marks booking dates as blocked** (this part works)
+3. **The unblock/cleanup logic is failing** — dates that are NOT in any booking should be deleted from the `availability` table (to show as available), but they remain as `available: false`
+
+### Evidence
+- Tokeet API shows bookings: Feb 3-4, Feb 10-11, Feb 14+ (with guest names)
+- Database shows ALL dates Feb 3-28 as blocked (including gaps like Feb 5-9, Feb 12-13)
+- The cleanup logic at lines 312-339 should delete dates not in current bookings, but it's not working
 
 ---
 
-## Implementation Approach
+## Root Cause Analysis
 
-### 1. Enhance pms-sync-cron Edge Function
-Modify the existing scheduled sync to also fetch and import bookings:
+Looking at the sync function in `pms-sync-cron/index.ts`:
 
 ```text
-Current Flow:
-  [Cron Trigger] → Fetch Availability → Upsert Blocked Dates → Done
+Current Cleanup Logic (lines 312-339):
+1. Fetch existing blocked dates from DB
+2. Filter to find dates NOT in current blockedDates set  
+3. Delete those dates using .in(date, datesToUnblock)
 
-New Flow:
-  [Cron Trigger] → Fetch Availability → Upsert Blocked Dates 
-                 → Fetch Inquiries → Create/Update Bookings → Done
+Problem: The .in() query might be failing silently on large arrays,
+or the date comparison is failing due to format differences.
 ```
 
-### 2. Add Booking Fetch Logic
-For each mapped property, after syncing availability:
-- Call Tokeet's `/inquiry` endpoint with the property's rental_id
-- Filter for `status = booked` or `status = confirmed`
-- For each inquiry not already in local DB, create a booking record
-- For existing bookings, update dates if changed (like reconciliation does)
+---
 
-### 3. Optimize for Performance
-To avoid hitting compute limits:
-- Only fetch inquiries for the next 6 months
-- Process one property at a time (already done for availability)
-- Skip properties that were recently synced (within last hour)
-- Batch database operations where possible
+## Solution
+
+### 1. Fix Date Comparison Issue
+The `blockedDates` Set uses ISO format (`2026-02-05`) but Supabase might return dates in a different format. Add proper date normalization.
+
+### 2. Improve Cleanup Reliability  
+Instead of using `.in()` with a potentially large array, batch the deletions in smaller chunks or use a different approach:
+
+```typescript
+// Instead of:
+await adminClient.from("availability").delete().in("date", datesToUnblock);
+
+// Use batched deletes or DELETE WHERE NOT IN approach:
+// Delete all blocked dates in range that are NOT in the current booking dates
+```
+
+### 3. Add Debug Logging
+Log the number of dates being unblocked to verify the cleanup is executing.
 
 ---
 
@@ -48,79 +57,48 @@ To avoid hitting compute limits:
 
 ### File: `supabase/functions/pms-sync-cron/index.ts`
 
-Add a new helper function `syncPropertyBookings` that:
-1. Fetches inquiries from Tokeet for the property
-2. Filters to active bookings only
-3. Upserts booking records (using external_booking_id for deduplication)
-4. Updates availability for booking date ranges
+**Changes to `syncPropertyAvailability` function:**
 
-Modify `syncPropertyAvailability` to also call `syncPropertyBookings` after syncing availability.
+1. **Normalize date formats** before comparison:
+```typescript
+const normalizeDate = (d: string) => d.split('T')[0];
+const datesToUnblock = existingBlocked
+  .map((r) => normalizeDate(r.date))
+  .filter((d) => !blockedDates.has(d));
+```
 
-### New Sync Summary
-The sync result will now include:
-- `synced` (properties with successful availability sync)
-- `failed` (properties with errors)
-- `bookingsCreated` (new OTA bookings imported)
-- `bookingsUpdated` (existing bookings with date changes)
+2. **Batch delete operations** to avoid query limits:
+```typescript
+// Delete in batches of 100
+const BATCH_SIZE = 100;
+for (let i = 0; i < datesToUnblock.length; i += BATCH_SIZE) {
+  const batch = datesToUnblock.slice(i, i + BATCH_SIZE);
+  await adminClient.from("availability").delete()
+    .eq("property_id", propertyId)
+    .in("date", batch);
+}
+```
 
----
-
-## Data Flow Diagram
-
-```text
-┌─────────────────────┐
-│  pg_cron (5 min)    │
-└─────────┬───────────┘
-          │
-          ▼
-┌─────────────────────┐
-│   pms-sync-cron     │
-└─────────┬───────────┘
-          │
-          ▼
-┌─────────────────────────────────────┐
-│  For each mapped property:          │
-│                                     │
-│  1. Fetch /rental/{id}/availability │
-│     └─► Upsert blocked dates        │
-│                                     │
-│  2. Fetch /inquiry?rental_id={id}   │ ◄── NEW
-│     └─► Filter booked/confirmed     │
-│     └─► Upsert booking records      │
-│     └─► Update availability dates   │
-└─────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────┐
-│  Update sync status │
-│  & timestamps       │
-└─────────────────────┘
+3. **Add logging** for visibility:
+```typescript
+console.log(`Property ${propertyId}: ${blockedDates.size} blocked, ${datesToUnblock.length} to unblock`);
 ```
 
 ---
 
-## Booking Record Creation
+## Additional Fix: Clear All Stale Blocked Dates
 
-When a new Tokeet inquiry is found:
+A one-time cleanup is needed for Centro House to reset its availability. This can be done by:
 
-| Haven Hub Field | Tokeet Source |
-|-----------------|---------------|
-| external_booking_id | inquiry.pkey |
-| property_id | via pms_property_map lookup |
-| check_in | inquiry.arrive (unix timestamp) |
-| check_out | inquiry.depart (unix timestamp) |
-| nights | calculated |
-| guest_name | inquiry.guest_name |
-| guest_email | inquiry.guest_email |
-| guest_phone | inquiry.guest_phone |
-| guests | inquiry.num_guests |
-| adults | inquiry.num_adults |
-| children | inquiry.num_child |
-| total_price | inquiry.booked_price |
-| source | inquiry.source (mapped to booking_com/airbnb/etc) |
-| status | "confirmed" |
-| payment_status | "paid" (OTA bookings are prepaid) |
-| pms_sync_status | "synced" |
+1. Delete all `available: false` records for Centro House
+2. Trigger a fresh sync to repopulate only the actual booking dates
+
+```sql
+-- Cleanup query (run once)
+DELETE FROM availability 
+WHERE property_id = '73c9e26e-9f09-4989-b3ab-00b0c7685848' 
+AND available = false;
+```
 
 ---
 
@@ -128,22 +106,23 @@ When a new Tokeet inquiry is found:
 
 | File | Changes |
 |------|---------|
-| `supabase/functions/pms-sync-cron/index.ts` | Add `syncPropertyBookings` function and integrate with existing sync flow |
+| `supabase/functions/pms-sync-cron/index.ts` | Fix date normalization, batch deletes, add logging |
 
 ---
 
-## Benefits After Implementation
+## Expected Outcome After Fix
 
-1. **Complete Visibility**: All OTA bookings appear in Admin Bookings page
-2. **Real-Time Sync**: Bookings imported every 5 minutes (or on manual trigger)
-3. **I DONT WANT Revenue Tracking**: Accurate booking revenue data from all channels
-4. **Guest Information**: Guest details available for all external bookings
-5. **Unified Calendar**: Calendar shows blocked dates with associated booking info
+1. **Booking dates show as blocked** (red): Feb 3-4, Feb 10-11, Feb 14-Mar 17, etc.
+2. **Gap dates show as available** (green): Feb 5-9, Feb 12-13, etc.
+3. **Calendar accurately reflects Tokeet availability**
 
 ---
 
-## Fallback Behavior
+## Testing Steps
 
-- If Tokeet inquiry API fails, availability sync still completes successfully
-- Booking import errors are logged but don't block availability updates
-- Duplicate bookings are prevented via `external_booking_id` matching
+1. Run the cleanup SQL to reset Centro House availability
+2. Deploy the fixed edge function
+3. Trigger a manual sync from Admin PMS Health
+4. Verify the calendar shows correct blocked/available dates
+5. Compare with Tokeet calendar to ensure accuracy
+
