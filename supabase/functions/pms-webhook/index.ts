@@ -159,6 +159,46 @@ Deno.serve(async (req) => {
       );
     }
 
+    // REPLAY ATTACK PREVENTION: Timestamp validation
+    // Reject webhooks older than 5 minutes to limit replay attack window
+    const timestampHeader = req.headers.get("x-tokeet-timestamp");
+    if (timestampHeader) {
+      const requestTimestamp = parseInt(timestampHeader, 10);
+      if (!isNaN(requestTimestamp)) {
+        const requestAgeMs = Date.now() - requestTimestamp * 1000;
+        const maxAgeMs = 5 * 60 * 1000; // 5 minutes
+        
+        if (requestAgeMs > maxAgeMs) {
+          console.warn(`Webhook rejected: timestamp too old (${Math.round(requestAgeMs / 1000)}s)`);
+          return new Response(
+            JSON.stringify({ 
+              error: "Webhook expired", 
+              message: "Request timestamp is too old" 
+            }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            }
+          );
+        }
+        
+        // Also reject future timestamps (clock skew protection, allow 60s tolerance)
+        if (requestAgeMs < -60000) {
+          console.warn(`Webhook rejected: timestamp in future`);
+          return new Response(
+            JSON.stringify({ 
+              error: "Invalid timestamp", 
+              message: "Request timestamp is in the future" 
+            }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, "Content-Type": "application/json" } 
+            }
+          );
+        }
+      }
+    }
+
     // Create admin client (no user auth for webhooks)
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -170,6 +210,34 @@ Deno.serve(async (req) => {
     const eventType = payload.event || payload.type || "unknown";
 
     console.log(`Received webhook event: ${eventType}`, JSON.stringify(payload).slice(0, 500));
+
+    // REPLAY ATTACK PREVENTION: Idempotency check
+    // Use webhook ID to prevent duplicate processing
+    const webhookId = payload.data?.pkey || payload.pkey;
+    if (webhookId) {
+      const { data: alreadyProcessed } = await adminClient
+        .from("pms_raw_events")
+        .select("id")
+        .eq("event_type", eventType)
+        .eq("processed", true)
+        .filter("payload->>pkey", "eq", webhookId)
+        .maybeSingle();
+
+      if (alreadyProcessed) {
+        console.log(`Webhook already processed: ${eventType} with pkey ${webhookId}`);
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "Already processed",
+            idempotent: true 
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
+      }
+    }
 
     // Get active connection
     const { data: connection } = await adminClient
