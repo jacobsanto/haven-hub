@@ -39,6 +39,29 @@ interface TokeetAvailabilityRange {
   closed?: number;
 }
 
+// Tokeet Inquiry API returns actual booking dates
+interface TokeetInquiry {
+  pkey: string;
+  rental_id: string;
+  // Tokeet uses various field names for dates
+  arrive?: number; // Unix timestamp (older API)
+  depart?: number; // Unix timestamp (older API)
+  guest_arrive?: number; // Unix timestamp (newer API)
+  guest_depart?: number; // Unix timestamp (newer API)
+  check_in?: number; // Unix timestamp (also used)
+  check_out?: number; // Unix timestamp (also used)
+  status: string;
+  source?: string;
+  inquiry_source?: string;
+  guest_name?: string;
+  guest_email?: string;
+  guest_phone?: string;
+  num_guests?: number;
+  num_adults?: number;
+  num_child?: number;
+  booked_price?: number;
+}
+
 interface BookingSyncResult {
   created: number;
   updated: number;
@@ -62,13 +85,13 @@ async function callTokeetAPI(
   });
 }
 
-function mapSourceToBookingSource(title: string | undefined): string {
-  if (!title) return "direct";
-  const titleLower = title.toLowerCase();
-  if (titleLower.includes("airbnb")) return "airbnb";
-  if (titleLower.includes("booking.com") || titleLower.includes("bookingcom")) return "booking_com";
-  if (titleLower.includes("expedia")) return "expedia";
-  if (titleLower.includes("vrbo") || titleLower.includes("homeaway")) return "vrbo";
+function mapSourceToBookingSource(source: string | undefined): string {
+  if (!source) return "direct";
+  const sourceLower = source.toLowerCase();
+  if (sourceLower.includes("airbnb")) return "airbnb";
+  if (sourceLower.includes("booking.com") || sourceLower.includes("bookingcom")) return "booking_com";
+  if (sourceLower.includes("expedia")) return "expedia";
+  if (sourceLower.includes("vrbo") || sourceLower.includes("homeaway")) return "vrbo";
   return "direct";
 }
 
@@ -80,136 +103,199 @@ function generateBookingReference(): string {
   return `BK-${year}${month}-${random}`;
 }
 
-function generateExternalId(from: string, to: string, title: string): string {
-  // Create a deterministic ID from the booking details
-  const base = `${from}-${to}-${title}`.replace(/[^a-zA-Z0-9-]/g, '_');
-  return `tokeet-${base}`.substring(0, 100);
+// Convert Unix timestamp (seconds) to YYYY-MM-DD
+function unixToDateString(timestamp: number): string {
+  const date = new Date(timestamp * 1000);
+  return date.toISOString().split("T")[0];
 }
 
-function isValidBookingTitle(title: string | undefined): boolean {
-  if (!title || title.trim() === "") return false;
-  
-  // Skip maintenance/blocked entries
-  const skipPatterns = [
-    /maintenance/i,
-    /blocked/i,
-    /closed/i,
-    /owner/i,
-    /unavailable/i,
-    /hold$/i,  // Ends with "hold" but not "Airbnb hold" which is a real booking
-  ];
-  
-  // Allow "Airbnb hold" as it represents a real Airbnb booking
-  if (/airbnb\s*hold/i.test(title)) return true;
-  
-  for (const pattern of skipPatterns) {
-    if (pattern.test(title)) return false;
-  }
-  
-  return true;
+// Calculate nights between two dates
+function calculateNights(checkIn: string, checkOut: string): number {
+  const start = new Date(checkIn);
+  const end = new Date(checkOut);
+  return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-// Extract bookings from availability response (main booking data source)
-async function extractBookingsFromAvailability(
+// Fetch bookings from Tokeet Inquiry API (accurate check-in/check-out dates)
+async function syncBookingsFromInquiryAPI(
   supabaseUrl: string,
   serviceRoleKey: string,
   propertyId: string,
-  availabilityRanges: TokeetAvailabilityRange[]
+  externalPropertyId: string,
+  apiKey: string,
+  accountId: string
 ): Promise<BookingSyncResult> {
   const result: BookingSyncResult = { created: 0, updated: 0, errors: [] };
 
   try {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // Fetch active inquiries for this property
+    const today = new Date().toISOString().split("T")[0];
+    const futureDate = new Date();
+    futureDate.setMonth(futureDate.getMonth() + 12);
     
-    // Filter to only ranges that are bookings (available: 1 with a guest name)
-    const bookingRanges = availabilityRanges.filter((range) => {
-      return range.available === 1 && isValidBookingTitle(range.title);
+    const fromTimestamp = Math.floor(new Date(today).getTime() / 1000);
+    const toTimestamp = Math.floor(futureDate.getTime() / 1000);
+
+    const tokeetUrl = new URL("https://capi.tokeet.com/v1/inquiry");
+    tokeetUrl.searchParams.set("account", accountId);
+    tokeetUrl.searchParams.set("rental_id", externalPropertyId);
+    tokeetUrl.searchParams.set("from", fromTimestamp.toString());
+    tokeetUrl.searchParams.set("to", toTimestamp.toString());
+    tokeetUrl.searchParams.set("limit", "100");
+
+    const response = await fetch(tokeetUrl.toString(), {
+      headers: {
+        Authorization: apiKey,
+        "Content-Type": "application/json",
+      },
     });
 
-    if (bookingRanges.length === 0) {
+    if (!response.ok) {
+      result.errors.push(`Inquiry API error: ${response.status}`);
       return result;
     }
 
-    console.log(`Property ${propertyId}: Found ${bookingRanges.length} potential bookings from availability data`);
+    const responseData = await response.json();
+    
+    console.log(`Property ${propertyId}: Inquiry API raw response: ${JSON.stringify(responseData).substring(0, 500)}`);
+    
+    const inquiries: TokeetInquiry[] = Array.isArray(responseData)
+      ? responseData
+      : (responseData.items || responseData.data || responseData.inquiries || []);
 
-    // Get existing bookings for this property by external_booking_id
-    const externalIds = bookingRanges.map((range) => 
-      generateExternalId(
-        range.from || range.start || "",
-        range.to || range.end || "",
-        range.title || ""
-      )
+    // Filter to only booked/confirmed/accept status
+    // Tokeet uses "accept" for confirmed bookings, not "booked" or "confirmed"
+    const activeInquiries = inquiries.filter(
+      (i) => i.status === "accept" || i.status === "booked" || i.status === "confirmed"
     );
 
+    console.log(`Property ${propertyId}: ${inquiries.length} total inquiries, ${activeInquiries.length} active (booked/confirmed)`);
+
+    if (activeInquiries.length === 0) {
+      return result;
+    }
+
+    console.log(`Property ${propertyId}: Found ${activeInquiries.length} active bookings from Inquiry API`);
+
+    // Get existing bookings for this property by pkey (external_booking_id)
+    const pkeys = activeInquiries.map((i) => i.pkey);
     const { data: existingBookings } = await adminClient
       .from("bookings")
-      .select("id, external_booking_id, check_in, check_out")
+      .select("id, external_booking_id, check_in, check_out, guest_name")
       .eq("property_id", propertyId)
-      .in("external_booking_id", externalIds);
+      .in("status", ["confirmed", "pending"]);
 
-    const existingMap = new Map(
-      (existingBookings || []).map((b) => [b.external_booking_id, b])
+    // Build map by pkey for quick lookup
+    const existingByPkey = new Map(
+      (existingBookings || [])
+        .filter((b) => b.external_booking_id && pkeys.includes(b.external_booking_id))
+        .map((b) => [b.external_booking_id, b])
+    );
+    
+    // Also build a map for legacy bookings (using old-style external_booking_id or no external ID)
+    // to migrate them to pkey format
+    const legacyBookings = (existingBookings || []).filter(
+      (b) => !b.external_booking_id || b.external_booking_id.startsWith("tokeet-")
     );
 
-    // Process each booking range
-    for (const range of bookingRanges) {
+    // Process each inquiry
+    for (const inquiry of activeInquiries) {
       try {
-        const fromDate = range.from || range.start || "";
-        const toDate = range.to || range.end || "";
+        // Get timestamps - Tokeet uses different field names
+        const arriveTs = inquiry.guest_arrive || inquiry.arrive || inquiry.check_in;
+        const departTs = inquiry.guest_depart || inquiry.depart || inquiry.check_out;
         
-        if (!fromDate || !toDate) continue;
+        if (!arriveTs || !departTs) {
+          console.log(`Property ${propertyId}: Skipping inquiry ${inquiry.pkey} - missing dates`);
+          continue;
+        }
 
-        const checkInDate = new Date(fromDate);
-        const checkOutDate = new Date(toDate);
-        
+        // Convert Unix timestamps to date strings
+        const checkIn = unixToDateString(arriveTs);
+        const checkOut = unixToDateString(departTs);
+        const nights = calculateNights(checkIn, checkOut);
+
         // Skip past bookings
-        if (checkOutDate < new Date()) continue;
+        if (new Date(checkOut) < new Date()) continue;
 
-        const checkIn = checkInDate.toISOString().split("T")[0];
-        const checkOut = checkOutDate.toISOString().split("T")[0];
-        const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)));
-
-        const externalId = generateExternalId(fromDate, toDate, range.title || "");
-        const existing = existingMap.get(externalId);
+        // First check if booking exists by pkey
+        let existing = existingByPkey.get(inquiry.pkey);
+        
+        // If not found by pkey, check for legacy booking by guest name + overlapping dates
+        if (!existing) {
+          const guestName = inquiry.guest_name || "";
+          const legacyMatch = legacyBookings.find((b) => {
+            // Match by similar guest name (case-insensitive partial match)
+            const nameMatch = b.guest_name && guestName && 
+              (b.guest_name.toLowerCase().includes(guestName.toLowerCase()) ||
+               guestName.toLowerCase().includes(b.guest_name.toLowerCase()));
+            
+            // Match by overlapping dates (check-in within 1 day)
+            const checkInDate = new Date(checkIn);
+            const existingCheckIn = new Date(b.check_in);
+            const dateDiff = Math.abs(checkInDate.getTime() - existingCheckIn.getTime()) / (1000 * 60 * 60 * 24);
+            const dateMatch = dateDiff <= 1;
+            
+            return nameMatch && dateMatch;
+          });
+          
+          if (legacyMatch) {
+            existing = legacyMatch;
+            console.log(`Property ${propertyId}: Found legacy booking ${legacyMatch.id} matching inquiry ${inquiry.pkey} (${guestName})`);
+          }
+        }
 
         if (existing) {
-          // Update if dates changed
-          if (existing.check_in !== checkIn || existing.check_out !== checkOut) {
+          // Update booking - fix dates AND migrate to new pkey format
+          const needsUpdate = 
+            existing.check_in !== checkIn || 
+            existing.check_out !== checkOut ||
+            existing.external_booking_id !== inquiry.pkey;
+          
+          if (needsUpdate) {
+            console.log(`Property ${propertyId}: Updating booking ${existing.id} -> pkey:${inquiry.pkey}, dates: ${existing.check_in}-${existing.check_out} -> ${checkIn}-${checkOut}`);
+            
             const { error } = await adminClient
               .from("bookings")
               .update({
                 check_in: checkIn,
                 check_out: checkOut,
                 nights,
+                external_booking_id: inquiry.pkey, // Migrate to new pkey format
                 pms_synced_at: new Date().toISOString(),
               })
               .eq("id", existing.id);
 
             if (error) {
-              result.errors.push(`Update ${externalId}: ${error.message}`);
+              result.errors.push(`Update ${inquiry.pkey}: ${error.message}`);
             } else {
               result.updated++;
+              // Remove from legacy list to avoid re-matching
+              const idx = legacyBookings.indexOf(existing);
+              if (idx > -1) legacyBookings.splice(idx, 1);
             }
           }
         } else {
-          // Create new booking
-          const guestName = range.title || "Guest";
-          const source = mapSourceToBookingSource(range.title);
-          
+          // Create new booking with accurate dates from Inquiry API
+          const guestName = inquiry.guest_name || "OTA Guest";
+          const source = mapSourceToBookingSource(inquiry.inquiry_source || inquiry.source);
+
           const bookingData = {
             property_id: propertyId,
-            external_booking_id: externalId,
+            external_booking_id: inquiry.pkey,
             booking_reference: generateBookingReference(),
             guest_name: guestName,
-            guest_email: "external@booking.sync",
-            guest_phone: null,
+            guest_email: inquiry.guest_email || `ota-${inquiry.pkey}@placeholder.local`,
+            guest_phone: inquiry.guest_phone || null,
             check_in: checkIn,
             check_out: checkOut,
             nights,
-            guests: 2, // Default
-            adults: 2,
-            children: 0,
-            total_price: 0, // Unknown from availability API
+            guests: inquiry.num_guests || 2,
+            adults: inquiry.num_adults || 2,
+            children: inquiry.num_child || 0,
+            total_price: inquiry.booked_price || 0,
             source,
             status: "confirmed",
             payment_status: "paid",
@@ -226,15 +312,15 @@ async function extractBookingsFromAvailability(
             if (error.code === "23505") {
               // Already exists, skip silently
             } else {
-              result.errors.push(`Create ${externalId}: ${error.message}`);
+              result.errors.push(`Create ${inquiry.pkey}: ${error.message}`);
             }
           } else {
             result.created++;
           }
         }
-      } catch (rangeError) {
+      } catch (inquiryError) {
         result.errors.push(
-          `Process range: ${rangeError instanceof Error ? rangeError.message : "Unknown error"}`
+          `Process inquiry ${inquiry.pkey}: ${inquiryError instanceof Error ? inquiryError.message : "Unknown error"}`
         );
       }
     }
@@ -288,12 +374,14 @@ async function syncPropertyAvailability(
       availabilityRanges = tokeetAvailability.blocked;
     }
 
-    // STEP 1: Extract and sync bookings from the availability data
-    const extractedBookings = await extractBookingsFromAvailability(
+    // STEP 1: Sync bookings from Inquiry API (accurate check-in/check-out dates)
+    const extractedBookings = await syncBookingsFromInquiryAPI(
       supabaseUrl,
       serviceRoleKey,
       propertyId,
-      availabilityRanges
+      externalPropertyId,
+      apiKey,
+      accountId
     );
     
     bookingResult.created = extractedBookings.created;
