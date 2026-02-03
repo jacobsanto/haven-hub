@@ -1,123 +1,158 @@
 
 
-# Comprehensive PMS Sync Audit & Fix Plan
+# Plan: Fix Availability Calendar Alignment with Bookings
 
-## Critical Issues Found
+## Problem Summary
 
-### Issue 1: Invalid sync_type Value
-**Location:** `pms-sync-cron/index.ts` line 472
-**Problem:** The code uses `sync_type: "availability_bookings"` but the database constraint only allows: `full`, `property`, `availability`, `rates`, `booking`
-**Impact:** Sync run records fail to create, which breaks tracking but doesn't stop the sync itself
+The availability calendars in the booking engine are not correctly aligned with actual bookings due to **multiple interconnected issues**:
 
-### Issue 2: Booking Sync Not Working - Wrong API Endpoint
-**Location:** `pms-sync-cron/index.ts` lines 98-106
-**Problem:** The booking sync uses Tokeet's `/inquiry` API which is for reservations/inquiries. However, the availability data already contains the booking information (guest names, dates) from the `/rental/{id}/availability` endpoint. The inquiry API may be returning different data or the status filtering is too strict.
-**Impact:** 0 bookings are ever created from PMS - the logs confirm "0 bookings created, 0 updated" on every sync
+### Issue 1: Off-by-One Error in PMS Sync (Root Cause)
+**Location:** `supabase/functions/pms-sync-cron/index.ts` lines 323-328
 
-### Issue 3: Booking Sync Date Range Only 6 Months
-**Location:** `pms-sync-cron/index.ts` lines 98-103
-**Problem:** Booking sync only looks 6 months ahead, while availability sync looks 12 months
-**Impact:** Inconsistent data between availability blocks and booking records
+The sync loop blocks the checkout date when it shouldn't:
+```typescript
+// Current (WRONG):
+for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
+  blockedDates.add(d.toISOString().split("T")[0]);
+}
 
-### Issue 4: Inquiry API Status Filtering May Be Too Strict  
-**Location:** `pms-sync-cron/index.ts` lines 120-124
-**Problem:** The code filters for status `booked`, `confirmed`, or `instant` but Tokeet may use different status values
-**Impact:** Bookings may be filtered out incorrectly
-
----
-
-## Root Cause Analysis
-
-The availability data from Tokeet's `/rental/{id}/availability` endpoint actually contains:
-```json
-[
-  {"from":"2026-02-03", "to":"2026-02-04", "title":"STELLA", "available":1},
-  {"from":"2026-02-14", "to":"2026-03-17", "title":"Manoj Katwal", "available":1},
-  {"from":"2026-03-19", "to":"2026-03-29", "title":"Stanislav Natov", "available":1}
-]
+// Example: Booking Feb 3 → Feb 4 blocks BOTH Feb 3 AND Feb 4
+// Should only block Feb 3 (checkout day is available for new check-ins)
 ```
 
-This IS the booking data! The `title` field contains the guest name. The current architecture uses TWO separate APIs:
-1. `/rental/{id}/availability` → Get blocked date ranges (working)  
-2. `/inquiry` → Get booking details (NOT working - returns no matching records)
+**Evidence from database:**
+- STELLA's booking: check_in Feb 3, check_out Feb 4 → Feb 4 is blocked (WRONG)
+- James's booking: check_in Feb 10, check_out Feb 11 → Feb 11 is blocked (WRONG)
 
-**The fix should extract booking data directly from the availability response** since it already contains guest names and date ranges.
+### Issue 2: Frontend Calendar Data Flow
+The booking engine calendars use `useAvailabilityCalendar` hook which reads from the `availability` table. The logic is:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          DATA FLOW                                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Tokeet PMS  ──sync──▶  availability table  ◀──read──  AvailabilityCalendar │
+│                              │                                           │
+│                              │                                           │
+│                        bookings table (NOT used by calendar)             │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+The calendar **does not** directly reference the `bookings` table. It only reads from `availability`. This means:
+1. PMS sync must be accurate
+2. Any locally-created bookings must also update the `availability` table
+
+### Issue 3: Local Bookings Don't Block Availability
+When a booking is created directly through the website, it adds to the `bookings` table but **does NOT automatically create corresponding `availability` records**.
+
+The `useCheckDateRangeAvailability` hook (lines 113-158 in `useCheckoutFlow.ts`) checks BOTH tables, but the calendar display only uses the `availability` table.
 
 ---
 
 ## Solution Architecture
 
-### Phase 1: Fix Immediate Issues
+### Fix 1: Correct the PMS Sync Date Range Loop
+Change the loop condition from `<=` to `<` for the end date:
 
-1. **Fix sync_type constraint** - Use valid value `availability` or add `availability_bookings` to allowed values
-2. **Extend booking sync range to 12 months** - Match availability range  
-3. **Add debug logging for inquiry API** - Understand why no bookings are found
+```typescript
+// FIXED: Don't include checkout date in blocked dates
+for (let d = new Date(rangeStart); d < rangeEnd; d.setDate(d.getDate() + 1)) {
+  blockedDates.add(d.toISOString().split("T")[0]);
+}
+```
 
-### Phase 2: Improve Booking Extraction
+### Fix 2: Update Frontend Calendar to Also Check Bookings Table
+Modify `useAvailabilityCalendar` to merge data from BOTH sources:
+1. `availability` table (PMS-synced blocks)
+2. `bookings` table (local bookings that may not be in PMS yet)
 
-Since the availability API already contains booking info (guest name in `title` field), we should:
-1. Extract booking records directly from availability response
-2. Use the `/inquiry` API as a secondary source for additional details (email, phone, price)
-3. Cross-reference both sources for complete booking records
+```typescript
+// Enhanced logic in useAvailabilityCalendar
+const { data: localBookings } = await supabase
+  .from('bookings')
+  .select('check_in, check_out')
+  .eq('property_id', propertyId)
+  .in('status', ['pending', 'confirmed'])
+  .gte('check_out', startDate)
+  .lte('check_in', endDate);
+
+// Merge booking dates into blocked dates
+localBookings?.forEach(booking => {
+  const start = parseISO(booking.check_in);
+  const end = parseISO(booking.check_out);
+  for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+    const dateStr = format(d, 'yyyy-MM-dd');
+    // Mark as blocked due to booking
+  }
+});
+```
+
+### Fix 3: Create Trigger to Auto-Update Availability on Booking Insert
+Add a database trigger that automatically creates `availability` records when a booking is created:
+
+```sql
+CREATE OR REPLACE FUNCTION sync_booking_to_availability()
+RETURNS TRIGGER AS $$
+DECLARE
+  d DATE;
+BEGIN
+  -- On INSERT or UPDATE: block the booking dates
+  IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+    -- Block all dates from check_in to check_out (exclusive)
+    FOR d IN SELECT generate_series(NEW.check_in, NEW.check_out - 1, '1 day')::date
+    LOOP
+      INSERT INTO availability (property_id, date, available)
+      VALUES (NEW.property_id, d, false)
+      ON CONFLICT (property_id, date) DO UPDATE SET available = false;
+    END LOOP;
+  END IF;
+  
+  -- On DELETE or status change to cancelled: unblock dates
+  IF TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND NEW.status = 'cancelled') THEN
+    FOR d IN SELECT generate_series(OLD.check_in, OLD.check_out - 1, '1 day')::date
+    LOOP
+      DELETE FROM availability 
+      WHERE property_id = OLD.property_id AND date = d;
+    END LOOP;
+  END IF;
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Fix 4: One-Time Data Cleanup
+Run a cleanup to fix existing off-by-one errors in the database.
 
 ---
 
 ## Technical Changes
 
-### File: `supabase/functions/pms-sync-cron/index.ts`
-
-```text
-CHANGE 1: Fix sync_type (line 472)
-- Before: sync_type: "availability_bookings"
-- After:  sync_type: "availability"
-
-CHANGE 2: Extend booking sync to 12 months (lines 101-103)
-- Before: endDate.setMonth(endDate.getMonth() + 6)
-- After:  endDate.setMonth(endDate.getMonth() + 12)
-
-CHANGE 3: Add debug logging for inquiry API response (after line 113)
-+ console.log(`Property ${propertyId}: Inquiry API response:`, JSON.stringify(responseData).substring(0, 500));
-
-CHANGE 4: Extract bookings from availability response
-Create new function that parses the availability response to:
-- Extract guest name from `title` field
-- Create booking records for ranges with `available: 1` and non-empty `title`
-- Use pkey/id from availability record as external_booking_id
-
-CHANGE 5: Improve inquiry status filtering (lines 120-124)
-- Add more status values: "reserved", "accepted", "pending"
-- Log filtered vs total inquiry counts for debugging
-```
-
-### Database Migration (if needed)
-Option A: Add `availability_bookings` to allowed sync_type values
-```sql
-ALTER TABLE pms_sync_runs 
-DROP CONSTRAINT pms_sync_runs_sync_type_check;
-
-ALTER TABLE pms_sync_runs 
-ADD CONSTRAINT pms_sync_runs_sync_type_check 
-CHECK (sync_type = ANY (ARRAY['full', 'property', 'availability', 'rates', 'booking', 'availability_bookings']));
-```
+| File | Change |
+|------|--------|
+| `supabase/functions/pms-sync-cron/index.ts` | Fix loop: `d <= rangeEnd` → `d < rangeEnd` |
+| `src/hooks/useCheckoutFlow.ts` | Add booking table query, merge with availability |
+| Database migration | Add trigger for auto-syncing bookings to availability |
+| One-time SQL | Clean up incorrectly blocked checkout dates |
 
 ---
 
 ## Expected Outcome
 
-After the fix:
-1. **All 20 properties** sync availability for the next **12 months**
-2. **Booking records** are created from PMS data with guest names, dates, and source (Airbnb, Booking.com, etc.)
-3. **Sync runs** are properly recorded in `pms_sync_runs` for monitoring
-4. **Calendar shows accurate availability** matching what you see in Tokeet
+1. **PMS sync** creates correct blocked dates (check-in to day before check-out)
+2. **Local bookings** automatically block their dates via trigger
+3. **Calendars** show accurate availability by reading merged data
+4. **Check-out dates** remain available for new check-ins
 
 ---
 
 ## Testing Steps
 
-1. Deploy the fixed edge function
-2. Trigger manual sync from Admin > PMS Health
-3. Check `pms_sync_runs` table for successful record creation
-4. Verify `bookings` table has new records with `external_booking_id`
-5. Compare Centro House March calendar with Tokeet to confirm accuracy
-6. Repeat for 2-3 other properties to ensure consistency
+1. Deploy fixed edge function
+2. Run database migration for trigger
+3. Execute one-time cleanup SQL
+4. Trigger manual PMS sync
+5. Verify Centro House Feb 4, Feb 11 are now AVAILABLE
+6. Create a test booking and verify calendar updates immediately
+7. Compare calendar with Tokeet to confirm full alignment
 
