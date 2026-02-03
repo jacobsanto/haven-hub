@@ -132,7 +132,8 @@ export function useAvailabilityCalendar(
       return pmsAvailability;
     },
     enabled: !!propertyId && !!startDate && !!endDate,
-    staleTime: 30000, // 30 seconds
+    staleTime: 10000, // 10 seconds - fresher data for booking flow
+    refetchInterval: 60000, // Refetch every minute as backup
   });
 }
 
