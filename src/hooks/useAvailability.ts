@@ -205,9 +205,13 @@ export function useBulkUpdateAvailability() {
         });
 
       if (error) throw error;
+      return { propertyId, count: dates.length };
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['availability', variables.propertyId] });
+    onSuccess: (data) => {
+      // Invalidate all availability queries for this property
+      queryClient.invalidateQueries({ queryKey: ['availability', data.propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'availability-sync-health'] });
     },
   });
 }

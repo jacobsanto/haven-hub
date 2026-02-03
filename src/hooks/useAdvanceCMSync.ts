@@ -377,9 +377,12 @@ export function useSyncPropertyAvailability() {
       }
       return result;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["availability-calendar"] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "pms"] });
+    onSuccess: (_, variables) => {
+      // Invalidate all relevant queries after sync
+      queryClient.invalidateQueries({ queryKey: ['availability', variables.propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'availability-sync-health'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
     },
   });
 }
