@@ -1,71 +1,57 @@
 
+# Tokeet API Date Interpretation - FINDINGS
 
-# Tokeet Availability API Date Interpretation Bug
+## Discovery Summary
 
-## Problem Identified
+After investigation, we found that **Tokeet has TWO different data sources that don't align**:
 
-The Tokeet **Availability API** (`/rental/{id}/availability`) is returning different dates than what shows in Tokeet's UI:
+### 1. Availability API (`/rental/{id}/availability`)
+- Returns calendar blocked ranges with guest names in `title` field
+- **Shows dates that are OFF by 1 day** (e.g., James shows `Feb 10-11` instead of `Feb 11-14`)
+- Contains ALL calendar blocks including OTA bookings, manual blocks, etc.
 
-| Booking | Tokeet UI | Availability API Returns |
-|---------|-----------|--------------------------|
-| James | Feb 11 - Feb 14 | `from: Feb 10, to: Feb 11` |
-| STELLA | Feb 3 - Feb 4 | `from: Feb 3, to: Feb 4` |
+### 2. Inquiry API (`/inquiry`)
+- Returns actual booking/inquiry records with accurate `arrive`/`depart` timestamps
+- Has correct dates using Unix timestamps
+- **Does NOT contain all the same bookings as Availability API**
+- Only contains inquiries that came through Tokeet's inquiry system
 
-This suggests **one of two issues**:
+## Root Cause
 
-### Theory A: Timezone Conversion Bug
-The Tokeet API returns dates in a specific timezone (likely UTC), but we're parsing them as local dates, causing a 1-day shift.
+The "James" booking visible in the Availability API (with wrong dates) is likely:
+- A **manually created block** in Tokeet
+- An **iCal import** from another platform
+- A **legacy booking** that doesn't have an inquiry record
 
-### Theory B: API Returns "Night Ranges" Not "Stay Dates"
-The availability API might return the **nights blocked** rather than check-in/check-out. For a 3-night stay (Feb 11-14), it might return `from: Feb 10, to: Feb 11` meaning "nights starting Feb 10".
+The Inquiry API only returns bookings that originated as Tokeet inquiries, not manual calendar blocks.
 
-## The Solution: Use Inquiry API Instead
+## Current Implementation
 
-Looking at `pms-reconcile/index.ts`, it uses the **Inquiry API** (`/inquiry`) which returns:
-```typescript
-arrive: number; // Unix timestamp for check-in
-depart: number; // Unix timestamp for check-out
-```
+The sync now uses:
+1. **Inquiry API** for booking data with accurate dates (when available)
+2. **Availability API** for calendar blocking (all dates)
 
-These timestamps are the **actual booking dates**, not the blocked calendar ranges.
+This means:
+- New OTA bookings through Tokeet will have correct dates
+- Legacy/manual bookings may still have incorrect dates from Availability API
 
-## Recommended Fix
+## Recommended Actions
 
-### Option 1: Primary Fix (Use Inquiry API for Booking Data)
+### Option A: Manual Fix for Legacy Bookings
+Delete the legacy bookings with wrong dates in the admin panel, then they will be recreated on next sync:
+- Centro House "James" booking (Feb 10-11 → should be Feb 11-14)
+- Other legacy bookings with `tokeet-` prefix in external_booking_id
 
-Modify `pms-sync-cron` to:
-1. **Keep using Availability API** only for blocking calendar dates (its intended purpose)
-2. **Use Inquiry API** for extracting booking information (guest names, actual dates)
+### Option B: Update Dates Directly in Tokeet
+Correct the booking dates directly in Tokeet's calendar, then run a sync.
 
-This separates concerns:
-- **Availability blocks** → from availability endpoint (for calendar display)
-- **Booking records** → from inquiry endpoint (for bookings table)
+### Option C: Query Fix (if Tokeet has the data)
+The Tokeet calendar may be using a different timezone setting. Check:
+1. Tokeet account timezone settings
+2. Whether dates in Tokeet UI match what the API returns
 
-### Option 2: Quick Fix (Add Timezone Handling)
+## Technical Notes
 
-If the issue is timezone-related, we can force UTC interpretation in the sync:
-
-```typescript
-// Parse Tokeet dates as UTC explicitly
-const rangeStart = new Date(range.from + 'T00:00:00Z');
-const rangeEnd = new Date(range.to + 'T00:00:00Z');
-```
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `supabase/functions/pms-sync-cron/index.ts` | Either fetch from inquiry API for booking data, OR add timezone handling to date parsing |
-
-## Implementation Steps
-
-1. **Test the theory** - Call the inquiry API for Centro House and log what dates it returns for James
-2. **If inquiry dates are correct** - Modify sync to use inquiry API for booking extraction
-3. **If both APIs return wrong dates** - Investigate Tokeet date timezone settings
-
-## Verification
-
-After fix:
-- James booking should show Feb 11 check-in, Feb 14 check-out
-- Calendar should block Feb 11, 12, 13 (checkout day Feb 14 available)
-
+- Inquiry API uses `guest_arrive`/`guest_depart` (Unix timestamps in seconds)
+- Availability API uses `from`/`to` (date strings)
+- Status field uses `"accept"` for confirmed bookings, not `"booked"` or `"confirmed"`
