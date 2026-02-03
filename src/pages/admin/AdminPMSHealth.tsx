@@ -42,6 +42,7 @@ import {
   useSyncPropertyNow,
   useSyncAllPropertyAvailability,
   useUpdateAutoSyncSettings,
+  useTriggerReconciliation,
 } from '@/hooks/useAdminPMSHealth';
 import { PMSConfigDialog } from '@/components/admin/PMSConfigDialog';
 import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDialog';
@@ -85,6 +86,7 @@ export default function AdminPMSHealth() {
   const syncPropertyNow = useSyncPropertyNow();
   const syncAllAvailability = useSyncAllPropertyAvailability();
   const updateAutoSyncSettings = useUpdateAutoSyncSettings();
+  const triggerReconciliation = useTriggerReconciliation();
 
   // Get provider config from connection
   const connectionConfig = connection?.config as { provider?: string } | null;
@@ -198,6 +200,22 @@ export default function AdminPMSHealth() {
     }
   };
 
+  const handleReconciliation = async () => {
+    try {
+      const result = await triggerReconciliation.mutateAsync();
+      toast({
+        title: result.success ? 'Reconciliation Complete' : 'Reconciliation Issues',
+        description: result.message || `Checked ${result.summary?.checked || 0} bookings`,
+        variant: result.success ? 'default' : 'destructive',
+      });
+    } catch (error) {
+      toast({
+        title: 'Reconciliation Failed',
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <AdminLayout>
@@ -264,6 +282,42 @@ export default function AdminPMSHealth() {
               isUpdating={updateAutoSyncSettings.isPending}
               projectId="xavjbiuhcmupsoocrmhf"
             />
+          </motion.div>
+        )}
+
+        {/* Daily Reconciliation Card */}
+        {connection && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Daily Booking Reconciliation
+                </CardTitle>
+                <CardDescription>
+                  Compares active bookings from Tokeet with local records to detect date modifications, 
+                  new OTA bookings, and cancellations. Runs automatically daily at 2 AM.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={handleReconciliation}
+                    disabled={triggerReconciliation.isPending}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${triggerReconciliation.isPending ? 'animate-spin' : ''}`} />
+                    Run Reconciliation Now
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Manually trigger a full booking reconciliation to sync dates and detect changes.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 
