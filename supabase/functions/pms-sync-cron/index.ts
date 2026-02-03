@@ -321,19 +321,29 @@ async function syncPropertyAvailability(
     if (fetchError) {
       console.warn(`Could not fetch existing blocked dates: ${fetchError.message}`);
     } else if (existingBlocked) {
+      // Normalize date formats before comparison (handle both ISO and date-only formats)
+      const normalizeDate = (d: string) => d.split('T')[0];
+      
       const datesToUnblock = existingBlocked
-        .map((r) => r.date)
+        .map((r) => normalizeDate(r.date))
         .filter((d) => !blockedDates.has(d));
 
-      if (datesToUnblock.length > 0) {
-        const { error: deleteError } = await adminClient
-          .from("availability")
-          .delete()
-          .eq("property_id", propertyId)
-          .in("date", datesToUnblock);
+      console.log(`Property ${propertyId}: ${blockedDates.size} blocked dates from PMS, ${datesToUnblock.length} stale dates to unblock`);
 
-        if (deleteError) {
-          console.warn(`Could not unblock dates: ${deleteError.message}`);
+      // Batch delete to avoid query limits
+      if (datesToUnblock.length > 0) {
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < datesToUnblock.length; i += BATCH_SIZE) {
+          const batch = datesToUnblock.slice(i, i + BATCH_SIZE);
+          const { error: deleteError } = await adminClient
+            .from("availability")
+            .delete()
+            .eq("property_id", propertyId)
+            .in("date", batch);
+
+          if (deleteError) {
+            console.warn(`Could not unblock dates batch ${i / BATCH_SIZE + 1}: ${deleteError.message}`);
+          }
         }
       }
     }
