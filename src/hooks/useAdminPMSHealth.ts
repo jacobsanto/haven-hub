@@ -420,6 +420,54 @@ export function useUpdateAutoSyncSettings() {
   });
 }
 
+// Trigger daily reconciliation manually
+export function useTriggerReconciliation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Authentication required');
+
+      // Get PMS webhook token from connection config or use a direct call
+      const { data: connection } = await supabase
+        .from('pms_connections')
+        .select('id')
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (!connection) throw new Error('No active PMS connection');
+
+      // Call the reconciliation endpoint
+      // Note: This requires the PMS_WEBHOOK_TOKEN to be passed - for admin manual trigger,
+      // we call via the edge function directly with admin auth
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pms-reconcile`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ manual: true }),
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Reconciliation failed');
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+    },
+  });
+}
+
 export function usePushBookingToPMS() {
   const queryClient = useQueryClient();
 
