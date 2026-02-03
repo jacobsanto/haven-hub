@@ -1,153 +1,213 @@
 
-# Admin Availability Audit Report & Enhancement Plan
+# Admin Availability Page Enhancements Plan
 
-## Audit Findings
+## Overview
+This plan adds three major features to the Admin Availability page:
+1. **Bulk Date Selection** - Select multiple dates to block/unblock at once
+2. **Sync Now Button** - Manual trigger to sync availability from PMS
+3. **Multi-Month Overview** - View 3 months at a glance
 
-### Current Data State
+---
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| Total blocked dates in database | 10,094 | — |
-| Active bookings (pending/confirmed) | 187 | ✓ Healthy |
-| Dates blocked WITH matching bookings | 2,799 | ✓ Correct |
-| Dates blocked WITHOUT bookings | 7,295 | ⚠️ Needs Review |
+## Current State Analysis
 
-### What are these 7,295 "orphaned" blocks?
+### Existing Components
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `AdminAvailability.tsx` | `src/pages/admin/` | Main page with single-month calendar |
+| `AvailabilityCalendarGrid.tsx` | `src/components/admin/availability/` | Calendar grid with single-click toggle |
+| `SyncStatusBadge.tsx` | `src/components/admin/availability/` | Has `onSyncNow` prop but NOT CONNECTED |
+| `AvailabilityHealthCard.tsx` | `src/components/admin/availability/` | Health dashboard stats |
+| `useBulkUpdateAvailability` | `src/hooks/useAvailability.ts` | Already exists but NOT USED |
+| `useSyncPropertyAvailability` | `src/hooks/useAdvanceCMSync.ts` | Already exists for single-property sync |
 
-These are **NOT errors**. They fall into three categories:
+### Key Finding
+The **Sync Now** button UI already exists in `SyncStatusBadge.tsx` but the `onSyncNow` callback is **never passed** from `AdminAvailability.tsx`.
 
-**Category 1: Seasonal Closures / Owner Blocks (Expected)**
-Example: Centro House is blocked from Oct 15, 2026 → Jan 24, 2028 (467 consecutive days)
-- This is likely a seasonal closure imported from Tokeet
-- Many Santorini properties close for winter months
-- The PMS marks these as `available: 1` (blocked) but with no guest name
+---
 
-**Category 2: Maintenance/Channel Blocks (Expected)**  
-Short blocks without guest names from OTA channels or internal maintenance
+## Enhancement 1: Bulk Date Selection
 
-**Category 3: Anemelia House (Property Deleted from Tokeet)**
-- 170 blocked dates exist for this property
-- PMS mapping still active with `sync_enabled: true`
-- Should be cleaned up or disabled
+### User Experience
+- Hold **Shift + Click** to start a range selection
+- Second **Shift + Click** completes the range
+- Selected dates highlighted with a selection indicator
+- "Block Selected" and "Unblock Selected" buttons appear when dates are selected
+- Clear selection button
 
-### Property-by-Property Breakdown
+### Technical Changes
 
+**New State in AdminAvailability.tsx:**
+```typescript
+const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
+const [isSelectingRange, setIsSelectingRange] = useState(false);
+const [rangeStart, setRangeStart] = useState<Date | null>(null);
+```
+
+**Modify AvailabilityCalendarGrid.tsx:**
+- Add `selectedDates` prop and `onSelectDate` callback
+- Add `selectionMode` prop for range selection UI
+- Highlight selected dates with a distinct style (blue ring)
+- Support Shift+Click for range selection
+
+**Add BulkActionsBar Component:**
 ```text
-Property                              | Orphaned Blocks | Last Booking | Issue
---------------------------------------|-----------------|--------------|-------
-Dream Home Master Villa               | 664             | None         | No bookings imported
-Infinite Blue Horizon Suite           | 535             | Aug 2026     | Winter closure
-Centro House                          | 467             | Oct 2026     | Winter closure  
-Blue Dreams                           | 462             | Jul 2026     | Winter closure
-Infinite Blue Sunrise Suite           | 459             | Oct 2026     | Winter closure
-Olive Grove villa 2                   | 400             | Aug 2026     | Winter closure
-Olive Grove villa 1                   | 396             | Aug 2026     | Winter closure
-Olive Grove Apt 3                     | 381             | Sep 2026     | Winter closure
-Art of Barrel                         | 355             | Nov 2026     | Winter closure
-Day One Standard                      | 355             | Aug 2026     | Winter closure
-Day One Cave                          | 355             | Nov 2026     | Winter closure
-Day One Studio                        | 355             | Jul 2026     | Winter closure
-Iris Villa                            | 355             | Nov 2026     | Winter closure
-DAY 1                                 | 355             | Nov 2026     | Winter closure
-Olivia Villa                          | 355             | Nov 2026     | Winter closure
-Narcissus Luxury Villa                | 355             | Nov 2026     | Winter closure
-Villa Amersa                          | 355             | Nov 2026     | Winter closure
-Anemelia House                        | 170             | Aug 2027     | ⚠️ DELETED FROM TOKEET
-BLE VILLA                             | 166             | Aug 2027     | Winter closure
+src/components/admin/availability/BulkActionsBar.tsx
+```
+- Shows count of selected dates
+- "Block All" button
+- "Unblock All" button  
+- "Clear Selection" button
+- Uses existing `useBulkUpdateAvailability` hook
+
+---
+
+## Enhancement 2: Sync Now Button Functionality
+
+### User Experience
+- Click "Sync Now" next to property dropdown
+- Button shows spinning icon while syncing
+- Toast notification on success/failure
+- Availability calendar auto-refreshes after sync
+
+### Technical Changes
+
+**Modify AdminAvailability.tsx:**
+```typescript
+import { useSyncPropertyAvailability } from '@/hooks/useAdvanceCMSync';
+
+const syncAvailability = useSyncPropertyAvailability();
+
+const handleSyncNow = async () => {
+  if (!selectedPropertyId) return;
+  
+  try {
+    await syncAvailability.mutateAsync({
+      propertyId: selectedPropertyId,
+      startDate: format(startOfMonth(currentMonth), 'yyyy-MM-dd'),
+      endDate: format(addMonths(endOfMonth(currentMonth), 11), 'yyyy-MM-dd'),
+    });
+    toast({ title: 'Sync Complete', description: 'Availability updated from PMS' });
+  } catch (error) {
+    toast({ title: 'Sync Failed', variant: 'destructive' });
+  }
+};
+```
+
+**Connect to SyncStatusBadge:**
+```tsx
+<SyncStatusBadge
+  lastSyncAt={propertySyncInfo.last_availability_sync_at}
+  syncStatus={syncHealth?.lastSyncStatus}
+  onSyncNow={handleSyncNow}  // <-- ADD THIS
+  isSyncing={syncAvailability.isPending}  // <-- ADD THIS
+/>
 ```
 
 ---
 
-## Recommended Actions
+## Enhancement 3: Multi-Month Overview
 
-### Action 1: Disable PMS Sync for Anemelia House
-Since this property no longer exists in Tokeet, we should:
-- Disable `sync_enabled` in `pms_property_map`
-- Optionally delete all availability and booking data for this property
+### User Experience
+- Toggle button: "Single Month" / "3 Month View"
+- In 3-month view, show current + next 2 months side-by-side
+- Smaller calendar cells in overview mode
+- Still supports clicking dates for blocking
 
-### Action 2: Clean Up Anemelia House Data  
-Delete orphaned data for the deleted property:
-- 170 availability blocks
-- 12 booking records (historical, optional to keep)
-- PMS property mapping
+### Technical Changes
 
-### Action 3: Keep Winter Closure Blocks
-The other 7,125 blocks are **legitimate seasonal closures** from Tokeet. They should remain as they represent real unavailability.
+**New State:**
+```typescript
+const [viewMode, setViewMode] = useState<'single' | 'multi'>('single');
+```
 
----
+**New Component:**
+```text
+src/components/admin/availability/MultiMonthCalendar.tsx
+```
+- Renders 3 `AvailabilityCalendarGrid` components side-by-side
+- Responsive: stacks on mobile, 3-column on desktop
+- Compact variant with smaller cells
 
-## Admin Availability Page Enhancements
-
-### Current Limitations Found
-
-1. **No real-time updates** - Requires manual refresh after PMS sync
-2. **No booking context** - Cannot see WHY a date is blocked (booking vs owner block)
-3. **No property health indicators** - Draft/active status not shown
-4. **No bulk operations** - Single date toggle only
-5. **No sync status visibility** - Cannot see when last synced
-
-### Proposed Enhancements
-
-**Enhancement 1: Add Property Health Cards**
-Display at top of page:
-- Total properties synced
-- Properties with sync errors
-- Properties with no near-term availability data
-- Last sync timestamp
-
-**Enhancement 2: Show Block Context on Calendar**
-Differentiate between:
-- 🔴 **Booked** - Has matching booking with guest name
-- 🟠 **Owner Block** - Blocked without booking (from PMS)
-- 🟣 **Manual Block** - Blocked directly in admin
-
-**Enhancement 3: Add Real-time Updates**
-Import and use `useRealtimeAvailabilityGlobal()` hook
-
-**Enhancement 4: Property Status Badges**
-Show draft/active badge next to property name in dropdown
-
-**Enhancement 5: Sync Status Panel**
-Add collapsible panel showing:
-- Last PMS sync time
-- Next scheduled sync
-- Manual "Sync Now" button
-- Error log if sync failed
+**Modify AvailabilityCalendarGrid.tsx:**
+- Add `compact` prop for smaller cells in multi-month view
+- Add `showMonthHeader` prop to display month name above each grid
 
 ---
 
-## Technical Implementation
-
-### Database Changes
-None required - all data structures exist
+## File Changes Summary
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/pages/admin/AdminAvailability.tsx` | Add health dashboard, booking context, real-time updates |
-| `src/hooks/useAvailability.ts` | Add query to fetch bookings alongside availability |
-| `src/hooks/useRealtimeAvailability.ts` | Already exists, just needs to be imported |
+| `src/pages/admin/AdminAvailability.tsx` | Add bulk selection state, sync handler, view toggle, connect all new features |
+| `src/components/admin/availability/AvailabilityCalendarGrid.tsx` | Add selection support, compact mode, month header |
+| `src/components/admin/availability/index.ts` | Export new components |
+| `src/hooks/useAvailability.ts` | Add query invalidation for sync |
 
-### New Components
+### New Files to Create
 
-1. **AvailabilityHealthCard** - Shows property sync health at top
-2. **AvailabilityLegend** - Enhanced legend with booking/owner block distinction
-3. **SyncStatusBadge** - Shows last sync time inline
+| File | Purpose |
+|------|---------|
+| `src/components/admin/availability/BulkActionsBar.tsx` | Actions toolbar for selected dates |
+| `src/components/admin/availability/MultiMonthCalendar.tsx` | 3-month overview wrapper |
 
 ---
 
-## Cleanup SQL (For Immediate Execution)
+## Implementation Details
 
-```sql
--- Disable sync for Anemelia House
-UPDATE pms_property_map
-SET sync_enabled = false
-WHERE external_property_name = 'Anemelia House';
+### BulkActionsBar.tsx Structure
+```text
++---------------------------------------------------------------+
+| 📋 5 dates selected    [Block All] [Unblock All] [Clear ✕]   |
++---------------------------------------------------------------+
+```
 
--- Delete orphaned availability for Anemelia House
-DELETE FROM availability 
-WHERE property_id = (SELECT id FROM properties WHERE name = 'Anemelia House');
+### Multi-Month Layout
+```text
+Desktop (3-column):
++-------------------+-------------------+-------------------+
+|    February 2026  |     March 2026    |     April 2026    |
+|   [Calendar Grid] |   [Calendar Grid] |   [Calendar Grid] |
++-------------------+-------------------+-------------------+
+
+Mobile (stacked):
++-------------------+
+|  February 2026    |
+|  [Calendar Grid]  |
++-------------------+
+|    March 2026     |
+|  [Calendar Grid]  |
++-------------------+
+```
+
+### Selection Highlighting
+- Selected dates: `ring-2 ring-blue-500 ring-offset-1`
+- Range-in-progress: `bg-blue-100` for dates between start and cursor
+
+---
+
+## UI Controls Layout
+
+### Updated Header Section
+```text
++------------------------------------------------------------------+
+| Availability                                                      |
+| Manage property availability and block dates                      |
++------------------------------------------------------------------+
+| [Property Dropdown ▼] [Last synced 2h ago] [Sync Now]            |
++------------------------------------------------------------------+
+| View: [Single Month] [3 Months]                                   |
++------------------------------------------------------------------+
+```
+
+### Bulk Actions (appears when dates selected)
+```text
++------------------------------------------------------------------+
+| 📋 8 dates selected                                               |
+| [Block Selected] [Unblock Selected] [Clear Selection]             |
++------------------------------------------------------------------+
 ```
 
 ---
@@ -155,8 +215,17 @@ WHERE property_id = (SELECT id FROM properties WHERE name = 'Anemelia House');
 ## Expected Outcomes
 
 After implementation:
-1. **Anemelia House** sync disabled and cleaned up
-2. **Admin calendar** shows context for each blocked date
-3. **Real-time updates** reflect PMS sync changes instantly
-4. **Health dashboard** provides at-a-glance sync status
-5. **No false "orphan" alerts** for legitimate seasonal closures
+1. **Bulk Operations**: Users can select date ranges with Shift+Click and bulk block/unblock
+2. **Sync Now**: One-click manual sync from PMS for selected property
+3. **Multi-Month View**: At-a-glance overview of next 3 months
+4. **Improved UX**: Less clicking for common operations
+
+---
+
+## Testing Considerations
+
+- Test Shift+Click range selection across month boundaries
+- Test Sync Now with and without PMS connection
+- Test multi-month view on mobile devices
+- Verify bulk operations don't affect booked dates (should be protected)
+- Ensure real-time updates still work after bulk changes
