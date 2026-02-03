@@ -49,6 +49,7 @@ import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDia
 import { PMSConnectionHealthCard } from '@/components/admin/PMSConnectionHealthCard';
 import { PMSSyncStatusPanel } from '@/components/admin/PMSSyncStatusPanel';
 import { AutoSyncSettingsCard } from '@/components/admin/AutoSyncSettingsCard';
+import { WebhookTesterCard } from '@/components/admin/WebhookTesterCard';
 import { getProviderById } from '@/lib/pms-providers';
 
 const getStatusBadge = (status: string | null) => {
@@ -318,6 +319,20 @@ export default function AdminPMSHealth() {
                 </div>
               </CardContent>
             </Card>
+          </motion.div>
+        )}
+
+        {/* Webhook Tester Card */}
+        {connection && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+          >
+            <WebhookTesterCard 
+              propertyMappings={propertyMappings} 
+              isLoading={mappingsLoading} 
+            />
           </motion.div>
         )}
 
