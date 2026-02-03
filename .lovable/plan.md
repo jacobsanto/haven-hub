@@ -1,97 +1,124 @@
-# Haven Hub - Implementation Plan
 
-## Current Status: ✅ Availability Calendar Fixes Complete
+# Availability Calendar Sync Fix Plan
 
-Last updated: 2026-02-04
+## Problem Summary
 
----
+The calendars were showing all dates as unavailable because:
 
-## Completed: Availability Calendar Audit & Fixes
+1. **Stale blocks accumulated in the database** - The `availability` table had 721 blocked entries when only ~620 should exist based on actual bookings
+2. **The PMS sync unblock logic wasn't running consistently** - Earlier sync runs showed "0 stale dates to unblock" when there were clearly stale blocks
+3. **The `sync_booking_to_availability` trigger is NOT attached** - The function exists but there's no trigger using it, causing inconsistency when local bookings are created/cancelled
 
-### Fixed Issues
+## Current Status (After Recent Sync)
 
-**Bug 1: Real-time Query Invalidation (FIXED ✅)**
-- Added `availability-calendar` query key invalidation to `useRealtimeAvailability` hook
-- All real-time changes now properly refresh visible calendars
+The database is now correct! The sync at 23:25 successfully:
+- Identified 100 stale dates to unblock
+- Cleaned up February availability (Feb 4-9 now correctly available)
+- Total blocked dates reduced from 721 to 621
 
-**Bug 2: Unified Calendars (FIXED ✅)**
-- All guest-facing calendars now use `AvailabilityCalendar` component:
-  - `BookingWidget.tsx` - Property detail page popovers
-  - `PropertySelectorDialog.tsx` - Booking dialog modal
-  - `MobileBookingCTA.tsx` - Mobile date picker panel
-  - `UnifiedBookingDialog.tsx` - Already had correct implementation
+**Centro House February 2026 (Now Correct):**
+| Date Range | Status | Guest |
+|------------|--------|-------|
+| Feb 3 | Blocked | STELLA |
+| Feb 4-9 | Available | - |
+| Feb 10 | Blocked | James |
+| Feb 11-13 | Available | - |
+| Feb 14 - Mar 16 | Blocked | Manoj Katwal |
+| Mar 17-18 | Available | - |
+| Mar 19-28 | Blocked | Stanislav Natov |
 
-**Bug 3: Property Timezone Support (FIXED ✅)**
-- Added `usePropertyTimezone` hook to fetch property timezone
-- Calendar now uses property timezone for "today" calculation
-- Prevents off-by-one errors for international users
+## Root Causes
 
-### Files Modified
+### Issue 1: Database Trigger Not Attached
+The `sync_booking_to_availability` function exists but is NOT triggered by any events on the `bookings` table. This means:
+- When local bookings are created → dates aren't blocked
+- When bookings are cancelled → dates aren't unblocked
+- This creates drift between `bookings` and `availability` tables
+
+### Issue 2: Stale Cache in Frontend
+The user's browser cached old availability data from before the sync cleanup. The real-time subscription should trigger a refetch, but there may be a timing gap.
+
+## Fixes Required
+
+### Fix 1: Attach the Database Trigger (CRITICAL)
+
+Create a trigger to connect `sync_booking_to_availability` to the `bookings` table:
+
+```sql
+CREATE TRIGGER sync_booking_availability_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON public.bookings
+  FOR EACH ROW
+  EXECUTE FUNCTION public.sync_booking_to_availability();
+```
+
+This ensures local booking changes immediately update the availability table.
+
+### Fix 2: Add Query Staleness Handling
+
+Reduce the `staleTime` in `useAvailabilityCalendar` to ensure fresher data:
+
+**Current:** `staleTime: 30000` (30 seconds)
+**Change to:** `staleTime: 10000` (10 seconds)
+
+Also add a `refetchInterval` for the booking flow pages:
+
+```typescript
+refetchInterval: 60000, // Refetch every minute as backup
+```
+
+### Fix 3: Improve Real-time Invalidation Logging
+
+Add console logging to the real-time subscription to verify it's working:
+
+```typescript
+.on('postgres_changes', { event: '*', ... }, (payload) => {
+  console.log('[RT] Availability change:', payload.eventType, payload.new?.date || payload.old?.date);
+  queryClient.invalidateQueries({ queryKey: ['availability-calendar', propertyId] });
+})
+```
+
+### Fix 4: Force Refetch After Sync Now
+
+When the admin triggers "Sync Now", ensure all connected calendars refetch:
+
+```typescript
+onSuccess: () => {
+  // Broadcast to all tabs/windows
+  queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
+  queryClient.invalidateQueries({ queryKey: ['availability'] });
+}
+```
+
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/hooks/useRealtimeAvailability.ts` | Added `availability-calendar` invalidation |
-| `src/hooks/useCheckoutFlow.ts` | Added `usePropertyTimezone` hook and `date-fns-tz` import |
-| `src/components/booking/AvailabilityCalendar.tsx` | Added timezone-aware date handling |
-| `src/components/booking/BookingWidget.tsx` | Replaced Calendar with AvailabilityCalendar + real-time hook |
-| `src/components/booking/PropertySelectorDialog.tsx` | Replaced Calendar with AvailabilityCalendar + real-time hook |
-| `src/components/booking/MobileBookingCTA.tsx` | Replaced Calendar with AvailabilityCalendar + real-time hook |
+| Database Migration | Create trigger on `bookings` table |
+| `src/hooks/useCheckoutFlow.ts` | Reduce staleTime, add refetchInterval |
+| `src/hooks/useRealtimeAvailability.ts` | Add debug logging (optional) |
+| `src/hooks/useAdvanceCMSync.ts` | Ensure Sync Now invalidates all calendars |
 
-### Dependencies Added
+## Database Migration SQL
 
-- `date-fns-tz` - Timezone support for date calculations
+```sql
+-- Create trigger to sync booking changes to availability table
+CREATE TRIGGER sync_booking_availability_trigger
+  AFTER INSERT OR UPDATE OR DELETE ON public.bookings
+  FOR EACH ROW
+  EXECUTE FUNCTION public.sync_booking_to_availability();
+```
 
----
+## Verification Steps
+
+After implementing:
+1. Create a test booking → verify availability table blocks those dates
+2. Cancel the booking → verify availability table unblocks those dates
+3. Trigger a PMS sync → verify calendar updates within seconds
+4. Open same property in two browser tabs → verify both update simultaneously
 
 ## Expected Outcome
 
-All calendars will now show the same blocked dates for the same property:
-- Feb 1-2: Available
-- Feb 3: Blocked (STELLA)
-- Feb 4-9: Available
-- Feb 10: Blocked (James)
-- Feb 11-13: Available
-- Feb 14+: Blocked (Manoj Katwal through Mar 17)
-
-This matches across:
-- Property page booking widget
-- "Find Your Perfect Stay" modal
-- Checkout page
-- Mobile booking CTA
-
----
-
-## Architecture Summary
-
-```
-Guest-Facing Calendar Flow:
-┌──────────────────────────────────────────────────────────────┐
-│ AvailabilityCalendar Component                                │
-│   └── useAvailabilityCalendar hook                            │
-│         └── Fetches from 3 sources:                           │
-│             1. availability table (PMS-synced blocks)         │
-│             2. bookings table (local confirmed/pending)       │
-│             3. checkout_holds table (temporary 10-min locks)  │
-└──────────────────────────────────────────────────────────────┘
-                        ↓
-┌──────────────────────────────────────────────────────────────┐
-│ Real-time Updates via useRealtimeAvailability                 │
-│   └── Subscribes to postgres_changes on:                      │
-│       • availability table                                    │
-│       • bookings table                                        │
-│       • checkout_holds table                                  │
-│   └── Instantly invalidates availability-calendar queries    │
-└──────────────────────────────────────────────────────────────┘
-```
-
-### Source of Truth Hierarchy
-
-1. **Tokeet/AdvanceCM** - External PMS (availability, rates, external bookings)
-2. **Local bookings table** - Haven Hub direct bookings
-3. **checkout_holds table** - Temporary 10-minute locks during checkout
-
----
-
-## Previous: Admin Availability Section Removed
-
-The Admin Availability section was removed as Tokeet/AdvanceCM is the single source of truth for availability. Manual overrides created operational risk by being overwritten by the 5-minute sync.
+1. Local booking changes immediately reflected in availability
+2. PMS sync continues to be the primary source of truth
+3. Real-time updates propagate to all connected clients
+4. No more stale blocks accumulating in the database
