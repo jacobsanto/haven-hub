@@ -1,5 +1,5 @@
 // Scheduled PMS Sync Edge Function
-// Called by pg_cron every 5 minutes (configurable) to sync availability from PMS
+// Called by pg_cron every 5 minutes (configurable) to sync availability AND bookings from PMS
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -25,6 +25,28 @@ interface PMSConnection {
   } | null;
 }
 
+interface TokeetInquiry {
+  pkey: string;
+  rental_id?: string;
+  arrive: number;
+  depart: number;
+  guest_name?: string;
+  guest_email?: string;
+  guest_phone?: string;
+  num_guests?: number;
+  num_adults?: number;
+  num_child?: number;
+  booked_price?: number;
+  source?: string;
+  status?: string;
+}
+
+interface BookingSyncResult {
+  created: number;
+  updated: number;
+  errors: string[];
+}
+
 async function callTokeetAPI(
   endpoint: string,
   apiKey: string,
@@ -40,6 +62,162 @@ async function callTokeetAPI(
       "Content-Type": "application/json",
     },
   });
+}
+
+function mapSourceToBookingSource(tokeetSource: string | undefined): string {
+  if (!tokeetSource) return "direct";
+  const sourceLower = tokeetSource.toLowerCase();
+  if (sourceLower.includes("airbnb")) return "airbnb";
+  if (sourceLower.includes("booking.com") || sourceLower.includes("bookingcom")) return "booking_com";
+  if (sourceLower.includes("expedia")) return "expedia";
+  if (sourceLower.includes("vrbo") || sourceLower.includes("homeaway")) return "vrbo";
+  return "direct";
+}
+
+function generateBookingReference(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `BK-${year}${month}-${random}`;
+}
+
+async function syncPropertyBookings(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  propertyId: string,
+  externalPropertyId: string,
+  apiKey: string,
+  accountId: string
+): Promise<BookingSyncResult> {
+  const result: BookingSyncResult = { created: 0, updated: 0, errors: [] };
+
+  try {
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // Calculate date range - 6 months forward
+    const now = new Date();
+    const startTimestamp = Math.floor(now.getTime() / 1000);
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 6);
+    const endTimestamp = Math.floor(endDate.getTime() / 1000);
+
+    // Fetch inquiries from Tokeet for this property
+    const endpoint = `/inquiry?rental_id=${externalPropertyId}&arrive_from=${startTimestamp}&arrive_to=${endTimestamp}&limit=100`;
+    const response = await callTokeetAPI(endpoint, apiKey, accountId);
+
+    if (!response.ok) {
+      throw new Error(`Tokeet inquiry API error: ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    
+    // Handle various response formats
+    const inquiries: TokeetInquiry[] = Array.isArray(responseData)
+      ? responseData
+      : (responseData.items || responseData.data || responseData.inquiries || []);
+
+    // Filter to only booked/confirmed inquiries
+    const activeBookings = inquiries.filter((inq: TokeetInquiry) => {
+      const status = (inq.status || "").toLowerCase();
+      return status === "booked" || status === "confirmed" || status === "instant";
+    });
+
+    if (activeBookings.length === 0) {
+      return result;
+    }
+
+    // Get existing bookings by external_booking_id
+    const externalIds = activeBookings.map((inq) => inq.pkey);
+    const { data: existingBookings } = await adminClient
+      .from("bookings")
+      .select("id, external_booking_id, check_in, check_out")
+      .in("external_booking_id", externalIds);
+
+    const existingMap = new Map(
+      (existingBookings || []).map((b) => [b.external_booking_id, b])
+    );
+
+    // Process each booking
+    for (const inquiry of activeBookings) {
+      try {
+        const checkInDate = new Date(inquiry.arrive * 1000);
+        const checkOutDate = new Date(inquiry.depart * 1000);
+        const checkIn = checkInDate.toISOString().split("T")[0];
+        const checkOut = checkOutDate.toISOString().split("T")[0];
+        const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+        const existing = existingMap.get(inquiry.pkey);
+
+        if (existing) {
+          // Update if dates changed
+          if (existing.check_in !== checkIn || existing.check_out !== checkOut) {
+            const { error } = await adminClient
+              .from("bookings")
+              .update({
+                check_in: checkIn,
+                check_out: checkOut,
+                nights,
+                pms_synced_at: new Date().toISOString(),
+              })
+              .eq("id", existing.id);
+
+            if (error) {
+              result.errors.push(`Update ${inquiry.pkey}: ${error.message}`);
+            } else {
+              result.updated++;
+            }
+          }
+        } else {
+          // Create new booking
+          const bookingData = {
+            property_id: propertyId,
+            external_booking_id: inquiry.pkey,
+            booking_reference: generateBookingReference(),
+            guest_name: inquiry.guest_name || "Guest",
+            guest_email: inquiry.guest_email || "unknown@external.booking",
+            guest_phone: inquiry.guest_phone || null,
+            check_in: checkIn,
+            check_out: checkOut,
+            nights,
+            guests: inquiry.num_guests || 1,
+            adults: inquiry.num_adults || inquiry.num_guests || 1,
+            children: inquiry.num_child || 0,
+            total_price: inquiry.booked_price || 0,
+            source: mapSourceToBookingSource(inquiry.source),
+            status: "confirmed",
+            payment_status: "paid",
+            pms_sync_status: "synced",
+            pms_synced_at: new Date().toISOString(),
+          };
+
+          const { error } = await adminClient
+            .from("bookings")
+            .insert(bookingData);
+
+          if (error) {
+            // Check for duplicate constraint violation
+            if (error.code === "23505") {
+              // Already exists, skip
+            } else {
+              result.errors.push(`Create ${inquiry.pkey}: ${error.message}`);
+            }
+          } else {
+            result.created++;
+          }
+        }
+      } catch (bookingError) {
+        result.errors.push(
+          `Process ${inquiry.pkey}: ${bookingError instanceof Error ? bookingError.message : "Unknown error"}`
+        );
+      }
+    }
+
+    return result;
+  } catch (error) {
+    result.errors.push(error instanceof Error ? error.message : "Unknown error");
+    return result;
+  }
 }
 
 async function syncPropertyAvailability(
@@ -118,7 +296,6 @@ async function syncPropertyAvailability(
     }
 
     // Use UPSERT with ON CONFLICT to atomically update availability
-    // This avoids race conditions from DELETE + INSERT
     if (availabilityRecords.length > 0) {
       const { error: upsertError } = await adminClient
         .from("availability")
@@ -132,8 +309,7 @@ async function syncPropertyAvailability(
       }
     }
 
-    // For dates that are NOT blocked, set them as available (clear old blocks)
-    // Get all existing blocked dates for this property in the date range
+    // Clear old blocks for dates that are now available
     const { data: existingBlocked, error: fetchError } = await adminClient
       .from("availability")
       .select("date")
@@ -145,13 +321,11 @@ async function syncPropertyAvailability(
     if (fetchError) {
       console.warn(`Could not fetch existing blocked dates: ${fetchError.message}`);
     } else if (existingBlocked) {
-      // Find dates that were blocked but should now be available
       const datesToUnblock = existingBlocked
         .map((r) => r.date)
         .filter((d) => !blockedDates.has(d));
 
       if (datesToUnblock.length > 0) {
-        // Delete these records to mark them as available (no record = available)
         const { error: deleteError } = await adminClient
           .from("availability")
           .delete()
@@ -268,7 +442,7 @@ Deno.serve(async (req) => {
         .from("pms_sync_runs")
         .insert({
           pms_connection_id: connection.id,
-          sync_type: "availability",
+          sync_type: "availability_bookings",
           status: "running",
           trigger_type: triggerType,
         })
@@ -282,10 +456,13 @@ Deno.serve(async (req) => {
       // Sync each property
       let synced = 0;
       let failed = 0;
+      let bookingsCreated = 0;
+      let bookingsUpdated = 0;
       const errors: string[] = [];
 
       for (const mapping of mappings as PMSPropertyMapping[]) {
-        const result = await syncPropertyAvailability(
+        // Step 1: Sync availability
+        const availResult = await syncPropertyAvailability(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
           mapping.property_id,
@@ -294,13 +471,30 @@ Deno.serve(async (req) => {
           accountId
         );
 
-        if (result.success) {
+        if (availResult.success) {
           synced++;
         } else {
           failed++;
-          if (result.error) {
-            errors.push(`${mapping.external_property_id}: ${result.error}`);
+          if (availResult.error) {
+            errors.push(`Avail ${mapping.external_property_id}: ${availResult.error}`);
           }
+        }
+
+        // Step 2: Sync bookings (even if availability fails, try bookings)
+        const bookingResult = await syncPropertyBookings(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+          mapping.property_id,
+          mapping.external_property_id,
+          apiKey,
+          accountId
+        );
+
+        bookingsCreated += bookingResult.created;
+        bookingsUpdated += bookingResult.updated;
+        
+        if (bookingResult.errors.length > 0) {
+          errors.push(...bookingResult.errors.slice(0, 3));
         }
       }
 
@@ -313,7 +507,9 @@ Deno.serve(async (req) => {
             completed_at: new Date().toISOString(),
             records_processed: synced,
             records_failed: failed,
-            error_summary: errors.length > 0 ? errors.slice(0, 5).join("; ") : null,
+            error_summary: errors.length > 0 
+              ? `${errors.slice(0, 5).join("; ")}${bookingsCreated > 0 ? ` | Bookings: +${bookingsCreated}` : ""}`
+              : bookingsCreated > 0 ? `Bookings created: ${bookingsCreated}, updated: ${bookingsUpdated}` : null,
           })
           .eq("id", syncRun.id);
       }
@@ -327,7 +523,7 @@ Deno.serve(async (req) => {
         })
         .eq("id", connection.id);
 
-      console.log(`Sync complete: ${synced} synced, ${failed} failed`);
+      console.log(`Sync complete: ${synced} properties synced, ${failed} failed, ${bookingsCreated} bookings created, ${bookingsUpdated} updated`);
 
       return new Response(
         JSON.stringify({
@@ -335,6 +531,8 @@ Deno.serve(async (req) => {
           total: mappings.length,
           synced,
           failed,
+          bookingsCreated,
+          bookingsUpdated,
           errors: errors.slice(0, 5),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
