@@ -28,7 +28,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProperties from "./pages/admin/AdminProperties";
 import AdminPropertyForm from "./pages/admin/AdminPropertyForm";
 import AdminBookings from "./pages/admin/AdminBookings";
-import AdminAvailability from "./pages/admin/AdminAvailability";
+
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAmenities from "./pages/admin/AdminAmenities";
 import AdminDestinations from "./pages/admin/AdminDestinations";
@@ -86,7 +86,7 @@ const App = () => (
                 <Route path="/admin/properties/new" element={<AdminPropertyForm />} />
                 <Route path="/admin/properties/:id/edit" element={<AdminPropertyForm />} />
                 <Route path="/admin/bookings" element={<AdminBookings />} />
-                <Route path="/admin/availability" element={<AdminAvailability />} />
+                
                 <Route path="/admin/amenities" element={<AdminAmenities />} />
                 <Route path="/admin/destinations" element={<AdminDestinations />} />
                 <Route path="/admin/experiences" element={<AdminExperiences />} />
