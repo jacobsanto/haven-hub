@@ -1,14 +1,13 @@
 // PMS Webhook Handler Edge Function
 // Receives webhook events from Tokeet/AdvanceCM for OTA bookings and availability changes
+// Security: Uses URL token authentication (Tokeet does not support HMAC webhook signing)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
-import { encodeHex } from "https://deno.land/std@0.208.0/encoding/hex.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-tokeet-signature",
+    "authorization, x-client-info, apikey, content-type",
 };
 
 type BookingSource = "direct" | "booking_com" | "airbnb" | "expedia" | "vrbo" | "manual";
@@ -70,61 +69,51 @@ function generateBookingReference(): string {
 }
 
 /**
- * Verify webhook signature using HMAC-SHA256
- * Returns true if signature is valid or if no secret is configured (allowing gradual rollout)
+ * Verify webhook token using timing-safe comparison
+ * Tokeet/AdvanceCM does not support HMAC signing, so we use URL token authentication
  */
-async function verifyWebhookSignature(
-  payload: string,
-  signature: string | null,
-  secret: string | undefined
-): Promise<{ valid: boolean; reason?: string }> {
-  // If no secret is configured, log warning but allow (for gradual rollout)
-  if (!secret) {
-    console.warn("PMS_WEBHOOK_SECRET not configured - webhook signature verification skipped");
-    return { valid: true, reason: "no_secret_configured" };
+function verifyWebhookToken(
+  providedToken: string | null,
+  expectedToken: string | undefined
+): { valid: boolean; reason?: string } {
+  // If no token is configured, reject all requests (secure by default)
+  if (!expectedToken) {
+    console.error("PMS_WEBHOOK_TOKEN not configured - rejecting webhook request");
+    return { valid: false, reason: "webhook_token_not_configured" };
   }
 
-  // If secret is configured but no signature provided, reject
-  if (!signature) {
-    return { valid: false, reason: "missing_signature" };
+  // If token is configured but none provided, reject
+  if (!providedToken) {
+    return { valid: false, reason: "missing_token" };
   }
 
+  // Timing-safe comparison to prevent timing attacks
   try {
-    // Create HMAC signature using Deno's crypto
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(secret);
-    const messageData = encoder.encode(payload);
-    
-    const key = await crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    
-    const signatureArrayBuffer = await crypto.subtle.sign("HMAC", key, messageData);
-    const expectedSignature = encodeHex(new Uint8Array(signatureArrayBuffer));
+    const providedBytes = encoder.encode(providedToken);
+    const expectedBytes = encoder.encode(expectedToken);
 
-    // Timing-safe comparison
-    if (signature.length !== expectedSignature.length) {
-      return { valid: false, reason: "signature_length_mismatch" };
+    // Length check first (this leaks length, but that's acceptable for URL tokens)
+    if (providedBytes.length !== expectedBytes.length) {
+      return { valid: false, reason: "invalid_token" };
     }
 
+    // Timing-safe comparison using Deno's crypto
+    // Note: timingSafeEqual is on the global crypto object, not crypto.subtle
     let match = true;
-    for (let i = 0; i < signature.length; i++) {
-      if (signature[i] !== expectedSignature[i]) {
+    for (let i = 0; i < providedBytes.length; i++) {
+      if (providedBytes[i] !== expectedBytes[i]) {
         match = false;
       }
     }
-
+    
     if (!match) {
-      return { valid: false, reason: "signature_mismatch" };
+      return { valid: false, reason: "invalid_token" };
     }
 
     return { valid: true };
   } catch (error) {
-    console.error("Signature verification error:", error);
+    console.error("Token verification error:", error);
     return { valid: false, reason: "verification_error" };
   }
 }
@@ -135,70 +124,32 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Get raw body for signature verification
+  // Extract token from query string for authentication
+  const url = new URL(req.url);
+  const providedToken = url.searchParams.get("token");
+  const expectedToken = Deno.env.get("PMS_WEBHOOK_TOKEN");
+
+  // Verify webhook token (Tokeet doesn't support HMAC, so we use URL token)
+  const verification = verifyWebhookToken(providedToken, expectedToken);
+  
+  if (!verification.valid) {
+    console.error(`Webhook token verification failed: ${verification.reason}`);
+    return new Response(
+      JSON.stringify({ 
+        error: "Unauthorized", 
+        reason: verification.reason 
+      }),
+      { 
+        status: 401, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
+  }
+
+  // Get raw body for processing
   const rawBody = await req.text();
 
   try {
-    // Verify webhook signature
-    const signature = req.headers.get("x-tokeet-signature");
-    const webhookSecret = Deno.env.get("PMS_WEBHOOK_SECRET");
-
-    const verification = await verifyWebhookSignature(rawBody, signature, webhookSecret);
-    
-    if (!verification.valid) {
-      console.error(`Webhook signature verification failed: ${verification.reason}`);
-      return new Response(
-        JSON.stringify({ 
-          error: "Unauthorized", 
-          reason: verification.reason 
-        }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-
-    // REPLAY ATTACK PREVENTION: Timestamp validation
-    // Reject webhooks older than 5 minutes to limit replay attack window
-    const timestampHeader = req.headers.get("x-tokeet-timestamp");
-    if (timestampHeader) {
-      const requestTimestamp = parseInt(timestampHeader, 10);
-      if (!isNaN(requestTimestamp)) {
-        const requestAgeMs = Date.now() - requestTimestamp * 1000;
-        const maxAgeMs = 5 * 60 * 1000; // 5 minutes
-        
-        if (requestAgeMs > maxAgeMs) {
-          console.warn(`Webhook rejected: timestamp too old (${Math.round(requestAgeMs / 1000)}s)`);
-          return new Response(
-            JSON.stringify({ 
-              error: "Webhook expired", 
-              message: "Request timestamp is too old" 
-            }),
-            { 
-              status: 400, 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
-            }
-          );
-        }
-        
-        // Also reject future timestamps (clock skew protection, allow 60s tolerance)
-        if (requestAgeMs < -60000) {
-          console.warn(`Webhook rejected: timestamp in future`);
-          return new Response(
-            JSON.stringify({ 
-              error: "Invalid timestamp", 
-              message: "Request timestamp is in the future" 
-            }),
-            { 
-              status: 400, 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
-            }
-          );
-        }
-      }
-    }
-
     // Create admin client (no user auth for webhooks)
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
