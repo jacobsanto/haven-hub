@@ -1,138 +1,168 @@
 
 
-# Generate Hero Photos for Destination Villages
+# Implementation Plan: Stripe Booking Completion & Real-Time Calendar Sync
 
-## Overview
+## Summary
 
-Create AI-generated hero images for all 9 active Santorini village destinations using Lovable AI's image generation capability (`google/gemini-2.5-flash-image`).
+After analyzing the codebase and backend logs, I've identified two separate issues that need to be addressed:
 
----
+1. **Stripe Booking Issue**: The edge functions are correctly deployed and working. Testing shows `create-payment-intent` is responding properly. The issue may be intermittent or related to the client-side flow.
 
-## Destinations Needing Images
-
-| Village | Slug | Current Image |
-|---------|------|---------------|
-| Oia | oia | None |
-| Fira | fira | None |
-| Imerovigli | imerovigli | None |
-| Megalochori | megalochori | None |
-| Mesaria | mesaria | None |
-| Emporio | emporio | None |
-| Perissa | perissa | None |
-| Thira | thira | None |
-| Vothonas | vothonas | None |
+2. **PMS Calendar Sync Issue**: The `pms-sync-cron` function is failing for 19 out of 20 properties due to a database constraint error: "duplicate key value violates unique constraint 'availability_property_id_date_key'". This means calendar availability is not being properly synchronized.
 
 ---
 
-## Implementation Approach
+## Part 1: Stripe Payment Flow Improvements
 
-### Step 1: Create Image Generation Edge Function
+### Current State
+- Edge functions `create-payment-intent` and `confirm-payment` are deployed and responding
+- Stripe secret key is configured
+- The payment flow in `Checkout.tsx` is correctly implemented
 
-A new edge function `generate-destination-image` that:
-- Accepts a destination name and optional style hints
-- Calls Lovable AI with `google/gemini-2.5-flash-image` model
-- Generates a landscape image (4:3 aspect ratio to match DestinationCard)
-- Uploads the image to Lovable Cloud Storage
-- Returns the public URL
+### Proposed Changes
 
-### Step 2: Storage Bucket
+#### 1.1 Add Better Error Handling & Retry Logic
+Add more robust error handling to the checkout page to catch and recover from transient network failures:
 
-Create a `destination-images` storage bucket with public access for serving the generated images.
+**File: `src/pages/Checkout.tsx`**
+- Add retry logic for edge function calls
+- Improve error messages to be more specific
+- Add a "Try Again" button when payment setup fails
+- Add loading state visibility improvements
 
-### Step 3: Admin Tool for Generation
+#### 1.2 Add Connection Health Check
+Create a pre-flight check that verifies Stripe connectivity before users reach the payment step:
 
-Add a "Generate Image" button to the destination admin interface that:
-- Triggers image generation for a specific destination
-- Shows generation progress
-- Automatically updates the `hero_image_url` field
+**File: `src/hooks/useStripeHealth.ts`** (new file)
+- Lightweight check to verify edge function availability
+- Can be called when checkout page loads
+- Provides early warning if backend is unreachable
 
-### Step 4: Batch Generation
+---
 
-Optionally, allow batch generation of all destinations missing images.
+## Part 2: PMS Calendar Sync Fix (Critical)
+
+### Root Cause
+The `pms-sync-cron` function uses `INSERT` after `DELETE`, but there's a race condition where some records may not be fully deleted before the insert happens, causing the unique constraint violation.
+
+### Current Flow (Broken)
+```text
+1. DELETE availability records for date range
+2. INSERT new blocked dates
+   ↳ Fails if DELETE didn't complete or concurrent process exists
+```
+
+### Proposed Fix
+Change the sync strategy to use proper `UPSERT` operations instead of DELETE + INSERT.
+
+**File: `supabase/functions/pms-sync-cron/index.ts`**
+```text
+Current (line 120-137):
+  - Delete all records then insert
+
+Proposed:
+  - Use UPSERT with ON CONFLICT clause
+  - Set available=true for dates NOT in blocked list
+  - Set available=false for blocked dates
+  - Single atomic operation, no race conditions
+```
+
+#### 2.1 Updated Sync Strategy
+```text
+1. Fetch blocked date ranges from Tokeet
+2. Build complete availability map for 12 months:
+   - Blocked dates → available: false
+   - Non-blocked dates → available: true (optional, can skip)
+3. Use UPSERT with ON CONFLICT (property_id, date) DO UPDATE
+4. No DELETE operations needed
+```
+
+---
+
+## Part 3: Real-Time Availability Updates
+
+### Current State
+Real-time subscriptions are already implemented via:
+- `useRealtimeAvailability` hook (subscribes to `availability`, `bookings`, `checkout_holds`)
+- `useRealtimeBookings` hook (subscribes to admin booking changes)
+
+### Proposed Enhancements
+
+#### 3.1 Ensure Realtime is Enabled for Availability Table
+The availability table needs to be added to the Supabase realtime publication.
+
+**Database Migration:**
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.availability;
+```
+
+#### 3.2 Live Availability Preview Widget
+Create a visual component that shows real-time calendar updates:
+
+**File: `src/components/booking/LiveAvailabilityBadge.tsx`** (new file)
+- Shows "Live" indicator with pulse animation
+- Displays last sync timestamp
+- Optional: Shows "Updating..." when sync is in progress
+
+#### 3.3 Admin Dashboard Sync Status
+Enhance admin visibility into PMS sync health:
+
+**File: `src/pages/admin/AdminDashboard.tsx`**
+- Add sync status card showing last successful sync
+- Show error count if syncs are failing
+- Quick action to trigger manual sync
+
+---
+
+## Implementation Steps
+
+### Phase 1: Fix Critical PMS Sync (Highest Priority)
+1. Update `pms-sync-cron` to use UPSERT instead of DELETE + INSERT
+2. Deploy the updated edge function
+3. Verify sync runs complete without errors
+
+### Phase 2: Enable Real-Time for Availability
+1. Add availability table to realtime publication
+2. Verify existing `useRealtimeAvailability` hook works correctly
+3. Test that calendar updates when PMS sync runs
+
+### Phase 3: Stripe Flow Improvements
+1. Add retry logic to checkout payment flow
+2. Create health check hook
+3. Improve error messaging
+
+### Phase 4: Visual Enhancements
+1. Add live availability indicator to calendar
+2. Enhance admin sync monitoring
+3. Add manual sync trigger in admin
 
 ---
 
 ## Technical Details
 
-### Edge Function: `generate-destination-image`
+### Files to Modify:
+1. `supabase/functions/pms-sync-cron/index.ts` - Fix upsert logic
+2. `src/pages/Checkout.tsx` - Add retry logic and better errors
+3. `src/pages/admin/AdminDashboard.tsx` - Add sync status visibility
+4. Database migration - Enable realtime for availability table
 
-```typescript
-// Key aspects:
-// 1. Craft prompt for Santorini village photography
-// 2. Call Lovable AI with image modality
-// 3. Upload base64 result to storage
-// 4. Return public URL
+### Files to Create:
+1. `src/hooks/useStripeHealth.ts` - Pre-flight check for Stripe
+2. `src/components/booking/LiveAvailabilityBadge.tsx` - Visual indicator
 
-const prompt = `A stunning hero photograph of ${villageName}, Santorini, Greece. 
-Capture the iconic whitewashed buildings with blue domes, 
-dramatic caldera views, Mediterranean Sea backdrop, 
-golden hour lighting. Professional travel photography style, 
-4:3 aspect ratio, high resolution, vibrant colors.`;
-```
-
-### Prompt Customization by Village
-
-| Village | Style Notes |
-|---------|-------------|
-| **Oia** | Famous sunsets, windmills, blue domes |
-| **Fira** | Clifftop capital, bustling streets, caldera views |
-| **Imerovigli** | Highest village, "balcony to the Aegean", Skaros Rock |
-| **Megalochori** | Traditional village, wine caves, quieter charm |
-| **Mesaria** | Inland village, vineyards, local life |
-| **Emporio** | Medieval fortress tower, authentic character |
-| **Perissa** | Black sand beach, beach umbrellas, mountain backdrop |
-| **Thira** | Historic center, archaeological museum |
-| **Vothonas** | Cave houses carved into rock, unique architecture |
+### Testing Strategy:
+1. Trigger manual PMS sync and verify no errors in logs
+2. Make a test booking through checkout to confirm Stripe flow
+3. Verify calendar shows real-time blocked dates after sync
 
 ---
 
-## File Changes
+## Expected Outcomes
 
-### New Files
-
-| File | Purpose |
-|------|---------|
-| `supabase/functions/generate-destination-image/index.ts` | Edge function for AI image generation |
-
-### Modified Files
-
-| File | Changes |
-|------|---------|
-| `src/pages/admin/AdminDestinations.tsx` | Add "Generate Image" button per destination |
-| `src/hooks/useDestinations.ts` | Add image generation mutation |
-| `supabase/config.toml` | Add new function configuration |
-
-### Database/Storage
-
-- Create `destination-images` storage bucket with public access policy
-
----
-
-## User Experience
-
-### Admin Workflow
-
-1. Navigate to **Admin > Destinations**
-2. See destinations listed with image preview (or placeholder)
-3. Click **"Generate Image"** button on any destination
-4. See loading spinner during generation (5-15 seconds)
-5. Image appears in preview once complete
-6. Optional: "Generate All Missing" batch action
-
-### Generated Image Quality
-
-- Style: Professional travel photography
-- Lighting: Golden hour / dramatic Mediterranean light
-- Composition: Landscape orientation (4:3)
-- Content: Iconic village features specific to each location
-
----
-
-## Benefits
-
-- **Consistent visual quality** across all destinations
-- **No stock photo licensing concerns** - AI-generated content
-- **Quick iteration** - regenerate if result isn't ideal
-- **Cost-effective** - uses existing Lovable AI credits
-- **Scalable** - easy to add new destinations in the future
+After implementation:
+- PMS availability sync will complete successfully for all 20 properties (currently failing for 19)
+- Calendar will reflect accurate blocked dates from Tokeet/AdvanceCM
+- Stripe payment flow will have better error recovery
+- Users will see visual confirmation that availability data is live
+- Admin will have visibility into sync health
 
