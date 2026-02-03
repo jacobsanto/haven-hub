@@ -71,6 +71,12 @@ export function usePMSConnectionStatus() {
 export function useTestPMSConnection() {
   return useMutation({
     mutationFn: async () => {
+      // Check for auth session first
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Please log in as an admin to test the PMS connection');
+      }
+      
       const isConnected = await pmsAdapter.testConnection();
       return { success: isConnected };
     },
