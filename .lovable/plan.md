@@ -1,168 +1,317 @@
 
-
-# Implementation Plan: Stripe Booking Completion & Real-Time Calendar Sync
+# Security Remediation Plan
 
 ## Summary
 
-After analyzing the codebase and backend logs, I've identified two separate issues that need to be addressed:
-
-1. **Stripe Booking Issue**: The edge functions are correctly deployed and working. Testing shows `create-payment-intent` is responding properly. The issue may be intermittent or related to the client-side flow.
-
-2. **PMS Calendar Sync Issue**: The `pms-sync-cron` function is failing for 19 out of 20 properties due to a database constraint error: "duplicate key value violates unique constraint 'availability_property_id_date_key'". This means calendar availability is not being properly synchronized.
-
----
-
-## Part 1: Stripe Payment Flow Improvements
-
-### Current State
-- Edge functions `create-payment-intent` and `confirm-payment` are deployed and responding
-- Stripe secret key is configured
-- The payment flow in `Checkout.tsx` is correctly implemented
-
-### Proposed Changes
-
-#### 1.1 Add Better Error Handling & Retry Logic
-Add more robust error handling to the checkout page to catch and recover from transient network failures:
-
-**File: `src/pages/Checkout.tsx`**
-- Add retry logic for edge function calls
-- Improve error messages to be more specific
-- Add a "Try Again" button when payment setup fails
-- Add loading state visibility improvements
-
-#### 1.2 Add Connection Health Check
-Create a pre-flight check that verifies Stripe connectivity before users reach the payment step:
-
-**File: `src/hooks/useStripeHealth.ts`** (new file)
-- Lightweight check to verify edge function availability
-- Can be called when checkout page loads
-- Provides early warning if backend is unreachable
+This plan addresses **7 active security findings** identified in the security scan:
+- **3 Critical Errors**: Data exposure issues requiring RLS policy updates
+- **3 Warnings**: Input validation, admin route protection, and authentication concerns  
+- **1 Error**: PMS webhook authentication (partially addressed - requires architectural decision)
 
 ---
 
-## Part 2: PMS Calendar Sync Fix (Critical)
+## Phase 1: Fix Critical Data Exposure Issues (Highest Priority)
 
-### Root Cause
-The `pms-sync-cron` function uses `INSERT` after `DELETE`, but there's a race condition where some records may not be fully deleted before the insert happens, causing the unique constraint violation.
+### 1.1 Fix blog_authors Email Exposure
 
-### Current Flow (Broken)
-```text
-1. DELETE availability records for date range
-2. INSERT new blocked dates
-   ↳ Fails if DELETE didn't complete or concurrent process exists
-```
+**Problem**: The public SELECT policy on `blog_authors` allows anyone to read the full table including email addresses, even though a `blog_authors_public` view exists that excludes emails.
 
-### Proposed Fix
-Change the sync strategy to use proper `UPSERT` operations instead of DELETE + INSERT.
-
-**File: `supabase/functions/pms-sync-cron/index.ts`**
-```text
-Current (line 120-137):
-  - Delete all records then insert
-
-Proposed:
-  - Use UPSERT with ON CONFLICT clause
-  - Set available=true for dates NOT in blocked list
-  - Set available=false for blocked dates
-  - Single atomic operation, no race conditions
-```
-
-#### 2.1 Updated Sync Strategy
-```text
-1. Fetch blocked date ranges from Tokeet
-2. Build complete availability map for 12 months:
-   - Blocked dates → available: false
-   - Non-blocked dates → available: true (optional, can skip)
-3. Use UPSERT with ON CONFLICT (property_id, date) DO UPDATE
-4. No DELETE operations needed
-```
-
----
-
-## Part 3: Real-Time Availability Updates
-
-### Current State
-Real-time subscriptions are already implemented via:
-- `useRealtimeAvailability` hook (subscribes to `availability`, `bookings`, `checkout_holds`)
-- `useRealtimeBookings` hook (subscribes to admin booking changes)
-
-### Proposed Enhancements
-
-#### 3.1 Ensure Realtime is Enabled for Availability Table
-The availability table needs to be added to the Supabase realtime publication.
+**Solution**: Restrict the public policy to only return non-sensitive fields by using column-level security or redirecting public access to the view.
 
 **Database Migration:**
 ```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.availability;
+-- Drop the overly permissive public policy
+DROP POLICY IF EXISTS "Public can view active authors without sensitive data" ON public.blog_authors;
+
+-- Recreate policy using the secure view pattern
+-- Public users should use blog_authors_public view instead
+-- The main table should only be accessible to admins
 ```
 
-#### 3.2 Live Availability Preview Widget
-Create a visual component that shows real-time calendar updates:
+**Note**: Since `blog_authors_public` view already exists and excludes email, we need to ensure frontend code uses this view for public-facing pages.
 
-**File: `src/components/booking/LiveAvailabilityBadge.tsx`** (new file)
-- Shows "Live" indicator with pulse animation
-- Displays last sync timestamp
-- Optional: Shows "Updating..." when sync is in progress
-
-#### 3.3 Admin Dashboard Sync Status
-Enhance admin visibility into PMS sync health:
-
-**File: `src/pages/admin/AdminDashboard.tsx`**
-- Add sync status card showing last successful sync
-- Show error count if syncs are failing
-- Quick action to trigger manual sync
+**Files to Update:**
+- Any frontend hooks/queries that read `blog_authors` for public display should be updated to use `blog_authors_public`
 
 ---
 
-## Implementation Steps
+### 1.2 Fix booking_addons Exposure
 
-### Phase 1: Fix Critical PMS Sync (Highest Priority)
-1. Update `pms-sync-cron` to use UPSERT instead of DELETE + INSERT
-2. Deploy the updated edge function
-3. Verify sync runs complete without errors
+**Problem**: The `booking_addons` table currently only has an admin policy, but the security scan indicates it may be publicly readable (needs verification).
 
-### Phase 2: Enable Real-Time for Availability
-1. Add availability table to realtime publication
-2. Verify existing `useRealtimeAvailability` hook works correctly
-3. Test that calendar updates when PMS sync runs
+**Current State**: 
+```sql
+-- Only admin policy exists
+Policy: "Admin can manage booking addons" (ALL command)
+```
 
-### Phase 3: Stripe Flow Improvements
-1. Add retry logic to checkout payment flow
-2. Create health check hook
-3. Improve error messaging
+**Solution**: Verify RLS is enabled and ensure no public read access exists. The table should only be accessible to admins.
 
-### Phase 4: Visual Enhancements
-1. Add live availability indicator to calendar
-2. Enhance admin sync monitoring
-3. Add manual sync trigger in admin
+**Database Migration (if needed):**
+```sql
+-- Ensure RLS is enabled (should already be)
+ALTER TABLE public.booking_addons ENABLE ROW LEVEL SECURITY;
+
+-- Verify no default public access exists
+-- The existing admin policy should be sufficient
+```
 
 ---
 
-## Technical Details
+### 1.3 Fix checkout_holds Session Validation
 
-### Files to Modify:
-1. `supabase/functions/pms-sync-cron/index.ts` - Fix upsert logic
-2. `src/pages/Checkout.tsx` - Add retry logic and better errors
-3. `src/pages/admin/AdminDashboard.tsx` - Add sync status visibility
-4. Database migration - Enable realtime for availability table
+**Problem**: The INSERT policy on `checkout_holds` only validates expiration time (within 15 minutes) but doesn't validate:
+- Session ID format/ownership
+- Rate limiting (users could spam holds to block availability)
 
-### Files to Create:
-1. `src/hooks/useStripeHealth.ts` - Pre-flight check for Stripe
-2. `src/components/booking/LiveAvailabilityBadge.tsx` - Visual indicator
+**Current Policy:**
+```sql
+-- Overly permissive INSERT
+WITH CHECK: (expires_at > now() AND expires_at < (now() + '00:15:00'::interval))
+```
 
-### Testing Strategy:
-1. Trigger manual PMS sync and verify no errors in logs
-2. Make a test booking through checkout to confirm Stripe flow
-3. Verify calendar shows real-time blocked dates after sync
+**Solution**: Add session validation and consider rate limiting via a database function.
+
+**Database Migration:**
+```sql
+-- Create a function to validate checkout hold creation
+CREATE OR REPLACE FUNCTION public.validate_checkout_hold()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  recent_holds_count INTEGER;
+BEGIN
+  -- Check for rate limiting: max 3 active holds per session in last 30 minutes
+  SELECT COUNT(*) INTO recent_holds_count
+  FROM public.checkout_holds
+  WHERE session_id = NEW.session_id
+    AND created_at > (now() - INTERVAL '30 minutes')
+    AND released = false;
+  
+  IF recent_holds_count >= 3 THEN
+    RAISE EXCEPTION 'Rate limit exceeded: too many active holds for this session';
+  END IF;
+  
+  -- Validate session_id format (must be non-empty, reasonable length)
+  IF NEW.session_id IS NULL OR LENGTH(NEW.session_id) < 10 OR LENGTH(NEW.session_id) > 100 THEN
+    RAISE EXCEPTION 'Invalid session_id format';
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+-- Create trigger for validation
+CREATE TRIGGER validate_checkout_hold_trigger
+  BEFORE INSERT ON public.checkout_holds
+  FOR EACH ROW
+  EXECUTE FUNCTION public.validate_checkout_hold();
+```
+
+---
+
+## Phase 2: Edge Function Input Validation
+
+### 2.1 Add Zod Validation to create-payment-intent
+
+**File**: `supabase/functions/create-payment-intent/index.ts`
+
+Add comprehensive input validation using Zod:
+
+```typescript
+// Add at top of file
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+
+const paymentIntentSchema = z.object({
+  propertyId: z.string().uuid(),
+  propertyName: z.string().min(1).max(200),
+  propertySlug: z.string().min(1).max(100),
+  propertyCity: z.string().max(100).optional(),
+  propertyCountry: z.string().max(100).optional(),
+  checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  nights: z.number().int().positive().max(365),
+  guests: z.number().int().positive().max(50),
+  adults: z.number().int().positive().max(50),
+  children: z.number().int().min(0).max(50),
+  accommodationTotal: z.number().positive(),
+  addonsTotal: z.number().min(0),
+  feesTotal: z.number().min(0),
+  taxesTotal: z.number().min(0),
+  discountAmount: z.number().min(0),
+  discountCode: z.string().max(50).optional(),
+  totalAmount: z.number().positive().max(1000000),
+  currency: z.string().length(3),
+  paymentType: z.enum(['full', 'deposit']),
+  depositPercentage: z.number().min(1).max(100).optional(),
+  amountDue: z.number().positive().max(1000000),
+  balanceDue: z.number().min(0).optional(),
+  cancellationPolicyId: z.string().uuid().optional(),
+  cancellationPolicyName: z.string().max(100).optional(),
+  guestName: z.string().min(1).max(200),
+  guestEmail: z.string().email().max(255),
+  guestCountry: z.string().max(100).optional(),
+  sessionId: z.string().min(10).max(100),
+  bookingReference: z.string().max(50).optional(),
+}).refine(
+  (data) => new Date(data.checkOut) > new Date(data.checkIn),
+  { message: "checkOut must be after checkIn" }
+);
+```
+
+**Validation at start of handler:**
+```typescript
+const validation = paymentIntentSchema.safeParse(body);
+if (!validation.success) {
+  return new Response(
+    JSON.stringify({ 
+      error: "Validation failed", 
+      details: validation.error.issues 
+    }),
+    { status: 400, headers: corsHeaders }
+  );
+}
+```
+
+---
+
+### 2.2 Add Zod Validation to confirm-payment
+
+**File**: `supabase/functions/confirm-payment/index.ts`
+
+Add similar schema validation for the booking payload:
+
+```typescript
+const confirmPaymentSchema = z.object({
+  paymentIntentId: z.string().startsWith("pi_"),
+  paymentType: z.enum(['full', 'deposit']),
+  bookingId: z.string().uuid().optional(),
+  bookingPayload: z.object({
+    propertyId: z.string().uuid(),
+    propertyName: z.string().min(1).max(200),
+    // ... full schema matching interface
+  }).optional(),
+}).refine(
+  (data) => data.bookingId || data.bookingPayload,
+  { message: "Either bookingId or bookingPayload is required" }
+);
+```
+
+---
+
+### 2.3 Add Validation to advancecm-sync
+
+**File**: `supabase/functions/advancecm-sync/index.ts`
+
+Add action-specific validation schemas to prevent malformed requests.
+
+---
+
+## Phase 3: PMS Webhook Authentication Decision
+
+### Current State
+The `pms-webhook` edge function has HMAC signature verification implemented, but:
+- Tokeet/AdvanceCM uses a **pull-based Data Feed model**, not push webhooks
+- The webhook secret (`PMS_WEBHOOK_SECRET`) is not configured
+- If no secret is set, the function logs a warning but processes requests
+
+### Recommended Action
+Since Tokeet doesn't support webhook signing and uses the Data Feed (pull) model:
+
+**Option A (Recommended)**: Remove the webhook authentication finding as "not applicable"
+- Update the security finding to ignore since this endpoint isn't used in the current architecture
+- The PMS sync happens via the `pms-sync-cron` function calling Tokeet's API
+
+**Option B**: Add URL token authentication
+- Store a token in secrets (`PMS_WEBHOOK_TOKEN`)
+- Update the function to verify `?token=xxx` query parameter
+- Configure this URL in Tokeet if webhooks are ever enabled
+
+---
+
+## Phase 4: Enable Leaked Password Protection
+
+**Action**: Use the configure-auth tool to enable leaked password protection.
+
+This checks user passwords against the HaveIBeenPwned database during signup/password change.
+
+---
+
+## Phase 5: Admin Role Verification in Edge Functions
+
+### Current State
+- RLS policies on database tables use `has_role()` function correctly
+- Edge functions use service role client, bypassing RLS
+- Admin operations in edge functions should explicitly verify role
+
+### Recommended Enhancement
+Create a shared helper for role verification in edge functions that need admin-only access:
+
+```typescript
+async function verifyAdminRole(
+  supabaseClient: SupabaseClient,
+  authHeader: string | null
+): Promise<{ isAdmin: boolean; userId?: string; error?: string }> {
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { isAdmin: false, error: 'Missing auth header' };
+  }
+  
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabaseClient.auth.getUser(token);
+  
+  if (error || !user) {
+    return { isAdmin: false, error: 'Invalid token' };
+  }
+  
+  // Check admin role using service client
+  const { data: roleData } = await supabaseClient
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+  
+  return { isAdmin: !!roleData, userId: user.id };
+}
+```
+
+---
+
+## Implementation Order
+
+1. **Phase 1**: Database migrations for RLS fixes (critical)
+2. **Phase 4**: Enable leaked password protection (quick win)
+3. **Phase 2**: Edge function input validation
+4. **Phase 3**: Update PMS webhook finding status
+5. **Phase 5**: Admin role verification in edge functions
+
+---
+
+## Files to Create/Modify
+
+### Database Migrations:
+1. Add checkout_holds validation trigger with rate limiting
+2. Verify blog_authors policy (may need to restrict public SELECT)
+
+### Edge Functions to Modify:
+1. `supabase/functions/create-payment-intent/index.ts` - Add Zod validation
+2. `supabase/functions/confirm-payment/index.ts` - Add Zod validation
+3. `supabase/functions/advancecm-sync/index.ts` - Add action validation
+
+### Frontend Files to Check:
+1. Verify blog author queries use `blog_authors_public` view for public pages
 
 ---
 
 ## Expected Outcomes
 
 After implementation:
-- PMS availability sync will complete successfully for all 20 properties (currently failing for 19)
-- Calendar will reflect accurate blocked dates from Tokeet/AdvanceCM
-- Stripe payment flow will have better error recovery
-- Users will see visual confirmation that availability data is live
-- Admin will have visibility into sync health
+- No publicly accessible PII or financial data
+- Input validation prevents malformed/malicious requests
+- Rate limiting on checkout holds prevents availability blocking attacks
+- Password security enhanced with breach detection
+- Clear documentation of intentional security decisions (PMS webhook)
 
