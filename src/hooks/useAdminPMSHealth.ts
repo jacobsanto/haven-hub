@@ -528,3 +528,38 @@ export function usePushBookingToPMS() {
     },
   });
 }
+
+// Test webhook endpoint via admin proxy
+export function useTestWebhookEndpoint() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ event, data }: { event: string; data: Record<string, unknown> }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Authentication required');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/test-pms-webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ event, data }),
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Test failed');
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pms', 'raw-events'] });
+    },
+  });
+}
