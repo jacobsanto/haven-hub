@@ -1,14 +1,17 @@
 import { motion } from 'framer-motion';
-import { Building2, Calendar, TrendingUp, Clock, Users, ArrowUpRight, ArrowDownRight, Timer, LogIn, LogOut, Sparkles } from 'lucide-react';
+import { Building2, Calendar, TrendingUp, Clock, Users, ArrowUpRight, ArrowDownRight, Timer, LogIn, LogOut, Sparkles, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminProperties } from '@/hooks/useProperties';
 import { useBookingStats, useAdminBookings } from '@/hooks/useBookings';
 import { useCheckoutHoldsStats, useTodayActivity, useRevenueStats } from '@/hooks/useAdminAnalytics';
 import { useRealtimeBookings } from '@/hooks/useRealtimeBookings';
+import { usePMSSyncStatus, useTriggerPMSSync } from '@/hooks/usePMSSyncStatus';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
   const { data: properties } = useAdminProperties();
@@ -16,6 +19,8 @@ export default function AdminDashboard() {
   const { data: recentBookings } = useAdminBookings();
   const { data: holdsStats } = useCheckoutHoldsStats();
   const { data: todayActivity } = useTodayActivity();
+  const { data: pmsSyncStatus } = usePMSSyncStatus();
+  const triggerSync = useTriggerPMSSync();
   
   // Revenue comparison: this month vs last month
   const thisMonthStart = startOfMonth(new Date());
@@ -28,6 +33,22 @@ export default function AdminDashboard() {
   
   // Enable real-time updates
   useRealtimeBookings();
+
+  const handleTriggerSync = async () => {
+    try {
+      await triggerSync.mutateAsync();
+      toast({
+        title: 'Sync started',
+        description: 'PMS availability sync has been triggered.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Sync failed',
+        description: error instanceof Error ? error.message : 'Failed to trigger sync',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -229,6 +250,93 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </motion.div>
+
+          {/* PMS Sync Status Card */}
+          {pmsSyncStatus?.connection && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Card className={`card-organic border-2 ${
+                pmsSyncStatus.isHealthy 
+                  ? 'border-green-200 bg-green-50/30' 
+                  : pmsSyncStatus.errorCount > 0 
+                    ? 'border-red-200 bg-red-50/30' 
+                    : 'border-amber-200 bg-amber-50/30'
+              }`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {pmsSyncStatus.isHealthy ? (
+                        <CheckCircle2 className="h-6 w-6 text-green-600" />
+                      ) : pmsSyncStatus.errorCount > 0 ? (
+                        <AlertTriangle className="h-6 w-6 text-red-600" />
+                      ) : (
+                        <Clock className="h-6 w-6 text-amber-600" />
+                      )}
+                      <div>
+                        <p className="font-medium">
+                          {pmsSyncStatus.connection.pms_name} Sync
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {pmsSyncStatus.isHealthy 
+                            ? 'All properties synced successfully' 
+                            : pmsSyncStatus.errorCount > 0 
+                              ? `${pmsSyncStatus.errorCount} sync errors in last 10 runs`
+                              : 'Waiting for first sync'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {pmsSyncStatus.lastRun && (
+                        <div className="text-right text-sm">
+                          <p className="text-muted-foreground">Last sync</p>
+                          <p className="font-medium">
+                            {format(new Date(pmsSyncStatus.lastRun.started_at), 'MMM d, HH:mm')}
+                          </p>
+                        </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleTriggerSync}
+                        disabled={triggerSync.isPending}
+                        className="gap-2"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${triggerSync.isPending ? 'animate-spin' : ''}`} />
+                        {triggerSync.isPending ? 'Syncing...' : 'Sync Now'}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {pmsSyncStatus.lastRun && (
+                    <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-6 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Status: </span>
+                        <Badge 
+                          variant={pmsSyncStatus.lastRun.status === 'success' ? 'default' : 'destructive'}
+                          className={pmsSyncStatus.lastRun.status === 'success' ? 'bg-green-100 text-green-700' : ''}
+                        >
+                          {pmsSyncStatus.lastRun.status}
+                        </Badge>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Processed: </span>
+                        <span className="font-medium">{pmsSyncStatus.lastRun.records_processed || 0}</span>
+                      </div>
+                      {(pmsSyncStatus.lastRun.records_failed || 0) > 0 && (
+                        <div>
+                          <span className="text-muted-foreground">Failed: </span>
+                          <span className="font-medium text-red-600">{pmsSyncStatus.lastRun.records_failed}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Recent Bookings */}
           <Card className="card-organic">
