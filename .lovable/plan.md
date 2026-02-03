@@ -1,105 +1,111 @@
 
-# Security Findings Review: Current Status & Cleanup
 
-## Summary
+# Fix: PMS Connection Test Authentication Issue
 
-After thorough analysis of the database, I've verified that the three security findings you mentioned are **already fixed**:
+## Root Cause Analysis
 
-| Finding | Table | Current Status | Evidence |
-|---------|-------|----------------|----------|
-| Email Exposure | `blog_authors` | ✅ FIXED | Only admin SELECT policy exists (`has_role('admin')`) |
-| Purchase Visibility | `booking_addons` | ✅ FIXED | Only admin ALL policy exists |
-| Session Manipulation | `checkout_holds` | ✅ FIXED | Validation trigger with rate limiting active |
+The PMS connection **IS working** - the database shows:
+- Active connection with successful sync status
+- Last sync just 9 minutes ago
+- Auto-sync enabled and running every 5 minutes
 
----
+The "Test Connection" button fails with "Authentication required" because:
 
-## Why Security Scan Still Flags Them
-
-The security scanner uses a **service role client** which bypasses Row Level Security. This means:
-- It can read data from any table regardless of RLS policies
-- It flags tables containing sensitive data patterns (emails, prices, etc.)
-- It doesn't detect that RLS policies would block unauthenticated users
+1. **Default adapter uses Mock**: `pmsAdapter = getPMSAdapter(false)` returns MockPMSAdapter
+2. **AdvanceCMAdapter requires authentication**: The `testConnection()` method calls an edge function that checks for `supabase.auth.getSession()` - if no session exists, it throws "Authentication required"
 
 ---
 
-## Verification Results
+## Why the UI Shows Disconnected
 
-### 1. blog_authors Email Exposure - FIXED
+Looking at the `PMSConnectionHealthCard` component, it displays connection status based on:
+- `connection.is_active` - which IS true
+- `connection.sync_status` - which IS "success"
 
-**Current SELECT policies:**
-```
-Only: "Admins can view all authors" with has_role(auth.uid(), 'admin')
-```
-
-**Evidence:** No public SELECT policy exists. The previous policy was dropped.
-
-**Frontend Impact:** The `useBlogAuthors` hook correctly queries `blog_authors_public` view (which excludes email).
+The issue is the **Test Connection button** throwing errors, which may be confusing you into thinking it's disconnected.
 
 ---
 
-### 2. booking_addons Purchase Visibility - FIXED
+## Solution: Fix the PMS Adapter Selection
 
-**Current policies:**
-```
-Only: "Admin can manage booking addons" (ALL command) with has_role('admin')
+### Change 1: Update `src/integrations/pms/index.ts`
+
+Currently:
+```typescript
+export const pmsAdapter = getPMSAdapter(false); // Always uses Mock
 ```
 
-**Evidence:** Query returned empty result when testing without service role.
-
----
-
-### 3. checkout_holds Rate Limiting - FIXED
-
-**Validation Trigger:**
-```
-validate_checkout_hold_trigger (BEFORE INSERT, tgtype=7)
+Change to use the real AdvanceCM adapter:
+```typescript
+export const pmsAdapter = getPMSAdapter(true); // Use real adapter
 ```
 
-**Function:** `validate_checkout_hold()` (SECURITY DEFINER) implements:
-- Rate limiting: Max 3 active holds per session in 30 minutes
-- Session ID format validation: 10-100 characters required
+Or better, create a dynamic adapter that checks if credentials are configured:
+```typescript
+export const pmsAdapter = new AdvanceCMAdapter();
+```
 
 ---
 
-## Action: Update Security Findings
+### Change 2: Improve Error Handling in Test Connection
 
-I will mark these three findings as resolved/ignored since the fixes are confirmed in place:
+The `AdvanceCMAdapter.testConnection()` method catches errors and returns `false`, but doesn't distinguish between:
+- "No session" (user not logged in)
+- "API credentials invalid"
+- "Network error"
 
-1. **Delete** the `blog_authors_email_exposure` finding (fixed by RLS policy)
-2. **Delete** the `booking_addons_purchase_exposure` finding (fixed by RLS policy)
-3. **Update** the `checkout_holds_session_validation` finding to ignored with reason
-
----
-
-## Other Findings Status
-
-The scan also shows findings for tables like `bookings`, `contact_submissions`, `newsletter_subscribers`, etc. These are **false positives** - all have proper admin-only SELECT policies:
-
-| Table | SELECT Policy | Status |
-|-------|---------------|--------|
-| bookings | Admin-only | ✅ Secure |
-| contact_submissions | Admin-only | ✅ Secure |
-| newsletter_subscribers | Admin-only | ✅ Secure |
-| booking_payments | Admin-only | ✅ Secure |
-| security_deposits | Admin-only | ✅ Secure |
-| audit_log | Admin-only | ✅ Secure |
-| profiles | User-own + Admin | ✅ Secure |
+We should improve the error handling to show more helpful messages.
 
 ---
 
-## Technical Changes
+### Change 3: Verify Admin Login Status
 
-**No database migrations needed** - policies are already correct.
+The edge function calls require a valid auth session. Ensure:
+1. You are logged in as an admin user
+2. The session hasn't expired
+3. The edge function has access to the TOKEET_API_KEY secret
 
-**Security Finding Updates:**
-- Update the security findings database to reflect current fixed state
-- This is purely a tracking update, not a code or schema change
+---
+
+## Implementation Steps
+
+1. **Update `src/integrations/pms/index.ts`**:
+   - Change default adapter from Mock to AdvanceCM
+   - This ensures all PMS operations use the real adapter
+
+2. **Update `useTestPMSConnection` hook**:
+   - Add better error messaging
+   - Check for auth session before calling adapter
+
+3. **Verify Secrets**:
+   - Confirm `TOKEET_API_KEY` and `TOKEET_ACCOUNT_ID` are configured in backend
+
+---
+
+## Quick Verification
+
+The PMS sync IS working. Evidence:
+- Edge function logs show: "Sync complete: 20 synced, 0 failed"
+- Database shows last sync 9 minutes ago with status "success"
+- The cron job is running every 5 minutes as expected
+
+The only issue is the "Test Connection" button failing due to the mock adapter being used.
+
+---
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/integrations/pms/index.ts` | Use `AdvanceCMAdapter` as default |
+| `src/hooks/useAdminPMSHealth.ts` | Add auth check before test connection |
 
 ---
 
 ## Expected Outcome
 
-After cleanup:
-- Security findings will accurately reflect the secured state
-- No false positives from already-fixed issues
-- Clear documentation of what was fixed and when
+After fix:
+- "Test Connection" button will work when logged in as admin
+- Clear error message if not authenticated
+- Connection status will continue to show correctly from database
+
