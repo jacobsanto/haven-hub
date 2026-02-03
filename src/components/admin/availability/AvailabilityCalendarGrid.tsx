@@ -21,6 +21,9 @@ interface AvailabilityCalendarGridProps {
   bookingsByDate: Map<string, BookingContext>;
   onToggleDate: (date: Date) => void;
   isToggling: boolean;
+  compact?: boolean;
+  selectedDates?: Set<string>;
+  onSelectDate?: (date: Date, shiftKey: boolean) => void;
 }
 
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -32,6 +35,9 @@ export function AvailabilityCalendarGrid({
   bookingsByDate,
   onToggleDate,
   isToggling,
+  compact = false,
+  selectedDates,
+  onSelectDate,
 }: AvailabilityCalendarGridProps) {
   const getDateStatus = (dateStr: string) => {
     const isBlocked = blockedDates.has(dateStr);
@@ -88,43 +94,65 @@ export function AvailabilityCalendarGrid({
     return <p>Available - Click to block</p>;
   };
 
+  const handleClick = (date: Date, event: React.MouseEvent) => {
+    const isPast = isBefore(date, new Date()) && !isToday(date);
+    if (isPast) return;
+
+    // If shift is held and we have a selection handler, trigger selection
+    if (event.shiftKey && onSelectDate) {
+      onSelectDate(date, true);
+    } else if (onSelectDate && !event.shiftKey) {
+      // Regular click with selection enabled - toggle selection
+      onSelectDate(date, false);
+    } else {
+      // No selection handler - toggle availability
+      onToggleDate(date);
+    }
+  };
+
   return (
     <TooltipProvider>
       <div>
         {/* Week Days Header */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
+        <div className={cn('grid grid-cols-7 gap-1', !compact && 'gap-2')}>
           {weekDays.map((day) => (
             <div
               key={day}
-              className="text-center text-sm font-medium text-muted-foreground py-2"
+              className={cn(
+                'text-center font-medium text-muted-foreground',
+                compact ? 'text-xs py-1' : 'text-sm py-2'
+              )}
             >
-              {day}
+              {compact ? day.charAt(0) : day}
             </div>
           ))}
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-2">
+        <div className={cn('grid grid-cols-7', compact ? 'gap-1' : 'gap-2')}>
           {/* Empty cells for days before the first of the month */}
           {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-            <div key={`empty-${index}`} className="aspect-square" />
+            <div key={`empty-${index}`} className={compact ? 'aspect-square' : 'aspect-square'} />
           ))}
 
           {/* Calendar Days */}
           {days.map((day) => {
             const dateStr = format(day, 'yyyy-MM-dd');
             const isPast = isBefore(day, new Date()) && !isToday(day);
+            const isSelected = selectedDates?.has(dateStr);
 
             return (
               <Tooltip key={dateStr}>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => !isPast && onToggleDate(day)}
+                    onClick={(e) => handleClick(day, e)}
                     disabled={isPast || isToggling}
                     className={cn(
-                      'aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all',
+                      'aspect-square flex items-center justify-center rounded-lg font-medium transition-all',
+                      compact ? 'text-xs' : 'text-sm',
                       getDateStyles(day, dateStr),
-                      isToday(day) && 'ring-2 ring-primary ring-offset-2'
+                      isToday(day) && 'ring-2 ring-primary ring-offset-2',
+                      isSelected && 'ring-2 ring-blue-500 ring-offset-1 bg-blue-50'
                     )}
                   >
                     {format(day, 'd')}
@@ -134,6 +162,11 @@ export function AvailabilityCalendarGrid({
                   <div className="text-xs">
                     <p className="font-medium mb-1">{format(day, 'EEEE, MMMM d')}</p>
                     {getTooltipContent(dateStr, day)}
+                    {onSelectDate && !isPast && (
+                      <p className="text-muted-foreground mt-1 italic">
+                        Shift+Click to select range
+                      </p>
+                    )}
                   </div>
                 </TooltipContent>
               </Tooltip>
