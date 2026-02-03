@@ -7,9 +7,11 @@ export function useBlogAuthors() {
   return useQuery({
     queryKey: ['blog-authors'],
     queryFn: async () => {
+      // Use blog_authors_public view to exclude sensitive data (email) for public access
       const { data, error } = await supabase
-        .from('blog_authors')
+        .from('blog_authors_public')
         .select('*')
+        .eq('is_active', true)
         .order('name');
       
       if (error) throw error;

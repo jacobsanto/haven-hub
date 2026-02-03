@@ -1,10 +1,115 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// Zod validation schemas for each action
+const baseRequestSchema = z.object({
+  action: z.enum([
+    "test",
+    "fetch-properties",
+    "fetch-property",
+    "fetch-availability",
+    "sync-availability",
+    "import-property",
+    "create-booking",
+    "cancel-booking",
+  ]),
+});
+
+const fetchPropertySchema = baseRequestSchema.extend({
+  action: z.literal("fetch-property"),
+  externalId: z.string().min(1).max(100),
+});
+
+const fetchAvailabilitySchema = baseRequestSchema.extend({
+  action: z.literal("fetch-availability"),
+  externalId: z.string().min(1).max(100),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+const importPropertySchema = baseRequestSchema.extend({
+  action: z.literal("import-property"),
+  propertyData: z.object({
+    pkey: z.string(),
+    name: z.string().optional(),
+    display_name: z.string().optional(),
+  }).passthrough(),
+  connectionId: z.string().uuid(),
+});
+
+const createBookingSchema = baseRequestSchema.extend({
+  action: z.literal("create-booking"),
+  externalPropertyId: z.string().min(1).max(100),
+  bookingReference: z.string().max(50).optional(),
+  checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  guests: z.number().int().positive().max(50).optional(),
+  adults: z.number().int().positive().max(50).optional(),
+  children: z.number().int().min(0).max(50).optional(),
+  guestInfo: z.object({
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    email: z.string().email().max(255),
+    phone: z.string().max(50).optional(),
+    country: z.string().max(100).optional(),
+  }),
+  totalPrice: z.number().min(0).optional(),
+  currency: z.string().length(3).optional(),
+  priceBreakdownNotes: z.string().max(2000).optional(),
+});
+
+const cancelBookingSchema = baseRequestSchema.extend({
+  action: z.literal("cancel-booking"),
+  externalBookingId: z.string().min(1).max(100),
+  cancellationReason: z.string().max(500).optional(),
+});
+
+function validateSyncRequest(body: unknown): { success: true; data: SyncRequest } | { success: false; error: string } {
+  const baseResult = baseRequestSchema.safeParse(body);
+  if (!baseResult.success) {
+    return { success: false, error: "Invalid action" };
+  }
+
+  const action = baseResult.data.action;
+  let result;
+
+  switch (action) {
+    case "test":
+    case "fetch-properties":
+    case "sync-availability":
+      result = baseRequestSchema.safeParse(body);
+      break;
+    case "fetch-property":
+      result = fetchPropertySchema.safeParse(body);
+      break;
+    case "fetch-availability":
+      result = fetchAvailabilitySchema.safeParse(body);
+      break;
+    case "import-property":
+      result = importPropertySchema.safeParse(body);
+      break;
+    case "create-booking":
+      result = createBookingSchema.safeParse(body);
+      break;
+    case "cancel-booking":
+      result = cancelBookingSchema.safeParse(body);
+      break;
+    default:
+      return { success: false, error: "Unknown action" };
+  }
+
+  if (!result.success) {
+    return { success: false, error: result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ') };
+  }
+
+  return { success: true, data: body as SyncRequest };
+}
 
 interface TokeetRental {
   pkey: string;
@@ -49,14 +154,14 @@ interface TokeetRate {
   nightly?: number;
   weekly?: number;
   monthly?: number;
-  minimum?: number;  // min stay
-  maximum?: number;  // max stay
-  start?: number;    // Unix timestamp
-  end?: number;      // Unix timestamp
-  from?: string;     // ISO date
-  to?: string;       // ISO date
+  minimum?: number;
+  maximum?: number;
+  start?: number;
+  end?: number;
+  from?: string;
+  to?: string;
   currency?: string;
-  type?: string;     // 'standard', 'seasonal', etc.
+  type?: string;
 }
 
 interface SyncRequest {
@@ -75,7 +180,6 @@ interface SyncRequest {
   propertyData?: TokeetRental;
   connectionId?: string;
   propertyId?: string;
-  // For create-booking
   externalPropertyId?: string;
   bookingReference?: string;
   checkIn?: string;
@@ -93,7 +197,6 @@ interface SyncRequest {
   totalPrice?: number;
   currency?: string;
   priceBreakdownNotes?: string;
-  // For cancel-booking
   externalBookingId?: string;
   cancellationReason?: string;
 }
@@ -212,7 +315,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body: SyncRequest = await req.json();
+    const rawBody = await req.json();
+    
+    // Validate request using action-specific schema
+    const validationResult = validateSyncRequest(rawBody);
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ error: "Validation failed", details: validationResult.error }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const body: SyncRequest = validationResult.data;
     const { action } = body;
 
     switch (action) {
