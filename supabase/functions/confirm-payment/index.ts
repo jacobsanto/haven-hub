@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,56 +9,70 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface BookingPayload {
-  propertyId: string;
-  propertyName: string;
-  propertySlug: string;
-  instantBooking: boolean;
-  bookingReference: string;
-  checkIn: string;
-  checkOut: string;
-  nights: number;
-  guests: number;
-  adults: number;
-  children: number;
-  guestInfo: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone?: string;
-    country?: string;
-    specialRequests?: string;
-  };
-  totalPrice: number;
-  paymentType: 'full' | 'deposit';
-  depositAmount?: number;
-  cancellationPolicy: string;
-  holdId?: string;
-  priceBreakdown: {
-    lineItems: Array<{
-      type: string;
-      label: string;
-      amount: number;
-      details?: string;
-    }>;
-  };
-  selectedAddons: Array<{
-    addon: { id: string; price: number };
-    quantity: number;
-    calculatedPrice: number;
-    guestCount?: number;
-    scheduledDate?: string;
-  }>;
-}
+// Zod validation schemas
+const guestInfoSchema = z.object({
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  email: z.string().email().max(255),
+  phone: z.string().max(50).optional(),
+  country: z.string().max(100).optional(),
+  specialRequests: z.string().max(2000).optional(),
+});
 
-interface ConfirmPaymentRequest {
-  paymentIntentId: string;
-  paymentType: 'full' | 'deposit';
-  // New: booking payload for deferred creation
-  bookingPayload?: BookingPayload;
-  // Legacy: bookingId for backward compatibility
-  bookingId?: string;
-}
+const lineItemSchema = z.object({
+  type: z.string(),
+  label: z.string(),
+  amount: z.number(),
+  details: z.string().optional(),
+});
+
+const selectedAddonSchema = z.object({
+  addon: z.object({
+    id: z.string().uuid(),
+    price: z.number(),
+  }),
+  quantity: z.number().int().positive(),
+  calculatedPrice: z.number(),
+  guestCount: z.number().int().positive().optional(),
+  scheduledDate: z.string().optional(),
+});
+
+const bookingPayloadSchema = z.object({
+  propertyId: z.string().uuid(),
+  propertyName: z.string().min(1).max(200),
+  propertySlug: z.string().min(1).max(100),
+  instantBooking: z.boolean(),
+  bookingReference: z.string().max(50),
+  checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  nights: z.number().int().positive().max(365),
+  guests: z.number().int().positive().max(50),
+  adults: z.number().int().positive().max(50),
+  children: z.number().int().min(0).max(50),
+  guestInfo: guestInfoSchema,
+  totalPrice: z.number().positive().max(1000000),
+  paymentType: z.enum(['full', 'deposit']),
+  depositAmount: z.number().min(0).optional(),
+  cancellationPolicy: z.string().max(100),
+  holdId: z.string().uuid().optional(),
+  priceBreakdown: z.object({
+    lineItems: z.array(lineItemSchema),
+  }),
+  selectedAddons: z.array(selectedAddonSchema),
+});
+
+const confirmPaymentSchema = z.object({
+  paymentIntentId: z.string().regex(/^pi_/, "Invalid payment intent ID"),
+  paymentType: z.enum(['full', 'deposit']),
+  bookingId: z.string().uuid().optional(),
+  bookingPayload: bookingPayloadSchema.optional(),
+}).refine(
+  (data) => data.bookingId || data.bookingPayload,
+  { message: "Either bookingId or bookingPayload is required" }
+);
+
+type BookingPayload = z.infer<typeof bookingPayloadSchema>;
+type ConfirmPaymentRequest = z.infer<typeof confirmPaymentSchema>;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -70,11 +85,24 @@ serve(async (req) => {
   );
 
   try {
-    const body: ConfirmPaymentRequest = await req.json();
-
-    if (!body.paymentIntentId) {
-      throw new Error("Missing paymentIntentId");
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validation = confirmPaymentSchema.safeParse(rawBody);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Validation failed", 
+          details: validation.error.issues.map(i => ({ path: i.path.join('.'), message: i.message }))
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
     }
+
+    const body: ConfirmPaymentRequest = validation.data;
 
     // Initialize Stripe
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");

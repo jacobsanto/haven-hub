@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,51 +9,44 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface CreatePaymentIntentRequest {
-  // Property details
-  propertyId: string;
-  propertyName: string;
-  propertySlug: string;
-  propertyCity: string;
-  propertyCountry: string;
-  
-  // Stay details
-  checkIn: string;
-  checkOut: string;
-  nights: number;
-  guests: number;
-  adults: number;
-  children: number;
-  
-  // Pricing
-  accommodationTotal: number;
-  addonsTotal: number;
-  feesTotal: number;
-  taxesTotal: number;
-  discountAmount: number;
-  discountCode?: string;
-  totalAmount: number;
-  currency: string;
-  
-  // Payment type
-  paymentType: 'full' | 'deposit';
-  depositPercentage?: number;
-  amountDue: number;
-  balanceDue?: number;
-  
-  // Policy
-  cancellationPolicyId?: string;
-  cancellationPolicyName?: string;
-  
-  // Guest info
-  guestName: string;
-  guestEmail: string;
-  guestCountry?: string;
-  
-  // Session
-  sessionId: string;
-  bookingReference?: string;
-}
+// Zod validation schema for payment intent request
+const paymentIntentSchema = z.object({
+  propertyId: z.string().uuid(),
+  propertyName: z.string().min(1).max(200),
+  propertySlug: z.string().min(1).max(100),
+  propertyCity: z.string().max(100).optional().default(""),
+  propertyCountry: z.string().max(100).optional().default(""),
+  checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+  checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+  nights: z.number().int().positive().max(365),
+  guests: z.number().int().positive().max(50),
+  adults: z.number().int().positive().max(50),
+  children: z.number().int().min(0).max(50),
+  accommodationTotal: z.number().min(0),
+  addonsTotal: z.number().min(0),
+  feesTotal: z.number().min(0),
+  taxesTotal: z.number().min(0),
+  discountAmount: z.number().min(0),
+  discountCode: z.string().max(50).optional(),
+  totalAmount: z.number().positive().max(1000000),
+  currency: z.string().length(3),
+  paymentType: z.enum(['full', 'deposit']),
+  depositPercentage: z.number().min(1).max(100).optional(),
+  amountDue: z.number().positive().max(1000000),
+  balanceDue: z.number().min(0).optional(),
+  cancellationPolicyId: z.string().uuid().optional(),
+  cancellationPolicyName: z.string().max(100).optional(),
+  guestName: z.string().min(1).max(200),
+  guestEmail: z.string().email().max(255),
+  guestCountry: z.string().max(100).optional(),
+  sessionId: z.string().min(10).max(100),
+  bookingReference: z.string().max(50).optional(),
+}).refine(
+  (data) => new Date(data.checkOut) > new Date(data.checkIn),
+  { message: "checkOut must be after checkIn" }
+);
+
+type CreatePaymentIntentRequest = z.infer<typeof paymentIntentSchema>;
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -66,13 +60,24 @@ serve(async (req) => {
   );
 
   try {
-    // Parse request body
-    const body: CreatePaymentIntentRequest = await req.json();
-
-    // Validate required fields
-    if (!body.propertyId || !body.amountDue || !body.guestEmail) {
-      throw new Error("Missing required fields: propertyId, amountDue, guestEmail");
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validation = paymentIntentSchema.safeParse(rawBody);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Validation failed", 
+          details: validation.error.issues.map(i => ({ path: i.path.join('.'), message: i.message }))
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
     }
+
+    const body: CreatePaymentIntentRequest = validation.data;
 
     // Initialize Stripe
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
