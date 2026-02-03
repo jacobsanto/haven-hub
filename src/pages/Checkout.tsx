@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
-import { ArrowLeft, MapPin, Users, Calendar, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Calendar, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { useProperty } from '@/hooks/useProperties';
 import { useFeesTaxes, calculatePriceBreakdown } from '@/hooks/useBookingEngine';
 import { useCreateCheckoutHold, useReleaseCheckoutHold, generateSessionId } from '@/hooks/useCheckoutFlow';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
+import { useStripeHealth } from '@/hooks/useStripeHealth';
 import { SelectedAddon, CouponPromo, BookingGuestWithCounts, PaymentType, PriceBreakdown } from '@/types/booking-engine';
 import { CancellationPolicyKey } from '@/lib/cancellation-policies';
 import { getStripe } from '@/lib/stripe';
@@ -63,6 +64,7 @@ export default function Checkout() {
   const [sessionId] = useState(generateSessionId);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   // Stripe state
   const [showStripeForm, setShowStripeForm] = useState(false);
@@ -72,6 +74,9 @@ export default function Checkout() {
   
   // Double-click protection
   const isSubmittingRef = useRef(false);
+  
+  // Pre-flight health check
+  const { checkHealth } = useStripeHealth();
 
   const createHold = useCreateCheckoutHold();
   const releaseHold = useReleaseCheckoutHold();
@@ -175,6 +180,31 @@ export default function Checkout() {
     }
   };
 
+  // Retry helper with exponential backoff
+  const retryWithBackoff = async <T,>(
+    fn: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T> => {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        if (attempt < maxRetries) {
+          const delay = baseDelay * Math.pow(2, attempt);
+          console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError;
+  };
+
   // Create Payment Intent and show Stripe form (deferred booking creation)
   const handleProceedToPayment = async () => {
     // Double-click protection
@@ -193,94 +223,102 @@ export default function Checkout() {
       return;
     }
 
-    // Check Stripe is configured
-    const stripeInstance = await getStripe();
-    if (!stripeInstance) {
-      console.error('Stripe not initialized - check VITE_STRIPE_PUBLISHABLE_KEY');
-      setPaymentError('Payment system is temporarily unavailable. Please try again later or contact support.');
-      toast({
-        title: 'Payment system unavailable',
-        description: 'Unable to initialize payment. Please try again later.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     isSubmittingRef.current = true;
     setIsProcessing(true);
 
     try {
+      // Pre-flight health check
+      const health = await checkHealth();
+      if (!health.isHealthy) {
+        throw new Error(health.error || 'Payment system is temporarily unavailable.');
+      }
+
       // Generate booking reference upfront
       const newBookingReference = generateBookingReference();
       setBookingReference(newBookingReference);
 
       console.log('Creating payment intent for booking:', newBookingReference);
 
-      // Create Payment Intent via edge function (NO booking created yet)
-      const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-        body: {
-          propertyId: property.id,
-          propertyName: property.name,
-          propertySlug: property.slug,
-          propertyCity: property.city,
-          propertyCountry: property.country,
-          checkIn: format(checkIn, 'yyyy-MM-dd'),
-          checkOut: format(checkOut, 'yyyy-MM-dd'),
-          nights,
-          guests,
-          adults,
-          children,
-          accommodationTotal: priceBreakdown.accommodationTotal,
-          addonsTotal: priceBreakdown.addonsTotal,
-          feesTotal: priceBreakdown.feesTotal,
-          taxesTotal: priceBreakdown.taxesTotal,
-          discountAmount: priceBreakdown.discountAmount,
-          discountCode: priceBreakdown.discountCode,
-          totalAmount: priceBreakdown.total,
-          currency: priceBreakdown.currency,
-          paymentType,
-          depositPercentage: paymentType === 'deposit' ? 30 : 100,
-          amountDue,
-          balanceDue: paymentType === 'deposit' ? priceBreakdown.balanceAmount : 0,
-          cancellationPolicyName: 'Moderate',
-          guestName: `${guestInfo.firstName} ${guestInfo.lastName}`,
-          guestEmail: guestInfo.email,
-          guestCountry: guestInfo.country,
-          sessionId,
-          bookingReference: newBookingReference,
-        },
-      });
+      // Create Payment Intent via edge function with retry logic
+      const result = await retryWithBackoff(async () => {
+        const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+          body: {
+            propertyId: property.id,
+            propertyName: property.name,
+            propertySlug: property.slug,
+            propertyCity: property.city,
+            propertyCountry: property.country,
+            checkIn: format(checkIn, 'yyyy-MM-dd'),
+            checkOut: format(checkOut, 'yyyy-MM-dd'),
+            nights,
+            guests,
+            adults,
+            children,
+            accommodationTotal: priceBreakdown.accommodationTotal,
+            addonsTotal: priceBreakdown.addonsTotal,
+            feesTotal: priceBreakdown.feesTotal,
+            taxesTotal: priceBreakdown.taxesTotal,
+            discountAmount: priceBreakdown.discountAmount,
+            discountCode: priceBreakdown.discountCode,
+            totalAmount: priceBreakdown.total,
+            currency: priceBreakdown.currency,
+            paymentType,
+            depositPercentage: paymentType === 'deposit' ? 30 : 100,
+            amountDue,
+            balanceDue: paymentType === 'deposit' ? priceBreakdown.balanceAmount : 0,
+            cancellationPolicyName: 'Moderate',
+            guestName: `${guestInfo.firstName} ${guestInfo.lastName}`,
+            guestEmail: guestInfo.email,
+            guestCountry: guestInfo.country,
+            sessionId,
+            bookingReference: newBookingReference,
+          },
+        });
 
-      // Handle edge function errors
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to create payment');
-      }
+        // Handle edge function errors
+        if (error) {
+          console.error('Edge function error:', error);
+          throw new Error(error.message || 'Failed to create payment');
+        }
 
-      // Handle missing or invalid response
-      if (!data) {
-        console.error('No data returned from create-payment-intent');
-        throw new Error('Payment service returned empty response');
-      }
+        // Handle missing or invalid response
+        if (!data) {
+          console.error('No data returned from create-payment-intent');
+          throw new Error('Payment service returned empty response');
+        }
 
-      if (!data.clientSecret) {
-        console.error('No client secret in response:', data);
-        throw new Error(data.error || 'No client secret received');
-      }
+        if (!data.clientSecret) {
+          console.error('No client secret in response:', data);
+          throw new Error(data.error || 'No client secret received');
+        }
 
-      console.log('Payment intent created successfully:', data.paymentIntentId);
+        return data;
+      }, 2); // Max 2 retries
 
-      setClientSecret(data.clientSecret);
-      setPaymentIntentId(data.paymentIntentId);
+      console.log('Payment intent created successfully:', result.paymentIntentId);
+
+      setClientSecret(result.clientSecret);
+      setPaymentIntentId(result.paymentIntentId);
       setShowStripeForm(true);
       setPaymentError(null);
+      setRetryCount(0);
     } catch (error) {
       console.error('Payment setup error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
       setPaymentError(errorMessage);
+      setRetryCount(prev => prev + 1);
+      
+      // More specific error messages based on error type
+      let userMessage = errorMessage;
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        userMessage = 'Network error. Please check your connection and try again.';
+      } else if (errorMessage.includes('timeout')) {
+        userMessage = 'The request timed out. Please try again.';
+      }
+      
       toast({
         title: 'Payment setup failed',
-        description: errorMessage,
+        description: userMessage,
         variant: 'destructive',
       });
       // Reset state on error
@@ -625,20 +663,28 @@ export default function Checkout() {
                   {paymentError && !isProcessing && (
                     <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-3">
                       <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-                      <div className="space-y-1">
+                      <div className="space-y-2 flex-1">
                         <p className="font-medium text-destructive">Payment initialization failed</p>
                         <p className="text-sm text-destructive/80">{paymentError}</p>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-2"
-                          onClick={() => {
-                            setPaymentError(null);
-                            handleProceedToPayment();
-                          }}
-                        >
-                          Try Again
-                        </Button>
+                        <div className="flex items-center gap-3 mt-3">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => {
+                              setPaymentError(null);
+                              handleProceedToPayment();
+                            }}
+                            className="gap-2"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Try Again
+                          </Button>
+                          {retryCount >= 2 && (
+                            <span className="text-xs text-muted-foreground">
+                              If the problem persists, please contact support.
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

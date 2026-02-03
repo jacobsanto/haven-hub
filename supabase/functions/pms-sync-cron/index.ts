@@ -107,7 +107,7 @@ async function syncPropertyAvailability(
       }
     }
 
-    // Prepare blocked date records
+    // Prepare blocked date records for UPSERT
     const availabilityRecords: Array<{ property_id: string; date: string; available: boolean }> = [];
     for (const dateStr of blockedDates) {
       availabilityRecords.push({
@@ -117,22 +117,50 @@ async function syncPropertyAvailability(
       });
     }
 
-    // Clear existing availability records for this property and date range
-    await adminClient
-      .from("availability")
-      .delete()
-      .eq("property_id", propertyId)
-      .gte("date", start)
-      .lte("date", end);
-
-    // Insert blocked dates
+    // Use UPSERT with ON CONFLICT to atomically update availability
+    // This avoids race conditions from DELETE + INSERT
     if (availabilityRecords.length > 0) {
       const { error: upsertError } = await adminClient
         .from("availability")
-        .insert(availabilityRecords);
+        .upsert(availabilityRecords, {
+          onConflict: "property_id,date",
+          ignoreDuplicates: false,
+        });
 
       if (upsertError) {
         throw new Error(`Failed to upsert availability: ${upsertError.message}`);
+      }
+    }
+
+    // For dates that are NOT blocked, set them as available (clear old blocks)
+    // Get all existing blocked dates for this property in the date range
+    const { data: existingBlocked, error: fetchError } = await adminClient
+      .from("availability")
+      .select("date")
+      .eq("property_id", propertyId)
+      .eq("available", false)
+      .gte("date", start)
+      .lte("date", end);
+
+    if (fetchError) {
+      console.warn(`Could not fetch existing blocked dates: ${fetchError.message}`);
+    } else if (existingBlocked) {
+      // Find dates that were blocked but should now be available
+      const datesToUnblock = existingBlocked
+        .map((r) => r.date)
+        .filter((d) => !blockedDates.has(d));
+
+      if (datesToUnblock.length > 0) {
+        // Delete these records to mark them as available (no record = available)
+        const { error: deleteError } = await adminClient
+          .from("availability")
+          .delete()
+          .eq("property_id", propertyId)
+          .in("date", datesToUnblock);
+
+        if (deleteError) {
+          console.warn(`Could not unblock dates: ${deleteError.message}`);
+        }
       }
     }
 
