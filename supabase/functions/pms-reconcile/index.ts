@@ -198,74 +198,81 @@ Deno.serve(async (req) => {
       propertyMap.set(m.external_property_id, m.property_id);
     }
 
-    // Fetch active bookings from Tokeet
+    // Fetch active bookings from Tokeet - optimized to only fetch for mapped properties
     const today = new Date().toISOString().split("T")[0];
     const futureDate = new Date();
-    futureDate.setFullYear(futureDate.getFullYear() + 1);
-    const futureDateStr = futureDate.toISOString().split("T")[0];
-
+    futureDate.setMonth(futureDate.getMonth() + 6); // 6 months instead of 1 year
+    
     // Tokeet uses Unix timestamps for from/to
     const fromTimestamp = Math.floor(new Date(today).getTime() / 1000);
     const toTimestamp = Math.floor(futureDate.getTime() / 1000);
 
+    // Get the list of external property IDs we care about
+    const externalPropertyIds = new Set(mappings.map(m => m.external_property_id));
+    
+    console.log(`Reconciling ${externalPropertyIds.size} properties from ${today} to ${futureDate.toISOString().split("T")[0]}`);
+
     let allInquiries: TokeetInquiry[] = [];
-    let offset = 0;
-    const limit = 100;
-    let hasMore = true;
+    
+    // Fetch inquiries per rental to avoid hitting compute limits
+    for (const externalPropertyId of externalPropertyIds) {
+      let offset = 0;
+      const limit = 100;
+      let hasMore = true;
+      let propertyInquiryCount = 0;
 
-    while (hasMore) {
-      const tokeetUrl = new URL("https://capi.tokeet.com/v1/inquiry");
-      tokeetUrl.searchParams.set("account", tokeetAccountId);
-      tokeetUrl.searchParams.set("from", fromTimestamp.toString());
-      tokeetUrl.searchParams.set("to", toTimestamp.toString());
-      tokeetUrl.searchParams.set("limit", limit.toString());
-      tokeetUrl.searchParams.set("offset", offset.toString());
+      while (hasMore) {
+        const tokeetUrl = new URL("https://capi.tokeet.com/v1/inquiry");
+        tokeetUrl.searchParams.set("account", tokeetAccountId);
+        tokeetUrl.searchParams.set("rental_id", externalPropertyId);
+        tokeetUrl.searchParams.set("from", fromTimestamp.toString());
+        tokeetUrl.searchParams.set("to", toTimestamp.toString());
+        tokeetUrl.searchParams.set("limit", limit.toString());
+        tokeetUrl.searchParams.set("offset", offset.toString());
 
-      console.log(`Fetching Tokeet inquiries, offset: ${offset}`);
+        const tokeetResponse = await fetch(tokeetUrl.toString(), {
+          headers: {
+            Authorization: tokeetApiKey,
+            "Content-Type": "application/json",
+          },
+        });
 
-      const tokeetResponse = await fetch(tokeetUrl.toString(), {
-        headers: {
-          Authorization: tokeetApiKey,
-          "Content-Type": "application/json",
-        },
-      });
+        if (!tokeetResponse.ok) {
+          const errorText = await tokeetResponse.text();
+          console.error(`Tokeet API error for ${externalPropertyId}: ${tokeetResponse.status} - ${errorText}`);
+          // Continue to next property instead of failing completely
+          break;
+        }
 
-      if (!tokeetResponse.ok) {
-        const errorText = await tokeetResponse.text();
-        throw new Error(`Tokeet API error: ${tokeetResponse.status} - ${errorText}`);
+        const responseData = await tokeetResponse.json();
+        
+        // Tokeet API returns { items: [...] } or directly an array depending on endpoint
+        const inquiries: TokeetInquiry[] = Array.isArray(responseData) 
+          ? responseData 
+          : (responseData.items || responseData.data || responseData.inquiries || []);
+        
+        // Filter to only booked/confirmed status
+        const activeInquiries = inquiries.filter(
+          (i) => i.status === "booked" || i.status === "confirmed"
+        );
+        
+        allInquiries = [...allInquiries, ...activeInquiries];
+        propertyInquiryCount += activeInquiries.length;
+        
+        if (inquiries.length < limit) {
+          hasMore = false;
+        } else {
+          offset += limit;
+        }
       }
-
-      const responseData = await tokeetResponse.json();
       
-      // Tokeet API returns { items: [...] } or directly an array depending on endpoint
-      const inquiries: TokeetInquiry[] = Array.isArray(responseData) 
-        ? responseData 
-        : (responseData.items || responseData.data || responseData.inquiries || []);
-      
-      console.log(`Received ${inquiries.length} inquiries from Tokeet`);
-      
-      // Filter to only booked/confirmed status
-      const activeInquiries = inquiries.filter(
-        (i) => i.status === "booked" || i.status === "confirmed"
-      );
-      
-      allInquiries = [...allInquiries, ...activeInquiries];
-      
-      if (inquiries.length < limit) {
-        hasMore = false;
-      } else {
-        offset += limit;
-      }
+      console.log(`Property ${externalPropertyId}: ${propertyInquiryCount} active bookings`);
     }
 
-    console.log(`Fetched ${allInquiries.length} active bookings from Tokeet`);
+    console.log(`Fetched ${allInquiries.length} active bookings from Tokeet for ${externalPropertyIds.size} properties`);
 
-    // Filter to only properties we manage
-    const relevantInquiries = allInquiries.filter((i) =>
-      propertyMap.has(i.rental_id)
-    );
-
-    console.log(`${relevantInquiries.length} bookings match our properties`);
+    // All inquiries are already filtered to our properties
+    const relevantInquiries = allInquiries;
 
     // Build lookup map by pkey
     const tokeetBookings = new Map<string, TokeetInquiry>();
