@@ -246,20 +246,34 @@ async function syncPropertyAvailability(
     }
 
     const tokeetAvailability = await response.json();
+    
+    console.log(`Property ${propertyId}: Tokeet API response type: ${typeof tokeetAvailability}, isArray: ${Array.isArray(tokeetAvailability)}, sample: ${JSON.stringify(tokeetAvailability).substring(0, 500)}`);
 
     // Process blocked date ranges
-    interface BlockedRange {
+    // Tokeet availability API returns ranges with 'available' field:
+    // - available: 1 means BOOKED (counterintuitive naming in Tokeet)
+    // - available: 0 means AVAILABLE
+    // We need to block only ranges where available === 1
+    interface TokeetRange {
       from?: string;
       to?: string;
       start?: string;
       end?: string;
+      available?: number;
+      status?: string;
     }
     
     let blockedRanges: Array<{ from: string; to: string }> = [];
 
     if (Array.isArray(tokeetAvailability)) {
+      // Filter to only ranges that are marked as unavailable (available: 1 in Tokeet's naming)
       blockedRanges = tokeetAvailability
-        .map((range: BlockedRange) => ({
+        .filter((range: TokeetRange) => {
+          // Only include if explicitly marked as unavailable/booked
+          // Tokeet uses available: 1 to mean "this range is a booking" (counterintuitive)
+          return range.available === 1 || range.status === 'booked' || range.status === 'blocked';
+        })
+        .map((range: TokeetRange) => ({
           from: range.from || range.start || "",
           to: range.to || range.end || "",
         }))
@@ -268,7 +282,10 @@ async function syncPropertyAvailability(
       blockedRanges = tokeetAvailability.blocked;
     } else if (tokeetAvailability?.data && Array.isArray(tokeetAvailability.data)) {
       blockedRanges = tokeetAvailability.data
-        .map((range: BlockedRange) => ({
+        .filter((range: TokeetRange) => {
+          return range.available === 1 || range.status === 'booked' || range.status === 'blocked';
+        })
+        .map((range: TokeetRange) => ({
           from: range.from || range.start || "",
           to: range.to || range.end || "",
         }))
