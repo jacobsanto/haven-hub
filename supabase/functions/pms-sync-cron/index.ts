@@ -1,5 +1,6 @@
 // Scheduled PMS Sync Edge Function
 // Called by pg_cron every 5 minutes (configurable) to sync availability AND bookings from PMS
+// Syncs a rolling 12-month window for all properties
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -25,20 +26,17 @@ interface PMSConnection {
   } | null;
 }
 
-interface TokeetInquiry {
-  pkey: string;
-  rental_id?: string;
-  arrive: number;
-  depart: number;
-  guest_name?: string;
-  guest_email?: string;
-  guest_phone?: string;
-  num_guests?: number;
-  num_adults?: number;
-  num_child?: number;
-  booked_price?: number;
-  source?: string;
+interface TokeetAvailabilityRange {
+  from?: string;
+  to?: string;
+  start?: string;
+  end?: string;
+  title?: string;
+  available?: number;
   status?: string;
+  pkey?: string;
+  id?: string;
+  closed?: number;
 }
 
 interface BookingSyncResult {
@@ -64,13 +62,13 @@ async function callTokeetAPI(
   });
 }
 
-function mapSourceToBookingSource(tokeetSource: string | undefined): string {
-  if (!tokeetSource) return "direct";
-  const sourceLower = tokeetSource.toLowerCase();
-  if (sourceLower.includes("airbnb")) return "airbnb";
-  if (sourceLower.includes("booking.com") || sourceLower.includes("bookingcom")) return "booking_com";
-  if (sourceLower.includes("expedia")) return "expedia";
-  if (sourceLower.includes("vrbo") || sourceLower.includes("homeaway")) return "vrbo";
+function mapSourceToBookingSource(title: string | undefined): string {
+  if (!title) return "direct";
+  const titleLower = title.toLowerCase();
+  if (titleLower.includes("airbnb")) return "airbnb";
+  if (titleLower.includes("booking.com") || titleLower.includes("bookingcom")) return "booking_com";
+  if (titleLower.includes("expedia")) return "expedia";
+  if (titleLower.includes("vrbo") || titleLower.includes("homeaway")) return "vrbo";
   return "direct";
 }
 
@@ -82,72 +80,97 @@ function generateBookingReference(): string {
   return `BK-${year}${month}-${random}`;
 }
 
-async function syncPropertyBookings(
+function generateExternalId(from: string, to: string, title: string): string {
+  // Create a deterministic ID from the booking details
+  const base = `${from}-${to}-${title}`.replace(/[^a-zA-Z0-9-]/g, '_');
+  return `tokeet-${base}`.substring(0, 100);
+}
+
+function isValidBookingTitle(title: string | undefined): boolean {
+  if (!title || title.trim() === "") return false;
+  
+  // Skip maintenance/blocked entries
+  const skipPatterns = [
+    /maintenance/i,
+    /blocked/i,
+    /closed/i,
+    /owner/i,
+    /unavailable/i,
+    /hold$/i,  // Ends with "hold" but not "Airbnb hold" which is a real booking
+  ];
+  
+  // Allow "Airbnb hold" as it represents a real Airbnb booking
+  if (/airbnb\s*hold/i.test(title)) return true;
+  
+  for (const pattern of skipPatterns) {
+    if (pattern.test(title)) return false;
+  }
+  
+  return true;
+}
+
+// Extract bookings from availability response (main booking data source)
+async function extractBookingsFromAvailability(
   supabaseUrl: string,
   serviceRoleKey: string,
   propertyId: string,
-  externalPropertyId: string,
-  apiKey: string,
-  accountId: string
+  availabilityRanges: TokeetAvailabilityRange[]
 ): Promise<BookingSyncResult> {
   const result: BookingSyncResult = { created: 0, updated: 0, errors: [] };
 
   try {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-
-    // Calculate date range - 6 months forward
-    const now = new Date();
-    const startTimestamp = Math.floor(now.getTime() / 1000);
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + 6);
-    const endTimestamp = Math.floor(endDate.getTime() / 1000);
-
-    // Fetch inquiries from Tokeet for this property
-    const endpoint = `/inquiry?rental_id=${externalPropertyId}&arrive_from=${startTimestamp}&arrive_to=${endTimestamp}&limit=100`;
-    const response = await callTokeetAPI(endpoint, apiKey, accountId);
-
-    if (!response.ok) {
-      throw new Error(`Tokeet inquiry API error: ${response.statusText}`);
-    }
-
-    const responseData = await response.json();
     
-    // Handle various response formats
-    const inquiries: TokeetInquiry[] = Array.isArray(responseData)
-      ? responseData
-      : (responseData.items || responseData.data || responseData.inquiries || []);
-
-    // Filter to only booked/confirmed inquiries
-    const activeBookings = inquiries.filter((inq: TokeetInquiry) => {
-      const status = (inq.status || "").toLowerCase();
-      return status === "booked" || status === "confirmed" || status === "instant";
+    // Filter to only ranges that are bookings (available: 1 with a guest name)
+    const bookingRanges = availabilityRanges.filter((range) => {
+      return range.available === 1 && isValidBookingTitle(range.title);
     });
 
-    if (activeBookings.length === 0) {
+    if (bookingRanges.length === 0) {
       return result;
     }
 
-    // Get existing bookings by external_booking_id
-    const externalIds = activeBookings.map((inq) => inq.pkey);
+    console.log(`Property ${propertyId}: Found ${bookingRanges.length} potential bookings from availability data`);
+
+    // Get existing bookings for this property by external_booking_id
+    const externalIds = bookingRanges.map((range) => 
+      generateExternalId(
+        range.from || range.start || "",
+        range.to || range.end || "",
+        range.title || ""
+      )
+    );
+
     const { data: existingBookings } = await adminClient
       .from("bookings")
       .select("id, external_booking_id, check_in, check_out")
+      .eq("property_id", propertyId)
       .in("external_booking_id", externalIds);
 
     const existingMap = new Map(
       (existingBookings || []).map((b) => [b.external_booking_id, b])
     );
 
-    // Process each booking
-    for (const inquiry of activeBookings) {
+    // Process each booking range
+    for (const range of bookingRanges) {
       try {
-        const checkInDate = new Date(inquiry.arrive * 1000);
-        const checkOutDate = new Date(inquiry.depart * 1000);
+        const fromDate = range.from || range.start || "";
+        const toDate = range.to || range.end || "";
+        
+        if (!fromDate || !toDate) continue;
+
+        const checkInDate = new Date(fromDate);
+        const checkOutDate = new Date(toDate);
+        
+        // Skip past bookings
+        if (checkOutDate < new Date()) continue;
+
         const checkIn = checkInDate.toISOString().split("T")[0];
         const checkOut = checkOutDate.toISOString().split("T")[0];
         const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)));
 
-        const existing = existingMap.get(inquiry.pkey);
+        const externalId = generateExternalId(fromDate, toDate, range.title || "");
+        const existing = existingMap.get(externalId);
 
         if (existing) {
           // Update if dates changed
@@ -163,28 +186,31 @@ async function syncPropertyBookings(
               .eq("id", existing.id);
 
             if (error) {
-              result.errors.push(`Update ${inquiry.pkey}: ${error.message}`);
+              result.errors.push(`Update ${externalId}: ${error.message}`);
             } else {
               result.updated++;
             }
           }
         } else {
           // Create new booking
+          const guestName = range.title || "Guest";
+          const source = mapSourceToBookingSource(range.title);
+          
           const bookingData = {
             property_id: propertyId,
-            external_booking_id: inquiry.pkey,
+            external_booking_id: externalId,
             booking_reference: generateBookingReference(),
-            guest_name: inquiry.guest_name || "Guest",
-            guest_email: inquiry.guest_email || "unknown@external.booking",
-            guest_phone: inquiry.guest_phone || null,
+            guest_name: guestName,
+            guest_email: "external@booking.sync",
+            guest_phone: null,
             check_in: checkIn,
             check_out: checkOut,
             nights,
-            guests: inquiry.num_guests || 1,
-            adults: inquiry.num_adults || inquiry.num_guests || 1,
-            children: inquiry.num_child || 0,
-            total_price: inquiry.booked_price || 0,
-            source: mapSourceToBookingSource(inquiry.source),
+            guests: 2, // Default
+            adults: 2,
+            children: 0,
+            total_price: 0, // Unknown from availability API
+            source,
             status: "confirmed",
             payment_status: "paid",
             pms_sync_status: "synced",
@@ -198,17 +224,17 @@ async function syncPropertyBookings(
           if (error) {
             // Check for duplicate constraint violation
             if (error.code === "23505") {
-              // Already exists, skip
+              // Already exists, skip silently
             } else {
-              result.errors.push(`Create ${inquiry.pkey}: ${error.message}`);
+              result.errors.push(`Create ${externalId}: ${error.message}`);
             }
           } else {
             result.created++;
           }
         }
-      } catch (bookingError) {
+      } catch (rangeError) {
         result.errors.push(
-          `Process ${inquiry.pkey}: ${bookingError instanceof Error ? bookingError.message : "Unknown error"}`
+          `Process range: ${rangeError instanceof Error ? rangeError.message : "Unknown error"}`
         );
       }
     }
@@ -227,11 +253,13 @@ async function syncPropertyAvailability(
   externalPropertyId: string,
   apiKey: string,
   accountId: string
-): Promise<{ success: boolean; blockedDays: number; error?: string }> {
+): Promise<{ success: boolean; blockedDays: number; bookingResult: BookingSyncResult; error?: string }> {
+  const bookingResult: BookingSyncResult = { created: 0, updated: 0, errors: [] };
+  
   try {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Calculate date range - 12 months
+    // Calculate date range - 12 months rolling window
     const start = new Date().toISOString().split("T")[0];
     const endDateObj = new Date();
     endDateObj.setMonth(endDateObj.getMonth() + 12);
@@ -249,48 +277,46 @@ async function syncPropertyAvailability(
     
     console.log(`Property ${propertyId}: Tokeet API response type: ${typeof tokeetAvailability}, isArray: ${Array.isArray(tokeetAvailability)}, sample: ${JSON.stringify(tokeetAvailability).substring(0, 500)}`);
 
-    // Process blocked date ranges
+    // Process availability response - could be array or object with data
+    let availabilityRanges: TokeetAvailabilityRange[] = [];
+    
+    if (Array.isArray(tokeetAvailability)) {
+      availabilityRanges = tokeetAvailability;
+    } else if (tokeetAvailability?.data && Array.isArray(tokeetAvailability.data)) {
+      availabilityRanges = tokeetAvailability.data;
+    } else if (tokeetAvailability?.blocked && Array.isArray(tokeetAvailability.blocked)) {
+      availabilityRanges = tokeetAvailability.blocked;
+    }
+
+    // STEP 1: Extract and sync bookings from the availability data
+    const extractedBookings = await extractBookingsFromAvailability(
+      supabaseUrl,
+      serviceRoleKey,
+      propertyId,
+      availabilityRanges
+    );
+    
+    bookingResult.created = extractedBookings.created;
+    bookingResult.updated = extractedBookings.updated;
+    bookingResult.errors = extractedBookings.errors;
+
+    // STEP 2: Process blocked date ranges for availability table
     // Tokeet availability API returns ranges with 'available' field:
     // - available: 1 means BOOKED (counterintuitive naming in Tokeet)
     // - available: 0 means AVAILABLE
     // We need to block only ranges where available === 1
-    interface TokeetRange {
-      from?: string;
-      to?: string;
-      start?: string;
-      end?: string;
-      available?: number;
-      status?: string;
-    }
     
-    let blockedRanges: Array<{ from: string; to: string }> = [];
-
-    if (Array.isArray(tokeetAvailability)) {
-      // Filter to only ranges that are marked as unavailable (available: 1 in Tokeet's naming)
-      blockedRanges = tokeetAvailability
-        .filter((range: TokeetRange) => {
-          // Only include if explicitly marked as unavailable/booked
-          // Tokeet uses available: 1 to mean "this range is a booking" (counterintuitive)
-          return range.available === 1 || range.status === 'booked' || range.status === 'blocked';
-        })
-        .map((range: TokeetRange) => ({
-          from: range.from || range.start || "",
-          to: range.to || range.end || "",
-        }))
-        .filter((r: { from: string; to: string }) => r.from && r.to);
-    } else if (tokeetAvailability?.blocked && Array.isArray(tokeetAvailability.blocked)) {
-      blockedRanges = tokeetAvailability.blocked;
-    } else if (tokeetAvailability?.data && Array.isArray(tokeetAvailability.data)) {
-      blockedRanges = tokeetAvailability.data
-        .filter((range: TokeetRange) => {
-          return range.available === 1 || range.status === 'booked' || range.status === 'blocked';
-        })
-        .map((range: TokeetRange) => ({
-          from: range.from || range.start || "",
-          to: range.to || range.end || "",
-        }))
-        .filter((r: { from: string; to: string }) => r.from && r.to);
-    }
+    const blockedRanges = availabilityRanges
+      .filter((range: TokeetAvailabilityRange) => {
+        // Only include if explicitly marked as unavailable/booked
+        // Tokeet uses available: 1 to mean "this range is a booking" (counterintuitive)
+        return range.available === 1 || range.status === 'booked' || range.status === 'blocked';
+      })
+      .map((range: TokeetAvailabilityRange) => ({
+        from: range.from || range.start || "",
+        to: range.to || range.end || "",
+      }))
+      .filter((r: { from: string; to: string }) => r.from && r.to);
 
     // Build set of blocked dates
     const blockedDates = new Set<string>();
@@ -371,11 +397,12 @@ async function syncPropertyAvailability(
       .update({ last_availability_sync_at: new Date().toISOString() })
       .eq("property_id", propertyId);
 
-    return { success: true, blockedDays: blockedDates.size };
+    return { success: true, blockedDays: blockedDates.size, bookingResult };
   } catch (error) {
     return {
       success: false,
       blockedDays: 0,
+      bookingResult,
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
@@ -488,8 +515,8 @@ Deno.serve(async (req) => {
       const errors: string[] = [];
 
       for (const mapping of mappings as PMSPropertyMapping[]) {
-        // Step 1: Sync availability
-        const availResult = await syncPropertyAvailability(
+        // Sync availability and extract bookings in one call
+        const result = await syncPropertyAvailability(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
           mapping.property_id,
@@ -498,35 +525,34 @@ Deno.serve(async (req) => {
           accountId
         );
 
-        if (availResult.success) {
+        if (result.success) {
           synced++;
         } else {
           failed++;
-          if (availResult.error) {
-            errors.push(`Avail ${mapping.external_property_id}: ${availResult.error}`);
+          if (result.error) {
+            errors.push(`Property ${mapping.external_property_id}: ${result.error}`);
           }
         }
 
-        // Step 2: Sync bookings (even if availability fails, try bookings)
-        const bookingResult = await syncPropertyBookings(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-          mapping.property_id,
-          mapping.external_property_id,
-          apiKey,
-          accountId
-        );
-
-        bookingsCreated += bookingResult.created;
-        bookingsUpdated += bookingResult.updated;
+        // Accumulate booking results
+        bookingsCreated += result.bookingResult.created;
+        bookingsUpdated += result.bookingResult.updated;
         
-        if (bookingResult.errors.length > 0) {
-          errors.push(...bookingResult.errors.slice(0, 3));
+        if (result.bookingResult.errors.length > 0) {
+          errors.push(...result.bookingResult.errors.slice(0, 3));
         }
       }
 
       // Update sync run
       if (syncRun) {
+        const summaryParts: string[] = [];
+        if (errors.length > 0) {
+          summaryParts.push(errors.slice(0, 5).join("; "));
+        }
+        if (bookingsCreated > 0 || bookingsUpdated > 0) {
+          summaryParts.push(`Bookings: +${bookingsCreated}, ~${bookingsUpdated}`);
+        }
+
         await adminClient
           .from("pms_sync_runs")
           .update({
@@ -534,9 +560,7 @@ Deno.serve(async (req) => {
             completed_at: new Date().toISOString(),
             records_processed: synced,
             records_failed: failed,
-            error_summary: errors.length > 0 
-              ? `${errors.slice(0, 5).join("; ")}${bookingsCreated > 0 ? ` | Bookings: +${bookingsCreated}` : ""}`
-              : bookingsCreated > 0 ? `Bookings created: ${bookingsCreated}, updated: ${bookingsUpdated}` : null,
+            error_summary: summaryParts.length > 0 ? summaryParts.join(" | ") : null,
           })
           .eq("id", syncRun.id);
       }
