@@ -64,7 +64,6 @@ const navSections: NavSection[] = [
     title: 'Booking Engine',
     items: [
       { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
-      { href: '/admin/availability', icon: CalendarDays, label: 'Availability' },
       { href: '/admin/addons', icon: Package, label: 'Add-ons' },
       { href: '/admin/promotions', icon: Tag, label: 'Promotions' },
       { href: '/admin/campaigns', icon: Megaphone, label: 'Campaigns' },
