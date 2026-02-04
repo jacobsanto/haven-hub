@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Users, Calendar } from 'lucide-react';
+import { Search, MapPin, Users, Calendar, ChevronDown, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useActiveDestinations } from '@/hooks/useDestinations';
 import { cn } from '@/lib/utils';
 
 interface SearchBarProps {
@@ -16,14 +18,19 @@ interface SearchBarProps {
 
 export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
   const navigate = useNavigate();
-  const [location, setLocation] = useState('');
+  const { data: destinations, isLoading: destinationsLoading } = useActiveDestinations();
+  
+  const [selectedDestination, setSelectedDestination] = useState<string>('');
+  const [destinationOpen, setDestinationOpen] = useState(false);
   const [guests, setGuests] = useState(2);
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
 
+  const selectedDestinationData = destinations?.find(d => d.name === selectedDestination);
+
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (location) params.set('location', location);
+    if (selectedDestination) params.set('location', selectedDestination);
     if (guests) params.set('guests', guests.toString());
     if (checkIn) params.set('checkIn', format(checkIn, 'yyyy-MM-dd'));
     if (checkOut) params.set('checkOut', format(checkOut, 'yyyy-MM-dd'));
@@ -31,29 +38,83 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
     navigate(`/properties?${params.toString()}`);
   };
 
+  const handleClearDestination = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedDestination('');
+  };
+
   if (variant === 'compact') {
     return (
       <div className={cn('flex items-center gap-2 bg-card border border-border rounded-full p-2', className)}>
-        <div className="flex items-center gap-2 px-3">
-          <MapPin className="h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Where to?"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="border-0 bg-transparent focus-visible:ring-0 p-0 h-auto text-sm w-32"
-          />
-        </div>
+        <Popover open={destinationOpen} onOpenChange={setDestinationOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              role="combobox"
+              aria-expanded={destinationOpen}
+              className="flex items-center gap-2 px-3 h-auto py-1"
+            >
+              <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className={cn(
+                "text-sm truncate max-w-24",
+                !selectedDestination && "text-muted-foreground"
+              )}>
+                {selectedDestination || 'All'}
+              </span>
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-0 bg-card border border-border z-50" align="start">
+            <Command>
+              <CommandInput placeholder="Search villages..." />
+              <CommandList>
+                <CommandEmpty>No destinations found.</CommandEmpty>
+                <CommandGroup>
+                  <CommandItem
+                    value=""
+                    onSelect={() => {
+                      setSelectedDestination('');
+                      setDestinationOpen(false);
+                    }}
+                  >
+                    <MapPin className="mr-2 h-4 w-4" />
+                    All Destinations
+                  </CommandItem>
+                  {destinationsLoading ? (
+                    <div className="p-2 space-y-2">
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                  ) : (
+                    destinations?.map((destination) => (
+                      <CommandItem
+                        key={destination.id}
+                        value={destination.name}
+                        onSelect={() => {
+                          setSelectedDestination(destination.name);
+                          setDestinationOpen(false);
+                        }}
+                      >
+                        <MapPin className="mr-2 h-4 w-4" />
+                        {destination.name}, {destination.country}
+                      </CommandItem>
+                    ))
+                  )}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
         <div className="h-6 w-px bg-border" />
         <div className="flex items-center gap-2 px-3">
           <Users className="h-4 w-4 text-muted-foreground" />
-          <Input
+          <input
             type="number"
             min={1}
             max={20}
             value={guests}
             onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-            className="border-0 bg-transparent focus-visible:ring-0 p-0 h-auto text-sm w-12"
+            className="border-0 bg-transparent focus-visible:outline-none p-0 h-auto text-sm w-8"
           />
         </div>
         <Button
@@ -78,21 +139,84 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
       )}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Location */}
+        {/* Destination Dropdown */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Destination
           </label>
-          <div className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-primary" />
-            <Input
-              type="text"
-              placeholder="Where would you like to go?"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="input-organic border-0 bg-muted/50"
-            />
-          </div>
+          <Popover open={destinationOpen} onOpenChange={setDestinationOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={destinationOpen}
+                className={cn(
+                  'w-full justify-between text-left font-normal border-0 bg-muted/50 rounded-xl h-11',
+                  !selectedDestination && 'text-muted-foreground'
+                )}
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
+                  <span className="truncate">
+                    {selectedDestinationData 
+                      ? `${selectedDestinationData.name}, ${selectedDestinationData.country}`
+                      : 'All Destinations'
+                    }
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {selectedDestination && (
+                    <X 
+                      className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer" 
+                      onClick={handleClearDestination}
+                    />
+                  )}
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[280px] p-0 bg-card border border-border z-50" align="start">
+              <Command>
+                <CommandInput placeholder="Search villages..." />
+                <CommandList>
+                  <CommandEmpty>No destinations found.</CommandEmpty>
+                  <CommandGroup heading="Available Destinations">
+                    <CommandItem
+                      value="all-destinations"
+                      onSelect={() => {
+                        setSelectedDestination('');
+                        setDestinationOpen(false);
+                      }}
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      All Destinations
+                    </CommandItem>
+                    {destinationsLoading ? (
+                      <div className="p-2 space-y-2">
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                      </div>
+                    ) : (
+                      destinations?.map((destination) => (
+                        <CommandItem
+                          key={destination.id}
+                          value={destination.name}
+                          onSelect={() => {
+                            setSelectedDestination(destination.name);
+                            setDestinationOpen(false);
+                          }}
+                        >
+                          <MapPin className="mr-2 h-4 w-4" />
+                          <span className="flex-1">{destination.name}, {destination.country}</span>
+                        </CommandItem>
+                      ))
+                    )}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Check In */}
@@ -165,13 +289,13 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 flex-1 bg-muted/50 rounded-xl px-3 py-2">
               <Users className="h-5 w-5 text-primary" />
-              <Input
+              <input
                 type="number"
                 min={1}
                 max={20}
                 value={guests}
                 onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-                className="border-0 bg-transparent focus-visible:ring-0 p-0 h-auto"
+                className="border-0 bg-transparent focus-visible:outline-none p-0 h-auto flex-1"
               />
               <span className="text-sm text-muted-foreground">guests</span>
             </div>
