@@ -1,117 +1,88 @@
 
-
-# Fix Destination Search to Use Village Dropdown
+# Add Customer-Facing Display Name for Properties
 
 ## Overview
 
-Replace all destination text inputs with dropdown selectors that show the actual villages from the database. This ensures users can only select valid destinations and provides a better UX.
+Add a separate `display_name` field to properties that will be shown to customers on Stripe checkout pages and receipts. This keeps the internal `name` (e.g., "PROP-001-SANTORINI-OIA") separate from the customer-friendly name (e.g., "Sunset Villa with Caldera View").
 
-## Components to Update
+## Database Change
 
-### 1. SearchBar Component (Hero & Compact variants)
-**Location:** `src/components/search/SearchBar.tsx`
+Add a new nullable column `display_name` to the `properties` table:
 
-Currently uses a text input. Will be updated to use a dropdown/combobox that:
-- Fetches active destinations from the database
-- Shows village names with country
-- Allows selection instead of free-typing
+| Column | Type | Default | Description |
+|--------|------|---------|-------------|
+| `display_name` | text | NULL | Customer-facing name shown on Stripe checkout. Falls back to `name` if not set. |
 
-### 2. UnifiedBookingDialog
-**Location:** `src/components/booking/UnifiedBookingDialog.tsx`
+## Admin Form Update
 
-Currently has a text input in the "search" step. Will be updated to show destination selection with the same villages.
+**Location:** `src/pages/admin/AdminPropertyForm.tsx`
 
-### 3. Constants Cleanup
-**Location:** `src/lib/constants.ts`
-
-Remove the static `POPULAR_DESTINATIONS` array since destinations are now dynamic from the database.
-
-## Implementation Details
-
-### SearchBar Changes
-
-Replace the destination text input with a Select/Combobox component:
+Add a new field in the "Basic Information" section:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│  HERO VARIANT                                               │
+│  BASIC INFORMATION                                          │
 │                                                              │
-│  ┌─────────────────┐ ┌───────────┐ ┌───────────┐ ┌────────┐│
-│  │ Destination ▼   │ │ Check In  │ │ Check Out │ │ Guests ││
-│  │ Oia, Greece     │ │ Feb 10    │ │ Feb 15    │ │ 2      ││
-│  └─────────────────┘ └───────────┘ └───────────┘ └────────┘│
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ Property Name (Internal) *                             │  │
+│  │ PROP-001-SANTORINI-OIA                                 │  │
+│  │ Used for admin, PMS sync, and internal reference       │  │
+│  └───────────────────────────────────────────────────────┘  │
 │                                                              │
-│  Dropdown options:                                           │
-│  ├── Oia, Greece                                             │
-│  ├── Fira, Greece                                            │
-│  ├── Imerovigli, Greece                                      │
-│  ├── Thira, Greece                                           │
-│  ├── Megalochori, Greece                                     │
-│  ├── Perissa, Greece                                         │
-│  ├── Emporio, Greece                                         │
-│  ├── Vothonas, Greece                                        │
-│  └── Mesaria, Greece                                         │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ Display Name (Customer-Facing)                         │  │
+│  │ Sunset Villa with Caldera View                         │  │
+│  │ Shown on Stripe checkout, receipts, and confirmations  │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌─────────────────────────┐ ┌─────────────────────────┐    │
+│  │ URL Slug *              │ │ Status                  │    │
+│  │ sunset-villa-oia        │ │ Active ▼                │    │
+│  └─────────────────────────┘ └─────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  COMPACT VARIANT (Header)                                    │
-│                                                              │
-│  ┌───────────────────┐ ┌────┐ ┌────┐                        │
-│  │ 📍 Oia ▼         │ │ 2  │ │ 🔍 │                        │
-│  └───────────────────┘ └────┘ └────┘                        │
-└──────────────────────────────────────────────────────────────┘
+## Stripe Checkout Update
+
+**Location:** `supabase/functions/create-checkout-session/index.ts`
+
+Update the property query to include `display_name` and use it in the Stripe line item:
+
+```typescript
+// Query now includes display_name
+const { data: property } = await supabase
+  .from('properties')
+  .select('id, name, display_name, slug, city, country, ...')
+
+// Use display_name with fallback to name
+const customerName = property.display_name || property.name;
+
+lineItems.push({
+  price_data: {
+    currency: 'eur',
+    product_data: {
+      name: `${customerName} - ${nights} night${nights > 1 ? 's' : ''}`,
+      description: `${checkIn} to ${checkOut} · ${guests} guest${guests > 1 ? 's' : ''}`,
+    },
+    unit_amount: totalCents,
+  },
+  quantity: 1,
+});
 ```
 
-### UnifiedBookingDialog Changes
-
-Replace the text input in the search step with a destination grid/list:
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  STEP 1: SELECT DESTINATION                                 │
-│                                                              │
-│  Where would you like to stay?                               │
-│                                                              │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
-│  │ 📍 Oia     │  │ 📍 Fira    │  │ 📍 Imerovigli│          │
-│  │ Greece     │  │ Greece     │  │ Greece      │          │
-│  └─────────────┘  └─────────────┘  └─────────────┘          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐          │
-│  │ 📍 Thira   │  │ 📍 Megalochori│ 📍 Perissa  │          │
-│  │ Greece     │  │ Greece       │ │ Greece      │          │
-│  └─────────────┘  └─────────────┘  └─────────────┘          │
-│                                                              │
-│  Or select "All Destinations" to see all properties          │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Technical Approach
-
-**SearchBar:**
-- Use existing `useActiveDestinations` hook to fetch villages
-- Replace `<Input>` with `<Select>` or `<Popover>` with `<Command>` (combobox)
-- Include "All Destinations" option that passes empty location
-- Show "Loading..." state while fetching
-
-**UnifiedBookingDialog:**
-- Fetch destinations with `useActiveDestinations`
-- Display as selectable cards/buttons
-- Update search step to allow destination selection before dates
-
-### Files to Modify
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/search/SearchBar.tsx` | Replace text input with destination dropdown using `useActiveDestinations` |
-| `src/components/booking/UnifiedBookingDialog.tsx` | Update search step with destination selection grid |
-| `src/lib/constants.ts` | Remove outdated `POPULAR_DESTINATIONS` |
+| **Database** | Add `display_name` column to `properties` table |
+| `src/types/database.ts` | Add `display_name?: string \| null` to Property interface |
+| `src/pages/admin/AdminPropertyForm.tsx` | Add display_name input field with helper text |
+| `src/hooks/useProperties.ts` | Include display_name in transformProperty |
+| `supabase/functions/create-checkout-session/index.ts` | Use display_name with fallback for Stripe line item |
 
-## UX Improvements
+## User Experience
 
-1. **Type-ahead filtering:** Users can still type to filter the dropdown
-2. **Show property count:** Each destination option shows how many properties are available
-3. **"All" option:** Always include "All Destinations" to browse everything
-4. **Clear selection:** Allow clearing to search without location filter
-
+- **Internal Name**: "PROP-OIA-SUNSET-001" (used in admin lists, PMS)
+- **Display Name**: "Sunset Villa with Caldera View" (shown to customers)
+- If display_name is empty, the system falls back to using `name`
+- Existing properties work without changes until display_name is set
