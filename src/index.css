@@ -8,6 +8,10 @@
 
 @layer base {
   :root {
+    /* Typography - default fonts (overridden by BrandContext) */
+    --font-serif: "Playfair Display", serif;
+    --font-sans: "Lato", sans-serif;
+
     /* White background */
     --background: 0 0% 100%;
     --foreground: 244 42% 28%;
@@ -112,11 +116,11 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-sans, 'Lato', sans-serif);
+    font-family: var(--font-sans);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-serif, 'Playfair Display', serif);
+    font-family: var(--font-serif);
     @apply font-medium tracking-tight;
   }
 }
