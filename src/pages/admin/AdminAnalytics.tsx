@@ -73,9 +73,8 @@ const getDateRange = (preset: DateRangePreset): { start: Date; end: Date } => {
   }
 };
 
-// Use centralized formatter from format-currency.ts
-import { formatEuro } from '@/lib/format-currency';
-const formatCurrency = formatEuro;
+// Use dynamic currency formatter hook
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 
 const chartConfig = {
   revenue: {
@@ -99,6 +98,7 @@ const getOccupancyColor = (rate: number) => {
 };
 
 export default function AdminAnalytics() {
+  const { format: formatCurrency } = useFormatCurrency();
   const [datePreset, setDatePreset] = useState<DateRangePreset>('last_3_months');
   const dateRange = getDateRange(datePreset);
 

@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+import { SupportedCurrency } from '@/types/currency';
+
 export interface BrandSettings {
   id: string;
   brand_name: string;
@@ -16,6 +18,7 @@ export interface BrandSettings {
   foreground_color: string;
   heading_font: string;
   body_font: string;
+  base_currency: SupportedCurrency;
   updated_at: string;
 }
 
@@ -33,6 +36,7 @@ export const defaultBrandSettings: Omit<BrandSettings, 'id' | 'updated_at'> = {
   foreground_color: '244 42% 28%',
   heading_font: 'Playfair Display',
   body_font: 'Lato',
+  base_currency: 'EUR',
 };
 
 export function useBrandSettings() {

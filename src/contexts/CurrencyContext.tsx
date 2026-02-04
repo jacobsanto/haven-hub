@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useBrand } from '@/contexts/BrandContext';
 import {
   SupportedCurrency,
   SUPPORTED_CURRENCIES,
-  BASE_CURRENCY,
   ExchangeRates,
   FormattedPrice,
   CurrencyInfo,
@@ -14,10 +14,11 @@ interface CurrencyContextValue {
   setSelectedCurrency: (currency: SupportedCurrency) => void;
   exchangeRates: ExchangeRates | null;
   isLoading: boolean;
-  formatPrice: (eurAmount: number) => FormattedPrice;
-  formatPriceSimple: (eurAmount: number) => string;
+  formatPrice: (baseAmount: number) => FormattedPrice;
+  formatPriceSimple: (baseAmount: number) => string;
   currencies: CurrencyInfo[];
   getCurrencyInfo: (code: SupportedCurrency) => CurrencyInfo;
+  baseCurrency: SupportedCurrency;
 }
 
 const CurrencyContext = createContext<CurrencyContextValue | undefined>(undefined);
@@ -49,6 +50,7 @@ function detectInitialCurrency(): SupportedCurrency {
 }
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
+  const { baseCurrency } = useBrand();
   const [selectedCurrency, setSelectedCurrencyState] = useState<SupportedCurrency>(detectInitialCurrency);
   const { data: exchangeRates, isLoading } = useExchangeRates();
 
@@ -66,33 +68,37 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     return SUPPORTED_CURRENCIES.find(c => c.code === code) || SUPPORTED_CURRENCIES[0];
   }, []);
 
-  // Format price with conversion
-  const formatPrice = useCallback((eurAmount: number): FormattedPrice => {
-    const eurInfo = getCurrencyInfo('EUR');
+  // Format price with conversion from base currency
+  const formatPrice = useCallback((baseAmount: number): FormattedPrice => {
+    const baseInfo = getCurrencyInfo(baseCurrency);
     const selectedInfo = getCurrencyInfo(selectedCurrency);
     
-    // Format EUR amount
-    const originalFormatted = new Intl.NumberFormat(eurInfo.locale, {
+    // Format base currency amount
+    const originalFormatted = new Intl.NumberFormat(baseInfo.locale, {
       style: 'currency',
-      currency: 'EUR',
+      currency: baseCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(eurAmount);
+    }).format(baseAmount);
 
-    // If EUR is selected, no conversion needed
-    if (selectedCurrency === 'EUR') {
+    // If selected currency equals base currency, no conversion needed
+    if (selectedCurrency === baseCurrency) {
       return {
         display: originalFormatted,
         original: originalFormatted,
         isConverted: false,
-        convertedAmount: eurAmount,
-        originalAmount: eurAmount,
+        convertedAmount: baseAmount,
+        originalAmount: baseAmount,
       };
     }
 
     // Convert to selected currency
-    const rate = exchangeRates?.[selectedCurrency] || 1;
-    const convertedAmount = eurAmount * rate;
+    // Note: exchangeRates are relative to EUR. If base is not EUR, we need to adjust.
+    // For simplicity, we assume rates are still EUR-based from the API.
+    // A full implementation would fetch rates relative to baseCurrency.
+    const rate = exchangeRates?.[selectedCurrency as keyof ExchangeRates] || 1;
+    const baseToEurRate = baseCurrency === 'EUR' ? 1 : (1 / (exchangeRates?.[baseCurrency as keyof ExchangeRates] || 1));
+    const convertedAmount = baseAmount * baseToEurRate * rate;
     
     const displayFormatted = new Intl.NumberFormat(selectedInfo.locale, {
       style: 'currency',
@@ -106,13 +112,13 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
       original: originalFormatted,
       isConverted: true,
       convertedAmount,
-      originalAmount: eurAmount,
+      originalAmount: baseAmount,
     };
-  }, [selectedCurrency, exchangeRates, getCurrencyInfo]);
+  }, [selectedCurrency, baseCurrency, exchangeRates, getCurrencyInfo]);
 
   // Simple format that just returns the display string
-  const formatPriceSimple = useCallback((eurAmount: number): string => {
-    return formatPrice(eurAmount).display;
+  const formatPriceSimple = useCallback((baseAmount: number): string => {
+    return formatPrice(baseAmount).display;
   }, [formatPrice]);
 
   const value = useMemo<CurrencyContextValue>(() => ({
@@ -124,7 +130,8 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     formatPriceSimple,
     currencies: SUPPORTED_CURRENCIES,
     getCurrencyInfo,
-  }), [selectedCurrency, setSelectedCurrency, exchangeRates, isLoading, formatPrice, formatPriceSimple, getCurrencyInfo]);
+    baseCurrency,
+  }), [selectedCurrency, setSelectedCurrency, exchangeRates, isLoading, formatPrice, formatPriceSimple, getCurrencyInfo, baseCurrency]);
 
   return (
     <CurrencyContext.Provider value={value}>

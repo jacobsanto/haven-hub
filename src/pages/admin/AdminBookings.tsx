@@ -27,9 +27,10 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { BookingStatus } from '@/types/database';
-import { formatEuro } from '@/lib/format-currency';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 
 export default function AdminBookings() {
+  const { format: formatCurrency } = useFormatCurrency();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
@@ -187,7 +188,7 @@ export default function AdminBookings() {
                       </TableCell>
                       <TableCell>{booking.guests}</TableCell>
                       <TableCell className="font-medium">
-                        {formatEuro(booking.total_price)}
+                        {formatCurrency(booking.total_price)}
                       </TableCell>
                       <TableCell>
                         <span
