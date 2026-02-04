@@ -82,7 +82,22 @@ export function BrandProvider({ children }: { children: ReactNode }) {
 export function useBrand() {
   const context = useContext(BrandContext);
   if (context === undefined) {
-    throw new Error('useBrand must be used within a BrandProvider');
+    // Fail-safe: avoid blank-screen crashes if a component renders outside BrandProvider
+    // (can happen during refactors/HMR). We still surface the problem loudly.
+    // eslint-disable-next-line no-console
+    console.error('useBrand must be used within a BrandProvider');
+
+    return {
+      settings: null,
+      isLoading: true,
+      brandName: defaultBrandSettings.brand_name,
+      brandTagline: defaultBrandSettings.brand_tagline ?? '',
+      logoUrl: defaultBrandSettings.logo_url ?? null,
+      contactEmail: defaultBrandSettings.contact_email ?? '',
+      contactPhone: defaultBrandSettings.contact_phone ?? '',
+      contactAddress: defaultBrandSettings.contact_address ?? '',
+      baseCurrency: defaultBrandSettings.base_currency,
+    };
   }
   return context;
 }
