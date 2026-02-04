@@ -1,203 +1,205 @@
 
 
-# Comprehensive Project Cleanup Plan
+# Booking Engine Stripe Readiness Audit: Add-ons & Experiences
 
-## Overview
-After a deep audit of the Haven Hub codebase, I've identified multiple categories of issues: dead code after Stripe removal, orphaned/unused files, duplicate hook implementations, stale config references, and outdated comments. This plan addresses all of them systematically.
+## Summary
 
----
+After a comprehensive audit of the add-ons and experiences systems, I've found:
 
-## Summary of Issues Found
-
-| Category | Count | Impact |
-|----------|-------|--------|
-| Stale Stripe references (comments/text) | 4 locations | Low - confusing, not functional |
-| Orphaned config.toml entries | 2 | Low - references non-existent functions |
-| Duplicate hook implementations | 4 hooks | Medium - maintenance burden, confusion |
-| Unused components | 2 | Low - dead code |
-| Unused hooks | 5 functions | Low - dead code |
-| Unused hook file (entire) | 1 | Medium - entire file unused |
-
----
-
-## Detailed Cleanup Items
-
-### 1. Remove Stale Stripe References (Comments/Text)
-
-These are leftover references to Stripe that no longer apply since Stripe was removed:
-
-| File | Line | Issue |
-|------|------|-------|
-| `src/components/booking/PaymentOptions.tsx` | 201 | Text: "Powered by Stripe • Apple Pay • Google Pay accepted" |
-| `src/components/booking/BookingWidget.tsx` | 67 | Comment: "// Instant booking - route to checkout with Stripe payment" |
-| `src/hooks/useCompleteBooking.ts` | 186 | Comment: "// Will be updated when Stripe payment completes" |
-| `src/types/booking-engine.ts` | 146 | Type field: `stripePaymentIntentId?: string;` |
-
-**Action:** Update text/comments to be generic ("Secure Payment Gateway") and keep the type field (used by database schema).
+| Component | Status | Stripe Ready? |
+|-----------|--------|---------------|
+| Add-ons Catalog | Complete | Yes |
+| Add-on Selection UI | Complete | Yes |
+| Add-on Price Calculation | Complete | Yes |
+| Add-on Persistence (booking_addons) | Complete | Yes |
+| Fees & Taxes | Schema ready, **no data** | Needs admin setup |
+| Experiences | Enquiry-based only | Not for direct booking |
+| Price Breakdown | Complete | Yes |
+| Checkout Flow | Complete | Yes |
 
 ---
 
-### 2. Remove Orphaned Edge Function Config Entries
+## 1. Add-ons System - Stripe Ready
 
-The `supabase/config.toml` file references two edge functions that don't exist in the codebase:
+### What's Working
 
-| Config Entry | Folder Exists? |
-|--------------|---------------|
-| `[functions.pms-reconcile]` | No |
-| `[functions.test-pms-webhook]` | No |
+The add-ons system is **fully integrated** into the booking flow:
 
-**Note:** `test-pms-webhook` is referenced in `useAdminPMSHealth.ts` but the function doesn't exist, so that call would fail.
+**Database**: `addons_catalog` table
+- Stores add-on products with flexible pricing (fixed, per_person, per_night, per_person_per_night)
+- Supports property-specific and global add-ons
+- Has 1 active add-on: "Airport Transfer" at €40/fixed
 
-**Action:** 
-- Remove the two orphaned config entries from `supabase/config.toml`
-- Update `useTestWebhookEndpoint()` in `useAdminPMSHealth.ts` to show an error or implement the missing function
+**Frontend**: `AddonsSelection.tsx`
+- Beautiful category-grouped UI (Transfers, Dining, Experiences, Services, Packages)
+- Quantity controls with max limits
+- Real-time price calculation
 
----
+**Price Engine**: `useBookingEngine.ts`
+- `calculateAddonPrice()` handles all pricing types
+- Add-ons are included in `calculatePriceBreakdown()` as line items
 
-### 3. Remove Duplicate Hook Implementations
+**Persistence**: `useCompleteBooking.ts`
+- Add-ons saved to `booking_addons` table with booking_id reference
+- Stored with unit_price, quantity, total_price, status
 
-Several hooks are defined in multiple files with similar functionality:
+**Checkout Integration**: `Checkout.tsx`
+- Step 2 ("addons") allows add-on selection
+- Selected add-ons appear in price summary
+- Passes to payment step
 
-#### 3a. `useTriggerPMSSync` - Duplicated
+### What's in Place for Stripe
 
-| File | Status |
-|------|--------|
-| `src/hooks/usePMSSyncStatus.ts` | **USED** (imported by AdminDashboard.tsx) |
-| `src/hooks/usePMSIntegration.ts` | UNUSED (never imported) |
-
-#### 3b. `useTestPMSConnection` - Duplicated
-
-| File | Status |
-|------|--------|
-| `src/hooks/useAdminPMSHealth.ts` | **USED** (imported by AdminPMSHealth.tsx) |
-| `src/hooks/usePMSIntegration.ts` | UNUSED (never imported) |
-
-#### 3c. `usePMSPropertyMappings` - Duplicated
-
-| File | Status |
-|------|--------|
-| `src/hooks/useAdminPMSHealth.ts` | **USED** (imported by AdminPMSHealth.tsx) |
-| `src/hooks/usePMSIntegration.ts` | UNUSED (never imported) |
-
-#### 3d. `usePMSRawEvents` - Duplicated
-
-| File | Status |
-|------|--------|
-| `src/hooks/useAdminPMSHealth.ts` | **USED** (imported by AdminPMSHealth.tsx) |
-| `src/hooks/usePMSIntegration.ts` | UNUSED (never imported) |
-
-#### 3e. Special Offer Mutations - Duplicated
-
-| File | Status |
-|------|--------|
-| `src/hooks/useAdminPromotions.ts` | **USED** (imported by SpecialOfferFormDialog) |
-| `src/hooks/useSpecialOffers.ts` | UNUSED (only reads are used) |
-
-**Action:** 
-- Delete the entire `src/hooks/usePMSIntegration.ts` file (all exports are unused)
-- Remove `useCreateSpecialOffer`, `useUpdateSpecialOffer`, `useDeleteSpecialOffer` from `src/hooks/useSpecialOffers.ts`
+When Stripe is implemented, add-ons will be:
+1. Included in the payment intent amount (already calculated)
+2. Listed as line items in price breakdown (already structured)
+3. Passed to Stripe metadata for dashboard visibility
+4. Saved atomically after payment success
 
 ---
 
-### 4. Remove Unused Hook Exports
+## 2. Experiences System - NOT for Direct Booking
 
-These hook functions are defined but never called anywhere:
+### Current Design (Intentional)
 
-| File | Function | Reason Unused |
-|------|----------|---------------|
-| `src/hooks/usePMSIntegration.ts` | `usePMSConnection()` | Never imported |
-| `src/hooks/usePMSIntegration.ts` | `usePMSSyncRuns()` | Never imported |
-| `src/hooks/usePMSIntegration.ts` | `useStorePMSWebhookEvent()` | Never imported |
-| `src/hooks/useAvailability.ts` | `usePropertyAvailability()` | Never imported |
-| `src/hooks/useAvailability.ts` | `usePropertyBookingsForCalendar()` | Never imported |
-| `src/hooks/useSpecialOffers.ts` | `useSpecialOffers()` | Never imported (only active offer used) |
-| `src/hooks/useSpecialOffers.ts` | `useAllActiveOffers()` | Never imported |
-| `src/hooks/useCancellationRefund.ts` | Entire file | Never imported (was for refund processing) |
+Experiences are **enquiry-based**, not direct-purchase:
 
-**Action:** 
-- Delete entire `src/hooks/usePMSIntegration.ts`
-- Delete entire `src/hooks/useCancellationRefund.ts`
-- Remove unused functions from `useAvailability.ts` and `useSpecialOffers.ts`
+```
+experiences table → EnquiryForm → experience_enquiries table
+```
 
----
+**Why This Makes Sense:**
+- Experiences are high-touch services (Wine Tasting €350/person, Yacht Charter €2,500/group)
+- Require coordination, availability confirmation, custom scheduling
+- Not suitable for instant checkout
 
-### 5. Unused Components
+**Current Flow:**
+1. Guest browses experiences
+2. Fills out enquiry form (name, email, preferred date, group size)
+3. Admin reviews in `/admin/experience-enquiries`
+4. Manual follow-up to confirm and collect payment
 
-| Component | Location | Reason Unused |
-|-----------|----------|---------------|
-| `NavLink` | `src/components/NavLink.tsx` | Never imported anywhere |
-| `PaymentOptions` | `src/components/booking/PaymentOptions.tsx` | Never imported (checkout uses placeholder) |
+### Should Experiences Be Added to Booking Flow?
 
-**Action:** Delete both files.
+**Option A: Keep Current (Recommended)**
+- Experiences remain enquiry-based
+- Add-ons catalog already has "experience" category for simpler experiences
+- High-value experiences benefit from concierge approach
 
----
-
-## Files to Delete
-
-| File | Reason |
-|------|--------|
-| `src/hooks/usePMSIntegration.ts` | All exports are duplicates of hooks in other files, never imported |
-| `src/hooks/useCancellationRefund.ts` | Was for refund calculations, never used after Stripe removal |
-| `src/components/NavLink.tsx` | Custom NavLink wrapper, never imported |
-| `src/components/booking/PaymentOptions.tsx` | Payment UI component, never used (checkout has placeholder) |
+**Option B: Future Enhancement (Post-Stripe)**
+- Allow experiences to be added as booking add-ons
+- Would require linking experiences to addons_catalog
+- Could add "instant book" flag to experiences
 
 ---
 
-## Files to Modify
+## 3. Gaps to Address Before Stripe
 
-### `supabase/config.toml`
-- Remove `[functions.pms-reconcile]` section (lines 21-22)
-- Remove `[functions.test-pms-webhook]` section (lines 24-25)
+### 3a. No Fees or Taxes Configured
 
-### `src/hooks/useAdminPMSHealth.ts`
-- Remove or mark as broken the `useTestWebhookEndpoint()` function (references non-existent edge function)
+The `fees_taxes` table is empty, but the schema supports:
+- Cleaning fees (fixed)
+- Service fees (percentage)
+- Tourism tax (per_guest_per_night)
+- VAT (percentage on subtotal)
 
-### `src/hooks/useAvailability.ts`
-- Remove `usePropertyAvailability()` function
-- Remove `usePropertyBookingsForCalendar()` function
+**Action Required:** Admin needs to configure fees/taxes in `/admin/fees` before going live
 
-### `src/hooks/useSpecialOffers.ts`
-- Remove `useSpecialOffers()` function
-- Remove `useAllActiveOffers()` function
-- Remove `useCreateSpecialOffer()` function
-- Remove `useUpdateSpecialOffer()` function
-- Remove `useDeleteSpecialOffer()` function
-- Keep only `useActiveSpecialOffer()` (which is used)
+### 3b. Experience Category in Add-ons
 
-### `src/components/booking/BookingWidget.tsx`
-- Update comment on line 67 to remove Stripe reference
+The add-on categories include "experience" which could create confusion:
 
-### `src/hooks/useCompleteBooking.ts`
-- Update comment on line 186 to remove Stripe reference
+| System | Purpose |
+|--------|---------|
+| `addons_catalog` category="experience" | Simple purchasable items (cooking class, spa add-on) |
+| `experiences` table | High-value concierge services (yacht charter, wine tour) |
+
+**Recommendation:** Rename add-on category to "activities" to avoid confusion
 
 ---
 
-## Implementation Order
+## 4. Complete Stripe Integration Checklist
 
-1. **Delete orphaned files** (4 files)
-2. **Clean up config.toml** (remove 2 sections)
-3. **Remove unused hook functions** from shared files
-4. **Update stale comments/text** to remove Stripe references
+### Already Complete (from booking engine)
+- Property selection and pricing
+- Date selection with availability checks
+- Guest information capture with validation
+- Add-ons selection and pricing
+- Coupon validation and discount application
+- Fees and taxes calculation framework
+- Full price breakdown display
+- 10-minute checkout hold (TTL lock)
+- Booking reference generation
+- PMS sync hooks
+
+### Needs Implementation (for Stripe)
+
+| Component | Description |
+|-----------|-------------|
+| `create-payment-intent` edge function | Creates Stripe PaymentIntent with full amount |
+| Stripe Elements UI | Card input in payment step |
+| `confirm-payment` edge function | Creates booking records after payment success |
+| Stripe metadata | Pass booking details for dashboard |
+| Payment webhook | Handle async payment events |
 
 ---
 
-## Risk Assessment
+## 5. Recommended Pre-Stripe Setup
 
-| Change | Risk | Mitigation |
-|--------|------|------------|
-| Delete `usePMSIntegration.ts` | Low | Verified no imports exist |
-| Delete `PaymentOptions.tsx` | Low | Verified no imports exist |
-| Delete `NavLink.tsx` | Low | Verified no imports exist |
-| Remove config entries | None | Functions don't exist anyway |
-| Update comments | None | No functional change |
+Before implementing Stripe, complete these admin setup tasks:
+
+| Task | Admin Path | Status |
+|------|------------|--------|
+| Add more add-ons | /admin/addons | Only 1 exists |
+| Configure fees | /admin/fees | Empty |
+| Configure taxes | /admin/fees | Empty |
+| Review rate plans | /admin/rate-plans | Check if configured |
+| Set up coupons | /admin/promotions | For launch discounts |
 
 ---
 
-## Post-Cleanup Verification
+## 6. Architecture Diagram
 
-After cleanup, verify:
-- Admin dashboard PMS sync still works (uses `usePMSSyncStatus.ts`)
-- PMS Health page still works (uses `useAdminPMSHealth.ts`)
-- Special offers display on property cards (uses `useActiveSpecialOffer`)
-- Checkout flow still works (uses `useCheckoutFlow.ts`)
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                        CHECKOUT FLOW                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐     │
+│  │  Dates   │ → │ Add-ons  │ → │  Guest   │ → │ Payment  │     │
+│  └──────────┘   └──────────┘   └──────────┘   └──────────┘     │
+│       │              │              │              │            │
+│       ▼              ▼              ▼              ▼            │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐     │
+│  │ Calendar │   │ AddonsUI │   │ GuestUI  │   │ Stripe   │     │
+│  │ + Holds  │   │ + Prices │   │ + Valid  │   │ Elements │     │
+│  └──────────┘   └──────────┘   └──────────┘   └──────────┘     │
+│                                                    │            │
+│                 ┌──────────────────────────────────┘            │
+│                 ▼                                               │
+│          ┌─────────────────────┐                                │
+│          │ calculatePriceBreak │ ← nightlyRate                  │
+│          │ down()              │ ← selectedAddons               │
+│          │                     │ ← fees/taxes                   │
+│          │                     │ ← coupon                       │
+│          └─────────────────────┘                                │
+│                 │                                               │
+│                 ▼                                               │
+│          ┌─────────────────────┐                                │
+│          │ Total Amount        │ → Stripe PaymentIntent         │
+│          └─────────────────────┘                                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Conclusion
+
+**The booking engine is ready for Stripe integration.** The add-ons system is fully wired up, the price calculation engine handles all scenarios, and the checkout flow has all steps in place. The main work is:
+
+1. **Edge Functions**: `create-payment-intent` and `confirm-payment`
+2. **Payment UI**: Stripe Elements in the payment step
+3. **Admin Setup**: Configure fees, taxes, and add more add-ons
+
+The experiences system is correctly designed as enquiry-based for high-touch concierge services and does not need to be part of the Stripe integration.
 
