@@ -12,6 +12,7 @@ import { CouponInput } from '@/components/booking/CouponInput';
 import { CancellationPolicyDisplay } from '@/components/booking/CancellationPolicyDisplay';
 import { StripeProvider } from '@/components/booking/StripeProvider';
 import { PaymentStep } from '@/components/booking/PaymentStep';
+import { StripeHealthBanner } from '@/components/booking/StripeHealthBanner';
 import { useProperty } from '@/hooks/useProperties';
 import { useFeesTaxes, calculatePriceBreakdown } from '@/hooks/useBookingEngine';
 import { useCreateCheckoutHold, useReleaseCheckoutHold, generateSessionId } from '@/hooks/useCheckoutFlow';
@@ -356,6 +357,9 @@ export default function Checkout() {
               {/* Step: Payment */}
               {currentStep === 'payment' && checkIn && checkOut && guestInfo && priceBreakdown && (
                 <>
+                  {/* Stripe Health Check */}
+                  <StripeHealthBanner />
+
                   {/* Cancellation Policy - shown before payment */}
                   <CancellationPolicyDisplay
                     policyKey="moderate"

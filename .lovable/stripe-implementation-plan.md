@@ -454,17 +454,17 @@ return new Response(JSON.stringify({
 
 ### Phase 1: Core Payment Flow (Priority)
 1. ✅ Audit complete - booking engine ready
-2. ⬜ Create `create-payment-intent` edge function
-3. ⬜ Create `confirm-payment` edge function
-4. ⬜ Create `PaymentStep.tsx` component
-5. ⬜ Create `useStripePayment.ts` hook
-6. ⬜ Integrate into Checkout.tsx
+2. ✅ Create `create-payment-intent` edge function
+3. ✅ Create `confirm-payment` edge function
+4. ✅ Create `PaymentStep.tsx` component
+5. ✅ Create `useStripePayment.ts` hook
+6. ✅ Integrate into Checkout.tsx
 7. ⬜ Test with Stripe test cards
 
 ### Phase 2: Resilience & Polish
-8. ⬜ Add useStripeHealth preflight check
-9. ⬜ Add retry with exponential backoff
-10. ⬜ Create stripe-webhook edge function
+8. ✅ Add useStripeHealth preflight check
+9. ✅ Add retry with exponential backoff
+10. ✅ Create stripe-webhook edge function
 11. ⬜ Add Apple Pay / Google Pay
 12. ⬜ Add deposit payment option
 
