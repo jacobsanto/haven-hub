@@ -183,7 +183,7 @@ export function useCompleteBooking() {
             ? (priceBreakdown.depositAmount || priceBreakdown.total * 0.3) 
             : priceBreakdown.total,
           currency: priceBreakdown.currency || 'EUR',
-          status: 'pending', // Will be updated when Stripe payment completes
+          status: 'pending', // Will be updated when payment gateway completes
         });
 
       if (paymentError) {

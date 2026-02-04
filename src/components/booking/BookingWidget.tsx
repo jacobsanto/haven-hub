@@ -64,7 +64,7 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
     }
   };
 
-  // Instant booking - route to checkout with Stripe payment
+  // Instant booking - route to checkout
   const handleInstantBook = () => {
     if (!checkIn || !checkOut) {
       toast({

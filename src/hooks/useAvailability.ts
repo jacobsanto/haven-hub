@@ -2,59 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Availability } from '@/types/database';
 
-// Fetch availability for a property
-export function usePropertyAvailability(propertyId: string, startDate?: string, endDate?: string) {
-  return useQuery({
-    queryKey: ['availability', propertyId, startDate, endDate],
-    queryFn: async () => {
-      let query = supabase
-        .from('availability')
-        .select('*')
-        .eq('property_id', propertyId)
-        .order('date', { ascending: true });
-
-      if (startDate) {
-        query = query.gte('date', startDate);
-      }
-
-      if (endDate) {
-        query = query.lte('date', endDate);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data as Availability[];
-    },
-    enabled: !!propertyId,
-  });
-}
-
-// Fetch bookings for a property in a date range (for calendar context)
-export function usePropertyBookingsForCalendar(propertyId: string, startDate?: string, endDate?: string) {
-  return useQuery({
-    queryKey: ['calendar-bookings', propertyId, startDate, endDate],
-    queryFn: async () => {
-      let query = supabase
-        .from('bookings')
-        .select('id, check_in, check_out, guest_name, source, status')
-        .eq('property_id', propertyId)
-        .in('status', ['pending', 'confirmed']);
-
-      if (startDate && endDate) {
-        // Get bookings that overlap with the date range
-        query = query.or(`check_in.lte.${endDate},check_out.gte.${startDate}`);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!propertyId && !!startDate && !!endDate,
-  });
-}
-
 // Fetch PMS sync health data for admin dashboard
 export function useAvailabilitySyncHealth() {
   return useQuery({

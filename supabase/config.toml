@@ -17,9 +17,3 @@ verify_jwt = false
 
 [functions.scheduled-posts-cron]
 verify_jwt = false
-
-[functions.pms-reconcile]
-verify_jwt = false
-
-[functions.test-pms-webhook]
-verify_jwt = false
