@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
-import { ArrowLeft, MapPin, Users, Calendar, Loader2, CreditCard } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Calendar, Loader2 } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
@@ -10,6 +10,8 @@ import { GuestForm } from '@/components/booking/GuestForm';
 import { PriceBreakdownDisplay } from '@/components/booking/PriceBreakdown';
 import { CouponInput } from '@/components/booking/CouponInput';
 import { CancellationPolicyDisplay } from '@/components/booking/CancellationPolicyDisplay';
+import { StripeProvider } from '@/components/booking/StripeProvider';
+import { PaymentStep } from '@/components/booking/PaymentStep';
 import { useProperty } from '@/hooks/useProperties';
 import { useFeesTaxes, calculatePriceBreakdown } from '@/hooks/useBookingEngine';
 import { useCreateCheckoutHold, useReleaseCheckoutHold, generateSessionId } from '@/hooks/useCheckoutFlow';
@@ -352,7 +354,7 @@ export default function Checkout() {
               )}
 
               {/* Step: Payment */}
-              {currentStep === 'payment' && checkIn && (
+              {currentStep === 'payment' && checkIn && checkOut && guestInfo && priceBreakdown && (
                 <>
                   {/* Cancellation Policy - shown before payment */}
                   <CancellationPolicyDisplay
@@ -360,26 +362,27 @@ export default function Checkout() {
                     checkInDate={checkIn}
                   />
 
-                  {/* Payment Gateway Placeholder */}
-                  <div className="bg-card rounded-xl border p-8 text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                      <CreditCard className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-serif text-xl font-medium mb-2">
-                      Payment Gateway Coming Soon
-                    </h3>
-                    <p className="text-muted-foreground max-w-md mx-auto">
-                      We're setting up secure payment processing. Please check back shortly or contact us to complete your booking.
-                    </p>
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => setCurrentStep('guest')}
-                  >
-                    Back to Guest Details
-                  </Button>
+                  {/* Stripe Payment Form */}
+                  <StripeProvider>
+                    <PaymentStep
+                      propertyId={property.id}
+                      checkIn={checkIn}
+                      checkOut={checkOut}
+                      nights={nights}
+                      guests={guests}
+                      adults={adults}
+                      children={children}
+                      guestInfo={guestInfo}
+                      selectedAddons={selectedAddons}
+                      priceBreakdown={priceBreakdown}
+                      paymentType={paymentType}
+                      holdId={holdId}
+                      onPaymentSuccess={(result) => {
+                        navigate(`/booking/confirm?ref=${result.bookingReference}`);
+                      }}
+                      onBack={() => setCurrentStep('guest')}
+                    />
+                  </StripeProvider>
                 </>
               )}
             </div>
