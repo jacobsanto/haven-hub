@@ -7,7 +7,7 @@ import { Property } from '@/types/database';
 import { useAmenityMap } from '@/hooks/useAmenities';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
 import { useBooking } from '@/contexts/BookingContext';
-import { useProperties } from '@/hooks/useProperties';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -35,20 +35,13 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
   const amenityMap = useAmenityMap();
   const { data: activeOffer } = useActiveSpecialOffer(property.id);
   const { openBooking } = useBooking();
+  const { formatPrice } = useCurrency();
 
   const handleBookNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     // Open unified booking dialog with this property pre-selected
     openBooking({ mode: 'direct', property });
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
   };
 
   // Get amenity data (from DB or fallback)
@@ -62,6 +55,11 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
       icon: fallbackIconMap[slug] || 'Sparkles',
     };
   };
+
+  const priceInfo = formatPrice(property.base_price);
+  const discountedPrice = activeOffer 
+    ? formatPrice(property.base_price * (1 - activeOffer.discount_percent / 100))
+    : null;
 
   return (
     <motion.div
@@ -103,17 +101,17 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
             {/* Price Tag */}
             <div className="absolute bottom-4 left-4">
               <span className="bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium">
-                {activeOffer ? (
+                {discountedPrice ? (
                   <>
                     <span className="line-through text-muted-foreground mr-1">
-                      {formatPrice(property.base_price)}
+                      {priceInfo.display}
                     </span>
                     <span className="text-green-600 dark:text-green-400">
-                      {formatPrice(property.base_price * (1 - activeOffer.discount_percent / 100))}
+                      {discountedPrice.display}
                     </span>
                   </>
                 ) : (
-                  formatPrice(property.base_price)
+                  priceInfo.display
                 )}{' '}
                 <span className="text-muted-foreground text-xs">/ night</span>
               </span>

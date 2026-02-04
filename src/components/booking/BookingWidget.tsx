@@ -9,6 +9,7 @@ import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar'
 import { useCreateBooking } from '@/hooks/useBookings';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { Property, SpecialOffer } from '@/types/database';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const createBooking = useCreateBooking();
+  const { formatPrice, selectedCurrency } = useCurrency();
   
   // Real-time availability subscription
   useRealtimeAvailability(property.id);
@@ -42,13 +44,11 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
   const discountAmount = specialOffer ? (baseTotal * specialOffer.discount_percent) / 100 : 0;
   const totalPrice = baseTotal - discountAmount;
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  // Format prices using currency context
+  const basePriceFormatted = formatPrice(property.base_price);
+  const baseTotalFormatted = formatPrice(baseTotal);
+  const discountFormatted = formatPrice(discountAmount);
+  const totalFormatted = formatPrice(totalPrice);
 
   // Handle date selection from AvailabilityCalendar
   const handleDateSelect = (date: Date, type: 'checkIn' | 'checkOut') => {
@@ -244,7 +244,7 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
       {/* Price Header */}
       <div className="flex items-baseline gap-2">
         <span className="text-3xl font-serif font-semibold">
-          {formatPrice(property.base_price)}
+          {basePriceFormatted.display}
         </span>
         <span className="text-muted-foreground">/ night</span>
       </div>
@@ -259,22 +259,27 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
             <div className="space-y-3 pt-4 border-t border-border">
               <div className="flex justify-between text-sm">
                 <span>
-                  {formatPrice(property.base_price)} × {nights} nights
+                  {basePriceFormatted.display} × {nights} nights
                 </span>
-                <span>{formatPrice(baseTotal)}</span>
+                <span>{baseTotalFormatted.display}</span>
               </div>
               {specialOffer && discountAmount > 0 && (
                 <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
                   <span>
                     {specialOffer.title} (-{specialOffer.discount_percent}%)
                   </span>
-                  <span>-{formatPrice(discountAmount)}</span>
+                  <span>-{discountFormatted.display}</span>
                 </div>
               )}
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
-                <span>{formatPrice(totalPrice)}</span>
+                <span>{totalFormatted.display}</span>
               </div>
+              {totalFormatted.isConverted && (
+                <div className="text-xs text-muted-foreground text-right">
+                  {totalFormatted.original} · You pay in EUR
+                </div>
+              )}
             </div>
           )}
 
@@ -360,22 +365,27 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
             <div className="space-y-3 pt-4 border-t border-border">
               <div className="flex justify-between text-sm">
                 <span>
-                  {formatPrice(property.base_price)} × {nights} nights
+                  {basePriceFormatted.display} × {nights} nights
                 </span>
-                <span>{formatPrice(baseTotal)}</span>
+                <span>{baseTotalFormatted.display}</span>
               </div>
               {specialOffer && discountAmount > 0 && (
                 <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
                   <span>
                     {specialOffer.title} (-{specialOffer.discount_percent}%)
                   </span>
-                  <span>-{formatPrice(discountAmount)}</span>
+                  <span>-{discountFormatted.display}</span>
                 </div>
               )}
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
-                <span>{formatPrice(totalPrice)}</span>
+                <span>{totalFormatted.display}</span>
               </div>
+              {totalFormatted.isConverted && (
+                <div className="text-xs text-muted-foreground text-right">
+                  {totalFormatted.original} · You pay in EUR
+                </div>
+              )}
             </div>
           )}
 

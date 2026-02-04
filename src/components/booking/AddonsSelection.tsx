@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Addon, SelectedAddon } from '@/types/booking-engine';
 import { useAddons, calculateAddonPrice } from '@/hooks/useBookingEngine';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +42,7 @@ export function AddonsSelection({
   className,
 }: AddonsSelectionProps) {
   const { data: addons, isLoading } = useAddons(propertyId);
+  const { formatPrice } = useCurrency();
   const [expandedCategory, setExpandedCategory] = useState<string | null>('transfer');
 
   const handleAddAddon = (addon: Addon) => {
@@ -97,17 +99,17 @@ export function AddonsSelection({
     return selectedAddons.find(s => s.addon.id === addonId)?.quantity || 0;
   };
 
-  const formatPrice = (addon: Addon) => {
-    const price = `€${addon.price}`;
+  const formatAddonPrice = (addon: Addon) => {
+    const priceInfo = formatPrice(addon.price);
     switch (addon.priceType) {
       case 'per_person':
-        return `${price}/person`;
+        return `${priceInfo.display}/person`;
       case 'per_night':
-        return `${price}/night`;
+        return `${priceInfo.display}/night`;
       case 'per_person_per_night':
-        return `${price}/person/night`;
+        return `${priceInfo.display}/person/night`;
       default:
-        return price;
+        return priceInfo.display;
     }
   };
 
@@ -193,7 +195,7 @@ export function AddonsSelection({
                               </p>
                             )}
                             <div className="text-sm font-medium text-primary mt-2">
-                              {formatPrice(addon)}
+                              {formatAddonPrice(addon)}
                             </div>
                           </div>
 
@@ -254,7 +256,7 @@ export function AddonsSelection({
                   {selected.addon.name}
                   {selected.quantity > 1 && ` × ${selected.quantity}`}
                 </span>
-                <span className="font-medium">€{selected.calculatedPrice}</span>
+                <span className="font-medium">{formatPrice(selected.calculatedPrice).display}</span>
               </div>
             ))}
           </div>

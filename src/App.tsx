@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { BrandProvider } from "@/contexts/BrandContext";
 import { BookingProvider } from "@/contexts/BookingContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { UnifiedBookingDialog } from "@/components/booking/UnifiedBookingDialog";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
@@ -59,12 +60,13 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <BrandProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <BookingProvider>
-              <UnifiedBookingDialog />
+        <CurrencyProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <BookingProvider>
+                <UnifiedBookingDialog />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/properties" element={<Properties />} />
@@ -116,9 +118,10 @@ const App = () => (
             </BookingProvider>
           </BrowserRouter>
         </TooltipProvider>
-      </BrandProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+      </CurrencyProvider>
+    </BrandProvider>
+  </AuthProvider>
+</QueryClientProvider>
 );
 
 export default App;

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { InstantBookingBadge } from '@/components/properties/InstantBookingBadge';
 import { useBooking } from '@/contexts/BookingContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
 import type { Property } from '@/types/database';
 
@@ -17,15 +18,10 @@ interface QuickBookCardProps {
 export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { openBooking } = useBooking();
+  const { formatPrice } = useCurrency();
   const { data: specialOffer } = useActiveSpecialOffer(property.id);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  const priceInfo = formatPrice(property.base_price);
 
   const handleBookNow = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -77,7 +73,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
 
             {/* Price on Image */}
             <div className="absolute bottom-3 left-3 text-white">
-              <span className="text-2xl font-bold">{formatPrice(property.base_price)}</span>
+              <span className="text-2xl font-bold">{priceInfo.display}</span>
               <span className="text-sm opacity-80">/night</span>
             </div>
 
