@@ -1,119 +1,89 @@
 
-# Complete Stripe Payment System Removal
+# Admin Dashboard Cleanup Plan
 
 ## Overview
-
-You want to completely remove all Stripe-related code and infrastructure to start fresh. This plan identifies and removes every Stripe component, file, hook, edge function, and reference.
+After auditing the admin dashboard, I've identified several items that need to be cleaned up because they either don't work (broken after Stripe removal), have no data/purpose, or reference features that aren't fully implemented.
 
 ---
 
-## What Will Be Deleted
+## Items to Clean Up
 
-### Frontend Files (Complete Deletion)
+### 1. ProcessRefundButton Component (REMOVE)
+**Location:** `src/components/admin/ProcessRefundButton.tsx`
 
-| File | Purpose |
-|------|---------|
-| `src/lib/stripe.ts` | Stripe SDK loader with `getStripe()` function |
-| `src/hooks/useStripeHealth.ts` | Pre-flight health check for Stripe connectivity |
-| `src/components/booking/StripePaymentForm.tsx` | Stripe PaymentElement form component |
+**Reason:** 
+- Imported in `BookingDetailDialog.tsx` but **never actually used** (no JSX usage found)
+- The refund processing edge function was deleted with Stripe removal
+- Has no backend to process refunds anymore
 
-### Edge Functions (Complete Deletion)
+**Action:** Delete the file and remove the import from `BookingDetailDialog.tsx`
 
-| Function | Purpose |
-|----------|---------|
-| `supabase/functions/create-payment-intent/index.ts` | Creates Stripe PaymentIntent for checkout |
-| `supabase/functions/confirm-payment/index.ts` | Verifies payment success and creates booking |
-| `supabase/functions/stripe-webhook/index.ts` | Handles Stripe webhook events |
-| `supabase/functions/process-refund/index.ts` | Processes refunds through Stripe |
+---
 
-### Files Requiring Stripe Code Removal
+### 2. Unused `isRefunding` State in BookingDetailDialog
+**Location:** `src/components/admin/BookingDetailDialog.tsx` (line 75)
 
+**Reason:**
+- State variable `isRefunding` is declared but never used after Stripe removal
+- Was intended for the ProcessRefundButton which is not rendered
+
+**Action:** Remove the unused state variable
+
+---
+
+### 3. Clean Up Sidebar Navigation - Remove Non-Functional Items
+
+The sidebar shows navigation items that either have empty data or incomplete functionality:
+
+| Nav Item | Reason to Keep/Remove |
+|----------|----------------------|
+| **Dashboard** | Keep - Works |
+| **Bookings** | Keep - Works, has 2 bookings |
+| **Add-ons** | Keep - Has data (1 addon in catalog) |
+| **Promotions** | Keep - Table exists, functional |
+| **Campaigns** | Keep - Table exists, works even if empty |
+| **Exit Intent** | Keep - Has 1 settings record, functional |
+| **Fees & Taxes** | Keep - Empty but functional, needed for checkout |
+| **Rate Plans** | Keep - Empty but functional, needed for pricing |
+| **Import Rates** | Keep - Works with edge function |
+| **Properties** | Keep - Works |
+| **Destinations** | Keep - Works |
+| **Amenities** | Keep - Works |
+| **Experiences** | Keep - Works |
+| **Enquiries** | Keep - Works |
+| **AI Generator** | Keep - Works with `generate-content` edge function |
+| **Content Calendar** | Keep - Works with `scheduled_blog_posts` table |
+| **Blog Posts** | Keep - Works |
+| **Authors** | Keep - Works |
+| **Categories** | Keep - Works |
+| **Newsletter** | Keep - Works |
+| **PMS Health** | Keep - Working iCal sync system |
+| **Analytics** | Keep - Works |
+| **Settings** | Keep - Works |
+
+**Conclusion:** All navigation items should be kept since they all connect to functional features with proper database tables.
+
+---
+
+## Files to Modify
+
+### Delete Files
+| File | Reason |
+|------|--------|
+| `src/components/admin/ProcessRefundButton.tsx` | Unused, no refund backend exists |
+
+### Modify Files
 | File | Changes |
 |------|---------|
-| `src/pages/Checkout.tsx` | Remove Stripe imports, Elements wrapper, payment intent logic, StripePaymentForm usage |
-| `src/components/booking/BookingWidget.tsx` | Remove "Secure payment via Stripe" text |
-| `src/components/admin/ProcessRefundButton.tsx` | Update refund description text |
-
-### Config Entries to Remove
-
-From `supabase/config.toml`:
-- `[functions.create-payment-intent]`
-- `[functions.confirm-payment]`
-- `[functions.process-refund]`
-- `[functions.stripe-webhook]`
-
-### Environment Variables (Remain in place for re-implementation)
-
-These secrets exist but will no longer be used until you re-implement:
-- `STRIPE_SECRET_KEY`
-- `STRIPE_PUBLISHABLE_KEY`
-- `VITE_STRIPE_PUBLISHABLE_KEY`
+| `src/components/admin/BookingDetailDialog.tsx` | Remove unused `ProcessRefundButton` import and `isRefunding` state |
 
 ---
 
-## Implementation Steps
+## Summary
 
-### Step 1: Delete Frontend Stripe Files
+This is a minimal cleanup focused on removing dead code after the Stripe removal. The admin dashboard navigation is well-organized and all items connect to functional features, even if some have no data yet (which is expected for a fresh system).
 
-Delete these files completely:
-1. `src/lib/stripe.ts`
-2. `src/hooks/useStripeHealth.ts`
-3. `src/components/booking/StripePaymentForm.tsx`
+**Total changes:**
+- 1 file deleted
+- 1 file modified (2 lines removed)
 
-### Step 2: Delete Edge Functions
-
-Delete these directories:
-1. `supabase/functions/create-payment-intent/`
-2. `supabase/functions/confirm-payment/`
-3. `supabase/functions/stripe-webhook/`
-4. `supabase/functions/process-refund/`
-
-Remove deployed functions from backend.
-
-### Step 3: Simplify Checkout Page
-
-Replace `src/pages/Checkout.tsx` with a placeholder that:
-- Removes all Stripe imports
-- Removes Elements provider
-- Removes payment intent creation logic
-- Removes StripePaymentForm usage
-- Shows a "Payment gateway coming soon" message at payment step
-- Keeps the date selection, addons, and guest form steps working
-
-### Step 4: Update BookingWidget
-
-Remove the "Secure payment via Stripe" text from the booking widget.
-
-### Step 5: Update ProcessRefundButton
-
-Update the refund description to remove Stripe-specific text.
-
-### Step 6: Clean Config File
-
-Update `supabase/config.toml` to remove the four Stripe-related function entries.
-
----
-
-## Post-Cleanup State
-
-After this cleanup:
-
-- **Checkout flow**: Date selection, addons, and guest form will still work
-- **Payment step**: Will show a placeholder message instead of Stripe form
-- **Refunds**: Will show a disabled state until re-implemented
-- **Booking creation**: Will not create bookings until new payment gateway is implemented
-
----
-
-## Files Summary
-
-| Action | Count | Files |
-|--------|-------|-------|
-| **Delete** | 7 | 3 frontend files + 4 edge function directories |
-| **Modify** | 4 | Checkout.tsx, BookingWidget.tsx, ProcessRefundButton.tsx, config.toml |
-
----
-
-## Database Note
-
-The database tables (`booking_payments` with `stripe_payment_intent_id`, `stripe_charge_id` columns) will remain. These columns are nullable and won't cause issues. When you re-implement payments, you can reuse these columns or add new ones for your chosen gateway.
