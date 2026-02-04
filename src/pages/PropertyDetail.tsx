@@ -23,6 +23,7 @@ import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidg
 import { useProperty } from '@/hooks/useProperties';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -49,6 +50,7 @@ export default function PropertyDetail() {
   const { data: property, isLoading, error } = useProperty(slug || '');
   const { data: activeOffer } = useActiveSpecialOffer(property?.id || '');
   const { addToRecentlyViewed } = useRecentlyViewed();
+  const { formatPrice } = useCurrency();
 
   // Track property view
   useEffect(() => {
@@ -73,13 +75,7 @@ export default function PropertyDetail() {
     enabled: !!property?.destination_id,
   });
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  // Price display using CurrencyContext for guest-facing multi-currency support
 
   if (isLoading) {
     return (
@@ -371,7 +367,7 @@ export default function PropertyDetail() {
         {/* Mobile Booking CTA */}
         <MobileBookingCTA 
           property={property} 
-          priceDisplay={formatPrice(property.base_price)}
+          priceDisplay={formatPrice(property.base_price).display}
           specialOffer={activeOffer}
         />
       </div>

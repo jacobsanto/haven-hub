@@ -7,6 +7,7 @@ import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar'
 import { BookingWidget } from './BookingWidget';
 import { Property, SpecialOffer } from '@/types/database';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
+import { useCurrency } from '@/hooks/useCurrency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
@@ -37,6 +38,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [checkIn, setCheckIn] = useState<Date | undefined>();
   const [checkOut, setCheckOut] = useState<Date | undefined>();
+  const { formatPrice } = useCurrency();
 
   // Real-time availability subscription
   useRealtimeAvailability(property.id);
@@ -49,13 +51,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
     ? differenceInDays(checkOut, checkIn) 
     : 0;
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  // Use CurrencyContext for price formatting
 
   const handleOpenSheet = useCallback(() => {
     triggerHaptic('light');
@@ -192,7 +188,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
               {specialOffer && discountedPrice ? (
                 <>
                   <span className="text-xl font-bold text-primary">
-                    {formatPrice(discountedPrice)}
+                    {formatPrice(discountedPrice).display}
                   </span>
                   <span className="text-sm text-muted-foreground line-through">
                     {priceDisplay}

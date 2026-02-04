@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { BookingStatus } from '@/types/database';
+import { formatEuro } from '@/lib/format-currency';
 
 export default function AdminBookings() {
   const [search, setSearch] = useState('');
@@ -49,13 +50,7 @@ export default function AdminBookings() {
       b.guest_email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  // Use centralized EUR formatter for admin display
 
   const handleStatusUpdate = async (id: string, status: BookingStatus) => {
     try {
@@ -192,7 +187,7 @@ export default function AdminBookings() {
                       </TableCell>
                       <TableCell>{booking.guests}</TableCell>
                       <TableCell className="font-medium">
-                        {formatPrice(booking.total_price)}
+                        {formatEuro(booking.total_price)}
                       </TableCell>
                       <TableCell>
                         <span

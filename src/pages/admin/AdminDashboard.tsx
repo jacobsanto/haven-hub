@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { formatEuro } from '@/lib/format-currency';
 
 export default function AdminDashboard() {
   const { data: properties } = useAdminProperties();
@@ -50,13 +51,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  // Use centralized EUR formatter for admin display
 
   // Calculate revenue trend
   const revenueTrend = thisMonthRevenue && lastMonthRevenue && lastMonthRevenue.totalRevenue > 0
@@ -87,7 +82,7 @@ export default function AdminDashboard() {
     },
     {
       title: 'Total Revenue',
-      value: formatPrice(stats?.totalRevenue || 0),
+      value: formatEuro(stats?.totalRevenue || 0),
       icon: TrendingUp,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
@@ -214,7 +209,7 @@ export default function AdminDashboard() {
                   <div>
                     <p className="text-sm text-muted-foreground">This Month's Revenue</p>
                     <p className="text-3xl font-bold">
-                      {formatPrice(thisMonthRevenue?.totalRevenue || 0)}
+                      {formatEuro(thisMonthRevenue?.totalRevenue || 0)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {thisMonthRevenue?.confirmedBookings || 0} confirmed bookings
@@ -233,7 +228,7 @@ export default function AdminDashboard() {
                     </div>
                     <p className="text-xs text-muted-foreground">vs last month</p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Last: {formatPrice(lastMonthRevenue?.totalRevenue || 0)}
+                      Last: {formatEuro(lastMonthRevenue?.totalRevenue || 0)}
                     </p>
                   </div>
                 </div>
@@ -242,7 +237,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Pending revenue</span>
                       <span className="font-medium text-amber-600">
-                        {formatPrice(thisMonthRevenue?.pendingRevenue || 0)}
+                        {formatEuro(thisMonthRevenue?.pendingRevenue || 0)}
                       </span>
                     </div>
                   </div>
@@ -374,7 +369,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="font-medium">
-                          {formatPrice(booking.total_price)}
+                          {formatEuro(booking.total_price)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(booking.check_in), 'MMM d')} -{' '}
