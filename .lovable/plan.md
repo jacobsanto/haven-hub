@@ -1,138 +1,113 @@
 
+# Stripe Checkout Audit and Fix Plan
 
-# Clean Up PMS Booking Import System
+## Summary of Findings
 
-## Overview
-
-You want to reset the system to work purely with iCal-based availability sync, removing all remnants of the old API-based booking import system. This involves:
-
-1. **Deleting all PMS-synced bookings** from the database (1,159 bookings across 19 properties)
-2. **Removing UI components** related to booking import/reconciliation from the admin dashboard
-3. **Cleaning up the availability table** to reset blocked dates (9,377 blocked dates)
-4. **Removing reconciliation features** that compare Tokeet API bookings with local records
+After a deep investigation of the Stripe checkout flow, I found that the core infrastructure is working correctly. The edge functions respond properly, and the Stripe SDK is configured. However, there are several issues that could prevent successful checkout:
 
 ---
 
-## What Will Be Removed
+## Issues Identified
 
-### Database Data Cleanup
-| Table | Action | Count |
-|-------|--------|-------|
-| `bookings` | Delete all records with `external_booking_id IS NOT NULL` | ~1,159 bookings |
-| `availability` | Delete all blocked dates (will be re-synced via iCal) | ~9,377 records |
-| `booking_price_breakdown` | Delete orphaned records for deleted bookings | Related records |
-| `booking_payments` | Delete orphaned records for deleted bookings | Related records |
-| `booking_addons` | Delete orphaned records for deleted bookings | Related records |
+### 1. Missing `STRIPE_WEBHOOK_SECRET` (Medium Priority)
+- **Problem**: The `stripe-webhook/index.ts` function requires `STRIPE_WEBHOOK_SECRET` but this is not configured in the secrets
+- **Impact**: Stripe webhooks will fail with "Stripe not configured" error, though this doesn't block initial payment since `confirm-payment` verifies payment status directly
+- **Fix**: Add the webhook secret from Stripe Dashboard to Supabase secrets
 
-### Admin UI Removals
+### 2. Empty `fees_taxes` Table (Low Priority)
+- **Problem**: The fees/taxes table has no data
+- **Impact**: Price breakdowns won't include any fees or taxes, but checkout will still work
+- **Fix**: Optional - add default fees/taxes if needed for your business model
 
-**From `AdminPMSHealth.tsx`:**
-- Daily Booking Reconciliation Card (entire component)
-- Webhook Tester Card (tests booking.created, booking.cancelled, reconciliation)
-- `useTriggerReconciliation` hook usage
-
-**From hooks:**
-- `useTriggerReconciliation` function from `useAdminPMSHealth.ts`
-
-**Edge Functions to Update:**
-- `pms-reconcile/index.ts` - Can be deleted entirely (only used for booking import)
-- `test-pms-webhook/index.ts` - Remove reconciliation test option
-
-### Components to Simplify
-- `WebhookTesterCard.tsx` - Remove booking and reconciliation test buttons, keep only for debugging iCal sync
+### 3. Properties with "Unknown" Country (Low Priority)
+- **Problem**: Most properties have `country: "Unknown"` instead of a proper country value
+- **Impact**: Stripe metadata will show "Unknown" for property country
+- **Fix**: Update property records with correct country values
 
 ---
 
-## What Will Be Kept
+## Testing the Checkout Flow
 
-| Component | Purpose |
-|-----------|---------|
-| Property Import | Import properties from Tokeet API |
-| iCal URL Management | Configure and sync availability via iCal feeds |
-| Push Bookings to PMS | Send direct bookings to Tokeet after payment |
-| Connection Health | Test PMS API connection |
-| Sync History | View past sync runs |
-| Property Mappings | Map local properties to Tokeet IDs with iCal URLs |
+To identify the exact failure point, we need to test the complete flow:
 
----
+### Step 1: Verify Stripe.js Loads
+The frontend uses `getStripe()` which loads the Stripe SDK using the publishable key from `VITE_STRIPE_PUBLISHABLE_KEY`. This appears to be correctly configured.
 
-## Implementation Steps
+### Step 2: Verify Payment Intent Creation
+I tested the `create-payment-intent` edge function directly and it returned a valid `clientSecret`:
 
-### Step 1: Database Cleanup (SQL)
-Execute SQL to delete all PMS-imported bookings and reset availability:
-
-```sql
--- Delete related records first (foreign key dependencies)
-DELETE FROM booking_price_breakdown 
-WHERE booking_id IN (SELECT id FROM bookings WHERE external_booking_id IS NOT NULL);
-
-DELETE FROM booking_payments 
-WHERE booking_id IN (SELECT id FROM bookings WHERE external_booking_id IS NOT NULL);
-
-DELETE FROM booking_addons 
-WHERE booking_id IN (SELECT id FROM bookings WHERE external_booking_id IS NOT NULL);
-
-DELETE FROM security_deposits 
-WHERE booking_id IN (SELECT id FROM bookings WHERE external_booking_id IS NOT NULL);
-
--- Delete PMS-synced bookings
-DELETE FROM bookings WHERE external_booking_id IS NOT NULL;
-
--- Clear all availability records (will be re-synced via iCal)
-DELETE FROM availability;
+```text
+Response: 200 OK
+{
+  "clientSecret": "pi_xxx_secret_xxx",
+  "customerId": "cus_xxx",
+  "paymentIntentId": "pi_xxx"
+}
 ```
 
-### Step 2: Update AdminPMSHealth.tsx
-- Remove the Daily Reconciliation Card section (lines ~300-335)
-- Remove the Webhook Tester Card section (lines ~337-349)
-- Remove import and usage of `useTriggerReconciliation`
-- Update sync description text to reflect iCal-only approach
+This confirms the backend payment creation is working.
 
-### Step 3: Update useAdminPMSHealth.ts
-- Remove `useTriggerReconciliation` hook function
-- Simplify remaining hooks to focus on iCal sync
+### Step 3: Verify Stripe Elements Render
+The `StripePaymentForm` component uses Stripe's `PaymentElement` which requires:
+- A valid `clientSecret` from step 2
+- The Stripe.js SDK loaded
 
-### Step 4: Update/Remove WebhookTesterCard.tsx
-- Remove the component entirely OR simplify to only test iCal sync
-- The old webhook tests (booking.created, booking.cancelled, reconciliation) are no longer relevant
-
-### Step 5: Delete Edge Function
-- Delete `supabase/functions/pms-reconcile/index.ts` entirely
-- Update `supabase/functions/test-pms-webhook/index.ts` to remove reconciliation option
-
-### Step 6: Update PMSSyncStatusPanel.tsx
-- Remove references to "Bookings Pull" in the sync status panel
-- Keep only "Availability Pull (iCal)" and "Bookings Push"
+### Step 4: Identify the Blocking Issue
+Since no console logs or network errors were captured, the issue is likely:
+- User hasn't reached the payment step (stuck on dates/guest form)
+- Dates are unavailable (101 blocked dates from iCal sync)
+- A silent JavaScript error preventing progression
 
 ---
 
-## Post-Cleanup: Fresh Start Workflow
+## Implementation Plan
 
-After this cleanup, the admin workflow will be:
+### Phase 1: Add Missing Webhook Secret
+1. Get webhook signing secret from Stripe Dashboard (Developers > Webhooks > Signing secret)
+2. Add `STRIPE_WEBHOOK_SECRET` to Supabase secrets
 
-1. **Import Properties** from Tokeet (API)
-2. **Add iCal URL** for each property in Admin > PMS Health > Property Mappings
-3. **Sync Availability** via iCal feeds (automatic every 5 minutes + manual trigger)
-4. **Push Bookings** to Tokeet when guests book directly on your website
+### Phase 2: Improve Error Visibility
+Add better error logging to capture the exact failure point:
+
+1. **Add console logging to `handleProceedToPayment`** in `Checkout.tsx`
+   - Log when health check starts/completes
+   - Log when payment intent request is made
+   - Log the response or error received
+
+2. **Add error boundary for Stripe Elements**
+   - Catch and display any errors from the Stripe Elements component
+
+### Phase 3: Test End-to-End
+1. Navigate to a property with available dates (check availability table)
+2. Complete the checkout flow step by step:
+   - Select dates (must be 2+ nights, dates not blocked)
+   - Continue through addons
+   - Fill guest form and accept terms
+   - Reach payment step
+   - Enter test card and complete payment
 
 ---
 
-## Files Modified
+## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/pages/admin/AdminPMSHealth.tsx` | Remove reconciliation card, webhook tester |
-| `src/hooks/useAdminPMSHealth.ts` | Remove `useTriggerReconciliation` |
-| `src/components/admin/WebhookTesterCard.tsx` | Delete or simplify |
-| `src/components/admin/PMSSyncStatusPanel.tsx` | Update to show iCal-only sync |
-| `supabase/functions/pms-reconcile/index.ts` | Delete entire function |
-| `supabase/functions/test-pms-webhook/index.ts` | Remove reconciliation test |
+| File | Changes |
+|------|---------|
+| (Supabase Secrets) | Add `STRIPE_WEBHOOK_SECRET` |
+| `src/pages/Checkout.tsx` | Add verbose logging for debugging |
+| `src/components/booking/StripePaymentForm.tsx` | Add error state visibility |
 
 ---
 
-## Risk Mitigation
+## Test Card Numbers (Stripe Test Mode)
+When testing, use these Stripe test cards:
+- **Success**: 4242 4242 4242 4242
+- **Decline**: 4000 0000 0000 0002
+- **3DS Required**: 4000 0025 0000 3155
 
-- **Backup Note**: The deleted bookings are all imports from Tokeet; your direct bookings have `external_booking_id = NULL` and will NOT be affected
-- **Availability Recovery**: iCal sync will immediately repopulate blocked dates after cleanup
-- **No Data Loss**: All original booking data remains in Tokeet; this cleanup only removes local copies
+---
 
+## Next Steps
+1. Add the `STRIPE_WEBHOOK_SECRET` to Supabase secrets
+2. Add enhanced logging to the checkout page
+3. Test the full booking flow end-to-end on a property with available dates
+4. If issues persist, check browser console for JavaScript errors
