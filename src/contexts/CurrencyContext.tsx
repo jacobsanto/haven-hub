@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useExchangeRates } from '@/hooks/useExchangeRates';
-import { useBrand } from '@/contexts/BrandContext';
 import {
   SupportedCurrency,
   SUPPORTED_CURRENCIES,
@@ -49,8 +48,12 @@ function detectInitialCurrency(): SupportedCurrency {
   return 'EUR';
 }
 
-export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const { baseCurrency } = useBrand();
+interface CurrencyProviderProps {
+  children: React.ReactNode;
+  baseCurrency?: SupportedCurrency;
+}
+
+export function CurrencyProvider({ children, baseCurrency = 'EUR' }: CurrencyProviderProps) {
   const [selectedCurrency, setSelectedCurrencyState] = useState<SupportedCurrency>(detectInitialCurrency);
   const { data: exchangeRates, isLoading } = useExchangeRates();
 
@@ -94,8 +97,6 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
 
     // Convert to selected currency
     // Note: exchangeRates are relative to EUR. If base is not EUR, we need to adjust.
-    // For simplicity, we assume rates are still EUR-based from the API.
-    // A full implementation would fetch rates relative to baseCurrency.
     const rate = exchangeRates?.[selectedCurrency as keyof ExchangeRates] || 1;
     const baseToEurRate = baseCurrency === 'EUR' ? 1 : (1 / (exchangeRates?.[baseCurrency as keyof ExchangeRates] || 1));
     const convertedAmount = baseAmount * baseToEurRate * rate;
