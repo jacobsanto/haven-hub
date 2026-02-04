@@ -43,7 +43,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ProcessRefundButton } from './ProcessRefundButton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,7 +71,6 @@ export function BookingDetailDialog({
   const confirmWithPMS = useConfirmBookingWithPMS();
   const retrySync = useRetryPMSSync();
   const { toast } = useToast();
-  const [isRefunding, setIsRefunding] = useState(false);
 
   const booking = data?.booking;
   const priceBreakdown = data?.priceBreakdown || [];
