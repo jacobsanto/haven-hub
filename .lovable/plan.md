@@ -1,189 +1,244 @@
 
-# Unify Currency Display: EUR Base Currency with Consistent Styling
+# Universal Currency Settings Widget in Admin Dashboard
 
-## Problem Summary
+## Overview
 
-The codebase has **inconsistent currency formatting** across admin dashboard and frontend:
+Create a centralized **Currency Settings** tab in the Admin Settings page that allows administrators to configure the base currency for the entire platform. This setting will be stored in the database and synced across the admin dashboard, frontend display, and all pricing logic.
 
-| Location | Current Currency | Should Be |
-|----------|------------------|-----------|
-| AdminDashboard.tsx | EUR ✓ | EUR |
-| AdminProperties.tsx | **USD** ✗ | EUR |
-| AdminBookings.tsx | **USD** ✗ | EUR |
-| AdminAnalytics.tsx | EUR ✓ | EUR |
-| AdminRatePlans.tsx | EUR ✓ | EUR |
-| AdminFees.tsx | EUR ✓ | EUR |
-| AdminAddonsManagement.tsx | EUR ✓ | EUR |
-| PropertyDetail.tsx | **USD** ✗ | Use CurrencyContext |
-| AtAGlanceCards.tsx | **USD** ✗ | Use CurrencyContext |
-| MobileBookingCTA.tsx | **USD** ✗ | Use CurrencyContext |
-| SeasonalRatesHeatmap.tsx | EUR ✓ | EUR |
+## Current Architecture
 
-Additionally, while the `CurrencyContext` exists for frontend guest-facing multi-currency display, there's no centralized admin currency formatter that ensures all admin pages use EUR consistently.
+| Component | Current State |
+|-----------|---------------|
+| Database | Prices stored in EUR (hardcoded assumption) |
+| Admin Dashboard | Uses `formatEuro()` from `lib/format-currency.ts` |
+| Frontend | Uses `CurrencyContext` with EUR as hardcoded `BASE_CURRENCY` |
+| Types | `src/types/currency.ts` exports `BASE_CURRENCY = 'EUR'` |
+| Stripe | Charges in EUR |
 
-## Solution Overview
-
-Create a **unified currency utility system** that provides:
-
-1. **`formatEuro()`** - A centralized admin-only formatter that always outputs EUR
-2. **Update all admin pages** - Replace local `formatPrice` functions with the shared utility
-3. **Update remaining frontend components** - Use the existing `useCurrency()` hook for guest-facing prices
-4. **Consistent styling** - All currency displays will use the same formatting pattern
+## Solution: Database-Driven Base Currency
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    UNIFIED CURRENCY ARCHITECTURE                    │
+│                  UNIVERSAL CURRENCY SETTINGS                        │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  ADMIN DASHBOARD                    FRONTEND (Guest-Facing)         │
-│  ┌─────────────────────┐            ┌─────────────────────────┐    │
-│  │ formatEuro()        │            │ useCurrency() hook      │    │
-│  │ Always EUR          │            │ Converts from EUR base  │    │
-│  │ No conversion       │            │ Shows ≈ converted price │    │
-│  │ €1,234              │            │ + original EUR          │    │
-│  └─────────────────────┘            └─────────────────────────┘    │
-│         ↓                                    ↓                      │
-│  ┌─────────────────────┐            ┌─────────────────────────┐    │
-│  │ AdminDashboard      │            │ PropertyCard            │    │
-│  │ AdminProperties     │            │ PropertyDetail          │    │
-│  │ AdminBookings       │            │ BookingWidget           │    │
-│  │ AdminRatePlans      │            │ MobileBookingCTA        │    │
-│  │ AdminAnalytics      │            │ PriceBreakdown          │    │
-│  └─────────────────────┘            └─────────────────────────┘    │
+│   DATABASE (brand_settings table)                                   │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │ base_currency: 'EUR'  ←── Single source of truth            │  │
+│   └─────────────────────────────────────────────────────────────┘  │
+│               ↓                                                     │
+│   ┌───────────────────────────────────────────────────────────────┐│
+│   │                    BrandContext                               ││
+│   │  • Fetches base_currency from brand_settings                  ││
+│   │  • Provides baseCurrency to entire app                        ││
+│   └───────────────────────────────────────────────────────────────┘│
+│         ↓                               ↓                          │
+│   ADMIN DASHBOARD                 FRONTEND (Guest Display)         │
+│   ┌─────────────────────┐        ┌─────────────────────────┐       │
+│   │ formatBaseCurrency()│        │ CurrencyContext         │       │
+│   │ Uses baseCurrency   │        │ • Base: from BrandContext│      │
+│   │ from BrandContext   │        │ • Guest can convert to  │       │
+│   │                     │        │   other currencies      │       │
+│   └─────────────────────┘        └─────────────────────────┘       │
 │                                                                     │
-│  DATABASE: All prices stored in EUR (unchanged)                     │
-│  STRIPE: All payments in EUR (unchanged)                           │
+│   ADMIN SETTINGS                                                    │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │ NEW TAB: Currency                                           │  │
+│   │ • Select base currency (EUR, USD, GBP, CHF, AUD, CAD)       │  │
+│   │ • Preview formatting                                         │  │
+│   │ • Currency symbol display options                            │  │
+│   └─────────────────────────────────────────────────────────────┘  │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Technical Implementation
 
-### Step 1: Create Centralized Admin Currency Formatter
+### 1. Database Schema Update
 
-**New File: `src/lib/format-currency.ts`**
+Add `base_currency` column to the existing `brand_settings` table:
+
+```sql
+ALTER TABLE brand_settings
+ADD COLUMN base_currency TEXT NOT NULL DEFAULT 'EUR';
+```
+
+### 2. Update BrandSettings Types & Hook
+
+Extend `useBrandSettings.ts`:
 
 ```typescript
-/**
- * Format a price in EUR for admin display.
- * Admin always sees EUR - no conversion needed.
- */
-export function formatEuro(amount: number, options?: {
-  minimumFractionDigits?: number;
-  maximumFractionDigits?: number;
-}): string {
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: options?.minimumFractionDigits ?? 0,
-    maximumFractionDigits: options?.maximumFractionDigits ?? 0,
-  }).format(amount);
+export interface BrandSettings {
+  // ... existing fields ...
+  base_currency: SupportedCurrency;  // NEW
 }
 
-/**
- * Format a number as compact currency (e.g., €1.2K)
- * Useful for dashboard stats
- */
-export function formatEuroCompact(amount: number): string {
-  if (amount >= 1000000) {
-    return `€${(amount / 1000000).toFixed(1)}M`;
-  }
-  if (amount >= 1000) {
-    return `€${(amount / 1000).toFixed(1)}K`;
-  }
-  return formatEuro(amount);
+export const defaultBrandSettings = {
+  // ... existing defaults ...
+  base_currency: 'EUR' as SupportedCurrency,  // NEW
+};
+```
+
+### 3. Create Currency Settings Tab
+
+Add a fourth tab to `AdminSettings.tsx`:
+
+```text
+┌────────────────────────────────────────────────────────────────┐
+│ [Identity] [Colors] [Typography] [Currency]  ← NEW TAB         │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│  Currency Settings                                             │
+│  Configure the base currency for all pricing                   │
+│                                                                │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │  Base Currency                                           │ │
+│  │  ┌──────────────────────────────────────────────┐       │ │
+│  │  │ EUR € - Euro                              ▼  │       │ │
+│  │  └──────────────────────────────────────────────┘       │ │
+│  │                                                          │ │
+│  │  This currency is used for:                              │ │
+│  │  • All property pricing in the database                  │ │
+│  │  • Payment processing via Stripe                         │ │
+│  │  • Admin dashboard displays                              │ │
+│  │                                                          │ │
+│  │  Guests can still view prices in other currencies,       │ │
+│  │  but payments will be charged in the base currency.      │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                                │
+│  Preview                                                       │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │  €1,234.00  |  €500/night  |  €10,500 total             │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### 4. Update BrandContext
+
+Extend `BrandContext.tsx` to expose `baseCurrency`:
+
+```typescript
+interface BrandContextValue {
+  // ... existing fields ...
+  baseCurrency: SupportedCurrency;  // NEW
+}
+
+const value: BrandContextValue = {
+  // ... existing values ...
+  baseCurrency: settings?.base_currency ?? 'EUR',
+};
+```
+
+### 5. Update CurrencyContext
+
+Modify `CurrencyContext.tsx` to read base currency from BrandContext:
+
+```typescript
+import { useBrand } from '@/contexts/BrandContext';
+
+export function CurrencyProvider({ children }) {
+  const { baseCurrency } = useBrand();  // Get from brand settings
+  
+  // Use baseCurrency instead of hardcoded 'EUR'
+  const formatPrice = useCallback((amount: number): FormattedPrice => {
+    // Format using baseCurrency as the "original" currency
+    // Convert from baseCurrency to selectedCurrency
+  }, [baseCurrency, selectedCurrency, exchangeRates]);
 }
 ```
 
-### Step 2: Update Admin Pages to Use Centralized Formatter
+### 6. Update Admin Currency Formatter
 
-Files to update with `import { formatEuro } from '@/lib/format-currency'`:
+Modify `lib/format-currency.ts` to support dynamic base currency:
 
-| File | Change |
-|------|--------|
-| `src/pages/admin/AdminDashboard.tsx` | Replace local `formatPrice` with `formatEuro` |
-| `src/pages/admin/AdminProperties.tsx` | Replace local `formatPrice` (USD→EUR) with `formatEuro` |
-| `src/pages/admin/AdminBookings.tsx` | Replace local `formatPrice` (USD→EUR) with `formatEuro` |
-| `src/pages/admin/AdminAnalytics.tsx` | Replace local `formatCurrency` with `formatEuro` |
-| `src/pages/admin/AdminRatePlans.tsx` | Replace local `formatCurrency` with `formatEuro` |
-| `src/pages/admin/AdminFees.tsx` | Use `formatEuro` for inline formatting |
-| `src/pages/admin/AdminAddonsManagement.tsx` | Replace local `formatPrice` with `formatEuro` |
-| `src/components/admin/SeasonalRatesHeatmap.tsx` | Replace local `formatCurrency` with `formatEuro` |
+```typescript
+import { useBrand } from '@/contexts/BrandContext';
 
-### Step 3: Update Remaining Frontend Components
+// For use in React components
+export function useFormatCurrency() {
+  const { baseCurrency } = useBrand();
+  
+  const format = useCallback((amount: number, options?) => {
+    const currencyInfo = SUPPORTED_CURRENCIES.find(c => c.code === baseCurrency);
+    return new Intl.NumberFormat(currencyInfo?.locale || 'en-US', {
+      style: 'currency',
+      currency: baseCurrency,
+      // ...options
+    }).format(amount);
+  }, [baseCurrency]);
+  
+  return { format, formatCompact };
+}
 
-These components still have hardcoded USD and should use the existing `useCurrency()` hook:
-
-| File | Current | Update |
-|------|---------|--------|
-| `src/pages/PropertyDetail.tsx` | Hardcoded USD | Use `useCurrency().formatPrice()` |
-| `src/components/properties/AtAGlanceCards.tsx` | Hardcoded USD | Use `useCurrency().formatPrice()` |
-| `src/components/booking/MobileBookingCTA.tsx` | Hardcoded USD | Use `useCurrency().formatPrice()` |
-
-### Step 4: Ensure Visual Consistency
-
-All price displays will follow these patterns:
-
-**Admin (always EUR):**
-```
-€2,450        - Standard price
-€1.2K         - Compact (dashboard stats, optional)
-€500/night    - Rate display
+// Keep formatEuro for backward compatibility or legacy uses
+export function formatEuro(amount: number, options?) { /* ... */ }
 ```
 
-**Frontend (guest-facing):**
-```
-When EUR selected:     €2,450
-When USD selected:     ≈ $2,646
-                       €2,450 EUR · You pay in EUR
-```
+### 7. Update Exchange Rates Edge Function
 
-## Files to Create
+Modify `exchange-rates/index.ts` to accept a dynamic base currency:
 
-| File | Purpose |
-|------|---------|
-| `src/lib/format-currency.ts` | Centralized EUR formatting utility for admin |
+```typescript
+// Fetch rates with dynamic base
+const BASE = baseCurrency || 'EUR';
+const response = await fetch(
+  `https://api.frankfurter.app/latest?from=${BASE}`
+);
+```
 
 ## Files to Modify
 
-### Admin Pages (Change to EUR)
-| File | Change |
-|------|--------|
-| `src/pages/admin/AdminDashboard.tsx` | Remove local formatPrice, import formatEuro |
-| `src/pages/admin/AdminProperties.tsx` | Change USD → EUR via formatEuro |
-| `src/pages/admin/AdminBookings.tsx` | Change USD → EUR via formatEuro |
-| `src/pages/admin/AdminAnalytics.tsx` | Use formatEuro |
-| `src/pages/admin/AdminRatePlans.tsx` | Use formatEuro |
-| `src/pages/admin/AdminFees.tsx` | Use formatEuro |
-| `src/pages/admin/AdminAddonsManagement.tsx` | Use formatEuro |
-| `src/components/admin/SeasonalRatesHeatmap.tsx` | Use formatEuro |
+### Database
+| Action | Details |
+|--------|---------|
+| Migration | Add `base_currency` column to `brand_settings` |
 
-### Frontend Components (Use CurrencyContext)
-| File | Change |
-|------|--------|
-| `src/pages/PropertyDetail.tsx` | Replace hardcoded USD with useCurrency() |
-| `src/components/properties/AtAGlanceCards.tsx` | Replace hardcoded USD with useCurrency() |
-| `src/components/booking/MobileBookingCTA.tsx` | Replace hardcoded USD with useCurrency() |
+### New Files
+| File | Purpose |
+|------|---------|
+| `src/components/admin/CurrencySettingsCard.tsx` | Currency settings UI card for admin |
+| `src/hooks/useFormatCurrency.ts` | React hook for dynamic currency formatting |
+
+### Modified Files
+| File | Changes |
+|------|---------|
+| `src/hooks/useBrandSettings.ts` | Add `base_currency` to interface and defaults |
+| `src/contexts/BrandContext.tsx` | Expose `baseCurrency` from settings |
+| `src/contexts/CurrencyContext.tsx` | Use `baseCurrency` from BrandContext instead of hardcoded EUR |
+| `src/pages/admin/AdminSettings.tsx` | Add Currency tab with selector |
+| `src/lib/format-currency.ts` | Add dynamic formatting option |
+| `src/types/currency.ts` | Remove hardcoded `BASE_CURRENCY` constant |
+| `supabase/functions/exchange-rates/index.ts` | Support dynamic base currency parameter |
 
 ## Implementation Order
 
-1. Create `src/lib/format-currency.ts` with `formatEuro()` utility
-2. Update all admin pages to use `formatEuro()` (8 files)
-3. Update remaining frontend components to use `useCurrency()` (3 files)
-4. Test admin dashboard shows EUR throughout
-5. Test frontend currency switcher works across all components
+1. **Database Migration**: Add `base_currency` column to `brand_settings`
+2. **Update Types**: Extend `BrandSettings` interface and defaults
+3. **Update BrandContext**: Expose `baseCurrency` value
+4. **Create CurrencySettingsCard**: Build the admin UI component
+5. **Add Currency Tab**: Integrate into AdminSettings page
+6. **Update CurrencyContext**: Read base from BrandContext
+7. **Create useFormatCurrency hook**: Dynamic admin formatting
+8. **Update format-currency.ts**: Add dynamic formatting support
+9. **Update Exchange Rates**: Support dynamic base parameter
+10. **Test full sync**: Verify changes propagate everywhere
 
-## Benefits
+## User Experience
 
-- **Single source of truth**: Admin always sees EUR from one utility
-- **No code duplication**: No more local `formatPrice` functions scattered everywhere
-- **Type safety**: Centralized utility can be properly typed
-- **Easy maintenance**: Future currency changes only need one update
-- **Consistent styling**: All prices formatted the same way (locale, decimals, symbol position)
+After implementation:
+1. Admin goes to **Settings > Currency** tab
+2. Selects base currency (e.g., USD)
+3. Clicks **Save Changes**
+4. Immediately:
+   - Admin dashboard shows prices in USD
+   - Frontend shows USD as base (guests can still convert)
+   - Payment processing uses USD
+   - Exchange rates recalculate relative to USD
 
-## What Stays Unchanged
+## Notes
 
-- Database: All prices remain stored in EUR
-- Stripe payments: Continue charging in EUR
-- CurrencyContext: Continues to handle guest-facing multi-currency display
-- Exchange rates: Edge function and caching logic unchanged
+- This change is **display and configuration only** for the base currency
+- Existing EUR prices in database would need manual conversion if base currency changes (out of scope for this implementation)
+- Stripe must be configured to accept the selected currency
+- Exchange rate API supports all listed currencies as base
