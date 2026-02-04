@@ -23,11 +23,12 @@ import {
 } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { useProperties } from '@/hooks/useProperties';
+import { useActiveDestinations } from '@/hooks/useDestinations';
 import { useCheckAvailability } from '@/hooks/useAvailability';
 import { useBooking } from '@/contexts/BookingContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -64,6 +65,7 @@ export function UnifiedBookingDialog() {
   } = useBooking();
 
   const { data: properties, isLoading } = useProperties();
+  const { data: destinations, isLoading: destinationsLoading } = useActiveDestinations();
   
   // Real-time availability subscription for selected property
   useRealtimeAvailability(selectedProperty?.id);
@@ -75,27 +77,26 @@ export function UnifiedBookingDialog() {
   };
 
   const [step, setStep] = useState<Step>(getInitialStep);
-  const [localSearchTerm, setLocalSearchTerm] = useState(searchLocation);
+  const [selectedDestinationName, setSelectedDestinationName] = useState(searchLocation);
 
   // Reset step when dialog opens
   useEffect(() => {
     if (isOpen) {
       setStep(getInitialStep());
-      setLocalSearchTerm(searchLocation);
+      setSelectedDestinationName(searchLocation);
     }
   }, [isOpen, mode, selectedProperty, searchLocation]);
 
-  // Filter properties based on search
+  // Filter properties based on selected destination
   const filteredProperties = useMemo(() => {
     if (!properties) return [];
-    if (!localSearchTerm.trim()) return properties;
-    const term = localSearchTerm.toLowerCase();
+    if (!selectedDestinationName.trim()) return properties;
+    const term = selectedDestinationName.toLowerCase();
     return properties.filter(p => 
-      p.name.toLowerCase().includes(term) ||
-      p.city.toLowerCase().includes(term) ||
+      p.city.toLowerCase() === term ||
       p.country.toLowerCase().includes(term)
     );
-  }, [properties, localSearchTerm]);
+  }, [properties, selectedDestinationName]);
 
   // Check availability for selected property (optional enhancement)
   const checkInStr = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '';
@@ -168,18 +169,23 @@ export function UnifiedBookingDialog() {
 
   const handleSearchProperties = useCallback(() => {
     triggerHaptic('light');
-    setSearchLocation(localSearchTerm);
+    setSearchLocation(selectedDestinationName);
     
     // Navigate to properties page with search params
     const params = new URLSearchParams();
-    if (localSearchTerm) params.set('location', localSearchTerm);
+    if (selectedDestinationName) params.set('location', selectedDestinationName);
     params.set('guests', String(guests));
     if (dateRange?.from) params.set('checkIn', format(dateRange.from, 'yyyy-MM-dd'));
     if (dateRange?.to) params.set('checkOut', format(dateRange.to, 'yyyy-MM-dd'));
     
     closeBooking();
     navigate(`/properties?${params.toString()}`);
-  }, [localSearchTerm, guests, dateRange, setSearchLocation, closeBooking, navigate]);
+  }, [selectedDestinationName, guests, dateRange, setSearchLocation, closeBooking, navigate]);
+
+  const handleSelectDestination = useCallback((destinationName: string) => {
+    triggerHaptic('light');
+    setSelectedDestinationName(destinationName);
+  }, []);
 
   // Get step info for progress indicator
   const getStepNumber = () => {
@@ -208,15 +214,57 @@ export function UnifiedBookingDialog() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Where would you like to stay?"
-                value={localSearchTerm}
-                onChange={(e) => setLocalSearchTerm(e.target.value)}
-                className="pl-10"
-                autoFocus
-              />
+            {/* Destination Selection Grid */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Select a destination</p>
+              {destinationsLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} className="h-16 rounded-xl" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {/* All Destinations Option */}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDestination('')}
+                    className={cn(
+                      'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left',
+                      !selectedDestinationName
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    )}
+                  >
+                    <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-sm">All</p>
+                      <p className="text-xs text-muted-foreground">Destinations</p>
+                    </div>
+                  </button>
+                  
+                  {/* Destination Options */}
+                  {destinations?.map((destination) => (
+                    <button
+                      key={destination.id}
+                      type="button"
+                      onClick={() => handleSelectDestination(destination.name)}
+                      className={cn(
+                        'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left',
+                        selectedDestinationName === destination.name
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      )}
+                    >
+                      <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{destination.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{destination.country}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-center">

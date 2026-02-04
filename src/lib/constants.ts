@@ -106,15 +106,7 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyTypeValue, string> = {
   penthouse: 'Penthouse',
 };
 
-// Popular destinations (for homepage)
-export const POPULAR_DESTINATIONS = [
-  { name: 'Tuscany', country: 'Italy', image: '' },
-  { name: 'Santorini', country: 'Greece', image: '' },
-  { name: 'Bali', country: 'Indonesia', image: '' },
-  { name: 'Maldives', country: 'Maldives', image: '' },
-  { name: 'French Riviera', country: 'France', image: '' },
-  { name: 'Amalfi Coast', country: 'Italy', image: '' },
-];
+// Note: Destinations are now fetched dynamically from the database using useActiveDestinations hook
 
 // Common countries for guest forms (sorted by relevance for luxury travel)
 export const COUNTRIES = [
