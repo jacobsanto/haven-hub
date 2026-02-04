@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ArrowLeft, MapPin, Users, Calendar, Loader2 } from 'lucide-react';
@@ -93,8 +93,17 @@ export default function Checkout() {
   }, [holdId, releaseHold]);
 
   // Create hold when dates are selected
+  // Use a ref to prevent duplicate calls during React strict mode or re-renders
+  const holdCreationPending = useRef(false);
+  
   useEffect(() => {
-    if (checkIn && checkOut && property?.id && !holdId) {
+    // Only create hold if:
+    // 1. We have valid dates and property
+    // 2. No existing hold
+    // 3. Not already pending a hold creation
+    if (checkIn && checkOut && property?.id && !holdId && !holdCreationPending.current && !createHold.isPending) {
+      holdCreationPending.current = true;
+      
       createHold.mutate(
         {
           propertyId: property.id,
@@ -107,12 +116,14 @@ export default function Checkout() {
           onSuccess: (data) => {
             setHoldId(data.id);
             setHoldExpiresAt(new Date(data.expires_at));
+            holdCreationPending.current = false;
             toast({
               title: 'Dates reserved',
               description: 'Your dates are held for 10 minutes while you complete checkout.',
             });
           },
-          onError: (error) => {
+          onError: () => {
+            holdCreationPending.current = false;
             toast({
               title: 'Could not reserve dates',
               description: 'These dates may no longer be available.',
@@ -122,7 +133,7 @@ export default function Checkout() {
         }
       );
     }
-  }, [checkIn, checkOut, property?.id, holdId, sessionId, createHold]);
+  }, [checkIn, checkOut, property?.id, holdId, sessionId, createHold.isPending]);
 
   // Step navigation
   const canProceedFromDates = checkIn && checkOut && nights >= 2;
