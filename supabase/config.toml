@@ -18,18 +18,6 @@ verify_jwt = false
 [functions.scheduled-posts-cron]
 verify_jwt = false
 
-[functions.create-payment-intent]
-verify_jwt = false
-
-[functions.confirm-payment]
-verify_jwt = false
-
-[functions.process-refund]
-verify_jwt = false
-
-[functions.stripe-webhook]
-verify_jwt = false
-
 [functions.pms-reconcile]
 verify_jwt = false
 
