@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { MapPin, DollarSign, Zap, Clock } from 'lucide-react';
 import { Property, SpecialOffer } from '@/types/database';
 import { Card } from '@/components/ui/card';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface AtAGlanceCardsProps {
   property: Property;
@@ -10,13 +11,9 @@ interface AtAGlanceCardsProps {
 }
 
 export function AtAGlanceCards({ property, specialOffer, destinationName }: AtAGlanceCardsProps) {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  const { formatPrice } = useCurrency();
+  
+  const priceFormatted = formatPrice(property.base_price);
 
   const cards = [
     {
@@ -30,10 +27,10 @@ export function AtAGlanceCards({ property, specialOffer, destinationName }: AtAG
     {
       icon: DollarSign,
       title: 'From',
-      value: `${formatPrice(property.base_price)}/night`,
+      value: `${priceFormatted.display}/night`,
       description: specialOffer 
         ? `${specialOffer.discount_percent}% off available!` 
-        : 'Best rate guaranteed',
+        : priceFormatted.isConverted ? priceFormatted.original : 'Best rate guaranteed',
       color: 'bg-accent/20',
       iconColor: 'text-accent-foreground',
       highlight: !!specialOffer,

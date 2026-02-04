@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { formatEuro } from '@/lib/format-currency';
 
 interface SeasonalRatesHeatmapProps {
   property: Property;
@@ -99,13 +100,8 @@ export function SeasonalRatesHeatmap({ property, seasonalRates, className }: Sea
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+  // Use centralized formatter
+  const formatCurrency = formatEuro;
 
   // Legend items
   const legendItems = useMemo(() => {

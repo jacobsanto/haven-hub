@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatEuro } from '@/lib/format-currency';
 
 const ADDON_CATEGORIES = ['transfer', 'food', 'experience', 'service', 'package'];
 
@@ -92,12 +93,7 @@ export default function AdminAddonsManagement() {
     setEditingAddon(null);
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(price);
-  };
+  // Use centralized EUR formatter for admin display
 
   return (
     <AdminGuard>
@@ -195,7 +191,7 @@ export default function AdminAddonsManagement() {
                       </div>
 
                       <div className="text-right">
-                        <p className="font-semibold">{formatPrice(addon.price)}</p>
+                        <p className="font-semibold">{formatEuro(addon.price)}</p>
                         <p className="text-xs text-muted-foreground">
                           {priceTypeLabels[addon.price_type] || addon.price_type}
                         </p>

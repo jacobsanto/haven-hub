@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { formatEuro } from '@/lib/format-currency';
 
 export default function AdminProperties() {
   const { data: properties, isLoading } = useAdminProperties();
@@ -49,13 +50,7 @@ export default function AdminProperties() {
       p.country.toLowerCase().includes(search.toLowerCase())
   );
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  // Use centralized EUR formatter for admin display
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -160,7 +155,7 @@ export default function AdminProperties() {
                           {property.country}
                         </p>
                       </TableCell>
-                      <TableCell>{formatPrice(property.base_price)}</TableCell>
+                      <TableCell>{formatEuro(property.base_price)}</TableCell>
                       <TableCell>{property.max_guests}</TableCell>
                       <TableCell>
                         <span

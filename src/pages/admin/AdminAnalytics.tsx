@@ -73,13 +73,9 @@ const getDateRange = (preset: DateRangePreset): { start: Date; end: Date } => {
   }
 };
 
-const formatCurrency = (value: number) => 
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+// Use centralized formatter from format-currency.ts
+import { formatEuro } from '@/lib/format-currency';
+const formatCurrency = formatEuro;
 
 const chartConfig = {
   revenue: {

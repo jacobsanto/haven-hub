@@ -29,6 +29,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { formatEuro } from '@/lib/format-currency';
 
 const RATE_TYPES = [
   { value: 'standard', label: 'Standard', description: 'Default pricing for all guests' },
@@ -293,13 +294,8 @@ export default function AdminRatePlans() {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+  // Use centralized formatter
+  const formatCurrency = (value: number) => formatEuro(value);
 
   const getRateTypeBadge = (rateType: string) => {
     const type = RATE_TYPES.find(t => t.value === rateType);
