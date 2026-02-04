@@ -72,11 +72,10 @@ export function useStripeHealth() {
         setTimeout(() => resolve({ data: null, error: new Error('Edge function timeout') }), HEALTH_CHECK_TIMEOUT_MS)
       );
 
-      const { error: funcError } = await Promise.race([healthCheckPromise, timeoutPromise]);
+      const { data, error: funcError } = await Promise.race([healthCheckPromise, timeoutPromise]);
       
-      // A specific error response (like validation error) means the function is reachable
-      // We expect a validation error since we're sending a health check
-      edgeFunctionReachable = !funcError || funcError.message.includes('validation') || funcError.message.includes('Invalid');
+      // Check for successful health response or function reachability
+      edgeFunctionReachable = !funcError && data?.healthy === true;
       
       if (!edgeFunctionReachable && !error) {
         error = 'Payment service temporarily unavailable';

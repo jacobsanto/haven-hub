@@ -33,13 +33,20 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json();
+
+    // Handle health check requests
+    if (body.healthCheck === true) {
+      return new Response(
+        JSON.stringify({ healthy: true, timestamp: new Date().toISOString() }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
-
-    const body = await req.json();
-    
     // Extract and validate required fields
     const {
       propertyId,
