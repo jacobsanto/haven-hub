@@ -1,42 +1,85 @@
 
+# Fix Checkout Holds Rate Limiting and Test Complete Payment Flow
 
-# Complete Stripe Webhook Setup
+## Problem Identified
 
-## Current Status
-You've successfully created the Stripe webhook endpoint with:
-- **Endpoint URL**: `https://xavjbiuhcmupsoocrmhf.supabase.co/functions/v1/stripe-webhook`
-- **Events**: `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`
-- **Signing Secret**: Received ✓
+The checkout flow is blocked because:
+1. **Stale expired holds**: 20+ checkout holds exist with `released = false` even though their `expires_at` timestamps have passed
+2. **Rate limit trigger issue**: The `validate_checkout_hold` trigger counts all non-released holds from the last 30 minutes, but doesn't exclude expired ones
+3. **Missing cleanup automation**: The `cleanup_expired_checkout_holds()` function exists but isn't being called on a schedule
 
-## Implementation Step
+## Solution
 
-### Add Webhook Secret to Backend
-Add the `STRIPE_WEBHOOK_SECRET` to the project's backend secrets so the `stripe-webhook` edge function can verify incoming events.
+### Part 1: Immediate Fix - Clean Up Stale Holds (Database Migration)
 
-**What this enables:**
-- The webhook will cryptographically verify that events are genuinely from Stripe
-- Payment confirmations will automatically update booking statuses
-- Refunds will properly cancel bookings and update payment records
+Run a migration to release all expired holds:
 
-## After Implementation
-
-Once the secret is added, your complete Stripe payment flow will be:
-
-```text
-┌─────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Checkout  │────▶│  Stripe Payment  │────▶│ Webhook (async) │
-│    Page     │     │    Processing    │     │  Confirmation   │
-└─────────────┘     └──────────────────┘     └─────────────────┘
-                            │                        │
-                            ▼                        ▼
-                    ┌──────────────────┐     ┌─────────────────┐
-                    │ confirm-payment  │     │ Update booking  │
-                    │ (sync response)  │     │ status (backup) │
-                    └──────────────────┘     └─────────────────┘
+```sql
+-- Release all expired checkout holds
+UPDATE public.checkout_holds
+SET released = true
+WHERE expires_at < now() AND released = false;
 ```
 
-## Next Steps After Approval
-1. Add the webhook secret to backend configuration
-2. Test the complete checkout flow with Stripe test cards
-3. Verify webhook events are received and processed correctly
+### Part 2: Permanent Fix - Update Rate Limit Trigger (Database Migration)
 
+Modify the `validate_checkout_hold` trigger to only count non-expired holds:
+
+```sql
+CREATE OR REPLACE FUNCTION public.validate_checkout_hold()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  recent_holds_count INTEGER;
+BEGIN
+  -- Check for rate limiting: max 3 active holds per session in last 30 minutes
+  -- Only count holds that are NOT released AND NOT expired
+  SELECT COUNT(*) INTO recent_holds_count
+  FROM public.checkout_holds
+  WHERE session_id = NEW.session_id
+    AND created_at > (now() - INTERVAL '30 minutes')
+    AND released = false
+    AND expires_at > now();  -- Only count non-expired holds
+  
+  IF recent_holds_count >= 3 THEN
+    RAISE EXCEPTION 'Rate limit exceeded: too many active holds for this session';
+  END IF;
+  
+  -- Validate session_id format (must be non-empty, reasonable length)
+  IF NEW.session_id IS NULL OR LENGTH(NEW.session_id) < 10 OR LENGTH(NEW.session_id) > 100 THEN
+    RAISE EXCEPTION 'Invalid session_id format';
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$;
+```
+
+### Part 3: Test Complete Payment Flow
+
+After the database fixes are applied, test the checkout flow:
+
+1. Navigate to a property page
+2. Select dates (Feb 18-21, 2026)
+3. Proceed through the checkout steps
+4. Enter guest details
+5. Use Stripe test card: `4242 4242 4242 4242`
+6. Verify booking confirmation
+
+## Technical Details
+
+**Files affected:**
+- Database only (migration to clean up holds and update trigger)
+
+**What the trigger fix does:**
+- Adds `AND expires_at > now()` condition to the rate limit check
+- Only counts holds that are both non-released AND not yet expired
+- Prevents rate limit false positives from stale expired holds
+
+**Why this is safe:**
+- Expired holds are no longer blocking availability (they're filtered out in queries)
+- The cleanup just sets `released = true` which is the natural end-state
+- The trigger update is additive and doesn't change existing behavior for valid cases
