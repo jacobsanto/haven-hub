@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { formatEuro } from '@/lib/format-currency';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 
 const ADDON_CATEGORIES = ['transfer', 'food', 'experience', 'service', 'package'];
 
@@ -47,6 +47,7 @@ const priceTypeLabels: Record<string, string> = {
 };
 
 export default function AdminAddonsManagement() {
+  const { format: formatCurrency } = useFormatCurrency();
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAddon, setEditingAddon] = useState<AddonCatalog | null>(null);
@@ -191,7 +192,7 @@ export default function AdminAddonsManagement() {
                       </div>
 
                       <div className="text-right">
-                        <p className="font-semibold">{formatEuro(addon.price)}</p>
+                        <p className="font-semibold">{formatCurrency(addon.price)}</p>
                         <p className="text-xs text-muted-foreground">
                           {priceTypeLabels[addon.price_type] || addon.price_type}
                         </p>

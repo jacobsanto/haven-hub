@@ -9,8 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FontSelector } from '@/components/admin/FontSelector';
+import { CurrencySettingsCard } from '@/components/admin/CurrencySettingsCard';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Type, Building2, Save, RotateCcw, Upload, X, ImageIcon } from 'lucide-react';
+import { Palette, Type, Building2, Save, RotateCcw, Upload, X, ImageIcon, Coins } from 'lucide-react';
+import { SupportedCurrency } from '@/types/currency';
 
 const HEADING_FONTS = [
   'Playfair Display',
@@ -82,6 +84,7 @@ interface FormState {
   foreground_color: string;
   heading_font: string;
   body_font: string;
+  base_currency: SupportedCurrency;
 }
 
 export default function AdminSettings() {
@@ -105,6 +108,7 @@ export default function AdminSettings() {
     foreground_color: defaultBrandSettings.foreground_color,
     heading_font: defaultBrandSettings.heading_font,
     body_font: defaultBrandSettings.body_font,
+    base_currency: defaultBrandSettings.base_currency,
   });
 
   useEffect(() => {
@@ -123,6 +127,7 @@ export default function AdminSettings() {
         foreground_color: settings.foreground_color,
         heading_font: settings.heading_font,
         body_font: settings.body_font,
+        base_currency: settings.base_currency,
       });
     }
   }, [settings]);
@@ -239,6 +244,7 @@ export default function AdminSettings() {
       foreground_color: defaultBrandSettings.foreground_color,
       heading_font: defaultBrandSettings.heading_font,
       body_font: defaultBrandSettings.body_font,
+      base_currency: defaultBrandSettings.base_currency,
     });
   };
 
@@ -286,7 +292,7 @@ export default function AdminSettings() {
           </div>
 
           <Tabs defaultValue="identity" className="space-y-6">
-            <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsList className="grid w-full max-w-lg grid-cols-4">
               <TabsTrigger value="identity" className="gap-2">
                 <Building2 className="h-4 w-4" />
                 Identity
@@ -298,6 +304,10 @@ export default function AdminSettings() {
               <TabsTrigger value="typography" className="gap-2">
                 <Type className="h-4 w-4" />
                 Typography
+              </TabsTrigger>
+              <TabsTrigger value="currency" className="gap-2">
+                <Coins className="h-4 w-4" />
+                Currency
               </TabsTrigger>
             </TabsList>
 
@@ -565,6 +575,14 @@ export default function AdminSettings() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Currency Tab */}
+            <TabsContent value="currency">
+              <CurrencySettingsCard
+                value={formState.base_currency}
+                onChange={(currency) => handleInputChange('base_currency', currency)}
+              />
             </TabsContent>
           </Tabs>
         </div>

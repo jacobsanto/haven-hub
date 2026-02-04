@@ -33,9 +33,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { formatEuro } from '@/lib/format-currency';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 
 export default function AdminProperties() {
+  const { format: formatCurrency } = useFormatCurrency();
   const { data: properties, isLoading } = useAdminProperties();
   const deleteProperty = useDeleteProperty();
   const { toast } = useToast();
@@ -155,7 +156,7 @@ export default function AdminProperties() {
                           {property.country}
                         </p>
                       </TableCell>
-                      <TableCell>{formatEuro(property.base_price)}</TableCell>
+                      <TableCell>{formatCurrency(property.base_price)}</TableCell>
                       <TableCell>{property.max_guests}</TableCell>
                       <TableCell>
                         <span

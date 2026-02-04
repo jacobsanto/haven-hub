@@ -16,6 +16,7 @@ export const SUPPORTED_CURRENCIES: CurrencyInfo[] = [
   { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar', locale: 'en-CA' },
 ];
 
+/** @deprecated Use useBrand().baseCurrency instead for dynamic base currency */
 export const BASE_CURRENCY: SupportedCurrency = 'EUR';
 
 export interface ExchangeRates {

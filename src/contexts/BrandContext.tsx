@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useBrandSettings, BrandSettings, defaultBrandSettings } from '@/hooks/useBrandSettings';
+import { SupportedCurrency } from '@/types/currency';
 
 interface BrandContextValue {
   settings: BrandSettings | null;
@@ -10,6 +11,7 @@ interface BrandContextValue {
   contactEmail: string;
   contactPhone: string;
   contactAddress: string;
+  baseCurrency: SupportedCurrency;
 }
 
 const BrandContext = createContext<BrandContextValue | undefined>(undefined);
@@ -67,6 +69,7 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     contactEmail: settings?.contact_email ?? defaultBrandSettings.contact_email ?? '',
     contactPhone: settings?.contact_phone ?? defaultBrandSettings.contact_phone ?? '',
     contactAddress: settings?.contact_address ?? defaultBrandSettings.contact_address ?? '',
+    baseCurrency: settings?.base_currency ?? defaultBrandSettings.base_currency,
   };
 
   return (
