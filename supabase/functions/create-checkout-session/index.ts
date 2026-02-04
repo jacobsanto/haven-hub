@@ -51,7 +51,7 @@ serve(async (req) => {
     // Verify property exists and is active
     const { data: property, error: propertyError } = await supabase
       .from('properties')
-      .select('id, name, slug, city, country, instant_booking, cancellation_policy')
+      .select('id, name, display_name, slug, city, country, instant_booking, cancellation_policy')
       .eq('id', propertyId)
       .eq('status', 'active')
       .single();
@@ -87,12 +87,15 @@ serve(async (req) => {
     // Build line items for display on Stripe Checkout page
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
+    // Use display_name for customer-facing content, fall back to internal name
+    const customerPropertyName = property.display_name || property.name;
+
     // Main accommodation line item
     lineItems.push({
       price_data: {
         currency: 'eur',
         product_data: {
-          name: `${property.name} - ${nights} night${nights > 1 ? 's' : ''}`,
+          name: `${customerPropertyName} - ${nights} night${nights > 1 ? 's' : ''}`,
           description: `${checkIn} to ${checkOut} · ${guests} guest${guests > 1 ? 's' : ''}`,
         },
         unit_amount: totalCents,

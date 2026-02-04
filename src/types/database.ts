@@ -25,6 +25,7 @@ export interface NearbyAttraction {
 export interface Property {
   id: string;
   name: string;
+  display_name: string | null;
   slug: string;
   description: string | null;
   hero_image_url: string | null;
