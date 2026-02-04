@@ -285,7 +285,7 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
           </Button>
 
           <p className="text-xs text-center text-muted-foreground">
-            Secure payment via Stripe
+            Secure payment processing
           </p>
         </>
       ) : (

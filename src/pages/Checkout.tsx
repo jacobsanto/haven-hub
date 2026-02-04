@@ -1,40 +1,23 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
-import { ArrowLeft, MapPin, Users, Calendar, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
-import { Elements } from '@stripe/react-stripe-js';
+import { ArrowLeft, MapPin, Users, Calendar, Loader2, CreditCard } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { AddonsSelection } from '@/components/booking/AddonsSelection';
 import { GuestForm } from '@/components/booking/GuestForm';
 import { PriceBreakdownDisplay } from '@/components/booking/PriceBreakdown';
 import { CouponInput } from '@/components/booking/CouponInput';
-import { PaymentOptions } from '@/components/booking/PaymentOptions';
-import { StripePaymentForm } from '@/components/booking/StripePaymentForm';
 import { CancellationPolicyDisplay } from '@/components/booking/CancellationPolicyDisplay';
 import { useProperty } from '@/hooks/useProperties';
 import { useFeesTaxes, calculatePriceBreakdown } from '@/hooks/useBookingEngine';
 import { useCreateCheckoutHold, useReleaseCheckoutHold, generateSessionId } from '@/hooks/useCheckoutFlow';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
-import { useStripeHealth } from '@/hooks/useStripeHealth';
 import { SelectedAddon, CouponPromo, BookingGuestWithCounts, PaymentType, PriceBreakdown } from '@/types/booking-engine';
-import { CancellationPolicyKey } from '@/lib/cancellation-policies';
-import { getStripe } from '@/lib/stripe';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 type CheckoutStep = 'dates' | 'addons' | 'guest' | 'payment';
-
-// Generate booking reference
-function generateBookingReference(): string {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `BK-${year}${month}-${random}`;
-}
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -62,21 +45,6 @@ export default function Checkout() {
   const [holdId, setHoldId] = useState<string | null>(null);
   const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
   const [sessionId] = useState(generateSessionId);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  
-  // Stripe state
-  const [showStripeForm, setShowStripeForm] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
-  const [bookingReference, setBookingReference] = useState<string | null>(null);
-  
-  // Double-click protection
-  const isSubmittingRef = useRef(false);
-  
-  // Pre-flight health check
-  const { checkHealth } = useStripeHealth();
 
   const createHold = useCreateCheckoutHold();
   const releaseHold = useReleaseCheckoutHold();
@@ -104,14 +72,6 @@ export default function Checkout() {
       paymentType === 'deposit' ? 30 : undefined
     );
   }, [nightlyRate, nights, guests, selectedAddons, feesTaxes, appliedCoupon, paymentType]);
-
-  // Calculate amount due
-  const amountDue = useMemo(() => {
-    if (!priceBreakdown) return 0;
-    return paymentType === 'deposit' 
-      ? (priceBreakdown.depositAmount || Math.ceil(priceBreakdown.total * 0.3))
-      : priceBreakdown.total;
-  }, [priceBreakdown, paymentType]);
 
   // Handle date selection
   const handleDateSelect = useCallback((date: Date, type: 'checkIn' | 'checkOut') => {
@@ -180,254 +140,6 @@ export default function Checkout() {
     }
   };
 
-  // Retry helper with exponential backoff
-  const retryWithBackoff = async <T,>(
-    fn: () => Promise<T>,
-    maxRetries: number = 3,
-    baseDelay: number = 1000
-  ): Promise<T> => {
-    let lastError: Error | null = null;
-    
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await fn();
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        
-        if (attempt < maxRetries) {
-          const delay = baseDelay * Math.pow(2, attempt);
-          console.log(`Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-    }
-    
-    throw lastError;
-  };
-
-  // Create Payment Intent and show Stripe form (deferred booking creation)
-  const handleProceedToPayment = async () => {
-    // Double-click protection
-    if (isSubmittingRef.current) return;
-    
-    // Clear any previous errors
-    setPaymentError(null);
-    
-    if (!property || !checkIn || !checkOut || !guestInfo || !priceBreakdown) {
-      setPaymentError('Please complete all required fields before proceeding to payment.');
-      toast({
-        title: 'Missing information',
-        description: 'Please complete all required fields.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    isSubmittingRef.current = true;
-    setIsProcessing(true);
-
-    try {
-      // Pre-flight health check
-      const health = await checkHealth();
-      if (!health.isHealthy) {
-        throw new Error(health.error || 'Payment system is temporarily unavailable.');
-      }
-
-      // Generate booking reference upfront
-      const newBookingReference = generateBookingReference();
-      setBookingReference(newBookingReference);
-
-      console.log('Creating payment intent for booking:', newBookingReference);
-
-      // Create Payment Intent via edge function with retry logic
-      const result = await retryWithBackoff(async () => {
-        const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-          body: {
-            propertyId: property.id,
-            propertyName: property.name,
-            propertySlug: property.slug,
-            propertyCity: property.city,
-            propertyCountry: property.country,
-            checkIn: format(checkIn, 'yyyy-MM-dd'),
-            checkOut: format(checkOut, 'yyyy-MM-dd'),
-            nights,
-            guests,
-            adults,
-            children,
-            accommodationTotal: priceBreakdown.accommodationTotal,
-            addonsTotal: priceBreakdown.addonsTotal,
-            feesTotal: priceBreakdown.feesTotal,
-            taxesTotal: priceBreakdown.taxesTotal,
-            discountAmount: priceBreakdown.discountAmount,
-            discountCode: priceBreakdown.discountCode,
-            totalAmount: priceBreakdown.total,
-            currency: priceBreakdown.currency,
-            paymentType,
-            depositPercentage: paymentType === 'deposit' ? 30 : 100,
-            amountDue,
-            balanceDue: paymentType === 'deposit' ? priceBreakdown.balanceAmount : 0,
-            cancellationPolicyName: 'Moderate',
-            guestName: `${guestInfo.firstName} ${guestInfo.lastName}`,
-            guestEmail: guestInfo.email,
-            guestCountry: guestInfo.country,
-            sessionId,
-            bookingReference: newBookingReference,
-          },
-        });
-
-        // Handle edge function errors
-        if (error) {
-          console.error('Edge function error:', error);
-          throw new Error(error.message || 'Failed to create payment');
-        }
-
-        // Handle missing or invalid response
-        if (!data) {
-          console.error('No data returned from create-payment-intent');
-          throw new Error('Payment service returned empty response');
-        }
-
-        if (!data.clientSecret) {
-          console.error('No client secret in response:', data);
-          throw new Error(data.error || 'No client secret received');
-        }
-
-        return data;
-      }, 2); // Max 2 retries
-
-      console.log('Payment intent created successfully:', result.paymentIntentId);
-
-      setClientSecret(result.clientSecret);
-      setPaymentIntentId(result.paymentIntentId);
-      setShowStripeForm(true);
-      setPaymentError(null);
-      setRetryCount(0);
-    } catch (error) {
-      console.error('Payment setup error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
-      setPaymentError(errorMessage);
-      setRetryCount(prev => prev + 1);
-      
-      // More specific error messages based on error type
-      let userMessage = errorMessage;
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        userMessage = 'Network error. Please check your connection and try again.';
-      } else if (errorMessage.includes('timeout')) {
-        userMessage = 'The request timed out. Please try again.';
-      }
-      
-      toast({
-        title: 'Payment setup failed',
-        description: userMessage,
-        variant: 'destructive',
-      });
-      // Reset state on error
-      setClientSecret(null);
-      setPaymentIntentId(null);
-      setShowStripeForm(false);
-    } finally {
-      setIsProcessing(false);
-      isSubmittingRef.current = false;
-    }
-  };
-
-  // Handle successful Stripe payment - CREATE BOOKING HERE (after payment succeeds)
-  const handlePaymentSuccess = async (stripePaymentIntentId: string) => {
-    if (!property || !checkIn || !checkOut || !guestInfo || !priceBreakdown || !bookingReference) {
-      toast({
-        title: 'Error',
-        description: 'Missing booking information',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      // Confirm payment AND create booking atomically via edge function
-      const { data, error } = await supabase.functions.invoke('confirm-payment', {
-        body: {
-          paymentIntentId: stripePaymentIntentId,
-          paymentType,
-          // Pass full booking payload for deferred creation
-          bookingPayload: {
-            propertyId: property.id,
-            propertyName: property.name,
-            propertySlug: property.slug,
-            instantBooking: property.instant_booking,
-            bookingReference,
-            checkIn: format(checkIn, 'yyyy-MM-dd'),
-            checkOut: format(checkOut, 'yyyy-MM-dd'),
-            nights,
-            guests,
-            adults,
-            children,
-            guestInfo: {
-              firstName: guestInfo.firstName,
-              lastName: guestInfo.lastName,
-              email: guestInfo.email,
-              phone: guestInfo.phone,
-              country: guestInfo.country,
-              specialRequests: guestInfo.specialRequests,
-            },
-            totalPrice: priceBreakdown.total,
-            depositAmount: priceBreakdown.depositAmount,
-            cancellationPolicy: 'moderate',
-            holdId: holdId || undefined,
-            priceBreakdown: {
-              lineItems: priceBreakdown.lineItems,
-            },
-            selectedAddons: selectedAddons.map(sa => ({
-              addon: { id: sa.addon.id, price: sa.addon.price },
-              quantity: sa.quantity,
-              calculatedPrice: sa.calculatedPrice,
-              guestCount: sa.guestCount,
-              scheduledDate: sa.scheduledDate,
-            })),
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Payment confirmation error:', error);
-        throw new Error(error.message || 'Failed to confirm booking');
-      }
-
-      // Navigate to confirmation page
-      navigate(`/booking/confirm?ref=${bookingReference}`, {
-        state: {
-          propertyName: property.name,
-          checkIn: format(checkIn, 'MMM d, yyyy'),
-          checkOut: format(checkOut, 'MMM d, yyyy'),
-          nights,
-          totalPrice: priceBreakdown.total,
-          amountPaid: amountDue,
-          paymentType,
-          status: 'confirmed',
-          bookingReference,
-          receiptUrl: data?.receiptUrl,
-        },
-      });
-    } catch (error) {
-      console.error('Confirmation error:', error);
-      toast({
-        title: 'Booking failed',
-        description: error instanceof Error ? error.message : 'Please contact support.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // Handle payment error
-  const handlePaymentError = (errorMessage: string) => {
-    toast({
-      title: 'Payment failed',
-      description: errorMessage,
-      variant: 'destructive',
-    });
-    setShowStripeForm(false);
-    setClientSecret(null);
-  };
-
   if (propertyLoading) {
     return (
       <PageLayout>
@@ -450,16 +162,6 @@ export default function Checkout() {
       </PageLayout>
     );
   }
-
-  // Stripe Elements appearance
-  const stripeAppearance = {
-    theme: 'stripe' as const,
-    variables: {
-      colorPrimary: 'hsl(16 50% 48%)',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      borderRadius: '8px',
-    },
-  };
 
   return (
     <PageLayout>
@@ -492,14 +194,13 @@ export default function Checkout() {
                     onClick={() => {
                       const steps: CheckoutStep[] = ['dates', 'addons', 'guest', 'payment'];
                       const currentIndex = steps.indexOf(currentStep);
-                      if (index < currentIndex && !showStripeForm) setCurrentStep(step as CheckoutStep);
+                      if (index < currentIndex) setCurrentStep(step as CheckoutStep);
                     }}
-                    disabled={showStripeForm}
                     className={`capitalize px-3 py-1 rounded-full transition-colors ${
                       currentStep === step
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground'
-                    } ${showStripeForm ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    }`}
                   >
                     {step}
                   </button>
@@ -659,92 +360,26 @@ export default function Checkout() {
                     checkInDate={checkIn}
                   />
 
-                  {/* Payment Error Alert */}
-                  {paymentError && !isProcessing && (
-                    <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-start gap-3">
-                      <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-                      <div className="space-y-2 flex-1">
-                        <p className="font-medium text-destructive">Payment initialization failed</p>
-                        <p className="text-sm text-destructive/80">{paymentError}</p>
-                        <div className="flex items-center gap-3 mt-3">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => {
-                              setPaymentError(null);
-                              handleProceedToPayment();
-                            }}
-                            className="gap-2"
-                          >
-                            <RefreshCw className="h-3.5 w-3.5" />
-                            Try Again
-                          </Button>
-                          {retryCount >= 2 && (
-                            <span className="text-xs text-muted-foreground">
-                              If the problem persists, please contact support.
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                  {/* Payment Gateway Placeholder */}
+                  <div className="bg-card rounded-xl border p-8 text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                      <CreditCard className="h-8 w-8 text-muted-foreground" />
                     </div>
-                  )}
+                    <h3 className="font-serif text-xl font-medium mb-2">
+                      Payment Gateway Coming Soon
+                    </h3>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                      We're setting up secure payment processing. Please check back shortly or contact us to complete your booking.
+                    </p>
+                  </div>
 
-                  {/* Loading state while initializing payment */}
-                  {isProcessing && (
-                    <div className="bg-card rounded-xl border p-8 flex flex-col items-center justify-center gap-4">
-                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                      <div className="text-center">
-                        <h3 className="font-serif text-lg font-medium">Preparing Payment</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Securely connecting to payment provider...
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Show Stripe form if client secret is available */}
-                  {showStripeForm && clientSecret && !isProcessing ? (
-                    <div className="bg-card rounded-xl border p-6">
-                      <h3 className="font-serif text-lg font-medium mb-4">Complete Payment</h3>
-                      <Elements
-                        stripe={getStripe()}
-                        options={{
-                          clientSecret,
-                          appearance: stripeAppearance,
-                        }}
-                      >
-                        <StripePaymentForm
-                          amountDue={amountDue}
-                          currency={priceBreakdown?.currency || 'EUR'}
-                          propertyName={property.name}
-                          checkIn={format(checkIn, 'MMM d, yyyy')}
-                          checkOut={checkOut ? format(checkOut, 'MMM d, yyyy') : ''}
-                          onSuccess={handlePaymentSuccess}
-                          onError={handlePaymentError}
-                        />
-                      </Elements>
-                    </div>
-                  ) : !isProcessing && !paymentError ? (
-                    <PaymentOptions
-                      breakdown={priceBreakdown!}
-                      depositPercentage={30}
-                      selectedPaymentType={paymentType}
-                      onPaymentTypeChange={setPaymentType}
-                      onProceedToPayment={handleProceedToPayment}
-                      isProcessing={isProcessing}
-                      holdExpiresAt={holdExpiresAt || undefined}
-                    />
-                  ) : null}
-
-                  {!showStripeForm && !isProcessing && (
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => setCurrentStep('guest')}
-                    >
-                      Back to Guest Details
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setCurrentStep('guest')}
+                  >
+                    Back to Guest Details
+                  </Button>
                 </>
               )}
             </div>

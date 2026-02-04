@@ -35,7 +35,7 @@ export function ProcessRefundButton({ bookingId, isRefunding, onRefund }: Proces
         <AlertDialogHeader>
           <AlertDialogTitle>Process Refund</AlertDialogTitle>
           <AlertDialogDescription>
-            This will calculate the refund amount based on the booking's cancellation policy and process it through Stripe. This action cannot be undone.
+            This will calculate the refund amount based on the booking's cancellation policy and process it. This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
