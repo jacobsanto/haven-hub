@@ -106,7 +106,7 @@ export function PMSSyncStatusPanel({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <SyncCapabilityCard
             direction="pull"
             label="Properties"
@@ -116,16 +116,9 @@ export function PMSSyncStatusPanel({
           />
           <SyncCapabilityCard
             direction="pull"
-            label="Availability"
-            enabled={provider.capabilities.pullAvailability}
-            active={isConnected && provider.capabilities.pullAvailability}
-            lastSync={formatLastSync(lastSyncAt)}
-          />
-          <SyncCapabilityCard
-            direction="pull"
-            label="Rates"
-            enabled={provider.capabilities.pullRates}
-            active={isConnected && provider.capabilities.pullRates}
+            label="Availability (iCal)"
+            enabled={true}
+            active={isConnected}
             lastSync={formatLastSync(lastSyncAt)}
           />
           <SyncCapabilityCard
@@ -142,14 +135,14 @@ export function PMSSyncStatusPanel({
             <div className="text-center flex-1">
               <div className="font-medium mb-1">Your System</div>
               <div className="text-xs text-muted-foreground">
-                Properties, Availability, Bookings
+                Properties, Availability (iCal), Bookings
               </div>
             </div>
             
             <div className="flex flex-col items-center gap-1 px-4">
               <div className="flex items-center gap-1 text-xs">
                 <ArrowDown className="h-3 w-3 text-green-600" />
-                <span className="text-muted-foreground">PULL</span>
+                <span className="text-muted-foreground">PULL (iCal)</span>
               </div>
               <div className="h-px w-16 bg-border" />
               <div className="flex items-center gap-1 text-xs">
@@ -161,7 +154,7 @@ export function PMSSyncStatusPanel({
             <div className="text-center flex-1">
               <div className="font-medium mb-1">{provider.name}</div>
               <div className="text-xs text-muted-foreground">
-                External PMS
+                External PMS + iCal Feeds
               </div>
             </div>
           </div>
