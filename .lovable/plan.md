@@ -1,89 +1,98 @@
 
-# Admin Dashboard Cleanup Plan
 
-## Overview
-After auditing the admin dashboard, I've identified several items that need to be cleaned up because they either don't work (broken after Stripe removal), have no data/purpose, or reference features that aren't fully implemented.
+# Fix: PMS Sync "Sync Now" Button Error
 
----
-
-## Items to Clean Up
-
-### 1. ProcessRefundButton Component (REMOVE)
-**Location:** `src/components/admin/ProcessRefundButton.tsx`
-
-**Reason:** 
-- Imported in `BookingDetailDialog.tsx` but **never actually used** (no JSX usage found)
-- The refund processing edge function was deleted with Stripe removal
-- Has no backend to process refunds anymore
-
-**Action:** Delete the file and remove the import from `BookingDetailDialog.tsx`
+## Problem
+When clicking "Sync Now" on the admin dashboard, you get "Failed to send a request to the Edge Function". This is a **CORS configuration issue** in the `pms-sync-cron` edge function.
 
 ---
 
-### 2. Unused `isRefunding` State in BookingDetailDialog
-**Location:** `src/components/admin/BookingDetailDialog.tsx` (line 75)
+## Root Cause
 
-**Reason:**
-- State variable `isRefunding` is declared but never used after Stripe removal
-- Was intended for the ProcessRefundButton which is not rendered
+The edge function's CORS headers don't include all headers that the Supabase JS client sends from the browser:
 
-**Action:** Remove the unused state variable
+**Current (incomplete):**
+```text
+authorization, x-client-info, apikey, content-type
+```
 
----
+**What the browser sends:**
+```text
+x-supabase-client-platform: macOS
+x-supabase-client-platform-version: ...
+x-supabase-client-runtime: ...
+x-supabase-client-runtime-version: ...
+```
 
-### 3. Clean Up Sidebar Navigation - Remove Non-Functional Items
-
-The sidebar shows navigation items that either have empty data or incomplete functionality:
-
-| Nav Item | Reason to Keep/Remove |
-|----------|----------------------|
-| **Dashboard** | Keep - Works |
-| **Bookings** | Keep - Works, has 2 bookings |
-| **Add-ons** | Keep - Has data (1 addon in catalog) |
-| **Promotions** | Keep - Table exists, functional |
-| **Campaigns** | Keep - Table exists, works even if empty |
-| **Exit Intent** | Keep - Has 1 settings record, functional |
-| **Fees & Taxes** | Keep - Empty but functional, needed for checkout |
-| **Rate Plans** | Keep - Empty but functional, needed for pricing |
-| **Import Rates** | Keep - Works with edge function |
-| **Properties** | Keep - Works |
-| **Destinations** | Keep - Works |
-| **Amenities** | Keep - Works |
-| **Experiences** | Keep - Works |
-| **Enquiries** | Keep - Works |
-| **AI Generator** | Keep - Works with `generate-content` edge function |
-| **Content Calendar** | Keep - Works with `scheduled_blog_posts` table |
-| **Blog Posts** | Keep - Works |
-| **Authors** | Keep - Works |
-| **Categories** | Keep - Works |
-| **Newsletter** | Keep - Works |
-| **PMS Health** | Keep - Working iCal sync system |
-| **Analytics** | Keep - Works |
-| **Settings** | Keep - Works |
-
-**Conclusion:** All navigation items should be kept since they all connect to functional features with proper database tables.
+The browser's preflight (OPTIONS) request fails because these headers aren't allowed, blocking the actual POST request.
 
 ---
 
-## Files to Modify
+## Evidence
 
-### Delete Files
-| File | Reason |
+| Test | Result |
 |------|--------|
-| `src/components/admin/ProcessRefundButton.tsx` | Unused, no refund backend exists |
-
-### Modify Files
-| File | Changes |
-|------|---------|
-| `src/components/admin/BookingDetailDialog.tsx` | Remove unused `ProcessRefundButton` import and `isRefunding` state |
+| Server-side call (my test) | Success - synced 37 events, 101 blocked days |
+| Browser call (your click) | Failed with "Failed to fetch" |
+| Network log | Shows `Error: Failed to fetch` |
+| Edge function logs | Shows successful cron runs but no record of browser calls |
 
 ---
 
-## Summary
+## Solution
 
-This is a minimal cleanup focused on removing dead code after the Stripe removal. The admin dashboard navigation is well-organized and all items connect to functional features, even if some have no data yet (which is expected for a fresh system).
+Update the CORS headers in `supabase/functions/pms-sync-cron/index.ts` to match the working `advancecm-sync` function.
 
-**Total changes:**
-- 1 file deleted
-- 1 file modified (2 lines removed)
+### File to Modify
+
+| File | Change |
+|------|--------|
+| `supabase/functions/pms-sync-cron/index.ts` | Update CORS headers (lines 7-11) |
+
+### Code Change
+
+```typescript
+// FROM (broken)
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+// TO (fixed)
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+```
+
+---
+
+## After the Fix
+
+- The "Sync Now" button will work correctly
+- Manual syncs from the dashboard will trigger immediately
+- Scheduled 5-minute syncs will continue working (already works)
+- iCal availability data will sync properly
+
+---
+
+## Files Changed
+
+| Action | File |
+|--------|------|
+| Modify | `supabase/functions/pms-sync-cron/index.ts` (1 line change) |
+
+---
+
+## Technical Note: Why Keep This Feature?
+
+The PMS Sync card is **core operational infrastructure** for Haven Hub:
+- Pulls availability from Tokeet via iCal feeds
+- Prevents double-bookings by blocking booked dates
+- Runs automatically every 5 minutes
+- "Sync Now" allows immediate manual sync when needed
+
+Without it, your property calendars would not reflect external bookings (Airbnb, Booking.com, etc.), risking overbookings.
 
