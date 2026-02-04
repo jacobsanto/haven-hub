@@ -1,113 +1,119 @@
 
-# Stripe Checkout Audit and Fix Plan
+# Complete Stripe Payment System Removal
 
-## Summary of Findings
+## Overview
 
-After a deep investigation of the Stripe checkout flow, I found that the core infrastructure is working correctly. The edge functions respond properly, and the Stripe SDK is configured. However, there are several issues that could prevent successful checkout:
-
----
-
-## Issues Identified
-
-### 1. Missing `STRIPE_WEBHOOK_SECRET` (Medium Priority)
-- **Problem**: The `stripe-webhook/index.ts` function requires `STRIPE_WEBHOOK_SECRET` but this is not configured in the secrets
-- **Impact**: Stripe webhooks will fail with "Stripe not configured" error, though this doesn't block initial payment since `confirm-payment` verifies payment status directly
-- **Fix**: Add the webhook secret from Stripe Dashboard to Supabase secrets
-
-### 2. Empty `fees_taxes` Table (Low Priority)
-- **Problem**: The fees/taxes table has no data
-- **Impact**: Price breakdowns won't include any fees or taxes, but checkout will still work
-- **Fix**: Optional - add default fees/taxes if needed for your business model
-
-### 3. Properties with "Unknown" Country (Low Priority)
-- **Problem**: Most properties have `country: "Unknown"` instead of a proper country value
-- **Impact**: Stripe metadata will show "Unknown" for property country
-- **Fix**: Update property records with correct country values
+You want to completely remove all Stripe-related code and infrastructure to start fresh. This plan identifies and removes every Stripe component, file, hook, edge function, and reference.
 
 ---
 
-## Testing the Checkout Flow
+## What Will Be Deleted
 
-To identify the exact failure point, we need to test the complete flow:
+### Frontend Files (Complete Deletion)
 
-### Step 1: Verify Stripe.js Loads
-The frontend uses `getStripe()` which loads the Stripe SDK using the publishable key from `VITE_STRIPE_PUBLISHABLE_KEY`. This appears to be correctly configured.
+| File | Purpose |
+|------|---------|
+| `src/lib/stripe.ts` | Stripe SDK loader with `getStripe()` function |
+| `src/hooks/useStripeHealth.ts` | Pre-flight health check for Stripe connectivity |
+| `src/components/booking/StripePaymentForm.tsx` | Stripe PaymentElement form component |
 
-### Step 2: Verify Payment Intent Creation
-I tested the `create-payment-intent` edge function directly and it returned a valid `clientSecret`:
+### Edge Functions (Complete Deletion)
 
-```text
-Response: 200 OK
-{
-  "clientSecret": "pi_xxx_secret_xxx",
-  "customerId": "cus_xxx",
-  "paymentIntentId": "pi_xxx"
-}
-```
+| Function | Purpose |
+|----------|---------|
+| `supabase/functions/create-payment-intent/index.ts` | Creates Stripe PaymentIntent for checkout |
+| `supabase/functions/confirm-payment/index.ts` | Verifies payment success and creates booking |
+| `supabase/functions/stripe-webhook/index.ts` | Handles Stripe webhook events |
+| `supabase/functions/process-refund/index.ts` | Processes refunds through Stripe |
 
-This confirms the backend payment creation is working.
-
-### Step 3: Verify Stripe Elements Render
-The `StripePaymentForm` component uses Stripe's `PaymentElement` which requires:
-- A valid `clientSecret` from step 2
-- The Stripe.js SDK loaded
-
-### Step 4: Identify the Blocking Issue
-Since no console logs or network errors were captured, the issue is likely:
-- User hasn't reached the payment step (stuck on dates/guest form)
-- Dates are unavailable (101 blocked dates from iCal sync)
-- A silent JavaScript error preventing progression
-
----
-
-## Implementation Plan
-
-### Phase 1: Add Missing Webhook Secret
-1. Get webhook signing secret from Stripe Dashboard (Developers > Webhooks > Signing secret)
-2. Add `STRIPE_WEBHOOK_SECRET` to Supabase secrets
-
-### Phase 2: Improve Error Visibility
-Add better error logging to capture the exact failure point:
-
-1. **Add console logging to `handleProceedToPayment`** in `Checkout.tsx`
-   - Log when health check starts/completes
-   - Log when payment intent request is made
-   - Log the response or error received
-
-2. **Add error boundary for Stripe Elements**
-   - Catch and display any errors from the Stripe Elements component
-
-### Phase 3: Test End-to-End
-1. Navigate to a property with available dates (check availability table)
-2. Complete the checkout flow step by step:
-   - Select dates (must be 2+ nights, dates not blocked)
-   - Continue through addons
-   - Fill guest form and accept terms
-   - Reach payment step
-   - Enter test card and complete payment
-
----
-
-## Files to Modify
+### Files Requiring Stripe Code Removal
 
 | File | Changes |
 |------|---------|
-| (Supabase Secrets) | Add `STRIPE_WEBHOOK_SECRET` |
-| `src/pages/Checkout.tsx` | Add verbose logging for debugging |
-| `src/components/booking/StripePaymentForm.tsx` | Add error state visibility |
+| `src/pages/Checkout.tsx` | Remove Stripe imports, Elements wrapper, payment intent logic, StripePaymentForm usage |
+| `src/components/booking/BookingWidget.tsx` | Remove "Secure payment via Stripe" text |
+| `src/components/admin/ProcessRefundButton.tsx` | Update refund description text |
+
+### Config Entries to Remove
+
+From `supabase/config.toml`:
+- `[functions.create-payment-intent]`
+- `[functions.confirm-payment]`
+- `[functions.process-refund]`
+- `[functions.stripe-webhook]`
+
+### Environment Variables (Remain in place for re-implementation)
+
+These secrets exist but will no longer be used until you re-implement:
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
+- `VITE_STRIPE_PUBLISHABLE_KEY`
 
 ---
 
-## Test Card Numbers (Stripe Test Mode)
-When testing, use these Stripe test cards:
-- **Success**: 4242 4242 4242 4242
-- **Decline**: 4000 0000 0000 0002
-- **3DS Required**: 4000 0025 0000 3155
+## Implementation Steps
+
+### Step 1: Delete Frontend Stripe Files
+
+Delete these files completely:
+1. `src/lib/stripe.ts`
+2. `src/hooks/useStripeHealth.ts`
+3. `src/components/booking/StripePaymentForm.tsx`
+
+### Step 2: Delete Edge Functions
+
+Delete these directories:
+1. `supabase/functions/create-payment-intent/`
+2. `supabase/functions/confirm-payment/`
+3. `supabase/functions/stripe-webhook/`
+4. `supabase/functions/process-refund/`
+
+Remove deployed functions from backend.
+
+### Step 3: Simplify Checkout Page
+
+Replace `src/pages/Checkout.tsx` with a placeholder that:
+- Removes all Stripe imports
+- Removes Elements provider
+- Removes payment intent creation logic
+- Removes StripePaymentForm usage
+- Shows a "Payment gateway coming soon" message at payment step
+- Keeps the date selection, addons, and guest form steps working
+
+### Step 4: Update BookingWidget
+
+Remove the "Secure payment via Stripe" text from the booking widget.
+
+### Step 5: Update ProcessRefundButton
+
+Update the refund description to remove Stripe-specific text.
+
+### Step 6: Clean Config File
+
+Update `supabase/config.toml` to remove the four Stripe-related function entries.
 
 ---
 
-## Next Steps
-1. Add the `STRIPE_WEBHOOK_SECRET` to Supabase secrets
-2. Add enhanced logging to the checkout page
-3. Test the full booking flow end-to-end on a property with available dates
-4. If issues persist, check browser console for JavaScript errors
+## Post-Cleanup State
+
+After this cleanup:
+
+- **Checkout flow**: Date selection, addons, and guest form will still work
+- **Payment step**: Will show a placeholder message instead of Stripe form
+- **Refunds**: Will show a disabled state until re-implemented
+- **Booking creation**: Will not create bookings until new payment gateway is implemented
+
+---
+
+## Files Summary
+
+| Action | Count | Files |
+|--------|-------|-------|
+| **Delete** | 7 | 3 frontend files + 4 edge function directories |
+| **Modify** | 4 | Checkout.tsx, BookingWidget.tsx, ProcessRefundButton.tsx, config.toml |
+
+---
+
+## Database Note
+
+The database tables (`booking_payments` with `stripe_payment_intent_id`, `stripe_charge_id` columns) will remain. These columns are nullable and won't cause issues. When you re-implement payments, you can reuse these columns or add new ones for your chosen gateway.
