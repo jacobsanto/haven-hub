@@ -855,6 +855,30 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates_cache: {
+        Row: {
+          base_currency: string
+          created_at: string
+          fetched_at: string
+          id: string
+          rates: Json
+        }
+        Insert: {
+          base_currency?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          rates?: Json
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          rates?: Json
+        }
+        Relationships: []
+      }
       exit_intent_settings: {
         Row: {
           cooldown_days: number | null

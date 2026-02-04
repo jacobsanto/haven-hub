@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
 import { HeaderSearchToggle } from '@/components/booking/HeaderSearchToggle';
+import { CurrencySwitcher } from '@/components/ui/CurrencySwitcher';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -105,9 +106,10 @@ export function Header() {
           ))}
         </div>
 
-        {/* Search & Auth */}
-        <div className="hidden md:flex items-center gap-4">
+        {/* Search, Currency & Auth */}
+        <div className="hidden md:flex items-center gap-2">
           {showSearch && <HeaderSearchToggle />}
+          <CurrencySwitcher variant="icon" />
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

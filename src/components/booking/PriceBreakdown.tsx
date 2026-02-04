@@ -1,4 +1,5 @@
 import { PriceBreakdown as PriceBreakdownType } from '@/types/booking-engine';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -17,26 +18,23 @@ export function PriceBreakdownDisplay({
   compact = false,
   className,
 }: PriceBreakdownProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-EU', {
-      style: 'currency',
-      currency: breakdown.currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const { formatPrice: formatCurrency, selectedCurrency } = useCurrency();
+  
+  // Helper to format amount using currency context
+  const formatAmount = (amount: number) => formatCurrency(amount).display;
+  const totalFormatted = formatCurrency(breakdown.total);
 
   if (compact) {
     return (
       <div className={cn('space-y-2', className)}>
         <div className="flex justify-between text-sm">
           <span>{breakdown.nights} night{breakdown.nights > 1 ? 's' : ''}</span>
-          <span>{formatCurrency(breakdown.accommodationTotal)}</span>
+          <span>{formatAmount(breakdown.accommodationTotal)}</span>
         </div>
         {breakdown.addonsTotal > 0 && (
           <div className="flex justify-between text-sm">
             <span>Add-ons</span>
-            <span>{formatCurrency(breakdown.addonsTotal)}</span>
+            <span>{formatAmount(breakdown.addonsTotal)}</span>
           </div>
         )}
         {breakdown.discountAmount > 0 && (
@@ -45,14 +43,19 @@ export function PriceBreakdownDisplay({
               <Tag className="h-3 w-3" />
               Discount
             </span>
-            <span>-{formatCurrency(breakdown.discountAmount)}</span>
+            <span>-{formatAmount(breakdown.discountAmount)}</span>
           </div>
         )}
         <Separator />
         <div className="flex justify-between font-semibold">
           <span>Total</span>
-          <span>{formatCurrency(breakdown.total)}</span>
+          <span>{totalFormatted.display}</span>
         </div>
+        {totalFormatted.isConverted && (
+          <div className="text-xs text-muted-foreground text-right">
+            {totalFormatted.original} · You pay in EUR
+          </div>
+        )}
       </div>
     );
   }
@@ -68,7 +71,7 @@ export function PriceBreakdownDisplay({
           .map((item, i) => (
             <div key={`acc-${i}`} className="flex justify-between text-sm">
               <span className="text-muted-foreground">{item.label}</span>
-              <span>{formatCurrency(item.amount)}</span>
+              <span>{formatAmount(item.amount)}</span>
             </div>
           ))}
 
@@ -87,7 +90,7 @@ export function PriceBreakdownDisplay({
                     <Check className="h-3 w-3 text-green-600" />
                     {item.label}
                   </span>
-                  <span>{formatCurrency(item.amount)}</span>
+                  <span>{formatAmount(item.amount)}</span>
                 </div>
               ))}
           </>
@@ -102,7 +105,7 @@ export function PriceBreakdownDisplay({
               .map((item, i) => (
                 <div key={`fee-${i}`} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{item.label}</span>
-                  <span>{formatCurrency(item.amount)}</span>
+                  <span>{formatAmount(item.amount)}</span>
                 </div>
               ))}
           </>
@@ -125,7 +128,7 @@ export function PriceBreakdownDisplay({
                       </Badge>
                     )}
                   </span>
-                  <span className="text-green-600">{formatCurrency(item.amount)}</span>
+                  <span className="text-green-600">{formatAmount(item.amount)}</span>
                 </div>
               ))}
           </>
@@ -140,7 +143,7 @@ export function PriceBreakdownDisplay({
               .map((item, i) => (
                 <div key={`tax-${i}`} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{item.label}</span>
-                  <span>{formatCurrency(item.amount)}</span>
+                  <span>{formatAmount(item.amount)}</span>
                 </div>
               ))}
           </>
@@ -150,8 +153,13 @@ export function PriceBreakdownDisplay({
         <Separator className="my-3" />
         <div className="flex justify-between items-center">
           <span className="font-serif text-lg font-medium">Total</span>
-          <span className="font-serif text-2xl font-semibold">{formatCurrency(breakdown.total)}</span>
+          <span className="font-serif text-2xl font-semibold">{totalFormatted.display}</span>
         </div>
+        {totalFormatted.isConverted && (
+          <div className="text-sm text-muted-foreground text-right">
+            {totalFormatted.original} · You pay in EUR
+          </div>
+        )}
 
         {/* Deposit info */}
         {showDeposit && breakdown.depositAmount && breakdown.balanceAmount && (
@@ -162,11 +170,11 @@ export function PriceBreakdownDisplay({
             </div>
             <div className="flex justify-between text-sm">
               <span>Pay deposit now</span>
-              <span className="font-medium">{formatCurrency(breakdown.depositAmount)}</span>
+              <span className="font-medium">{formatAmount(breakdown.depositAmount)}</span>
             </div>
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>Balance due before arrival</span>
-              <span>{formatCurrency(breakdown.balanceAmount)}</span>
+              <span>{formatAmount(breakdown.balanceAmount)}</span>
             </div>
           </div>
         )}
