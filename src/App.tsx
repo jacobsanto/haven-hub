@@ -12,6 +12,8 @@ import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
 import BookingConfirm from "./pages/BookingConfirm";
 import Checkout from "./pages/Checkout";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancelled from "./pages/PaymentCancelled";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import About from "./pages/About";
@@ -69,6 +71,8 @@ const App = () => (
                 <Route path="/properties/:slug" element={<PropertyDetail />} />
                 <Route path="/booking/confirm" element={<BookingConfirm />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
+                <Route path="/payment-cancelled" element={<PaymentCancelled />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/about" element={<About />} />

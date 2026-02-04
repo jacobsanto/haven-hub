@@ -10,7 +10,7 @@ import { GuestForm } from '@/components/booking/GuestForm';
 import { PriceBreakdownDisplay } from '@/components/booking/PriceBreakdown';
 import { CouponInput } from '@/components/booking/CouponInput';
 import { CancellationPolicyDisplay } from '@/components/booking/CancellationPolicyDisplay';
-import { StripeProvider } from '@/components/booking/StripeProvider';
+
 import { PaymentStep } from '@/components/booking/PaymentStep';
 import { StripeHealthBanner } from '@/components/booking/StripeHealthBanner';
 import { useProperty } from '@/hooks/useProperties';
@@ -378,26 +378,25 @@ export default function Checkout() {
                   />
 
                   {/* Stripe Payment Form */}
-                  <StripeProvider>
-                    <PaymentStep
-                      propertyId={property.id}
-                      checkIn={checkIn}
-                      checkOut={checkOut}
-                      nights={nights}
-                      guests={guests}
-                      adults={adults}
-                      children={children}
-                      guestInfo={guestInfo}
-                      selectedAddons={selectedAddons}
-                      priceBreakdown={priceBreakdown}
-                      paymentType={paymentType}
-                      holdId={holdId}
-                      onPaymentSuccess={(result) => {
-                        navigate(`/booking/confirm?ref=${result.bookingReference}`);
-                      }}
-                      onBack={() => setCurrentStep('guest')}
-                    />
-                  </StripeProvider>
+                  <PaymentStep
+                    propertyId={property.id}
+                    propertySlug={property.slug}
+                    checkIn={checkIn}
+                    checkOut={checkOut}
+                    nights={nights}
+                    guests={guests}
+                    adults={adults}
+                    children={children}
+                    guestInfo={guestInfo}
+                    selectedAddons={selectedAddons}
+                    priceBreakdown={priceBreakdown}
+                    paymentType={paymentType}
+                    holdId={holdId}
+                    onPaymentSuccess={(result) => {
+                      navigate(`/booking/confirm?ref=${result.bookingReference}`);
+                    }}
+                    onBack={() => setCurrentStep('guest')}
+                  />
                 </>
               )}
             </div>
