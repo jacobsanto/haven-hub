@@ -1,105 +1,138 @@
-# iCal-Based Availability Sync Architecture
 
-## ✅ Status: IMPLEMENTED
 
-Implementation completed on Feb 4, 2026.
+# Clean Up PMS Booking Import System
 
-## Summary
+## Overview
 
-Replaced the unreliable Tokeet Availability API with iCal feed parsing for calendar blocking. This eliminates the date shift bugs entirely.
+You want to reset the system to work purely with iCal-based availability sync, removing all remnants of the old API-based booking import system. This involves:
 
-## Verified Results
-
-Centro House iCal sync test showed **perfect accuracy**:
-
-| Guest | iCal Dates | Blocked Dates |
-|-------|------------|---------------|
-| STELLA (Hold 1) | Feb 4-6 | Feb 4-5 ✅ |
-| STELLA (Hold 2) | Feb 5-8 | Feb 5-7 ✅ |
-| Craig Stevens (Expedia) | Feb 8-10 | Feb 8-9 ✅ |
-
-**Feb 10 correctly available** (checkout day).
+1. **Deleting all PMS-synced bookings** from the database (1,159 bookings across 19 properties)
+2. **Removing UI components** related to booking import/reconciliation from the admin dashboard
+3. **Cleaning up the availability table** to reset blocked dates (9,377 blocked dates)
+4. **Removing reconciliation features** that compare Tokeet API bookings with local records
 
 ---
 
-## Implementation Completed
+## What Will Be Removed
 
-### Database Changes ✅
-- Added `ical_url` column to `pms_property_map`
-- Added `last_ical_sync_at` timestamp column
+### Database Data Cleanup
+| Table | Action | Count |
+|-------|--------|-------|
+| `bookings` | Delete all records with `external_booking_id IS NOT NULL` | ~1,159 bookings |
+| `availability` | Delete all blocked dates (will be re-synced via iCal) | ~9,377 records |
+| `booking_price_breakdown` | Delete orphaned records for deleted bookings | Related records |
+| `booking_payments` | Delete orphaned records for deleted bookings | Related records |
+| `booking_addons` | Delete orphaned records for deleted bookings | Related records |
 
-### Edge Function: `pms-sync-cron` ✅
-Replaced with iCal-based logic:
-- Fetches iCal feeds per property
-- Parses VEVENT blocks for DTSTART/DTEND
-- Blocks dates from check-in to checkout-1
-- Removed all Inquiry API and Availability API calls
-- Removed date shift correction code
+### Admin UI Removals
 
-Supports actions:
-- `sync-all-availability` - Sync all properties with iCal URLs
-- `sync-property` - Sync a single property
-- `test-ical` - Test an iCal URL and show sample events
+**From `AdminPMSHealth.tsx`:**
+- Daily Booking Reconciliation Card (entire component)
+- Webhook Tester Card (tests booking.created, booking.cancelled, reconciliation)
+- `useTriggerReconciliation` hook usage
 
-### Admin UI: PropertyICalManager ✅
-New component for managing iCal URLs per property:
-- Edit/save iCal URL
-- Test iCal feed (shows event count, blocked days, sample events)
-- Sync Now button for manual trigger
-- Status badges showing iCal configuration state
+**From hooks:**
+- `useTriggerReconciliation` function from `useAdminPMSHealth.ts`
 
-### Admin Page: AdminPMSHealth ✅
-Updated property mappings section:
-- Expandable rows with iCal management
-- Visual indicators for iCal status (configured vs not set)
-- Integrated PropertyICalManager component
+**Edge Functions to Update:**
+- `pms-reconcile/index.ts` - Can be deleted entirely (only used for booking import)
+- `test-pms-webhook/index.ts` - Remove reconciliation test option
+
+### Components to Simplify
+- `WebhookTesterCard.tsx` - Remove booking and reconciliation test buttons, keep only for debugging iCal sync
 
 ---
 
-## Usage
+## What Will Be Kept
 
-1. Go to **Admin → PMS Health**
-2. Click on a property row to expand it
-3. Click **"Add iCal URL"** and paste the Tokeet iCal feed URL
-4. Click **"Test"** to verify the feed parses correctly
-5. Click **"Save"** to store the URL
-6. Click **"Sync Now"** or wait for the 5-minute cron to sync
-
-## Finding iCal URLs in Tokeet
-
-In Tokeet:
-1. Go to the property
-2. Click "Calendar" → "Export" 
-3. Copy the iCal feed URL
+| Component | Purpose |
+|-----------|---------|
+| Property Import | Import properties from Tokeet API |
+| iCal URL Management | Configure and sync availability via iCal feeds |
+| Push Bookings to PMS | Send direct bookings to Tokeet after payment |
+| Connection Health | Test PMS API connection |
+| Sync History | View past sync runs |
+| Property Mappings | Map local properties to Tokeet IDs with iCal URLs |
 
 ---
 
-## What We Kept
+## Implementation Steps
 
-| Feature | Status |
-|---------|--------|
-| Property Import | ✅ KEPT - via Tokeet `/rental` API |
-| Push Bookings to PMS | ✅ KEPT - via Tokeet `/inquiry` POST |
-| Cancel Bookings in PMS | ✅ KEPT - via Tokeet inquiry update |
-| Connection Test | ✅ KEPT - validates API credentials |
+### Step 1: Database Cleanup (SQL)
+Execute SQL to delete all PMS-imported bookings and reset availability:
 
-## What We Removed
+```sql
+-- Delete related records first (foreign key dependencies)
+DELETE FROM booking_price_breakdown 
+WHERE booking_id IN (SELECT id FROM bookings WHERE external_booking_id IS NOT NULL);
 
-| Feature | Status |
-|---------|--------|
-| Import Bookings from PMS | ✅ DELETED |
-| Availability API Sync | ✅ REPLACED with iCal |
-| Date Shift Corrections | ✅ DELETED |
-| Inquiry API Fetch | ✅ DELETED |
+DELETE FROM booking_payments 
+WHERE booking_id IN (SELECT id FROM bookings WHERE external_booking_id IS NOT NULL);
+
+DELETE FROM booking_addons 
+WHERE booking_id IN (SELECT id FROM bookings WHERE external_booking_id IS NOT NULL);
+
+DELETE FROM security_deposits 
+WHERE booking_id IN (SELECT id FROM bookings WHERE external_booking_id IS NOT NULL);
+
+-- Delete PMS-synced bookings
+DELETE FROM bookings WHERE external_booking_id IS NOT NULL;
+
+-- Clear all availability records (will be re-synced via iCal)
+DELETE FROM availability;
+```
+
+### Step 2: Update AdminPMSHealth.tsx
+- Remove the Daily Reconciliation Card section (lines ~300-335)
+- Remove the Webhook Tester Card section (lines ~337-349)
+- Remove import and usage of `useTriggerReconciliation`
+- Update sync description text to reflect iCal-only approach
+
+### Step 3: Update useAdminPMSHealth.ts
+- Remove `useTriggerReconciliation` hook function
+- Simplify remaining hooks to focus on iCal sync
+
+### Step 4: Update/Remove WebhookTesterCard.tsx
+- Remove the component entirely OR simplify to only test iCal sync
+- The old webhook tests (booking.created, booking.cancelled, reconciliation) are no longer relevant
+
+### Step 5: Delete Edge Function
+- Delete `supabase/functions/pms-reconcile/index.ts` entirely
+- Update `supabase/functions/test-pms-webhook/index.ts` to remove reconciliation option
+
+### Step 6: Update PMSSyncStatusPanel.tsx
+- Remove references to "Bookings Pull" in the sync status panel
+- Keep only "Availability Pull (iCal)" and "Bookings Push"
 
 ---
 
-## Benefits Achieved
+## Post-Cleanup: Fresh Start Workflow
 
-| Before (API) | After (iCal) |
-|--------------|--------------|
-| Date shift bugs | No bugs - standard format ✅ |
-| Missing bookings | All events included ✅ |
-| Wrong durations | Accurate durations ✅ |
-| Complex cross-referencing | Simple parsing ✅ |
-| ~700 lines of sync code | ~510 lines ✅ |
+After this cleanup, the admin workflow will be:
+
+1. **Import Properties** from Tokeet (API)
+2. **Add iCal URL** for each property in Admin > PMS Health > Property Mappings
+3. **Sync Availability** via iCal feeds (automatic every 5 minutes + manual trigger)
+4. **Push Bookings** to Tokeet when guests book directly on your website
+
+---
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `src/pages/admin/AdminPMSHealth.tsx` | Remove reconciliation card, webhook tester |
+| `src/hooks/useAdminPMSHealth.ts` | Remove `useTriggerReconciliation` |
+| `src/components/admin/WebhookTesterCard.tsx` | Delete or simplify |
+| `src/components/admin/PMSSyncStatusPanel.tsx` | Update to show iCal-only sync |
+| `supabase/functions/pms-reconcile/index.ts` | Delete entire function |
+| `supabase/functions/test-pms-webhook/index.ts` | Remove reconciliation test |
+
+---
+
+## Risk Mitigation
+
+- **Backup Note**: The deleted bookings are all imports from Tokeet; your direct bookings have `external_booking_id = NULL` and will NOT be affected
+- **Availability Recovery**: iCal sync will immediately repopulate blocked dates after cleanup
+- **No Data Loss**: All original booking data remains in Tokeet; this cleanup only removes local copies
+
