@@ -1,10 +1,11 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { BrandProvider } from "@/contexts/BrandContext";
+import { BrandProvider, useBrand } from "@/contexts/BrandContext";
 import { BookingProvider } from "@/contexts/BookingContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { UnifiedBookingDialog } from "@/components/booking/UnifiedBookingDialog";
@@ -56,11 +57,17 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Wrapper to connect BrandContext's baseCurrency to CurrencyProvider
+function CurrencyProviderWithBrand({ children }: { children: React.ReactNode }) {
+  const { baseCurrency } = useBrand();
+  return <CurrencyProvider baseCurrency={baseCurrency}>{children}</CurrencyProvider>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <BrandProvider>
-        <CurrencyProvider>
+        <CurrencyProviderWithBrand>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -118,7 +125,7 @@ const App = () => (
             </BookingProvider>
           </BrowserRouter>
         </TooltipProvider>
-      </CurrencyProvider>
+      </CurrencyProviderWithBrand>
     </BrandProvider>
   </AuthProvider>
 </QueryClientProvider>
