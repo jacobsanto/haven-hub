@@ -1397,6 +1397,7 @@ export type Database = {
           created_at: string
           description: string | null
           destination_id: string | null
+          display_name: string | null
           gallery: string[] | null
           hero_image_url: string | null
           highlights: string[]
@@ -1431,6 +1432,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           destination_id?: string | null
+          display_name?: string | null
           gallery?: string[] | null
           hero_image_url?: string | null
           highlights?: string[]
@@ -1465,6 +1467,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           destination_id?: string | null
+          display_name?: string | null
           gallery?: string[] | null
           hero_image_url?: string | null
           highlights?: string[]

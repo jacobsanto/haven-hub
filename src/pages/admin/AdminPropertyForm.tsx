@@ -49,6 +49,7 @@ export default function AdminPropertyForm() {
 
   const [formData, setFormData] = useState({
     name: '',
+    display_name: null as string | null,
     slug: '',
     description: '',
     hero_image_url: '',
@@ -86,6 +87,7 @@ export default function AdminPropertyForm() {
     if (existingProperty) {
       setFormData({
         name: existingProperty.name,
+        display_name: existingProperty.display_name || null,
         slug: existingProperty.slug,
         description: existingProperty.description || '',
         hero_image_url: existingProperty.hero_image_url || '',
@@ -254,17 +256,38 @@ export default function AdminPropertyForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Property Name *</Label>
+                  <Label htmlFor="name">Property Name (Internal) *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={handleNameChange}
-                    placeholder="e.g., Villa Serena"
+                    placeholder="e.g., PROP-001-TUSCANY"
                     className="input-organic"
                     required
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Used for admin, PMS sync, and internal reference
+                  </p>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="display_name">Display Name (Customer-Facing)</Label>
+                  <Input
+                    id="display_name"
+                    value={formData.display_name || ''}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, display_name: e.target.value || null }))
+                    }
+                    placeholder="e.g., Sunset Villa with Caldera View"
+                    className="input-organic"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Shown on Stripe checkout, receipts, and confirmations
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="slug">URL Slug *</Label>
                   <Input

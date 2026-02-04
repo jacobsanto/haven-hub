@@ -6,6 +6,7 @@ import { Property, PropertySearchParams, PropertyStatus, RoomConfig, NearbyAttra
 function transformProperty(row: any): Property {
   return {
     ...row,
+    display_name: row.display_name || null,
     gallery: row.gallery || [],
     amenities: row.amenities || [],
     highlights: row.highlights || [],
