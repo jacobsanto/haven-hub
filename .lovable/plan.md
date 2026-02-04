@@ -1,210 +1,189 @@
 
-# Implement Multi-Currency Display for Booking Engine
+# Unify Currency Display: EUR Base Currency with Consistent Styling
 
-## Overview
+## Problem Summary
 
-Add the ability for guests to view prices in their preferred currency while maintaining EUR as the base currency for all pricing, payments, and admin operations. This is a **display-only conversion** - all actual payments remain in EUR.
+The codebase has **inconsistent currency formatting** across admin dashboard and frontend:
 
-## Architecture Approach
+| Location | Current Currency | Should Be |
+|----------|------------------|-----------|
+| AdminDashboard.tsx | EUR ✓ | EUR |
+| AdminProperties.tsx | **USD** ✗ | EUR |
+| AdminBookings.tsx | **USD** ✗ | EUR |
+| AdminAnalytics.tsx | EUR ✓ | EUR |
+| AdminRatePlans.tsx | EUR ✓ | EUR |
+| AdminFees.tsx | EUR ✓ | EUR |
+| AdminAddonsManagement.tsx | EUR ✓ | EUR |
+| PropertyDetail.tsx | **USD** ✗ | Use CurrencyContext |
+| AtAGlanceCards.tsx | **USD** ✗ | Use CurrencyContext |
+| MobileBookingCTA.tsx | **USD** ✗ | Use CurrencyContext |
+| SeasonalRatesHeatmap.tsx | EUR ✓ | EUR |
+
+Additionally, while the `CurrencyContext` exists for frontend guest-facing multi-currency display, there's no centralized admin currency formatter that ensures all admin pages use EUR consistently.
+
+## Solution Overview
+
+Create a **unified currency utility system** that provides:
+
+1. **`formatEuro()`** - A centralized admin-only formatter that always outputs EUR
+2. **Update all admin pages** - Replace local `formatPrice` functions with the shared utility
+3. **Update remaining frontend components** - Use the existing `useCurrency()` hook for guest-facing prices
+4. **Consistent styling** - All currency displays will use the same formatting pattern
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         CURRENCY FLOW                               │
+│                    UNIFIED CURRENCY ARCHITECTURE                    │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│  DATABASE (Source of Truth)          FRONTEND (Display Layer)      │
-│  ┌─────────────────────┐             ┌─────────────────────────┐   │
-│  │ All prices in EUR   │────────────▶│ Convert to guest's      │   │
-│  │ • Properties        │   Exchange  │ preferred currency      │   │
-│  │ • Addons            │   Rates     │                         │   │
-│  │ • Fees              │             │ Show: "≈ $540 USD"      │   │
-│  │ • Bookings          │             │ with original EUR below │   │
-│  └─────────────────────┘             └─────────────────────────┘   │
+│  ADMIN DASHBOARD                    FRONTEND (Guest-Facing)         │
+│  ┌─────────────────────┐            ┌─────────────────────────┐    │
+│  │ formatEuro()        │            │ useCurrency() hook      │    │
+│  │ Always EUR          │            │ Converts from EUR base  │    │
+│  │ No conversion       │            │ Shows ≈ converted price │    │
+│  │ €1,234              │            │ + original EUR          │    │
+│  └─────────────────────┘            └─────────────────────────┘    │
+│         ↓                                    ↓                      │
+│  ┌─────────────────────┐            ┌─────────────────────────┐    │
+│  │ AdminDashboard      │            │ PropertyCard            │    │
+│  │ AdminProperties     │            │ PropertyDetail          │    │
+│  │ AdminBookings       │            │ BookingWidget           │    │
+│  │ AdminRatePlans      │            │ MobileBookingCTA        │    │
+│  │ AdminAnalytics      │            │ PriceBreakdown          │    │
+│  └─────────────────────┘            └─────────────────────────┘    │
 │                                                                     │
-│  STRIPE PAYMENT                                                     │
-│  ┌─────────────────────┐                                           │
-│  │ Always charges EUR  │  ◀── Guest pays in EUR regardless of      │
-│  │ (base currency)     │      display currency preference          │
-│  └─────────────────────┘                                           │
+│  DATABASE: All prices stored in EUR (unchanged)                     │
+│  STRIPE: All payments in EUR (unchanged)                           │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Supported Currencies
-
-| Currency | Symbol | Locale |
-|----------|--------|--------|
-| EUR (Base) | € | en-EU |
-| USD | $ | en-US |
-| GBP | £ | en-GB |
-| CHF | Fr. | de-CH |
-| AUD | A$ | en-AU |
-| CAD | C$ | en-CA |
-
 ## Technical Implementation
 
-### 1. Currency Context & State Management
+### Step 1: Create Centralized Admin Currency Formatter
 
-Create a new `CurrencyContext` to manage the guest's preferred display currency:
+**New File: `src/lib/format-currency.ts`**
 
-**New File: `src/contexts/CurrencyContext.tsx`**
+```typescript
+/**
+ * Format a price in EUR for admin display.
+ * Admin always sees EUR - no conversion needed.
+ */
+export function formatEuro(amount: number, options?: {
+  minimumFractionDigits?: number;
+  maximumFractionDigits?: number;
+}): string {
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: options?.minimumFractionDigits ?? 0,
+    maximumFractionDigits: options?.maximumFractionDigits ?? 0,
+  }).format(amount);
+}
 
-- Stores selected currency in localStorage for persistence
-- Fetches live exchange rates from a free API (exchangerate-api or similar)
-- Provides `formatPrice(amount, options)` helper that returns both converted and original EUR values
-- Auto-detects initial currency from browser locale
-
-```text
-CurrencyContext provides:
-├── selectedCurrency: string (e.g., "USD")
-├── exchangeRates: Record<string, number>
-├── setSelectedCurrency: (currency) => void
-├── formatPrice: (eurAmount) => { display: string, original: string }
-└── isLoading: boolean
+/**
+ * Format a number as compact currency (e.g., €1.2K)
+ * Useful for dashboard stats
+ */
+export function formatEuroCompact(amount: number): string {
+  if (amount >= 1000000) {
+    return `€${(amount / 1000000).toFixed(1)}M`;
+  }
+  if (amount >= 1000) {
+    return `€${(amount / 1000).toFixed(1)}K`;
+  }
+  return formatEuro(amount);
+}
 ```
 
-### 2. Exchange Rate Edge Function
+### Step 2: Update Admin Pages to Use Centralized Formatter
 
-**New File: `supabase/functions/exchange-rates/index.ts`**
+Files to update with `import { formatEuro } from '@/lib/format-currency'`:
 
-Fetches and caches exchange rates to avoid excessive API calls:
+| File | Change |
+|------|--------|
+| `src/pages/admin/AdminDashboard.tsx` | Replace local `formatPrice` with `formatEuro` |
+| `src/pages/admin/AdminProperties.tsx` | Replace local `formatPrice` (USD→EUR) with `formatEuro` |
+| `src/pages/admin/AdminBookings.tsx` | Replace local `formatPrice` (USD→EUR) with `formatEuro` |
+| `src/pages/admin/AdminAnalytics.tsx` | Replace local `formatCurrency` with `formatEuro` |
+| `src/pages/admin/AdminRatePlans.tsx` | Replace local `formatCurrency` with `formatEuro` |
+| `src/pages/admin/AdminFees.tsx` | Use `formatEuro` for inline formatting |
+| `src/pages/admin/AdminAddonsManagement.tsx` | Replace local `formatPrice` with `formatEuro` |
+| `src/components/admin/SeasonalRatesHeatmap.tsx` | Replace local `formatCurrency` with `formatEuro` |
 
-- Fetches rates from free API (e.g., frankfurter.app or exchangerate.host)
-- Caches in Supabase for 1 hour (rates don't need real-time updates)
-- Returns rates relative to EUR base
-- Falls back to stale rates if API is unavailable
+### Step 3: Update Remaining Frontend Components
 
-### 3. Currency Selector Component
+These components still have hardcoded USD and should use the existing `useCurrency()` hook:
 
-**New File: `src/components/ui/CurrencySwitcher.tsx`**
+| File | Current | Update |
+|------|---------|--------|
+| `src/pages/PropertyDetail.tsx` | Hardcoded USD | Use `useCurrency().formatPrice()` |
+| `src/components/properties/AtAGlanceCards.tsx` | Hardcoded USD | Use `useCurrency().formatPrice()` |
+| `src/components/booking/MobileBookingCTA.tsx` | Hardcoded USD | Use `useCurrency().formatPrice()` |
 
-A dropdown component for guests to select their preferred display currency:
+### Step 4: Ensure Visual Consistency
 
-```text
-┌──────────────────────────────────┐
-│ 🌐 Currency                      │
-│ ┌──────────────────────────────┐ │
-│ │ EUR € (Euro)            ✓   │ │
-│ │ USD $ (US Dollar)           │ │
-│ │ GBP £ (British Pound)       │ │
-│ │ CHF Fr. (Swiss Franc)       │ │
-│ │ AUD A$ (Australian Dollar)  │ │
-│ │ CAD C$ (Canadian Dollar)    │ │
-│ └──────────────────────────────┘ │
-└──────────────────────────────────┘
+All price displays will follow these patterns:
+
+**Admin (always EUR):**
+```
+€2,450        - Standard price
+€1.2K         - Compact (dashboard stats, optional)
+€500/night    - Rate display
 ```
 
-Placement:
-- Header (next to navigation)
-- Footer
-- Booking widget (optional secondary selector)
-
-### 4. Update Price Display Components
-
-Modify all price-displaying components to use the new `useCurrency()` hook:
-
-| Component | Current | After |
-|-----------|---------|-------|
-| PropertyCard | `$500/night` | `≈ $540/night` + small `(€500)` |
-| PropertyDetail | `$500/night` | `≈ $540/night` + `(€500)` |
-| BookingWidget | `$500/night` | `≈ $540/night` + EUR subtotal |
-| PriceBreakdown | `€500` | Shows both currencies clearly |
-| QuickBookCard | `$500/night` | `≈ $540/night` |
-| AddonsSelection | `€50` | `≈ $54` + `(€50)` |
-| ExperienceCard | `From €50` | `From ≈ $54` |
-
-### 5. Price Display Pattern
-
-To ensure guests understand the payment currency, use this consistent pattern:
-
-```text
-┌────────────────────────────────┐
-│ ≈ $540 USD                     │  ◀── Converted (prominent)
-│ €500 EUR · You pay in EUR      │  ◀── Original + clarification
-└────────────────────────────────┘
+**Frontend (guest-facing):**
 ```
-
-For checkout/payment step, prominently show:
-
-```text
-┌────────────────────────────────────────────────┐
-│ 💳 Payment Amount                              │
-│                                                │
-│   €2,450.00 EUR                                │
-│   ───────────────────                          │
-│   Approximately $2,646.00 USD                  │
-│                                                │
-│ ℹ️ All payments are processed in EUR.          │
-│    Your bank will convert at their rate.      │
-└────────────────────────────────────────────────┘
+When EUR selected:     €2,450
+When USD selected:     ≈ $2,646
+                       €2,450 EUR · You pay in EUR
 ```
 
 ## Files to Create
 
 | File | Purpose |
 |------|---------|
-| `src/contexts/CurrencyContext.tsx` | Currency state, exchange rates, format helper |
-| `src/hooks/useCurrency.ts` | Hook to access currency context |
-| `src/hooks/useExchangeRates.ts` | Fetch and cache exchange rates |
-| `src/components/ui/CurrencySwitcher.tsx` | Dropdown to select currency |
-| `supabase/functions/exchange-rates/index.ts` | Edge function to fetch rates |
+| `src/lib/format-currency.ts` | Centralized EUR formatting utility for admin |
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/App.tsx` | Wrap with `CurrencyProvider` |
-| `src/components/layout/Header.tsx` | Add CurrencySwitcher |
-| `src/components/layout/Footer.tsx` | Add CurrencySwitcher |
-| `src/components/properties/PropertyCard.tsx` | Use `useCurrency().formatPrice()` |
-| `src/components/properties/AtAGlanceCards.tsx` | Use `useCurrency().formatPrice()` |
-| `src/components/booking/BookingWidget.tsx` | Use `useCurrency().formatPrice()` |
-| `src/components/booking/PriceBreakdown.tsx` | Show both currencies |
-| `src/components/booking/QuickBookCard.tsx` | Use `useCurrency().formatPrice()` |
-| `src/components/booking/AddonsSelection.tsx` | Use `useCurrency().formatPrice()` |
-| `src/components/experiences/ExperienceCard.tsx` | Use `useCurrency().formatPrice()` |
-| `src/pages/PropertyDetail.tsx` | Use `useCurrency().formatPrice()` |
-| `src/pages/Checkout.tsx` | Show payment currency notice |
+### Admin Pages (Change to EUR)
+| File | Change |
+|------|--------|
+| `src/pages/admin/AdminDashboard.tsx` | Remove local formatPrice, import formatEuro |
+| `src/pages/admin/AdminProperties.tsx` | Change USD → EUR via formatEuro |
+| `src/pages/admin/AdminBookings.tsx` | Change USD → EUR via formatEuro |
+| `src/pages/admin/AdminAnalytics.tsx` | Use formatEuro |
+| `src/pages/admin/AdminRatePlans.tsx` | Use formatEuro |
+| `src/pages/admin/AdminFees.tsx` | Use formatEuro |
+| `src/pages/admin/AdminAddonsManagement.tsx` | Use formatEuro |
+| `src/components/admin/SeasonalRatesHeatmap.tsx` | Use formatEuro |
 
-## Database Changes
-
-**New Table: `exchange_rates_cache`**
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| base_currency | text | Always "EUR" |
-| rates | jsonb | `{"USD": 1.08, "GBP": 0.86, ...}` |
-| fetched_at | timestamptz | When rates were fetched |
-| created_at | timestamptz | Record creation |
-
-This table is optional (can use in-memory caching in the edge function), but provides resilience if the external API is down.
-
-## No Changes Required
-
-- **Stripe checkout**: Continues to charge in EUR
-- **Database pricing**: All prices remain stored in EUR
-- **Admin dashboard**: No changes, always shows EUR
-- **Booking records**: Store totals in EUR
-- **PMS sync**: No currency changes needed
+### Frontend Components (Use CurrencyContext)
+| File | Change |
+|------|--------|
+| `src/pages/PropertyDetail.tsx` | Replace hardcoded USD with useCurrency() |
+| `src/components/properties/AtAGlanceCards.tsx` | Replace hardcoded USD with useCurrency() |
+| `src/components/booking/MobileBookingCTA.tsx` | Replace hardcoded USD with useCurrency() |
 
 ## Implementation Order
 
-1. Create exchange rates edge function + cache table
-2. Create CurrencyContext and useCurrency hook
-3. Create CurrencySwitcher component
-4. Add CurrencyProvider to App.tsx
-5. Add CurrencySwitcher to Header
-6. Update PropertyCard and QuickBookCard
-7. Update BookingWidget and PriceBreakdown
-8. Update remaining price display components
-9. Add payment currency notice on checkout
-10. Test end-to-end with different currencies
+1. Create `src/lib/format-currency.ts` with `formatEuro()` utility
+2. Update all admin pages to use `formatEuro()` (8 files)
+3. Update remaining frontend components to use `useCurrency()` (3 files)
+4. Test admin dashboard shows EUR throughout
+5. Test frontend currency switcher works across all components
 
-## User Experience Notes
+## Benefits
 
-- Default currency is detected from browser locale
-- Selection is persisted in localStorage
-- Rates are refreshed hourly (stale rates are better than no rates)
-- Clear messaging that payment is always in EUR
-- Approximate symbol (`≈`) used to indicate conversion estimates
+- **Single source of truth**: Admin always sees EUR from one utility
+- **No code duplication**: No more local `formatPrice` functions scattered everywhere
+- **Type safety**: Centralized utility can be properly typed
+- **Easy maintenance**: Future currency changes only need one update
+- **Consistent styling**: All prices formatted the same way (locale, decimals, symbol position)
+
+## What Stays Unchanged
+
+- Database: All prices remain stored in EUR
+- Stripe payments: Continue charging in EUR
+- CurrencyContext: Continues to handle guest-facing multi-currency display
+- Exchange rates: Edge function and caching logic unchanged
