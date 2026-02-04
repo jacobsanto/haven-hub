@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { 
@@ -8,6 +9,9 @@ import {
   RefreshCw,
   Link as LinkIcon,
   Clock,
+  Calendar,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +34,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import {
   usePMSConnectionStatus,
@@ -50,6 +59,7 @@ import { PMSConnectionHealthCard } from '@/components/admin/PMSConnectionHealthC
 import { PMSSyncStatusPanel } from '@/components/admin/PMSSyncStatusPanel';
 import { AutoSyncSettingsCard } from '@/components/admin/AutoSyncSettingsCard';
 import { WebhookTesterCard } from '@/components/admin/WebhookTesterCard';
+import { PropertyICalManager } from '@/components/admin/PropertyICalManager';
 import { getProviderById } from '@/lib/pms-providers';
 
 const getStatusBadge = (status: string | null) => {
@@ -70,9 +80,11 @@ const getStatusBadge = (status: string | null) => {
 
 export default function AdminPMSHealth() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [syncingPropertyId, setSyncingPropertyId] = useState<string | null>(null);
+  const [expandedMappings, setExpandedMappings] = useState<Set<string>>(new Set());
 
   // Data hooks
   const { data: connection, isLoading: connectionLoading } = usePMSConnectionStatus();
@@ -379,56 +391,92 @@ export default function AdminPMSHealth() {
                       ))}
                     </div>
                   ) : propertyMappings && propertyMappings.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Local Property</TableHead>
-                          <TableHead>External ID</TableHead>
-                          <TableHead>External Name</TableHead>
-                          <TableHead>Last Availability Sync</TableHead>
-                          <TableHead>Sync Enabled</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {propertyMappings.map((mapping) => (
-                          <TableRow key={mapping.id}>
-                            <TableCell className="font-medium">
-                              {mapping.property?.name || 'Unknown'}
-                            </TableCell>
-                            <TableCell>
-                              <code className="text-xs bg-muted px-2 py-1 rounded">
-                                {mapping.external_property_id}
-                              </code>
-                            </TableCell>
-                            <TableCell>{mapping.external_property_name || '-'}</TableCell>
-                            <TableCell>
-                              {mapping.last_availability_sync_at 
-                                ? format(new Date(mapping.last_availability_sync_at), 'MMM d, HH:mm')
-                                : 'Never'}
-                            </TableCell>
-                            <TableCell>
-                              <Switch
-                                checked={mapping.sync_enabled}
-                                onCheckedChange={(checked) => handleTogglePropertySync(mapping.id, checked)}
-                                disabled={togglePropertySync.isPending}
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleSyncPropertyNow(mapping.external_property_id)}
-                                disabled={syncingPropertyId !== null || !mapping.sync_enabled}
-                              >
-                                <RefreshCw className={`h-4 w-4 mr-1 ${syncingPropertyId === mapping.external_property_id ? 'animate-spin' : ''}`} />
-                                Sync
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                    <div className="space-y-2">
+                      {propertyMappings.map((mapping) => {
+                        const isExpanded = expandedMappings.has(mapping.id);
+                        const toggleExpand = () => {
+                          setExpandedMappings(prev => {
+                            const next = new Set(prev);
+                            if (next.has(mapping.id)) {
+                              next.delete(mapping.id);
+                            } else {
+                              next.add(mapping.id);
+                            }
+                            return next;
+                          });
+                        };
+                        
+                        return (
+                          <Collapsible key={mapping.id} open={isExpanded} onOpenChange={toggleExpand}>
+                            <div className="border rounded-lg">
+                              <CollapsibleTrigger asChild>
+                                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                                  <div className="flex items-center gap-4">
+                                    {isExpanded ? (
+                                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                    <div>
+                                      <p className="font-medium">{mapping.property?.name || 'Unknown'}</p>
+                                      <code className="text-xs text-muted-foreground">
+                                        {mapping.external_property_id}
+                                      </code>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    {/* iCal Status Badge */}
+                                    {mapping.ical_url ? (
+                                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                        <Calendar className="h-3 w-3 mr-1" />
+                                        iCal
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="secondary">
+                                        <XCircle className="h-3 w-3 mr-1" />
+                                        No iCal
+                                      </Badge>
+                                    )}
+                                    
+                                    {/* Last Sync */}
+                                    <span className="text-sm text-muted-foreground hidden md:inline">
+                                      {mapping.last_ical_sync_at
+                                        ? `Synced ${format(new Date(mapping.last_ical_sync_at), 'MMM d, HH:mm')}`
+                                        : mapping.last_availability_sync_at
+                                        ? `Synced ${format(new Date(mapping.last_availability_sync_at), 'MMM d, HH:mm')}`
+                                        : 'Never synced'}
+                                    </span>
+                                    
+                                    {/* Sync Toggle */}
+                                    <Switch
+                                      checked={mapping.sync_enabled}
+                                      onCheckedChange={(checked) => {
+                                        // Prevent event from triggering collapsible
+                                        handleTogglePropertySync(mapping.id, checked);
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      disabled={togglePropertySync.isPending}
+                                    />
+                                  </div>
+                                </div>
+                              </CollapsibleTrigger>
+                              
+                              <CollapsibleContent>
+                                <div className="border-t p-4 bg-muted/30">
+                                  <PropertyICalManager 
+                                    mapping={mapping} 
+                                    onUpdate={() => {
+                                      // Refetch mappings
+                                      queryClient.invalidateQueries({ queryKey: ['admin', 'pms', 'property-mappings'] });
+                                    }}
+                                  />
+                                </div>
+                              </CollapsibleContent>
+                            </div>
+                          </Collapsible>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <LinkIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />

@@ -1,6 +1,6 @@
 // Scheduled PMS Sync Edge Function
-// Called by pg_cron every 5 minutes (configurable) to sync availability AND bookings from PMS
-// Syncs a rolling 12-month window for all properties
+// Called by pg_cron every 5 minutes to sync availability from iCal feeds
+// Uses iCal feeds for accurate blocked date sync (replacing buggy Availability API)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -14,6 +14,7 @@ interface PMSPropertyMapping {
   property_id: string;
   external_property_id: string;
   pms_connection_id: string;
+  ical_url: string | null;
 }
 
 interface PMSConnection {
@@ -26,461 +27,198 @@ interface PMSConnection {
   } | null;
 }
 
-interface TokeetAvailabilityRange {
-  from?: string;
-  to?: string;
-  start?: string;
-  end?: string;
-  title?: string;
-  available?: number;
-  status?: string;
-  pkey?: string;
-  id?: string;
-  closed?: number;
+interface ICalEvent {
+  dtstart: string;
+  dtend: string;
+  summary: string;
+  uid: string;
 }
 
-// Tokeet Inquiry API returns actual booking dates
-interface TokeetInquiry {
-  pkey: string;
-  rental_id: string;
-  // Tokeet uses various field names for dates
-  arrive?: number; // Unix timestamp (older API)
-  depart?: number; // Unix timestamp (older API)
-  guest_arrive?: number; // Unix timestamp (newer API)
-  guest_depart?: number; // Unix timestamp (newer API)
-  check_in?: number; // Unix timestamp (also used)
-  check_out?: number; // Unix timestamp (also used)
-  status: string;
-  source?: string;
-  inquiry_source?: string;
-  guest_name?: string;
-  guest_email?: string;
-  guest_phone?: string;
-  num_guests?: number;
-  num_adults?: number;
-  num_child?: number;
-  booked_price?: number;
+// Parse iCal date format (YYYYMMDD) to ISO date string (YYYY-MM-DD)
+function parseICalDate(dateStr: string): string {
+  const year = dateStr.substring(0, 4);
+  const month = dateStr.substring(4, 6);
+  const day = dateStr.substring(6, 8);
+  return `${year}-${month}-${day}`;
 }
 
-interface BookingSyncResult {
-  created: number;
-  updated: number;
-  errors: string[];
-}
-
-async function callTokeetAPI(
-  endpoint: string,
-  apiKey: string,
-  accountId: string
-): Promise<Response> {
-  const separator = endpoint.includes("?") ? "&" : "?";
-  const url = `https://capi.tokeet.com/v1${endpoint}${separator}account=${accountId}`;
-
-  return await fetch(url, {
-    method: "GET",
-    headers: {
-      Authorization: apiKey,
-      "Content-Type": "application/json",
-    },
-  });
-}
-
-function mapSourceToBookingSource(source: string | undefined): string {
-  if (!source) return "direct";
-  const sourceLower = source.toLowerCase();
-  if (sourceLower.includes("airbnb")) return "airbnb";
-  if (sourceLower.includes("booking.com") || sourceLower.includes("bookingcom")) return "booking_com";
-  if (sourceLower.includes("expedia")) return "expedia";
-  if (sourceLower.includes("vrbo") || sourceLower.includes("homeaway")) return "vrbo";
-  return "direct";
-}
-
-function generateBookingReference(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `BK-${year}${month}-${random}`;
-}
-
-// Convert Unix timestamp (seconds) to YYYY-MM-DD
-function unixToDateString(timestamp: number): string {
-  const date = new Date(timestamp * 1000);
-  return date.toISOString().split("T")[0];
-}
-
-// Calculate nights between two dates
-function calculateNights(checkIn: string, checkOut: string): number {
-  const start = new Date(checkIn);
-  const end = new Date(checkOut);
-  return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-// Fetch bookings from Tokeet Inquiry API (accurate check-in/check-out dates)
-async function syncBookingsFromInquiryAPI(
-  supabaseUrl: string,
-  serviceRoleKey: string,
-  propertyId: string,
-  externalPropertyId: string,
-  apiKey: string,
-  accountId: string
-): Promise<BookingSyncResult> {
-  const result: BookingSyncResult = { created: 0, updated: 0, errors: [] };
-
-  try {
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
-
-    // Fetch active inquiries for this property
-    const today = new Date().toISOString().split("T")[0];
-    const futureDate = new Date();
-    futureDate.setMonth(futureDate.getMonth() + 12);
+// Parse iCal feed and extract all VEVENT blocks
+function parseICalFeed(icalText: string): ICalEvent[] {
+  const events: ICalEvent[] = [];
+  
+  // Match VEVENT blocks
+  const eventRegex = /BEGIN:VEVENT[\s\S]*?END:VEVENT/g;
+  const eventBlocks = icalText.match(eventRegex) || [];
+  
+  for (const block of eventBlocks) {
+    // Extract DTSTART (check-in date)
+    const startMatch = block.match(/DTSTART(?:;VALUE=DATE)?:(\d{8})/);
+    // Extract DTEND (checkout date - day guest leaves)
+    const endMatch = block.match(/DTEND(?:;VALUE=DATE)?:(\d{8})/);
+    // Extract SUMMARY (guest name or block description)
+    const summaryMatch = block.match(/SUMMARY:(.+?)(?:\r?\n|$)/);
+    // Extract UID
+    const uidMatch = block.match(/UID:(.+?)(?:\r?\n|$)/);
     
-    const fromTimestamp = Math.floor(new Date(today).getTime() / 1000);
-    const toTimestamp = Math.floor(futureDate.getTime() / 1000);
+    if (startMatch && endMatch) {
+      events.push({
+        dtstart: parseICalDate(startMatch[1]),
+        dtend: parseICalDate(endMatch[1]),
+        summary: summaryMatch ? summaryMatch[1].trim() : "Blocked",
+        uid: uidMatch ? uidMatch[1].trim() : `event-${startMatch[1]}-${endMatch[1]}`,
+      });
+    }
+  }
+  
+  return events;
+}
 
-    const tokeetUrl = new URL("https://capi.tokeet.com/v1/inquiry");
-    tokeetUrl.searchParams.set("account", accountId);
-    tokeetUrl.searchParams.set("rental_id", externalPropertyId);
-    tokeetUrl.searchParams.set("from", fromTimestamp.toString());
-    tokeetUrl.searchParams.set("to", toTimestamp.toString());
-    tokeetUrl.searchParams.set("limit", "100");
+// Convert iCal events to blocked date set
+// DTSTART = check-in (block this day)
+// DTEND = checkout (DON'T block - guest leaves, next guest can check in)
+function eventsToBlockedDates(events: ICalEvent[]): Set<string> {
+  const blockedDates = new Set<string>();
+  
+  for (const event of events) {
+    const startDate = new Date(event.dtstart);
+    const endDate = new Date(event.dtend);
+    
+    // Block from DTSTART to DTEND-1 (checkout day is available for new check-in)
+    for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
+      blockedDates.add(d.toISOString().split("T")[0]);
+    }
+  }
+  
+  return blockedDates;
+}
 
-    const response = await fetch(tokeetUrl.toString(), {
+// Fetch and parse iCal feed for a property
+async function fetchICalFeed(icalUrl: string): Promise<{ success: boolean; events?: ICalEvent[]; error?: string }> {
+  try {
+    const response = await fetch(icalUrl, {
       headers: {
-        Authorization: apiKey,
-        "Content-Type": "application/json",
+        "Accept": "text/calendar",
       },
     });
-
+    
     if (!response.ok) {
-      result.errors.push(`Inquiry API error: ${response.status}`);
-      return result;
+      return { success: false, error: `HTTP ${response.status}: ${response.statusText}` };
     }
-
-    const responseData = await response.json();
     
-    console.log(`Property ${propertyId}: Inquiry API raw response: ${JSON.stringify(responseData).substring(0, 500)}`);
+    const icalText = await response.text();
     
-    const inquiries: TokeetInquiry[] = Array.isArray(responseData)
-      ? responseData
-      : (responseData.items || responseData.data || responseData.inquiries || []);
-
-    // Filter to only booked/confirmed/accept status
-    // Tokeet uses "accept" for confirmed bookings, not "booked" or "confirmed"
-    const activeInquiries = inquiries.filter(
-      (i) => i.status === "accept" || i.status === "booked" || i.status === "confirmed"
-    );
-
-    console.log(`Property ${propertyId}: ${inquiries.length} total inquiries, ${activeInquiries.length} active (booked/confirmed)`);
-
-    if (activeInquiries.length === 0) {
-      return result;
+    // Validate it's actually an iCal feed
+    if (!icalText.includes("BEGIN:VCALENDAR")) {
+      return { success: false, error: "Invalid iCal format - missing VCALENDAR" };
     }
-
-    console.log(`Property ${propertyId}: Found ${activeInquiries.length} active bookings from Inquiry API`);
-
-    // Get existing bookings for this property by pkey (external_booking_id)
-    const pkeys = activeInquiries.map((i) => i.pkey);
-    const { data: existingBookings } = await adminClient
-      .from("bookings")
-      .select("id, external_booking_id, check_in, check_out, guest_name")
-      .eq("property_id", propertyId)
-      .in("status", ["confirmed", "pending"]);
-
-    // Build map by pkey for quick lookup
-    const existingByPkey = new Map(
-      (existingBookings || [])
-        .filter((b) => b.external_booking_id && pkeys.includes(b.external_booking_id))
-        .map((b) => [b.external_booking_id, b])
-    );
     
-    // Also build a map for legacy bookings (using old-style external_booking_id or no external ID)
-    // to migrate them to pkey format
-    const legacyBookings = (existingBookings || []).filter(
-      (b) => !b.external_booking_id || b.external_booking_id.startsWith("tokeet-")
-    );
-
-    // Process each inquiry
-    for (const inquiry of activeInquiries) {
-      try {
-        // Get timestamps - Tokeet uses different field names
-        const arriveTs = inquiry.guest_arrive || inquiry.arrive || inquiry.check_in;
-        const departTs = inquiry.guest_depart || inquiry.depart || inquiry.check_out;
-        
-        if (!arriveTs || !departTs) {
-          console.log(`Property ${propertyId}: Skipping inquiry ${inquiry.pkey} - missing dates`);
-          continue;
-        }
-
-        // Convert Unix timestamps to date strings
-        const checkIn = unixToDateString(arriveTs);
-        const checkOut = unixToDateString(departTs);
-        const nights = calculateNights(checkIn, checkOut);
-
-        // Skip past bookings
-        if (new Date(checkOut) < new Date()) continue;
-
-        // First check if booking exists by pkey
-        let existing = existingByPkey.get(inquiry.pkey);
-        
-        // If not found by pkey, check for legacy booking by guest name + overlapping dates
-        if (!existing) {
-          const guestName = inquiry.guest_name || "";
-          const legacyMatch = legacyBookings.find((b) => {
-            // Match by similar guest name (case-insensitive partial match)
-            const nameMatch = b.guest_name && guestName && 
-              (b.guest_name.toLowerCase().includes(guestName.toLowerCase()) ||
-               guestName.toLowerCase().includes(b.guest_name.toLowerCase()));
-            
-            // Match by overlapping dates (check-in within 1 day)
-            const checkInDate = new Date(checkIn);
-            const existingCheckIn = new Date(b.check_in);
-            const dateDiff = Math.abs(checkInDate.getTime() - existingCheckIn.getTime()) / (1000 * 60 * 60 * 24);
-            const dateMatch = dateDiff <= 1;
-            
-            return nameMatch && dateMatch;
-          });
-          
-          if (legacyMatch) {
-            existing = legacyMatch;
-            console.log(`Property ${propertyId}: Found legacy booking ${legacyMatch.id} matching inquiry ${inquiry.pkey} (${guestName})`);
-          }
-        }
-
-        if (existing) {
-          // Update booking - fix dates AND migrate to new pkey format
-          const needsUpdate = 
-            existing.check_in !== checkIn || 
-            existing.check_out !== checkOut ||
-            existing.external_booking_id !== inquiry.pkey;
-          
-          if (needsUpdate) {
-            console.log(`Property ${propertyId}: Updating booking ${existing.id} -> pkey:${inquiry.pkey}, dates: ${existing.check_in}-${existing.check_out} -> ${checkIn}-${checkOut}`);
-            
-            const { error } = await adminClient
-              .from("bookings")
-              .update({
-                check_in: checkIn,
-                check_out: checkOut,
-                nights,
-                external_booking_id: inquiry.pkey, // Migrate to new pkey format
-                pms_synced_at: new Date().toISOString(),
-              })
-              .eq("id", existing.id);
-
-            if (error) {
-              result.errors.push(`Update ${inquiry.pkey}: ${error.message}`);
-            } else {
-              result.updated++;
-              // Remove from legacy list to avoid re-matching
-              const idx = legacyBookings.indexOf(existing);
-              if (idx > -1) legacyBookings.splice(idx, 1);
-            }
-          }
-        } else {
-          // Create new booking with accurate dates from Inquiry API
-          const guestName = inquiry.guest_name || "OTA Guest";
-          const source = mapSourceToBookingSource(inquiry.inquiry_source || inquiry.source);
-
-          const bookingData = {
-            property_id: propertyId,
-            external_booking_id: inquiry.pkey,
-            booking_reference: generateBookingReference(),
-            guest_name: guestName,
-            guest_email: inquiry.guest_email || `ota-${inquiry.pkey}@placeholder.local`,
-            guest_phone: inquiry.guest_phone || null,
-            check_in: checkIn,
-            check_out: checkOut,
-            nights,
-            guests: inquiry.num_guests || 2,
-            adults: inquiry.num_adults || 2,
-            children: inquiry.num_child || 0,
-            total_price: inquiry.booked_price || 0,
-            source,
-            status: "confirmed",
-            payment_status: "paid",
-            pms_sync_status: "synced",
-            pms_synced_at: new Date().toISOString(),
-          };
-
-          const { error } = await adminClient
-            .from("bookings")
-            .insert(bookingData);
-
-          if (error) {
-            // Check for duplicate constraint violation
-            if (error.code === "23505") {
-              // Already exists, skip silently
-            } else {
-              result.errors.push(`Create ${inquiry.pkey}: ${error.message}`);
-            }
-          } else {
-            result.created++;
-          }
-        }
-      } catch (inquiryError) {
-        result.errors.push(
-          `Process inquiry ${inquiry.pkey}: ${inquiryError instanceof Error ? inquiryError.message : "Unknown error"}`
-        );
-      }
-    }
-
-    return result;
+    const events = parseICalFeed(icalText);
+    return { success: true, events };
   } catch (error) {
-    result.errors.push(error instanceof Error ? error.message : "Unknown error");
-    return result;
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to fetch iCal feed" 
+    };
   }
 }
 
-async function syncPropertyAvailability(
+// Sync availability for a property using iCal feed
+async function syncPropertyFromICal(
   supabaseUrl: string,
   serviceRoleKey: string,
   propertyId: string,
-  externalPropertyId: string,
-  apiKey: string,
-  accountId: string
-): Promise<{ success: boolean; blockedDays: number; bookingResult: BookingSyncResult; error?: string }> {
-  const bookingResult: BookingSyncResult = { created: 0, updated: 0, errors: [] };
-  
+  icalUrl: string
+): Promise<{ success: boolean; blockedDays: number; events: number; error?: string }> {
   try {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-
-    // Calculate date range - 12 months rolling window
-    const start = new Date().toISOString().split("T")[0];
-    const endDateObj = new Date();
-    endDateObj.setMonth(endDateObj.getMonth() + 12);
-    const end = endDateObj.toISOString().split("T")[0];
-
-    // Fetch availability from Tokeet
-    const endpoint = `/rental/${externalPropertyId}/availability?from=${start}&to=${end}`;
-    const response = await callTokeetAPI(endpoint, apiKey, accountId);
     
-    if (!response.ok) {
-      throw new Error(`Tokeet API error: ${response.statusText}`);
+    // Fetch and parse iCal feed
+    const feedResult = await fetchICalFeed(icalUrl);
+    
+    if (!feedResult.success || !feedResult.events) {
+      return { 
+        success: false, 
+        blockedDays: 0, 
+        events: 0, 
+        error: feedResult.error 
+      };
     }
-
-    const tokeetAvailability = await response.json();
     
-    console.log(`Property ${propertyId}: Tokeet API response type: ${typeof tokeetAvailability}, isArray: ${Array.isArray(tokeetAvailability)}, sample: ${JSON.stringify(tokeetAvailability).substring(0, 500)}`);
-
-    // Process availability response - could be array or object with data
-    let availabilityRanges: TokeetAvailabilityRange[] = [];
+    const events = feedResult.events;
+    console.log(`Property ${propertyId}: Parsed ${events.length} events from iCal feed`);
     
-    if (Array.isArray(tokeetAvailability)) {
-      availabilityRanges = tokeetAvailability;
-    } else if (tokeetAvailability?.data && Array.isArray(tokeetAvailability.data)) {
-      availabilityRanges = tokeetAvailability.data;
-    } else if (tokeetAvailability?.blocked && Array.isArray(tokeetAvailability.blocked)) {
-      availabilityRanges = tokeetAvailability.blocked;
-    }
-
-    // STEP 1: Sync bookings from Inquiry API (accurate check-in/check-out dates)
-    const extractedBookings = await syncBookingsFromInquiryAPI(
-      supabaseUrl,
-      serviceRoleKey,
-      propertyId,
-      externalPropertyId,
-      apiKey,
-      accountId
-    );
+    // Log first few events for debugging
+    events.slice(0, 3).forEach(e => {
+      console.log(`  Event: ${e.summary} | ${e.dtstart} - ${e.dtend}`);
+    });
     
-    bookingResult.created = extractedBookings.created;
-    bookingResult.updated = extractedBookings.updated;
-    bookingResult.errors = extractedBookings.errors;
-
-    // STEP 2: Process blocked date ranges for availability table
-    // Tokeet availability API returns ranges with 'available' field:
-    // - available: 1 means BOOKED (counterintuitive naming in Tokeet)
-    // - available: 0 means AVAILABLE
-    // We need to block only ranges where available === 1
+    // Convert events to blocked dates
+    const blockedDates = eventsToBlockedDates(events);
+    console.log(`Property ${propertyId}: ${blockedDates.size} blocked dates from iCal`);
     
-    const blockedRanges = availabilityRanges
-      .filter((range: TokeetAvailabilityRange) => {
-        // Only include if explicitly marked as unavailable/booked
-        // Tokeet uses available: 1 to mean "this range is a booking" (counterintuitive)
-        return range.available === 1 || range.status === 'booked' || range.status === 'blocked';
-      })
-      .map((range: TokeetAvailabilityRange) => ({
-        from: range.from || range.start || "",
-        to: range.to || range.end || "",
-      }))
-      .filter((r: { from: string; to: string }) => r.from && r.to);
-
-    // Build set of blocked dates
-    // TOKEET FIX: The Availability API returns dates shifted -1 day from reality
-    // e.g., a booking for Feb 11-14 shows as from: "2026-02-10", to: "2026-02-11"
-    // We need to shift both dates by +1 day to get the actual blocked dates
-    // 
-    // Additionally, Tokeet returns "to" as the first day AFTER the block ends,
-    // so we include from (corrected) through to-1 (corrected, exclusive)
-    const blockedDates = new Set<string>();
-    for (const range of blockedRanges) {
-      // Apply +1 day correction to Tokeet Availability API dates
-      const rawFrom = new Date(range.from);
-      const rawTo = new Date(range.to);
-      
-      // Shift dates by +1 day to match Tokeet UI reality
-      const correctedFrom = new Date(rawFrom);
-      correctedFrom.setDate(correctedFrom.getDate() + 1);
-      
-      const correctedTo = new Date(rawTo);
-      correctedTo.setDate(correctedTo.getDate() + 1);
-      
-      console.log(`Property: Date correction: raw ${range.from}-${range.to} -> corrected ${correctedFrom.toISOString().split("T")[0]}-${correctedTo.toISOString().split("T")[0]}`);
-      
-      // Block from corrected check-in through day BEFORE corrected check-out
-      // This allows same-day turnovers where checkout = new check-in
-      for (let d = new Date(correctedFrom); d < correctedTo; d.setDate(d.getDate() + 1)) {
-        blockedDates.add(d.toISOString().split("T")[0]);
+    // Calculate date range for sync (today to 12 months out)
+    const today = new Date().toISOString().split("T")[0];
+    const futureDate = new Date();
+    futureDate.setMonth(futureDate.getMonth() + 12);
+    const endDate = futureDate.toISOString().split("T")[0];
+    
+    // Filter blocked dates to only include those within our sync window
+    const blockedInWindow = new Set<string>();
+    for (const dateStr of blockedDates) {
+      if (dateStr >= today && dateStr <= endDate) {
+        blockedInWindow.add(dateStr);
       }
     }
-
+    
     // Prepare blocked date records for UPSERT
     const availabilityRecords: Array<{ property_id: string; date: string; available: boolean }> = [];
-    for (const dateStr of blockedDates) {
+    for (const dateStr of blockedInWindow) {
       availabilityRecords.push({
         property_id: propertyId,
         date: dateStr,
         available: false,
       });
     }
-
-    // Use UPSERT with ON CONFLICT to atomically update availability
+    
+    // Upsert blocked dates
     if (availabilityRecords.length > 0) {
-      const { error: upsertError } = await adminClient
-        .from("availability")
-        .upsert(availabilityRecords, {
-          onConflict: "property_id,date",
-          ignoreDuplicates: false,
-        });
-
-      if (upsertError) {
-        throw new Error(`Failed to upsert availability: ${upsertError.message}`);
+      // Batch upsert in chunks to avoid query limits
+      const BATCH_SIZE = 200;
+      for (let i = 0; i < availabilityRecords.length; i += BATCH_SIZE) {
+        const batch = availabilityRecords.slice(i, i + BATCH_SIZE);
+        const { error: upsertError } = await adminClient
+          .from("availability")
+          .upsert(batch, {
+            onConflict: "property_id,date",
+            ignoreDuplicates: false,
+          });
+        
+        if (upsertError) {
+          console.error(`Property ${propertyId}: Upsert error batch ${i / BATCH_SIZE + 1}: ${upsertError.message}`);
+        }
       }
     }
-
-    // Clear old blocks for dates that are now available
+    
+    // Get existing blocked dates for this property within sync window
     const { data: existingBlocked, error: fetchError } = await adminClient
       .from("availability")
       .select("date")
       .eq("property_id", propertyId)
       .eq("available", false)
-      .gte("date", start)
-      .lte("date", end);
-
+      .gte("date", today)
+      .lte("date", endDate);
+    
     if (fetchError) {
-      console.warn(`Could not fetch existing blocked dates: ${fetchError.message}`);
+      console.warn(`Property ${propertyId}: Could not fetch existing blocked dates: ${fetchError.message}`);
     } else if (existingBlocked) {
-      // Normalize date formats before comparison (handle both ISO and date-only formats)
-      const normalizeDate = (d: string) => d.split('T')[0];
-      
+      // Find dates that were blocked but are now available (removed from iCal)
       const datesToUnblock = existingBlocked
-        .map((r) => normalizeDate(r.date))
-        .filter((d) => !blockedDates.has(d));
-
-      console.log(`Property ${propertyId}: ${blockedDates.size} blocked dates from PMS, ${datesToUnblock.length} stale dates to unblock`);
-
-      // Batch delete to avoid query limits
+        .map((r) => r.date.split("T")[0])
+        .filter((d) => !blockedInWindow.has(d));
+      
+      console.log(`Property ${propertyId}: ${datesToUnblock.length} stale dates to unblock`);
+      
+      // Batch delete stale blocks
       if (datesToUnblock.length > 0) {
         const BATCH_SIZE = 100;
         for (let i = 0; i < datesToUnblock.length; i += BATCH_SIZE) {
@@ -490,26 +228,33 @@ async function syncPropertyAvailability(
             .delete()
             .eq("property_id", propertyId)
             .in("date", batch);
-
+          
           if (deleteError) {
-            console.warn(`Could not unblock dates batch ${i / BATCH_SIZE + 1}: ${deleteError.message}`);
+            console.warn(`Property ${propertyId}: Could not unblock dates batch: ${deleteError.message}`);
           }
         }
       }
     }
-
-    // Update last sync timestamp
+    
+    // Update last sync timestamps
     await adminClient
       .from("pms_property_map")
-      .update({ last_availability_sync_at: new Date().toISOString() })
+      .update({ 
+        last_availability_sync_at: new Date().toISOString(),
+        last_ical_sync_at: new Date().toISOString(),
+      })
       .eq("property_id", propertyId);
-
-    return { success: true, blockedDays: blockedDates.size, bookingResult };
+    
+    return { 
+      success: true, 
+      blockedDays: blockedInWindow.size, 
+      events: events.length 
+    };
   } catch (error) {
     return {
       success: false,
       blockedDays: 0,
-      bookingResult,
+      events: 0,
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
@@ -528,32 +273,22 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get Tokeet credentials
-    const apiKey = Deno.env.get("TOKEET_API_KEY");
-    const accountId = Deno.env.get("TOKEET_ACCOUNT_ID");
-
-    if (!apiKey || !accountId) {
-      console.error("Tokeet credentials not configured");
-      return new Response(
-        JSON.stringify({ error: "Tokeet credentials not configured" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     // Parse request body
     let action = "sync-all-availability";
     let triggerType: "scheduled" | "manual" = "scheduled";
+    let targetPropertyId: string | undefined;
     
     try {
       const body = await req.json();
       action = body.action || action;
       triggerType = body.triggerType || triggerType;
+      targetPropertyId = body.propertyId;
     } catch {
       // Empty body is fine for scheduled calls
     }
 
-    if (action === "sync-all-availability") {
-      // Get active connection with auto-sync enabled
+    if (action === "sync-all-availability" || action === "sync-property") {
+      // Get active connection
       const { data: connection, error: connError } = await adminClient
         .from("pms_connections")
         .select("*")
@@ -579,12 +314,19 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Get all property mappings with sync enabled
-      const { data: mappings, error: mappingsError } = await adminClient
+      // Build query for property mappings
+      let mappingsQuery = adminClient
         .from("pms_property_map")
-        .select("property_id, external_property_id, pms_connection_id")
+        .select("property_id, external_property_id, pms_connection_id, ical_url")
         .eq("pms_connection_id", connection.id)
         .eq("sync_enabled", true);
+      
+      // Filter to single property if specified
+      if (targetPropertyId) {
+        mappingsQuery = mappingsQuery.eq("property_id", targetPropertyId);
+      }
+
+      const { data: mappings, error: mappingsError } = await mappingsQuery;
 
       if (mappingsError) {
         throw new Error(`Failed to fetch mappings: ${mappingsError.message}`);
@@ -598,12 +340,33 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Filter to only properties with iCal URLs
+      const mappingsWithICal = (mappings as PMSPropertyMapping[]).filter(m => m.ical_url);
+      const mappingsWithoutICal = mappings.length - mappingsWithICal.length;
+      
+      if (mappingsWithICal.length === 0) {
+        console.log("No properties have iCal URLs configured");
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "No iCal URLs configured", 
+            total: mappings.length,
+            skipped: mappings.length,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (mappingsWithoutICal > 0) {
+        console.log(`${mappingsWithoutICal} properties skipped (no iCal URL)`);
+      }
+
       // Create sync run record
       const { data: syncRun, error: syncRunError } = await adminClient
         .from("pms_sync_runs")
         .insert({
           pms_connection_id: connection.id,
-          sync_type: "availability_bookings",
+          sync_type: "ical_availability",
           status: "running",
           trigger_type: triggerType,
         })
@@ -617,47 +380,41 @@ Deno.serve(async (req) => {
       // Sync each property
       let synced = 0;
       let failed = 0;
-      let bookingsCreated = 0;
-      let bookingsUpdated = 0;
+      let totalEvents = 0;
+      let totalBlockedDays = 0;
       const errors: string[] = [];
 
-      for (const mapping of mappings as PMSPropertyMapping[]) {
-        // Sync availability and extract bookings in one call
-        const result = await syncPropertyAvailability(
+      for (const mapping of mappingsWithICal) {
+        const result = await syncPropertyFromICal(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
           mapping.property_id,
-          mapping.external_property_id,
-          apiKey,
-          accountId
+          mapping.ical_url!
         );
 
         if (result.success) {
           synced++;
+          totalEvents += result.events;
+          totalBlockedDays += result.blockedDays;
         } else {
           failed++;
           if (result.error) {
             errors.push(`Property ${mapping.external_property_id}: ${result.error}`);
           }
         }
-
-        // Accumulate booking results
-        bookingsCreated += result.bookingResult.created;
-        bookingsUpdated += result.bookingResult.updated;
-        
-        if (result.bookingResult.errors.length > 0) {
-          errors.push(...result.bookingResult.errors.slice(0, 3));
-        }
       }
 
       // Update sync run
       if (syncRun) {
         const summaryParts: string[] = [];
-        if (errors.length > 0) {
-          summaryParts.push(errors.slice(0, 5).join("; "));
+        if (totalEvents > 0) {
+          summaryParts.push(`${totalEvents} events, ${totalBlockedDays} blocked days`);
         }
-        if (bookingsCreated > 0 || bookingsUpdated > 0) {
-          summaryParts.push(`Bookings: +${bookingsCreated}, ~${bookingsUpdated}`);
+        if (errors.length > 0) {
+          summaryParts.push(errors.slice(0, 3).join("; "));
+        }
+        if (mappingsWithoutICal > 0) {
+          summaryParts.push(`${mappingsWithoutICal} skipped (no iCal)`);
         }
 
         await adminClient
@@ -681,7 +438,7 @@ Deno.serve(async (req) => {
         })
         .eq("id", connection.id);
 
-      console.log(`Sync complete: ${synced} properties synced, ${failed} failed, ${bookingsCreated} bookings created, ${bookingsUpdated} updated`);
+      console.log(`iCal sync complete: ${synced} properties synced, ${failed} failed, ${totalEvents} events, ${totalBlockedDays} blocked days`);
 
       return new Response(
         JSON.stringify({
@@ -689,9 +446,53 @@ Deno.serve(async (req) => {
           total: mappings.length,
           synced,
           failed,
-          bookingsCreated,
-          bookingsUpdated,
+          skipped: mappingsWithoutICal,
+          events: totalEvents,
+          blockedDays: totalBlockedDays,
           errors: errors.slice(0, 5),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Test iCal URL action
+    if (action === "test-ical") {
+      let icalUrl: string | undefined;
+      try {
+        const body = await req.json();
+        icalUrl = body.icalUrl;
+      } catch {
+        // Already parsed above
+      }
+
+      if (!icalUrl) {
+        return new Response(
+          JSON.stringify({ success: false, error: "icalUrl is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const result = await fetchICalFeed(icalUrl);
+      
+      if (!result.success) {
+        return new Response(
+          JSON.stringify({ success: false, error: result.error }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const blockedDates = eventsToBlockedDates(result.events || []);
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          events: result.events?.length || 0,
+          blockedDays: blockedDates.size,
+          sampleEvents: result.events?.slice(0, 5).map(e => ({
+            summary: e.summary,
+            checkIn: e.dtstart,
+            checkOut: e.dtend,
+          })),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

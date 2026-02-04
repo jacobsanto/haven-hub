@@ -37,6 +37,8 @@ export interface PMSPropertyMapping {
   sync_enabled: boolean;
   last_sync_at: string | null;
   last_availability_sync_at: string | null;
+  ical_url: string | null;
+  last_ical_sync_at: string | null;
   property?: { id: string; name: string; slug: string };
 }
 
