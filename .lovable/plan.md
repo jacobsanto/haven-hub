@@ -1,88 +1,112 @@
 
-# Add Customer-Facing Display Name for Properties
+# Fix Font Syncing Between Admin Dashboard and Frontend
 
-## Overview
+## Problem Summary
 
-Add a separate `display_name` field to properties that will be shown to customers on Stripe checkout pages and receipts. This keeps the internal `name` (e.g., "PROP-001-SANTORINI-OIA") separate from the customer-friendly name (e.g., "Sunset Villa with Caldera View").
+When you change fonts in the Admin Settings (e.g., set heading font to "Georgia"), the database correctly saves this choice, but the frontend continues displaying the hardcoded default font (Playfair Display). This happens because Tailwind's font configuration bypasses the CSS variables that the admin system updates.
 
-## Database Change
+## Root Cause
 
-Add a new nullable column `display_name` to the `properties` table:
+| Layer | Current Behavior | Problem |
+|-------|------------------|---------|
+| Database | Stores `heading_font: Georgia` | Working correctly |
+| BrandContext | Sets `--font-serif: "Georgia", serif` | Working correctly |
+| Tailwind Config | Uses `serif: ["Playfair Display", "Georgia", "serif"]` | Hardcoded - ignores CSS variables |
+| Components | Use `className="font-serif"` | Gets Tailwind's hardcoded value |
 
-| Column | Type | Default | Description |
-|--------|------|---------|-------------|
-| `display_name` | text | NULL | Customer-facing name shown on Stripe checkout. Falls back to `name` if not set. |
-
-## Admin Form Update
-
-**Location:** `src/pages/admin/AdminPropertyForm.tsx`
-
-Add a new field in the "Basic Information" section:
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  BASIC INFORMATION                                          │
-│                                                              │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │ Property Name (Internal) *                             │  │
-│  │ PROP-001-SANTORINI-OIA                                 │  │
-│  │ Used for admin, PMS sync, and internal reference       │  │
-│  └───────────────────────────────────────────────────────┘  │
-│                                                              │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │ Display Name (Customer-Facing)                         │  │
-│  │ Sunset Villa with Caldera View                         │  │
-│  │ Shown on Stripe checkout, receipts, and confirmations  │  │
-│  └───────────────────────────────────────────────────────┘  │
-│                                                              │
-│  ┌─────────────────────────┐ ┌─────────────────────────┐    │
-│  │ URL Slug *              │ │ Status                  │    │
-│  │ sunset-villa-oia        │ │ Active ▼                │    │
-│  └─────────────────────────┘ └─────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
+The Tailwind-generated CSS for `font-serif` outputs:
+```css
+.font-serif { font-family: Playfair Display, Georgia, serif; }
 ```
 
-## Stripe Checkout Update
+This static CSS overrides the dynamic CSS variable because it has higher specificity.
 
-**Location:** `supabase/functions/create-checkout-session/index.ts`
+## Solution
 
-Update the property query to include `display_name` and use it in the Stripe line item:
+Update `tailwind.config.ts` to reference CSS variables instead of hardcoded font names, making Tailwind's utility classes dynamic:
+
+```text
+BEFORE (hardcoded):
+fontFamily: {
+  serif: ["Playfair Display", "Georgia", "serif"],
+  sans: ["Lato", "system-ui", "sans-serif"],
+}
+
+AFTER (CSS variable-based):
+fontFamily: {
+  serif: ["var(--font-serif)", "serif"],
+  sans: ["var(--font-sans)", "sans-serif"],
+}
+```
+
+Also update `src/index.css` to set default values for these CSS variables in `:root`, ensuring fonts work even before the BrandContext loads.
+
+## Technical Implementation
+
+### File 1: tailwind.config.ts
+
+Change the fontFamily configuration to use CSS variables:
 
 ```typescript
-// Query now includes display_name
-const { data: property } = await supabase
-  .from('properties')
-  .select('id, name, display_name, slug, city, country, ...')
+fontFamily: {
+  serif: ["var(--font-serif)", "serif"],
+  sans: ["var(--font-sans)", "sans-serif"],
+}
+```
 
-// Use display_name with fallback to name
-const customerName = property.display_name || property.name;
+### File 2: src/index.css
 
-lineItems.push({
-  price_data: {
-    currency: 'eur',
-    product_data: {
-      name: `${customerName} - ${nights} night${nights > 1 ? 's' : ''}`,
-      description: `${checkIn} to ${checkOut} · ${guests} guest${guests > 1 ? 's' : ''}`,
-    },
-    unit_amount: totalCents,
-  },
-  quantity: 1,
-});
+Add default font CSS variables to `:root` so fonts display correctly during initial load:
+
+```css
+:root {
+  /* ... existing variables ... */
+  
+  /* Typography - default fonts (overridden by BrandContext) */
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "Lato", sans-serif;
+}
+```
+
+Remove the fallback values from the body/heading rules since the variables now have defaults:
+
+```css
+body {
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+```
+
+## How It Works After the Fix
+
+```text
+1. Page loads
+   └─> CSS uses default --font-serif: "Playfair Display"
+   
+2. BrandContext fetches settings from database
+   └─> Gets heading_font: "Georgia"
+   
+3. BrandContext updates CSS variable
+   └─> Sets --font-serif: "Georgia", serif
+   
+4. All elements using font-serif update instantly
+   └─> Headings now display in Georgia
 ```
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| **Database** | Add `display_name` column to `properties` table |
-| `src/types/database.ts` | Add `display_name?: string \| null` to Property interface |
-| `src/pages/admin/AdminPropertyForm.tsx` | Add display_name input field with helper text |
-| `src/hooks/useProperties.ts` | Include display_name in transformProperty |
-| `supabase/functions/create-checkout-session/index.ts` | Use display_name with fallback for Stripe line item |
+| File | Change |
+|------|--------|
+| `tailwind.config.ts` | Replace hardcoded fonts with CSS variable references |
+| `src/index.css` | Add default font variables to `:root`, simplify body/heading rules |
 
-## User Experience
+## Verification Steps
 
-- **Internal Name**: "PROP-OIA-SUNSET-001" (used in admin lists, PMS)
-- **Display Name**: "Sunset Villa with Caldera View" (shown to customers)
-- If display_name is empty, the system falls back to using `name`
-- Existing properties work without changes until display_name is set
+After implementation:
+1. Go to Admin Settings and change the heading font to something distinctive (e.g., "Cormorant Garamond")
+2. Navigate to the homepage
+3. Verify all headings now use the selected font
+4. Repeat for body font selection
