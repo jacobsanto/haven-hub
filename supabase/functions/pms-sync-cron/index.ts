@@ -277,12 +277,14 @@ Deno.serve(async (req) => {
     let action = "sync-all-availability";
     let triggerType: "scheduled" | "manual" = "scheduled";
     let targetPropertyId: string | undefined;
+    let icalUrl: string | undefined;
     
     try {
       const body = await req.json();
       action = body.action || action;
       triggerType = body.triggerType || triggerType;
       targetPropertyId = body.propertyId;
+      icalUrl = body.icalUrl;
     } catch {
       // Empty body is fine for scheduled calls
     }
@@ -457,13 +459,6 @@ Deno.serve(async (req) => {
 
     // Test iCal URL action
     if (action === "test-ical") {
-      let icalUrl: string | undefined;
-      try {
-        const body = await req.json();
-        icalUrl = body.icalUrl;
-      } catch {
-        // Already parsed above
-      }
 
       if (!icalUrl) {
         return new Response(
