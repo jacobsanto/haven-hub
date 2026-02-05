@@ -38,6 +38,8 @@ export default function AdminDashboard() {
   } = usePMSSyncStatus();
   const triggerSync = useTriggerPMSSync();
 
+  const pmsLastRun = pmsSyncStatus?.lastRun;
+
   // Revenue comparison: this month vs last month
   const thisMonthStart = startOfMonth(new Date());
   const thisMonthEnd = endOfMonth(new Date());
@@ -272,9 +274,50 @@ export default function AdminDashboard() {
         }}>
               <Card className={`card-organic border-2 ${pmsSyncStatus.isHealthy ? 'border-green-200 bg-green-50/30' : pmsSyncStatus.errorCount > 0 ? 'border-red-200 bg-red-50/30' : 'border-amber-200 bg-amber-50/30'}`}>
                 <CardContent className="p-6">
-                  
-                  
-                  {pmsSyncStatus.lastRun}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5">
+                        {pmsSyncStatus.isHealthy ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : pmsSyncStatus.errorCount > 0 ? <AlertTriangle className="h-5 w-5 text-red-600" /> : <AlertTriangle className="h-5 w-5 text-amber-600" />}
+                      </div>
+                      <div>
+                        <p className="font-semibold">PMS Sync</p>
+                        <p className="text-sm text-muted-foreground">
+                          {pmsLastRun ? <>Last run: <span className="font-medium text-foreground">{pmsLastRun.status}</span></> : 'No sync runs recorded yet.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button size="sm" onClick={handleTriggerSync} disabled={triggerSync.isPending}>
+                      <RefreshCw className={`h-4 w-4 mr-2 ${triggerSync.isPending ? 'animate-spin' : ''}`} />
+                      Sync Now
+                    </Button>
+                  </div>
+
+                  {pmsLastRun && <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Started</p>
+                        <p className="text-sm font-medium">{format(new Date(pmsLastRun.started_at), 'MMM d, HH:mm')}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Completed</p>
+                        <p className="text-sm font-medium">{pmsLastRun.completed_at ? format(new Date(pmsLastRun.completed_at), 'MMM d, HH:mm') : '—'}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Processed</p>
+                        <p className="text-sm font-medium">{pmsLastRun.records_processed ?? 0}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Failed</p>
+                        <p className={`text-sm font-medium ${pmsLastRun.records_failed && pmsLastRun.records_failed > 0 ? 'text-red-600' : ''}`}>
+                          {pmsLastRun.records_failed ?? 0}
+                        </p>
+                      </div>
+                    </div>}
+
+                  {pmsLastRun?.error_summary && <div className="mt-4 p-3 rounded-lg bg-muted/30 border">
+                      <p className="text-xs font-medium">Last error</p>
+                      <p className="text-sm text-muted-foreground mt-1">{pmsLastRun.error_summary}</p>
+                    </div>}
                 </CardContent>
               </Card>
             </motion.div>}
