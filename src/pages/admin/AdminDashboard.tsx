@@ -1,18 +1,20 @@
 import { motion } from 'framer-motion';
-import { Building2, Calendar, TrendingUp, Clock, Users, ArrowUpRight, ArrowDownRight, Timer, LogIn, LogOut, Sparkles, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Building2, Calendar, TrendingUp, Clock, ArrowUpRight, ArrowDownRight, Timer, LogIn, LogOut, Sparkles, RefreshCw, AlertTriangle, CheckCircle2, CreditCard, Mail, BarChart3 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminProperties } from '@/hooks/useProperties';
 import { useBookingStats, useAdminBookings } from '@/hooks/useBookings';
-import { useCheckoutHoldsStats, useTodayActivity, useRevenueStats } from '@/hooks/useAdminAnalytics';
+import { useCheckoutHoldsStats, useTodayActivity, useRevenueStats, useOccupancyMetrics } from '@/hooks/useAdminAnalytics';
 import { useRealtimeBookings } from '@/hooks/useRealtimeBookings';
-import { usePMSSyncStatus, useTriggerPMSSync } from '@/hooks/usePMSSyncStatus';
+import { useStripeHealth } from '@/hooks/useStripeHealth';
+import { useNewsletterSubscribers } from '@/hooks/useNewsletterSubscribers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
+import { format, startOfMonth, endOfMonth, subMonths, subDays, isAfter } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/hooks/use-toast';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
+
 export default function AdminDashboard() {
   const {
     format: formatCurrency,
@@ -33,11 +35,14 @@ export default function AdminDashboard() {
   const {
     data: todayActivity
   } = useTodayActivity();
-  const {
-    data: pmsSyncStatus
-  } = usePMSSyncStatus();
-  const triggerSync = useTriggerPMSSync();
-  const pmsLastRun = pmsSyncStatus?.lastRun;
+  // Stripe payment health
+  const stripeHealth = useStripeHealth();
+  
+  // Newsletter subscribers
+  const { data: subscribers } = useNewsletterSubscribers();
+  
+  // Occupancy metrics for current month
+  const { data: occupancyMetrics } = useOccupancyMetrics();
 
   // Revenue comparison: this month vs last month
   const thisMonthStart = startOfMonth(new Date());
@@ -59,23 +64,17 @@ export default function AdminDashboard() {
 
   // Enable real-time updates
   useRealtimeBookings();
-  const handleTriggerSync = async () => {
-    try {
-      await triggerSync.mutateAsync();
-      toast({
-        title: 'Sync started',
-        description: 'PMS availability sync has been triggered.'
-      });
-    } catch (error) {
-      toast({
-        title: 'Sync failed',
-        description: error instanceof Error ? error.message : 'Failed to trigger sync',
-        variant: 'destructive'
-      });
-    }
-  };
 
-  // Use centralized EUR formatter for admin display
+  // Newsletter stats
+  const activeSubscribers = subscribers?.filter(s => s.is_active).length || 0;
+  const recentSubscribers = subscribers?.filter(s => 
+    isAfter(new Date(s.subscribed_at), subDays(new Date(), 7))
+  ).length || 0;
+
+  // Occupancy average
+  const averageOccupancy = occupancyMetrics && occupancyMetrics.length > 0
+    ? occupancyMetrics.reduce((sum, m) => sum + m.occupancyRate, 0) / occupancyMetrics.length
+    : 0;
 
   // Calculate revenue trend
   const revenueTrend = thisMonthRevenue && lastMonthRevenue && lastMonthRevenue.totalRevenue > 0 ? (thisMonthRevenue.totalRevenue - lastMonthRevenue.totalRevenue) / lastMonthRevenue.totalRevenue * 100 : 0;
@@ -261,62 +260,141 @@ export default function AdminDashboard() {
             </Card>
           </motion.div>
 
-          {/* PMS Sync Status Card */}
-          {pmsSyncStatus?.connection && <motion.div initial={{
-          opacity: 0,
-          y: 20
-        }} animate={{
-          opacity: 1,
-          y: 0
-        }} transition={{
-          delay: 0.5
-        }}>
-              <Card className={`card-organic border-2 ${pmsSyncStatus.isHealthy ? 'border-green-200 bg-green-50/30' : pmsSyncStatus.errorCount > 0 ? 'border-red-200 bg-red-50/30' : 'border-amber-200 bg-amber-50/30'}`}>
-                <CardContent className="p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
-                        {pmsSyncStatus.isHealthy ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : pmsSyncStatus.errorCount > 0 ? <AlertTriangle className="h-5 w-5 text-red-600" /> : <AlertTriangle className="h-5 w-5 text-amber-600" />}
-                      </div>
-                      <div>
-                        <p className="font-semibold">PMS Sync</p>
-                        <p className="text-sm text-muted-foreground">
-                          {pmsLastRun ? <>Last run: <span className="font-medium text-foreground">{pmsLastRun.status}</span></> : 'No sync runs recorded yet.'}
-                        </p>
-                      </div>
+          {/* Payment Health Card */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card className={`card-organic border-2 ${
+              stripeHealth.status === 'healthy' ? 'border-green-200 bg-green-50/30' : 
+              stripeHealth.status === 'degraded' ? 'border-amber-200 bg-amber-50/30' : 
+              stripeHealth.status === 'unhealthy' ? 'border-red-200 bg-red-50/30' :
+              'border-muted'
+            }`}>
+              <CardContent className="p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5">
+                      {stripeHealth.status === 'healthy' ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      ) : stripeHealth.status === 'degraded' ? (
+                        <AlertTriangle className="h-5 w-5 text-amber-600" />
+                      ) : stripeHealth.status === 'unhealthy' ? (
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                      ) : (
+                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                      )}
                     </div>
-
-                    <Button size="sm" onClick={handleTriggerSync} disabled={triggerSync.isPending}>
-                      <RefreshCw className={`h-4 w-4 mr-2 ${triggerSync.isPending ? 'animate-spin' : ''}`} />
-                      Sync Now
-                    </Button>
+                    <div>
+                      <p className="font-semibold">Payment System</p>
+                      <p className="text-sm text-muted-foreground">
+                        {stripeHealth.status === 'healthy' ? 'Stripe connected and processing payments normally' :
+                         stripeHealth.status === 'degraded' ? 'Payment system partially available' :
+                         stripeHealth.status === 'unhealthy' ? 'Payment system unavailable' :
+                         stripeHealth.status === 'checking' ? 'Checking connection...' :
+                         'Status unknown'}
+                      </p>
+                    </div>
                   </div>
 
-                  {pmsLastRun && <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                      
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <p className="text-xs text-muted-foreground">Completed</p>
-                        <p className="text-sm font-medium">{pmsLastRun.completed_at ? format(new Date(pmsLastRun.completed_at), 'MMM d, HH:mm') : '—'}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <p className="text-xs text-muted-foreground">Processed</p>
-                        <p className="text-sm font-medium">{pmsLastRun.records_processed ?? 0}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <p className="text-xs text-muted-foreground">Failed</p>
-                        <p className={`text-sm font-medium ${pmsLastRun.records_failed && pmsLastRun.records_failed > 0 ? 'text-red-600' : ''}`}>
-                          {pmsLastRun.records_failed ?? 0}
-                        </p>
-                      </div>
-                    </div>}
+                  <Button size="sm" onClick={() => stripeHealth.checkHealth(true)} disabled={stripeHealth.isChecking}>
+                    <RefreshCw className={`h-4 w-4 mr-2 ${stripeHealth.isChecking ? 'animate-spin' : ''}`} />
+                    Check Now
+                  </Button>
+                </div>
 
-                  {pmsLastRun?.error_summary && <div className="mt-4 p-3 rounded-lg bg-muted/30 border">
-                      <p className="text-xs font-medium">Last error</p>
-                      <p className="text-sm text-muted-foreground mt-1">{pmsLastRun.error_summary}</p>
-                    </div>}
-                </CardContent>
-              </Card>
-            </motion.div>}
+                <div className="mt-4 grid grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Stripe.js</p>
+                    <p className={`text-sm font-medium ${stripeHealth.stripeLoaded ? 'text-green-600' : 'text-red-600'}`}>
+                      {stripeHealth.stripeLoaded ? '✓ Loaded' : '✗ Failed'}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Edge Function</p>
+                    <p className={`text-sm font-medium ${stripeHealth.edgeFunctionReachable ? 'text-green-600' : 'text-red-600'}`}>
+                      {stripeHealth.edgeFunctionReachable ? '✓ Reachable' : '✗ Unreachable'}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Last Check</p>
+                    <p className="text-sm font-medium">
+                      {stripeHealth.lastChecked ? format(stripeHealth.lastChecked, 'HH:mm') : '—'}
+                    </p>
+                  </div>
+                </div>
+
+                {stripeHealth.error && (
+                  <div className="mt-4 p-3 rounded-lg bg-muted/30 border">
+                    <p className="text-xs font-medium">Issue detected</p>
+                    <p className="text-sm text-muted-foreground mt-1">{stripeHealth.error}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Newsletter Growth Card */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
+            <Card className="card-organic border-2 border-purple-200 bg-purple-50/30">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5">
+                    <Mail className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold">Newsletter Subscribers</p>
+                    <p className="text-3xl font-bold text-purple-800 mt-2">{activeSubscribers}</p>
+                    <p className="text-sm text-purple-600 mt-1">
+                      {recentSubscribers > 0 ? `+${recentSubscribers} this week` : 'No new signups this week'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Occupancy Overview Card */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+            <Card className="card-organic">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <div>
+                    <p className="font-semibold">This Month's Occupancy</p>
+                    <p className="text-sm text-muted-foreground">
+                      Average: <span className={`font-medium ${
+                        averageOccupancy >= 70 ? 'text-green-600' : 
+                        averageOccupancy >= 40 ? 'text-amber-600' : 'text-red-600'
+                      }`}>{averageOccupancy.toFixed(0)}%</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {occupancyMetrics?.slice(0, 4).map(metric => (
+                    <div key={metric.propertyId} className="p-3 rounded-lg bg-muted/50">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-sm font-medium truncate">{metric.propertyName}</p>
+                        <span className={`text-sm font-medium ${
+                          metric.occupancyRate >= 70 ? 'text-green-600' : 
+                          metric.occupancyRate >= 40 ? 'text-amber-600' : 'text-red-600'
+                        }`}>{metric.occupancyRate.toFixed(0)}%</span>
+                      </div>
+                      <Progress 
+                        value={metric.occupancyRate} 
+                        className={`h-2 ${
+                          metric.occupancyRate >= 70 ? '[&>div]:bg-green-500' : 
+                          metric.occupancyRate >= 40 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500'
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {(!occupancyMetrics || occupancyMetrics.length === 0) && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No occupancy data available</p>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Recent Bookings */}
           <Card className="card-organic">
