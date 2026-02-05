@@ -274,22 +274,7 @@ export default function AdminDashboard() {
                 <CardContent className="p-6">
                   
                   
-                  {pmsSyncStatus.lastRun && <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-6 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Status: </span>
-                        <Badge variant={pmsSyncStatus.lastRun.status === 'success' ? 'default' : 'destructive'} className={pmsSyncStatus.lastRun.status === 'success' ? 'bg-green-100 text-green-700' : ''}>
-                          {pmsSyncStatus.lastRun.status}
-                        </Badge>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Processed: </span>
-                        <span className="font-medium">{pmsSyncStatus.lastRun.records_processed || 0}</span>
-                      </div>
-                      {(pmsSyncStatus.lastRun.records_failed || 0) > 0 && <div>
-                          <span className="text-muted-foreground">Failed: </span>
-                          <span className="font-medium text-red-600">{pmsSyncStatus.lastRun.records_failed}</span>
-                        </div>}
-                    </div>}
+                  {pmsSyncStatus.lastRun}
                 </CardContent>
               </Card>
             </motion.div>}
