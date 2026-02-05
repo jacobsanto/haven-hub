@@ -98,25 +98,29 @@ export default function AdminDashboard() {
     value: properties?.length || 0,
     icon: Building2,
     color: 'text-primary',
-    bgColor: 'bg-primary/10'
+    bgColor: 'bg-primary/10',
+    href: '/admin/properties'
   }, {
     title: 'Total Bookings',
     value: stats?.totalBookings || 0,
     icon: Calendar,
     color: 'text-blue-600',
-    bgColor: 'bg-blue-100'
+    bgColor: 'bg-blue-100',
+    href: '/admin/bookings'
   }, {
     title: 'Pending Bookings',
     value: stats?.pendingBookings || 0,
     icon: Clock,
     color: 'text-amber-600',
-    bgColor: 'bg-amber-100'
+    bgColor: 'bg-amber-100',
+    href: '/admin/bookings'
   }, {
     title: 'Total Revenue',
     value: formatCurrency(stats?.totalRevenue || 0),
     icon: TrendingUp,
     color: 'text-green-600',
-    bgColor: 'bg-green-100'
+    bgColor: 'bg-green-100',
+    href: '/admin/analytics'
   }];
   return <AdminGuard>
       <AdminLayout>
@@ -238,7 +242,10 @@ export default function AdminDashboard() {
           }} transition={{
             delay: index * 0.1
           }}>
-                <Card className="card-organic">
+                <Card 
+                  className="card-organic cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => navigate(stat.href)}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4">
                       <div className={`p-3 rounded-xl ${stat.bgColor}`}>
