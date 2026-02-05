@@ -121,6 +121,14 @@ export default function AdminDashboard() {
   return <AdminGuard>
       <AdminLayout>
         <div className="space-y-8">
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-serif font-medium">Dashboard</h1>
+            <p className="text-muted-foreground">
+              Welcome back! Here's what's happening with your properties.
+            </p>
+          </div>
+
           {/* Quick Actions */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <Card className="card-organic">
@@ -148,14 +156,6 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </motion.div>
-
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-serif font-medium">Dashboard</h1>
-            <p className="text-muted-foreground">
-              Welcome back! Here's what's happening with your properties.
-            </p>
-          </div>
 
           {/* Real-time Activity Strip */}
           <motion.div initial={{
