@@ -121,6 +121,34 @@ export default function AdminDashboard() {
   return <AdminGuard>
       <AdminLayout>
         <div className="space-y-8">
+          {/* Quick Actions */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="card-organic">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Zap className="h-5 w-5 text-primary" />
+                  <p className="font-semibold">Quick Actions</p>
+                </div>
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-3">
+                  {quickActions.map((action) => (
+                    <button
+                      key={action.href}
+                      onClick={() => navigate(action.href)}
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className={`p-3 rounded-xl ${action.bgColor} group-hover:scale-110 transition-transform`}>
+                        <action.icon className={`h-5 w-5 ${action.color}`} />
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground">
+                        {action.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           {/* Header */}
           <div>
             <h1 className="text-3xl font-serif font-medium">Dashboard</h1>
@@ -407,34 +435,6 @@ export default function AdminDashboard() {
                 {(!occupancyMetrics || occupancyMetrics.length === 0) && (
                   <p className="text-sm text-muted-foreground text-center py-4">No occupancy data available</p>
                 )}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Quick Actions */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}>
-            <Card className="card-organic">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Zap className="h-5 w-5 text-primary" />
-                  <p className="font-semibold">Quick Actions</p>
-                </div>
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-3">
-                  {quickActions.map((action) => (
-                    <button
-                      key={action.href}
-                      onClick={() => navigate(action.href)}
-                      className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors group"
-                    >
-                      <div className={`p-3 rounded-xl ${action.bgColor} group-hover:scale-110 transition-transform`}>
-                        <action.icon className={`h-5 w-5 ${action.color}`} />
-                      </div>
-                      <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground">
-                        {action.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
               </CardContent>
             </Card>
           </motion.div>
