@@ -37,7 +37,6 @@ export default function AdminDashboard() {
     data: pmsSyncStatus
   } = usePMSSyncStatus();
   const triggerSync = useTriggerPMSSync();
-
   const pmsLastRun = pmsSyncStatus?.lastRun;
 
   // Revenue comparison: this month vs last month
@@ -294,10 +293,7 @@ export default function AdminDashboard() {
                   </div>
 
                   {pmsLastRun && <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <p className="text-xs text-muted-foreground">Started</p>
-                        <p className="text-sm font-medium">{format(new Date(pmsLastRun.started_at), 'MMM d, HH:mm')}</p>
-                      </div>
+                      
                       <div className="p-3 rounded-lg bg-muted/50">
                         <p className="text-xs text-muted-foreground">Completed</p>
                         <p className="text-sm font-medium">{pmsLastRun.completed_at ? format(new Date(pmsLastRun.completed_at), 'MMM d, HH:mm') : '—'}</p>
