@@ -13,41 +13,63 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
-
 export default function AdminDashboard() {
-  const { format: formatCurrency, formatCompact } = useFormatCurrency();
-  const { data: properties } = useAdminProperties();
-  const { data: stats } = useBookingStats();
-  const { data: recentBookings } = useAdminBookings();
-  const { data: holdsStats } = useCheckoutHoldsStats();
-  const { data: todayActivity } = useTodayActivity();
-  const { data: pmsSyncStatus } = usePMSSyncStatus();
+  const {
+    format: formatCurrency,
+    formatCompact
+  } = useFormatCurrency();
+  const {
+    data: properties
+  } = useAdminProperties();
+  const {
+    data: stats
+  } = useBookingStats();
+  const {
+    data: recentBookings
+  } = useAdminBookings();
+  const {
+    data: holdsStats
+  } = useCheckoutHoldsStats();
+  const {
+    data: todayActivity
+  } = useTodayActivity();
+  const {
+    data: pmsSyncStatus
+  } = usePMSSyncStatus();
   const triggerSync = useTriggerPMSSync();
-  
+
   // Revenue comparison: this month vs last month
   const thisMonthStart = startOfMonth(new Date());
   const thisMonthEnd = endOfMonth(new Date());
   const lastMonthStart = startOfMonth(subMonths(new Date(), 1));
   const lastMonthEnd = endOfMonth(subMonths(new Date(), 1));
-  
-  const { data: thisMonthRevenue } = useRevenueStats({ start: thisMonthStart, end: thisMonthEnd });
-  const { data: lastMonthRevenue } = useRevenueStats({ start: lastMonthStart, end: lastMonthEnd });
-  
+  const {
+    data: thisMonthRevenue
+  } = useRevenueStats({
+    start: thisMonthStart,
+    end: thisMonthEnd
+  });
+  const {
+    data: lastMonthRevenue
+  } = useRevenueStats({
+    start: lastMonthStart,
+    end: lastMonthEnd
+  });
+
   // Enable real-time updates
   useRealtimeBookings();
-
   const handleTriggerSync = async () => {
     try {
       await triggerSync.mutateAsync();
       toast({
         title: 'Sync started',
-        description: 'PMS availability sync has been triggered.',
+        description: 'PMS availability sync has been triggered.'
       });
     } catch (error) {
       toast({
         title: 'Sync failed',
         description: error instanceof Error ? error.message : 'Failed to trigger sync',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
@@ -55,43 +77,33 @@ export default function AdminDashboard() {
   // Use centralized EUR formatter for admin display
 
   // Calculate revenue trend
-  const revenueTrend = thisMonthRevenue && lastMonthRevenue && lastMonthRevenue.totalRevenue > 0
-    ? ((thisMonthRevenue.totalRevenue - lastMonthRevenue.totalRevenue) / lastMonthRevenue.totalRevenue) * 100
-    : 0;
-
-  const statCards = [
-    {
-      title: 'Total Properties',
-      value: properties?.length || 0,
-      icon: Building2,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
-    },
-    {
-      title: 'Total Bookings',
-      value: stats?.totalBookings || 0,
-      icon: Calendar,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-    },
-    {
-      title: 'Pending Bookings',
-      value: stats?.pendingBookings || 0,
-      icon: Clock,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-100',
-    },
-    {
-      title: 'Total Revenue',
-      value: formatCurrency(stats?.totalRevenue || 0),
-      icon: TrendingUp,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-    },
-  ];
-
-  return (
-    <AdminGuard>
+  const revenueTrend = thisMonthRevenue && lastMonthRevenue && lastMonthRevenue.totalRevenue > 0 ? (thisMonthRevenue.totalRevenue - lastMonthRevenue.totalRevenue) / lastMonthRevenue.totalRevenue * 100 : 0;
+  const statCards = [{
+    title: 'Total Properties',
+    value: properties?.length || 0,
+    icon: Building2,
+    color: 'text-primary',
+    bgColor: 'bg-primary/10'
+  }, {
+    title: 'Total Bookings',
+    value: stats?.totalBookings || 0,
+    icon: Calendar,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100'
+  }, {
+    title: 'Pending Bookings',
+    value: stats?.pendingBookings || 0,
+    icon: Clock,
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-100'
+  }, {
+    title: 'Total Revenue',
+    value: formatCurrency(stats?.totalRevenue || 0),
+    icon: TrendingUp,
+    color: 'text-green-600',
+    bgColor: 'bg-green-100'
+  }];
+  return <AdminGuard>
       <AdminLayout>
         <div className="space-y-8">
           {/* Header */}
@@ -103,11 +115,13 @@ export default function AdminDashboard() {
           </div>
 
           {/* Real-time Activity Strip */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4"
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: -10
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Active Checkout Holds */}
             <Card className="border-2 border-dashed border-amber-300 bg-amber-50/50">
               <CardContent className="p-4">
@@ -172,13 +186,15 @@ export default function AdminDashboard() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {statCards.map((stat, index) => (
-              <motion.div
-                key={stat.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
+            {statCards.map((stat, index) => <motion.div key={stat.title} initial={{
+            opacity: 0,
+            y: 20
+          }} animate={{
+            opacity: 1,
+            y: 0
+          }} transition={{
+            delay: index * 0.1
+          }}>
                 <Card className="card-organic">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4">
@@ -194,16 +210,19 @@ export default function AdminDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </div>
 
           {/* Revenue Trend Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
+          <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.4
+        }}>
             <Card className="card-organic bg-gradient-to-br from-primary/5 to-accent/5">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -218,11 +237,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="text-right">
                     <div className={`flex items-center gap-1 ${revenueTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {revenueTrend >= 0 ? (
-                        <ArrowUpRight className="h-5 w-5" />
-                      ) : (
-                        <ArrowDownRight className="h-5 w-5" />
-                      )}
+                      {revenueTrend >= 0 ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
                       <span className="text-lg font-semibold">
                         {Math.abs(revenueTrend).toFixed(1)}%
                       </span>
@@ -233,87 +248,36 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                 </div>
-                {(thisMonthRevenue?.pendingRevenue || 0) > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border/50">
+                {(thisMonthRevenue?.pendingRevenue || 0) > 0 && <div className="mt-4 pt-4 border-t border-border/50">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Pending revenue</span>
                       <span className="font-medium text-amber-600">
                         {formatCurrency(thisMonthRevenue?.pendingRevenue || 0)}
                       </span>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </motion.div>
 
           {/* PMS Sync Status Card */}
-          {pmsSyncStatus?.connection && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <Card className={`card-organic border-2 ${
-                pmsSyncStatus.isHealthy 
-                  ? 'border-green-200 bg-green-50/30' 
-                  : pmsSyncStatus.errorCount > 0 
-                    ? 'border-red-200 bg-red-50/30' 
-                    : 'border-amber-200 bg-amber-50/30'
-              }`}>
+          {pmsSyncStatus?.connection && <motion.div initial={{
+          opacity: 0,
+          y: 20
+        }} animate={{
+          opacity: 1,
+          y: 0
+        }} transition={{
+          delay: 0.5
+        }}>
+              <Card className={`card-organic border-2 ${pmsSyncStatus.isHealthy ? 'border-green-200 bg-green-50/30' : pmsSyncStatus.errorCount > 0 ? 'border-red-200 bg-red-50/30' : 'border-amber-200 bg-amber-50/30'}`}>
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {pmsSyncStatus.isHealthy ? (
-                        <CheckCircle2 className="h-6 w-6 text-green-600" />
-                      ) : pmsSyncStatus.errorCount > 0 ? (
-                        <AlertTriangle className="h-6 w-6 text-red-600" />
-                      ) : (
-                        <Clock className="h-6 w-6 text-amber-600" />
-                      )}
-                      <div>
-                        <p className="font-medium">
-                          {pmsSyncStatus.connection.pms_name} Sync
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {pmsSyncStatus.isHealthy 
-                            ? 'All properties synced successfully' 
-                            : pmsSyncStatus.errorCount > 0 
-                              ? `${pmsSyncStatus.errorCount} sync errors in last 10 runs`
-                              : 'Waiting for first sync'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {pmsSyncStatus.lastRun && (
-                        <div className="text-right text-sm">
-                          <p className="text-muted-foreground">Last sync</p>
-                          <p className="font-medium">
-                            {format(new Date(pmsSyncStatus.lastRun.started_at), 'MMM d, HH:mm')}
-                          </p>
-                        </div>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleTriggerSync}
-                        disabled={triggerSync.isPending}
-                        className="gap-2"
-                      >
-                        <RefreshCw className={`h-4 w-4 ${triggerSync.isPending ? 'animate-spin' : ''}`} />
-                        {triggerSync.isPending ? 'Syncing...' : 'Sync Now'}
-                      </Button>
-                    </div>
-                  </div>
                   
-                  {pmsSyncStatus.lastRun && (
-                    <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-6 text-sm">
+                  
+                  {pmsSyncStatus.lastRun && <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-6 text-sm">
                       <div>
                         <span className="text-muted-foreground">Status: </span>
-                        <Badge 
-                          variant={pmsSyncStatus.lastRun.status === 'success' ? 'default' : 'destructive'}
-                          className={pmsSyncStatus.lastRun.status === 'success' ? 'bg-green-100 text-green-700' : ''}
-                        >
+                        <Badge variant={pmsSyncStatus.lastRun.status === 'success' ? 'default' : 'destructive'} className={pmsSyncStatus.lastRun.status === 'success' ? 'bg-green-100 text-green-700' : ''}>
                           {pmsSyncStatus.lastRun.status}
                         </Badge>
                       </div>
@@ -321,18 +285,14 @@ export default function AdminDashboard() {
                         <span className="text-muted-foreground">Processed: </span>
                         <span className="font-medium">{pmsSyncStatus.lastRun.records_processed || 0}</span>
                       </div>
-                      {(pmsSyncStatus.lastRun.records_failed || 0) > 0 && (
-                        <div>
+                      {(pmsSyncStatus.lastRun.records_failed || 0) > 0 && <div>
                           <span className="text-muted-foreground">Failed: </span>
                           <span className="font-medium text-red-600">{pmsSyncStatus.lastRun.records_failed}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        </div>}
+                    </div>}
                 </CardContent>
               </Card>
-            </motion.div>
-          )}
+            </motion.div>}
 
           {/* Recent Bookings */}
           <Card className="card-organic">
@@ -340,26 +300,13 @@ export default function AdminDashboard() {
               <CardTitle className="font-serif">Recent Bookings</CardTitle>
             </CardHeader>
             <CardContent>
-              {recentBookings && recentBookings.length > 0 ? (
-                <div className="space-y-4">
-                  {recentBookings.slice(0, 5).map((booking) => (
-                    <div
-                      key={booking.id}
-                      className="flex items-center justify-between p-4 bg-muted/50 rounded-xl"
-                    >
+              {recentBookings && recentBookings.length > 0 ? <div className="space-y-4">
+                  {recentBookings.slice(0, 5).map(booking => <div key={booking.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-lg bg-secondary overflow-hidden">
-                          {booking.property?.hero_image_url ? (
-                            <img
-                              src={booking.property.hero_image_url}
-                              alt={booking.property.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
+                          {booking.property?.hero_image_url ? <img src={booking.property.hero_image_url} alt={booking.property.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center">
                               <Building2 className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
+                            </div>}
                         </div>
                         <div>
                           <p className="font-medium">{booking.guest_name}</p>
@@ -377,29 +324,16 @@ export default function AdminDashboard() {
                           {format(new Date(booking.check_out), 'MMM d')}
                         </p>
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          booking.status === 'confirmed'
-                            ? 'bg-green-100 text-green-700'
-                            : booking.status === 'pending'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
-                      >
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${booking.status === 'confirmed' ? 'bg-green-100 text-green-700' : booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
                         {booking.status}
                       </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-8">
+                    </div>)}
+                </div> : <p className="text-muted-foreground text-center py-8">
                   No bookings yet
-                </p>
-              )}
+                </p>}
             </CardContent>
           </Card>
         </div>
       </AdminLayout>
-    </AdminGuard>
-  );
+    </AdminGuard>;
 }
