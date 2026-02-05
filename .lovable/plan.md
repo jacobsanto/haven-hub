@@ -1,60 +1,148 @@
 
-# Fix Website Analytics Edge Function
 
-## Problem Identified
+# Custom Analytics Tracking System
 
-The `website-analytics` edge function is returning 404 errors due to two issues:
+## Overview
 
-1. **Framework Mismatch**: The function uses the Hono framework (`app.post('/')` with `Deno.serve(app.fetch)`), while all other working functions in this project use direct `Deno.serve(async (req) => {...})` pattern.
+Build a first-party analytics tracking system that stores all page views in your database, giving you full control and ownership of your website traffic data. This replaces the mock data currently shown in Website Analytics with real visitor tracking.
 
-2. **Network Requests Failing**: The POST requests from the frontend are failing with "Failed to fetch" which typically indicates either CORS issues or the function not responding correctly.
-
-## Solution
-
-Rewrite the edge function to match the project's established pattern (like `exchange-rates` and `generate-content`).
-
-## Changes Required
-
-### 1. Rewrite `supabase/functions/website-analytics/index.ts`
-
-Replace the Hono-based implementation with the standard pattern:
+## Architecture
 
 ```text
-Before (Hono pattern - NOT WORKING):
-┌─────────────────────────────────────────┐
-│ import { Hono } from '...'              │
-│ const app = new Hono()                  │
-│ app.options('*', ...)                   │
-│ app.post('/', async (c) => {...})       │
-│ Deno.serve(app.fetch)                   │
-└─────────────────────────────────────────┘
-
-After (Standard pattern - WORKING):
-┌─────────────────────────────────────────┐
-│ import { createClient } from '...'      │
-│ Deno.serve(async (req) => {             │
-│   if (req.method === 'OPTIONS') {...}   │
-│   // Handle POST directly               │
-│   return new Response(...)              │
-│ })                                      │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│  User Visits Page                                                                │
+│       ↓                                                                         │
+│  PageLayout renders → usePageTracking hook fires                                │
+│       ↓                                                                         │
+│  Collects: path, title, referrer, device, country (from headers)                │
+│       ↓                                                                         │
+│  Generates session_id (stored in sessionStorage)                                │
+│       ↓                                                                         │
+│  INSERT into page_views table (anonymous, no PII)                               │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Key changes:
-- Remove Hono framework dependency
-- Use `Deno.serve(async (req) => {...})` directly
-- Handle CORS preflight with direct Response
-- Use `await supabase.auth.getUser()` pattern (matching `generate-content` function) instead of `getClaims` for more reliable authentication
-- Return proper `Response` objects with JSON and CORS headers
+## Database Design
 
-### 2. Technical Details
+### New Table: `page_views`
 
-The rewritten function will:
-- Handle OPTIONS preflight requests correctly
-- Verify authentication using `getUser()` (same pattern as generate-content)
-- Check admin role via `user_roles` table
-- Parse request body for date range
-- Return mock analytics data with proper JSON response
-- Include correct CORS headers on all responses
+| Column | Type | Description |
+|--------|------|-------------|
+| id | uuid | Primary key |
+| session_id | text | Anonymous session identifier |
+| path | text | Page path (e.g., `/properties`) |
+| page_title | text | Page title (e.g., "Properties") |
+| referrer | text | Referring URL (if available) |
+| device_type | text | desktop/mobile/tablet |
+| browser | text | Browser name (Chrome, Safari, etc.) |
+| country_code | text | 2-letter country code (from IP lookup) |
+| utm_source | text | UTM source parameter |
+| utm_medium | text | UTM medium parameter |
+| utm_campaign | text | UTM campaign parameter |
+| created_at | timestamp | When the view occurred |
 
-No database schema changes required.
+### RLS Policy
+- **Public INSERT**: Allow anonymous inserts (no auth required)
+- **Admin SELECT**: Only admins can read the data
+
+## Session Tracking Approach
+
+Sessions are identified using:
+1. A random UUID generated on first page load
+2. Stored in `sessionStorage` (clears when tab closes)
+3. No cookies, no PII, fully GDPR-compliant
+
+Bounce rate calculated by:
+- Sessions with only 1 page view = bounce
+- Sessions with 2+ page views = engaged
+
+## Files to Create
+
+### 1. `src/hooks/usePageTracking.ts`
+- Custom hook that fires on every route change
+- Collects page metadata (path, title, referrer)
+- Detects device type from user agent
+- Extracts UTM parameters from URL
+- Generates/retrieves session_id
+- Inserts data into `page_views` table
+
+### 2. Update `src/components/layout/PageLayout.tsx`
+- Import and invoke `usePageTracking()` hook
+- No UI changes, just tracking integration
+
+### 3. Update `supabase/functions/website-analytics/index.ts`
+- Replace mock data generation with real database queries
+- Aggregate page_views by date, path, device, etc.
+- Calculate bounce rate from session analysis
+- Calculate average session duration from session timestamps
+
+## Updated Edge Function Logic
+
+The `website-analytics` function will query the real data:
+
+```text
+Summary Queries:
+├── Total unique sessions → Visitors count
+├── Total page_views count → Page Views
+├── Sessions with 1 view / Total sessions → Bounce Rate
+├── First-to-last view per session → Avg Session Duration
+└── Total views / Total sessions → Pages per Visit
+
+Breakdown Queries:
+├── GROUP BY date → Daily traffic
+├── GROUP BY path → Top pages
+├── GROUP BY device_type → Device breakdown
+├── GROUP BY country_code → Geographic distribution
+└── GROUP BY utm_source → Traffic sources (or 'Direct' if null)
+```
+
+## Privacy Considerations
+
+- No cookies used
+- No PII stored (no names, emails, or IPs)
+- Session IDs are anonymous UUIDs
+- Country derived from IP at insert time (IP not stored)
+- Fully compliant with GDPR/CCPA
+
+## Implementation Order
+
+1. Create `page_views` table with RLS policies
+2. Create `usePageTracking` hook
+3. Integrate hook into `PageLayout`
+4. Update `website-analytics` edge function to query real data
+5. Test end-to-end
+
+## Technical Details
+
+### Device Detection
+```javascript
+const getDeviceType = () => {
+  const ua = navigator.userAgent;
+  if (/tablet|ipad/i.test(ua)) return 'Tablet';
+  if (/mobile|android|iphone/i.test(ua)) return 'Mobile';
+  return 'Desktop';
+};
+```
+
+### Session ID Management
+```javascript
+const getSessionId = () => {
+  let sessionId = sessionStorage.getItem('analytics_session_id');
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    sessionStorage.setItem('analytics_session_id', sessionId);
+  }
+  return sessionId;
+};
+```
+
+### Page Title Mapping
+The hook will use a lookup table to map paths to friendly titles:
+- `/` → "Home"
+- `/properties` → "Properties"
+- `/properties/:slug` → "Property Detail"
+- etc.
+
+### Debouncing
+To prevent duplicate tracking on rapid navigations, the hook will debounce inserts by 100ms.
+
