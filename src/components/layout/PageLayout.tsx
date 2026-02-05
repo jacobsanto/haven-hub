@@ -7,7 +7,7 @@ import { FloatingBookButton } from '@/components/booking/FloatingBookButton';
 import { PromotionalPopup } from '@/components/promotions/PromotionalPopup';
 import { PromotionProvider, usePromotion } from '@/contexts/PromotionContext';
 import { useExitIntent } from '@/hooks/useExitIntent';
-
+import { usePageTracking } from '@/hooks/usePageTracking';
 interface PageLayoutProps {
   children: ReactNode;
   hideFooter?: boolean;
@@ -22,9 +22,11 @@ const pageVariants = {
 function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
   const { activePromotion, triggerPromotion, hasBeenDismissed } = usePromotion();
   
+  // Track page views for analytics
+  usePageTracking();
+  
   // Exit intent with settings from database
   const { showExitIntent, dismiss: dismissExitIntent, settings: exitIntentSettings, isEnabled: exitIntentEnabled } = useExitIntent();
-
   // Check if we should show exit intent OR promotional popup for exit trigger
   const shouldShowExitPromo = activePromotion && 
     (activePromotion.trigger_type === 'exit' || activePromotion.trigger_type === 'both') &&

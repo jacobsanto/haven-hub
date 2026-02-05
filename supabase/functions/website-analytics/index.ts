@@ -5,6 +5,41 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
+// Country code to name mapping
+const COUNTRY_NAMES: Record<string, string> = {
+  'US': 'United States',
+  'GB': 'United Kingdom',
+  'DE': 'Germany',
+  'FR': 'France',
+  'IT': 'Italy',
+  'ES': 'Spain',
+  'NL': 'Netherlands',
+  'AU': 'Australia',
+  'CA': 'Canada',
+  'BR': 'Brazil',
+  'JP': 'Japan',
+  'CN': 'China',
+  'IN': 'India',
+  'KR': 'South Korea',
+  'MX': 'Mexico',
+  'RU': 'Russia',
+  'SE': 'Sweden',
+  'NO': 'Norway',
+  'DK': 'Denmark',
+  'FI': 'Finland',
+  'CH': 'Switzerland',
+  'AT': 'Austria',
+  'BE': 'Belgium',
+  'PT': 'Portugal',
+  'GR': 'Greece',
+  'PL': 'Poland',
+  'CZ': 'Czech Republic',
+  'IE': 'Ireland',
+  'NZ': 'New Zealand',
+  'SG': 'Singapore',
+  'AE': 'United Arab Emirates',
+};
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -22,14 +57,16 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
     
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    // Use anon key with user's auth for RLS check
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     })
 
     // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
     
     if (authError || !user) {
       return new Response(
@@ -39,7 +76,7 @@ Deno.serve(async (req) => {
     }
 
     // Check if user is admin
-    const { data: roleData, error: roleError } = await supabase
+    const { data: roleData, error: roleError } = await supabaseAuth
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -54,7 +91,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json()
-    const { startDate, endDate, granularity = 'daily' } = body
+    const { startDate, endDate } = body
 
     if (!startDate || !endDate) {
       return new Response(
@@ -63,11 +100,30 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Generate mock analytics data
-    const mockData = generateMockAnalytics(startDate, endDate, granularity)
+    // Use service role key for analytics queries (bypasses RLS)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Fetch page views within date range
+    const { data: pageViews, error: pvError } = await supabaseAdmin
+      .from('page_views')
+      .select('*')
+      .gte('created_at', `${startDate}T00:00:00.000Z`)
+      .lte('created_at', `${endDate}T23:59:59.999Z`)
+      .order('created_at', { ascending: true })
+
+    if (pvError) {
+      console.error('Error fetching page views:', pvError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch analytics data' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Process the data
+    const analyticsData = processPageViews(pageViews || [], startDate, endDate)
     
     return new Response(
-      JSON.stringify(mockData),
+      JSON.stringify(analyticsData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
@@ -79,74 +135,186 @@ Deno.serve(async (req) => {
   }
 })
 
-function generateMockAnalytics(startDate: string, endDate: string, _granularity: string) {
+interface PageView {
+  id: string
+  session_id: string
+  path: string
+  page_title: string | null
+  referrer: string | null
+  device_type: string | null
+  browser: string | null
+  country_code: string | null
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
+  created_at: string
+}
+
+function processPageViews(pageViews: PageView[], startDate: string, endDate: string) {
+  const totalPageviews = pageViews.length
+  
+  // Get unique sessions
+  const sessions = new Map<string, PageView[]>()
+  pageViews.forEach(pv => {
+    if (!sessions.has(pv.session_id)) {
+      sessions.set(pv.session_id, [])
+    }
+    sessions.get(pv.session_id)!.push(pv)
+  })
+  
+  const totalVisitors = sessions.size
+  
+  // Calculate bounce rate (sessions with only 1 page view)
+  let bouncedSessions = 0
+  sessions.forEach(views => {
+    if (views.length === 1) bouncedSessions++
+  })
+  const bounceRate = totalVisitors > 0 ? ((bouncedSessions / totalVisitors) * 100).toFixed(1) : '0'
+  
+  // Calculate average session duration
+  let totalDuration = 0
+  let sessionsWithDuration = 0
+  sessions.forEach(views => {
+    if (views.length > 1) {
+      const sortedViews = views.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )
+      const firstView = new Date(sortedViews[0].created_at).getTime()
+      const lastView = new Date(sortedViews[sortedViews.length - 1].created_at).getTime()
+      const duration = (lastView - firstView) / 1000 // in seconds
+      if (duration > 0 && duration < 3600) { // Cap at 1 hour to avoid outliers
+        totalDuration += duration
+        sessionsWithDuration++
+      }
+    }
+  })
+  const avgSessionDuration = sessionsWithDuration > 0 
+    ? Math.round(totalDuration / sessionsWithDuration) 
+    : 0
+  
+  // Pages per visit
+  const pageviewsPerVisit = totalVisitors > 0 
+    ? (totalPageviews / totalVisitors).toFixed(2) 
+    : '0'
+  
+  // Daily breakdown
+  const dailyMap = new Map<string, { visitors: Set<string>, pageviews: number }>()
+  
+  // Initialize all days in range
   const start = new Date(startDate)
   const end = new Date(endDate)
-  const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-  
-  // Generate daily breakdown
-  const dailyData = []
-  for (let i = 0; i < days; i++) {
-    const date = new Date(start)
-    date.setDate(date.getDate() + i)
-    
-    // Simulate realistic traffic patterns
-    const dayOfWeek = date.getDay()
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-    const baseVisitors = isWeekend ? 150 : 200
-    const variance = Math.random() * 100 - 50
-    
-    dailyData.push({
-      date: date.toISOString().split('T')[0],
-      visitors: Math.round(baseVisitors + variance),
-      pageviews: Math.round((baseVisitors + variance) * (2.5 + Math.random())),
-    })
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0]
+    dailyMap.set(dateStr, { visitors: new Set(), pageviews: 0 })
   }
   
-  // Calculate totals
-  const totalVisitors = dailyData.reduce((sum, d) => sum + d.visitors, 0)
-  const totalPageviews = dailyData.reduce((sum, d) => sum + d.pageviews, 0)
+  // Fill in actual data
+  pageViews.forEach(pv => {
+    const dateStr = pv.created_at.split('T')[0]
+    if (dailyMap.has(dateStr)) {
+      const day = dailyMap.get(dateStr)!
+      day.visitors.add(pv.session_id)
+      day.pageviews++
+    }
+  })
+  
+  const daily = Array.from(dailyMap.entries()).map(([date, data]) => ({
+    date,
+    visitors: data.visitors.size,
+    pageviews: data.pageviews,
+  }))
+  
+  // Traffic sources (from UTM or referrer)
+  const sourceMap = new Map<string, Set<string>>()
+  pageViews.forEach(pv => {
+    let source = 'Direct'
+    if (pv.utm_source) {
+      source = pv.utm_source.charAt(0).toUpperCase() + pv.utm_source.slice(1)
+    } else if (pv.referrer) {
+      try {
+        const url = new URL(pv.referrer)
+        if (url.hostname.includes('google')) source = 'Organic Search'
+        else if (url.hostname.includes('facebook') || url.hostname.includes('instagram') || url.hostname.includes('twitter') || url.hostname.includes('linkedin')) source = 'Social'
+        else source = 'Referral'
+      } catch {
+        source = 'Referral'
+      }
+    }
+    if (!sourceMap.has(source)) sourceMap.set(source, new Set())
+    sourceMap.get(source)!.add(pv.session_id)
+  })
+  
+  const sources = Array.from(sourceMap.entries())
+    .map(([source, visitors]) => ({
+      source,
+      visitors: visitors.size,
+      percentage: totalVisitors > 0 ? Math.round((visitors.size / totalVisitors) * 100) : 0,
+    }))
+    .sort((a, b) => b.visitors - a.visitors)
+  
+  // Top pages
+  const pageMap = new Map<string, { path: string, title: string, views: number }>()
+  pageViews.forEach(pv => {
+    if (!pageMap.has(pv.path)) {
+      pageMap.set(pv.path, { path: pv.path, title: pv.page_title || pv.path, views: 0 })
+    }
+    pageMap.get(pv.path)!.views++
+  })
+  
+  const pages = Array.from(pageMap.values())
+    .map(p => ({
+      ...p,
+      percentage: totalPageviews > 0 ? Math.round((p.views / totalPageviews) * 100) : 0,
+    }))
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 10)
+  
+  // Device breakdown
+  const deviceMap = new Map<string, Set<string>>()
+  pageViews.forEach(pv => {
+    const device = pv.device_type || 'Unknown'
+    if (!deviceMap.has(device)) deviceMap.set(device, new Set())
+    deviceMap.get(device)!.add(pv.session_id)
+  })
+  
+  const devices = Array.from(deviceMap.entries())
+    .map(([device, visitors]) => ({
+      device,
+      visitors: visitors.size,
+      percentage: totalVisitors > 0 ? Math.round((visitors.size / totalVisitors) * 100) : 0,
+    }))
+    .sort((a, b) => b.visitors - a.visitors)
+  
+  // Countries (if we have country data)
+  const countryMap = new Map<string, Set<string>>()
+  pageViews.forEach(pv => {
+    if (pv.country_code) {
+      if (!countryMap.has(pv.country_code)) countryMap.set(pv.country_code, new Set())
+      countryMap.get(pv.country_code)!.add(pv.session_id)
+    }
+  })
+  
+  const countries = Array.from(countryMap.entries())
+    .map(([code, visitors]) => ({
+      country: COUNTRY_NAMES[code] || code,
+      code,
+      visitors: visitors.size,
+    }))
+    .sort((a, b) => b.visitors - a.visitors)
+    .slice(0, 10)
   
   return {
     summary: {
       visitors: totalVisitors,
       pageviews: totalPageviews,
-      pageviewsPerVisit: totalVisitors > 0 ? (totalPageviews / totalVisitors).toFixed(2) : '0',
-      bounceRate: (35 + Math.random() * 15).toFixed(1),
-      avgSessionDuration: Math.round(120 + Math.random() * 180),
+      pageviewsPerVisit,
+      bounceRate,
+      avgSessionDuration,
     },
-    daily: dailyData,
-    sources: [
-      { source: 'Direct', visitors: Math.round(totalVisitors * 0.35), percentage: 35 },
-      { source: 'Organic Search', visitors: Math.round(totalVisitors * 0.30), percentage: 30 },
-      { source: 'Social', visitors: Math.round(totalVisitors * 0.15), percentage: 15 },
-      { source: 'Referral', visitors: Math.round(totalVisitors * 0.12), percentage: 12 },
-      { source: 'Email', visitors: Math.round(totalVisitors * 0.08), percentage: 8 },
-    ],
-    pages: [
-      { path: '/', title: 'Home', views: Math.round(totalPageviews * 0.25), percentage: 25 },
-      { path: '/properties', title: 'Properties', views: Math.round(totalPageviews * 0.20), percentage: 20 },
-      { path: '/destinations', title: 'Destinations', views: Math.round(totalPageviews * 0.15), percentage: 15 },
-      { path: '/blog', title: 'Blog', views: Math.round(totalPageviews * 0.12), percentage: 12 },
-      { path: '/experiences', title: 'Experiences', views: Math.round(totalPageviews * 0.10), percentage: 10 },
-      { path: '/about', title: 'About', views: Math.round(totalPageviews * 0.08), percentage: 8 },
-      { path: '/contact', title: 'Contact', views: Math.round(totalPageviews * 0.05), percentage: 5 },
-      { path: '/checkout', title: 'Checkout', views: Math.round(totalPageviews * 0.05), percentage: 5 },
-    ],
-    devices: [
-      { device: 'Desktop', visitors: Math.round(totalVisitors * 0.55), percentage: 55 },
-      { device: 'Mobile', visitors: Math.round(totalVisitors * 0.38), percentage: 38 },
-      { device: 'Tablet', visitors: Math.round(totalVisitors * 0.07), percentage: 7 },
-    ],
-    countries: [
-      { country: 'United States', code: 'US', visitors: Math.round(totalVisitors * 0.25) },
-      { country: 'United Kingdom', code: 'GB', visitors: Math.round(totalVisitors * 0.15) },
-      { country: 'Germany', code: 'DE', visitors: Math.round(totalVisitors * 0.12) },
-      { country: 'France', code: 'FR', visitors: Math.round(totalVisitors * 0.10) },
-      { country: 'Italy', code: 'IT', visitors: Math.round(totalVisitors * 0.08) },
-      { country: 'Spain', code: 'ES', visitors: Math.round(totalVisitors * 0.06) },
-      { country: 'Netherlands', code: 'NL', visitors: Math.round(totalVisitors * 0.05) },
-      { country: 'Australia', code: 'AU', visitors: Math.round(totalVisitors * 0.04) },
-    ],
+    daily,
+    sources,
+    pages,
+    devices,
+    countries,
   }
 }
