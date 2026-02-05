@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Building2, Calendar, TrendingUp, Clock, ArrowUpRight, ArrowDownRight, Timer, LogIn, LogOut, Sparkles, RefreshCw, AlertTriangle, CheckCircle2, CreditCard, Mail, BarChart3 } from 'lucide-react';
+import { Building2, Calendar, TrendingUp, Clock, ArrowUpRight, ArrowDownRight, Timer, LogIn, LogOut, Sparkles, RefreshCw, AlertTriangle, CheckCircle2, CreditCard, Mail, BarChart3, Settings, Star, FileText, Package, Tag, Receipt, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useAdminProperties } from '@/hooks/useProperties';
@@ -15,7 +16,21 @@ import { format, startOfMonth, endOfMonth, subMonths, subDays, isAfter } from 'd
 import { Badge } from '@/components/ui/badge';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 
+const quickActions = [
+  { label: 'Properties', icon: Building2, href: '/admin/properties', color: 'text-primary', bgColor: 'bg-primary/10' },
+  { label: 'Bookings', icon: Calendar, href: '/admin/bookings', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+  { label: 'Promotions', icon: Tag, href: '/admin/promotions', color: 'text-amber-600', bgColor: 'bg-amber-100' },
+  { label: 'Experiences', icon: Star, href: '/admin/experiences', color: 'text-purple-600', bgColor: 'bg-purple-100' },
+  { label: 'Blog', icon: FileText, href: '/admin/blog', color: 'text-green-600', bgColor: 'bg-green-100' },
+  { label: 'Analytics', icon: TrendingUp, href: '/admin/analytics', color: 'text-indigo-600', bgColor: 'bg-indigo-100' },
+  { label: 'Add-ons', icon: Package, href: '/admin/addons', color: 'text-pink-600', bgColor: 'bg-pink-100' },
+  { label: 'Settings', icon: Settings, href: '/admin/settings', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  { label: 'Newsletter', icon: Mail, href: '/admin/newsletter', color: 'text-violet-600', bgColor: 'bg-violet-100' },
+  { label: 'Fees', icon: Receipt, href: '/admin/fees', color: 'text-teal-600', bgColor: 'bg-teal-100' },
+];
+
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const {
     format: formatCurrency,
     formatCompact
@@ -392,6 +407,34 @@ export default function AdminDashboard() {
                 {(!occupancyMetrics || occupancyMetrics.length === 0) && (
                   <p className="text-sm text-muted-foreground text-center py-4">No occupancy data available</p>
                 )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Quick Actions */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}>
+            <Card className="card-organic">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Zap className="h-5 w-5 text-primary" />
+                  <p className="font-semibold">Quick Actions</p>
+                </div>
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-3">
+                  {quickActions.map((action) => (
+                    <button
+                      key={action.href}
+                      onClick={() => navigate(action.href)}
+                      className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors group"
+                    >
+                      <div className={`p-3 rounded-xl ${action.bgColor} group-hover:scale-110 transition-transform`}>
+                        <action.icon className={`h-5 w-5 ${action.color}`} />
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground">
+                        {action.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </motion.div>
