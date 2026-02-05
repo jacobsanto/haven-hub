@@ -1,244 +1,126 @@
 
-# Universal Currency Settings Widget in Admin Dashboard
 
-## Overview
+# Replace PMS Sync Card with Alternative Dashboard Widget
 
-Create a centralized **Currency Settings** tab in the Admin Settings page that allows administrators to configure the base currency for the entire platform. This setting will be stored in the database and synced across the admin dashboard, frontend display, and all pricing logic.
+## Current Situation
 
-## Current Architecture
+The PMS Sync Status Card (lines 264-319 in `AdminDashboard.tsx`) displays:
+- Connection health status
+- Last sync run details
+- Processed/failed records count
+- Manual sync trigger button
 
-| Component | Current State |
-|-----------|---------------|
-| Database | Prices stored in EUR (hardcoded assumption) |
-| Admin Dashboard | Uses `formatEuro()` from `lib/format-currency.ts` |
-| Frontend | Uses `CurrencyContext` with EUR as hardcoded `BASE_CURRENCY` |
-| Types | `src/types/currency.ts` exports `BASE_CURRENCY = 'EUR'` |
-| Stripe | Charges in EUR |
+Since PMS sync functionality is no longer in use, this card should be replaced with something more useful.
 
-## Solution: Database-Driven Base Currency
+## Replacement Options
 
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                  UNIVERSAL CURRENCY SETTINGS                        │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   DATABASE (brand_settings table)                                   │
-│   ┌─────────────────────────────────────────────────────────────┐  │
-│   │ base_currency: 'EUR'  ←── Single source of truth            │  │
-│   └─────────────────────────────────────────────────────────────┘  │
-│               ↓                                                     │
-│   ┌───────────────────────────────────────────────────────────────┐│
-│   │                    BrandContext                               ││
-│   │  • Fetches base_currency from brand_settings                  ││
-│   │  • Provides baseCurrency to entire app                        ││
-│   └───────────────────────────────────────────────────────────────┘│
-│         ↓                               ↓                          │
-│   ADMIN DASHBOARD                 FRONTEND (Guest Display)         │
-│   ┌─────────────────────┐        ┌─────────────────────────┐       │
-│   │ formatBaseCurrency()│        │ CurrencyContext         │       │
-│   │ Uses baseCurrency   │        │ • Base: from BrandContext│      │
-│   │ from BrandContext   │        │ • Guest can convert to  │       │
-│   │                     │        │   other currencies      │       │
-│   └─────────────────────┘        └─────────────────────────┘       │
-│                                                                     │
-│   ADMIN SETTINGS                                                    │
-│   ┌─────────────────────────────────────────────────────────────┐  │
-│   │ NEW TAB: Currency                                           │  │
-│   │ • Select base currency (EUR, USD, GBP, CHF, AUD, CAD)       │  │
-│   │ • Preview formatting                                         │  │
-│   │ • Currency symbol display options                            │  │
-│   └─────────────────────────────────────────────────────────────┘  │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+Here are the best alternatives based on the available data sources in your system:
 
-## Technical Implementation
+| Option | Description | Data Source | Value |
+|--------|-------------|-------------|-------|
+| **A. Payment Health** | Shows Stripe connectivity status, last successful payment, any issues | `useStripeHealth` | Critical for operations |
+| **B. Occupancy Overview** | Shows occupancy rates across all properties for current month | `useOccupancyMetrics` | Key performance indicator |
+| **C. Enquiries Summary** | Shows pending experience enquiries needing response | `useExperienceEnquiries` | Action-oriented |
+| **D. Newsletter Growth** | Shows subscriber count and recent signups | `useNewsletterSubscribers` | Marketing insight |
+| **E. Quick Actions** | Links to common admin tasks (add property, view bookings, etc.) | N/A (static) | Productivity boost |
+| **F. Remove entirely** | Simply remove the card, dashboard has enough content | N/A | Cleaner UI |
 
-### 1. Database Schema Update
+---
 
-Add `base_currency` column to the existing `brand_settings` table:
+## Recommended: Option A - Payment Health Card
 
-```sql
-ALTER TABLE brand_settings
-ADD COLUMN base_currency TEXT NOT NULL DEFAULT 'EUR';
-```
-
-### 2. Update BrandSettings Types & Hook
-
-Extend `useBrandSettings.ts`:
-
-```typescript
-export interface BrandSettings {
-  // ... existing fields ...
-  base_currency: SupportedCurrency;  // NEW
-}
-
-export const defaultBrandSettings = {
-  // ... existing defaults ...
-  base_currency: 'EUR' as SupportedCurrency,  // NEW
-};
-```
-
-### 3. Create Currency Settings Tab
-
-Add a fourth tab to `AdminSettings.tsx`:
+Since this is an **operational booking platform**, payment health is the most critical replacement. It tells admins at a glance whether guests can successfully complete bookings.
 
 ```text
-┌────────────────────────────────────────────────────────────────┐
-│ [Identity] [Colors] [Typography] [Currency]  ← NEW TAB         │
-├────────────────────────────────────────────────────────────────┤
-│                                                                │
-│  Currency Settings                                             │
-│  Configure the base currency for all pricing                   │
-│                                                                │
-│  ┌──────────────────────────────────────────────────────────┐ │
-│  │  Base Currency                                           │ │
-│  │  ┌──────────────────────────────────────────────┐       │ │
-│  │  │ EUR € - Euro                              ▼  │       │ │
-│  │  └──────────────────────────────────────────────┘       │ │
-│  │                                                          │ │
-│  │  This currency is used for:                              │ │
-│  │  • All property pricing in the database                  │ │
-│  │  • Payment processing via Stripe                         │ │
-│  │  • Admin dashboard displays                              │ │
-│  │                                                          │ │
-│  │  Guests can still view prices in other currencies,       │ │
-│  │  but payments will be charged in the base currency.      │ │
-│  └──────────────────────────────────────────────────────────┘ │
-│                                                                │
-│  Preview                                                       │
-│  ┌──────────────────────────────────────────────────────────┐ │
-│  │  €1,234.00  |  €500/night  |  €10,500 total             │ │
-│  └──────────────────────────────────────────────────────────┘ │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│  ✓  Payment System                          [Check Now]        │
+│                                                                 │
+│  Status: Healthy                                                │
+│  Stripe connected and processing payments normally             │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ Stripe.js    │  │ Edge Function │  │ Last Check   │          │
+│  │ ✓ Loaded     │  │ ✓ Reachable   │  │ 2 min ago    │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 4. Update BrandContext
+---
 
-Extend `BrandContext.tsx` to expose `baseCurrency`:
+## Alternative: Option B - Occupancy Overview Card
 
-```typescript
-interface BrandContextValue {
-  // ... existing fields ...
-  baseCurrency: SupportedCurrency;  // NEW
-}
+If payment health feels redundant (Stripe issues are rare), an occupancy summary provides valuable operational insight:
 
-const value: BrandContextValue = {
-  // ... existing values ...
-  baseCurrency: settings?.base_currency ?? 'EUR',
-};
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  📊  This Month's Occupancy                                     │
+│                                                                 │
+│  Average: 72%                                                   │
+│                                                                 │
+│  ┌──────────────────┐  ┌──────────────────┐                    │
+│  │ Villa Amalfi     │  │ Tuscan Estate    │                    │
+│  │ ████████░░ 85%   │  │ ██████░░░░ 64%   │                    │
+│  └──────────────────┘  └──────────────────┘                    │
+│  ┌──────────────────┐  ┌──────────────────┐                    │
+│  │ Santorini Retreat│  │ Provence Manor   │                    │
+│  │ ███████░░░ 78%   │  │ █████░░░░░ 58%   │                    │
+│  └──────────────────┘  └──────────────────┘                    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 5. Update CurrencyContext
+---
 
-Modify `CurrencyContext.tsx` to read base currency from BrandContext:
+## Implementation Plan
 
-```typescript
-import { useBrand } from '@/contexts/BrandContext';
+### For Option A (Payment Health):
 
-export function CurrencyProvider({ children }) {
-  const { baseCurrency } = useBrand();  // Get from brand settings
-  
-  // Use baseCurrency instead of hardcoded 'EUR'
-  const formatPrice = useCallback((amount: number): FormattedPrice => {
-    // Format using baseCurrency as the "original" currency
-    // Convert from baseCurrency to selectedCurrency
-  }, [baseCurrency, selectedCurrency, exchangeRates]);
-}
-```
+**Files to Modify:**
+| File | Change |
+|------|--------|
+| `src/pages/admin/AdminDashboard.tsx` | Replace PMS Sync card with Payment Health card |
 
-### 6. Update Admin Currency Formatter
+**Changes:**
+1. Remove `usePMSSyncStatus` and `useTriggerPMSSync` imports
+2. Remove `pmsSyncStatus`, `pmsLastRun`, and `handleTriggerSync` references
+3. Add `useStripeHealth` import
+4. Replace the PMS Sync Card JSX (lines 264-319) with a Payment Health Card that shows:
+   - Overall health status (healthy/degraded/unhealthy)
+   - Stripe.js load status
+   - Edge function reachability
+   - Last checked timestamp
+   - "Check Now" button to refresh
 
-Modify `lib/format-currency.ts` to support dynamic base currency:
+### For Option B (Occupancy Overview):
 
-```typescript
-import { useBrand } from '@/contexts/BrandContext';
+**Files to Modify:**
+| File | Change |
+|------|--------|
+| `src/pages/admin/AdminDashboard.tsx` | Replace PMS Sync card with Occupancy card |
 
-// For use in React components
-export function useFormatCurrency() {
-  const { baseCurrency } = useBrand();
-  
-  const format = useCallback((amount: number, options?) => {
-    const currencyInfo = SUPPORTED_CURRENCIES.find(c => c.code === baseCurrency);
-    return new Intl.NumberFormat(currencyInfo?.locale || 'en-US', {
-      style: 'currency',
-      currency: baseCurrency,
-      // ...options
-    }).format(amount);
-  }, [baseCurrency]);
-  
-  return { format, formatCompact };
-}
+**Changes:**
+1. Remove PMS-related imports and state
+2. Add `useOccupancyMetrics` import from `useAdminAnalytics`
+3. Replace the PMS Sync Card JSX with an Occupancy Overview showing:
+   - Average occupancy percentage
+   - Mini progress bars for each property
+   - Color coding (green >70%, amber 40-70%, red <40%)
 
-// Keep formatEuro for backward compatibility or legacy uses
-export function formatEuro(amount: number, options?) { /* ... */ }
-```
+### For Option F (Remove Entirely):
 
-### 7. Update Exchange Rates Edge Function
+Simply delete lines 264-319 and remove unused imports. The dashboard already has:
+- Real-time activity strip (4 cards)
+- Stats grid (4 cards)
+- Revenue trend card
+- Recent bookings list
 
-Modify `exchange-rates/index.ts` to accept a dynamic base currency:
+---
 
-```typescript
-// Fetch rates with dynamic base
-const BASE = baseCurrency || 'EUR';
-const response = await fetch(
-  `https://api.frankfurter.app/latest?from=${BASE}`
-);
-```
+## My Recommendation
 
-## Files to Modify
-
-### Database
-| Action | Details |
-|--------|---------|
-| Migration | Add `base_currency` column to `brand_settings` |
-
-### New Files
-| File | Purpose |
-|------|---------|
-| `src/components/admin/CurrencySettingsCard.tsx` | Currency settings UI card for admin |
-| `src/hooks/useFormatCurrency.ts` | React hook for dynamic currency formatting |
-
-### Modified Files
-| File | Changes |
-|------|---------|
-| `src/hooks/useBrandSettings.ts` | Add `base_currency` to interface and defaults |
-| `src/contexts/BrandContext.tsx` | Expose `baseCurrency` from settings |
-| `src/contexts/CurrencyContext.tsx` | Use `baseCurrency` from BrandContext instead of hardcoded EUR |
-| `src/pages/admin/AdminSettings.tsx` | Add Currency tab with selector |
-| `src/lib/format-currency.ts` | Add dynamic formatting option |
-| `src/types/currency.ts` | Remove hardcoded `BASE_CURRENCY` constant |
-| `supabase/functions/exchange-rates/index.ts` | Support dynamic base currency parameter |
-
-## Implementation Order
-
-1. **Database Migration**: Add `base_currency` column to `brand_settings`
-2. **Update Types**: Extend `BrandSettings` interface and defaults
-3. **Update BrandContext**: Expose `baseCurrency` value
-4. **Create CurrencySettingsCard**: Build the admin UI component
-5. **Add Currency Tab**: Integrate into AdminSettings page
-6. **Update CurrencyContext**: Read base from BrandContext
-7. **Create useFormatCurrency hook**: Dynamic admin formatting
-8. **Update format-currency.ts**: Add dynamic formatting support
-9. **Update Exchange Rates**: Support dynamic base parameter
-10. **Test full sync**: Verify changes propagate everywhere
-
-## User Experience
-
-After implementation:
-1. Admin goes to **Settings > Currency** tab
-2. Selects base currency (e.g., USD)
-3. Clicks **Save Changes**
-4. Immediately:
-   - Admin dashboard shows prices in USD
-   - Frontend shows USD as base (guests can still convert)
-   - Payment processing uses USD
-   - Exchange rates recalculate relative to USD
-
-## Notes
-
-- This change is **display and configuration only** for the base currency
-- Existing EUR prices in database would need manual conversion if base currency changes (out of scope for this implementation)
-- Stripe must be configured to accept the selected currency
-- Exchange rate API supports all listed currencies as base
+**Go with Option A (Payment Health)** because:
+1. It's operationally critical - you need to know if payments work
+2. It replaces a "system health" card with another "system health" card (consistent purpose)
+3. The hook already exists (`useStripeHealth`) - minimal new code needed
+4. Fits the visual design of the current PMS Sync card
+Also below that, add Newsletter Growth** | Shows subscriber count and recent signups | `useNewsletterSubscribers` | Marketing insight |
+Also below Newsletter Growth, **(Occupancy)** would be the best alternative.
