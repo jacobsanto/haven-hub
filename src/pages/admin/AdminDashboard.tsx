@@ -136,22 +136,22 @@ export default function AdminDashboard() {
           {/* Quick Actions */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <Card className="card-organic">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Zap className="h-5 w-5 text-primary" />
-                  <p className="font-semibold">Quick Actions</p>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-semibold">Quick Actions</p>
                 </div>
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-3">
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                   {quickActions.map((action) => (
                     <button
                       key={action.href}
                       onClick={() => navigate(action.href)}
-                      className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors group"
+                      className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-muted/50 transition-colors group"
                     >
-                      <div className={`p-3 rounded-xl ${action.bgColor} group-hover:scale-110 transition-transform`}>
-                        <action.icon className={`h-5 w-5 ${action.color}`} />
+                      <div className={`p-2 rounded-lg ${action.bgColor} group-hover:scale-110 transition-transform`}>
+                        <action.icon className={`h-4 w-4 ${action.color}`} />
                       </div>
-                      <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground">
+                      <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground">
                         {action.label}
                       </span>
                     </button>
