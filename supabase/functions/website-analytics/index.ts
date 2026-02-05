@@ -1,4 +1,3 @@
-import { Hono } from 'https://deno.land/x/hono@v4.0.0/mod.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const corsHeaders = {
@@ -6,19 +5,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
-const app = new Hono()
+Deno.serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
-// Handle CORS preflight
-app.options('*', (c) => {
-  return c.json({}, { headers: corsHeaders })
-})
-
-app.post('/', async (c) => {
   try {
     // Verify user is authenticated and is an admin
-    const authHeader = c.req.header('Authorization')
+    const authHeader = req.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      return c.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -28,51 +28,58 @@ app.post('/', async (c) => {
       global: { headers: { Authorization: authHeader } }
     })
 
-    const token = authHeader.replace('Bearer ', '')
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token)
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    if (claimsError || !claimsData?.claims) {
-      return c.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    const userId = claimsData.claims.sub
-    
     // Check if user is admin
     const { data: roleData, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .eq('role', 'admin')
       .single()
 
     if (roleError || !roleData) {
-      return c.json({ error: 'Forbidden: Admin access required' }, { status: 403, headers: corsHeaders })
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    const body = await c.req.json()
+    const body = await req.json()
     const { startDate, endDate, granularity = 'daily' } = body
 
     if (!startDate || !endDate) {
-      return c.json({ error: 'startDate and endDate are required' }, { status: 400, headers: corsHeaders })
+      return new Response(
+        JSON.stringify({ error: 'startDate and endDate are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // For now, return mock analytics data since the actual Lovable Cloud analytics API
-    // would need to be called from internal infrastructure.
-    // This provides a realistic data structure that matches the expected format.
-    
+    // Generate mock analytics data
     const mockData = generateMockAnalytics(startDate, endDate, granularity)
     
-    return c.json(mockData, { headers: corsHeaders })
+    return new Response(
+      JSON.stringify(mockData),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
     console.error('Website analytics error:', error)
-    return c.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500, headers: corsHeaders }
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
 
-function generateMockAnalytics(startDate: string, endDate: string, granularity: string) {
+function generateMockAnalytics(startDate: string, endDate: string, _granularity: string) {
   const start = new Date(startDate)
   const end = new Date(endDate)
   const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
@@ -106,7 +113,7 @@ function generateMockAnalytics(startDate: string, endDate: string, granularity: 
       pageviews: totalPageviews,
       pageviewsPerVisit: totalVisitors > 0 ? (totalPageviews / totalVisitors).toFixed(2) : '0',
       bounceRate: (35 + Math.random() * 15).toFixed(1),
-      avgSessionDuration: Math.round(120 + Math.random() * 180), // seconds
+      avgSessionDuration: Math.round(120 + Math.random() * 180),
     },
     daily: dailyData,
     sources: [
@@ -143,5 +150,3 @@ function generateMockAnalytics(startDate: string, endDate: string, granularity: 
     ],
   }
 }
-
-Deno.serve(app.fetch)
