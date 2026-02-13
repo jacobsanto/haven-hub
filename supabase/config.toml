@@ -18,7 +18,7 @@ verify_jwt = false
 [functions.scheduled-posts-cron]
 verify_jwt = false
 
-[functions.create-payment-intent]
+[functions.create-checkout-session]
 verify_jwt = false
 
 [functions.confirm-payment]

@@ -64,7 +64,7 @@ export function useStripeHealth() {
 
     try {
       // Check 2: Can we reach the edge function?
-      const healthCheckPromise = supabase.functions.invoke('create-payment-intent', {
+      const healthCheckPromise = supabase.functions.invoke('create-checkout-session', {
         body: { healthCheck: true },
       });
       
@@ -72,10 +72,17 @@ export function useStripeHealth() {
         setTimeout(() => resolve({ data: null, error: new Error('Edge function timeout') }), HEALTH_CHECK_TIMEOUT_MS)
       );
 
-      const { data, error: funcError } = await Promise.race([healthCheckPromise, timeoutPromise]);
+      const result = await Promise.race([healthCheckPromise, timeoutPromise]);
       
-      // Check for successful health response or function reachability
-      edgeFunctionReachable = !funcError && data?.healthy === true;
+      // Any response from the function (even validation errors) proves reachability.
+      // Only network-level failures (timeouts, unreachable) mean it's down.
+      const funcError = result.error;
+      const isNetworkError = funcError && (
+        funcError.message === 'Edge function timeout' ||
+        funcError.message?.includes('Failed to send a request') ||
+        funcError.message?.includes('Failed to fetch')
+      );
+      edgeFunctionReachable = !isNetworkError;
       
       if (!edgeFunctionReachable && !error) {
         error = 'Payment service temporarily unavailable';
