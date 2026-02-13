@@ -15,6 +15,14 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
+
+    // Health check for Stripe connectivity verification
+    if (body.healthCheck) {
+      return new Response(
+        JSON.stringify({ healthy: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     
     const {
       propertyId,
