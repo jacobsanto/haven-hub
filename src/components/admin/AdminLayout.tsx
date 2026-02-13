@@ -27,6 +27,7 @@ import {
   DollarSign,
   Upload,
   Megaphone,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -104,6 +105,7 @@ const navSections: NavSection[] = [
     items: [
       { href: '/admin/pms', icon: Activity, label: 'PMS Health' },
       { href: '/admin/analytics', icon: TrendingUp, label: 'Analytics' },
+      { href: '/admin/user-roles', icon: Shield, label: 'User Roles' },
       { href: '/admin/settings', icon: Settings, label: 'Settings' },
     ],
   },
