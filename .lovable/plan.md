@@ -1,148 +1,34 @@
 
+# Fix: Stripe Health Check - Broken Edge Function Reference
 
-# Custom Analytics Tracking System
+## Problem
 
-## Overview
+The admin dashboard's **Payment System** health widget always shows "Edge Function: Unreachable" because `useStripeHealth.ts` calls a non-existent `create-payment-intent` edge function, producing 404 errors on every dashboard load.
 
-Build a first-party analytics tracking system that stores all page views in your database, giving you full control and ownership of your website traffic data. This replaces the mock data currently shown in Website Analytics with real visitor tracking.
+## Root Cause
 
-## Architecture
+The hook references `create-payment-intent` but the actual payment function is named `create-checkout-session`.
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│  User Visits Page                                                                │
-│       ↓                                                                         │
-│  PageLayout renders → usePageTracking hook fires                                │
-│       ↓                                                                         │
-│  Collects: path, title, referrer, device, country (from headers)                │
-│       ↓                                                                         │
-│  Generates session_id (stored in sessionStorage)                                │
-│       ↓                                                                         │
-│  INSERT into page_views table (anonymous, no PII)                               │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
+## Fix
 
-## Database Design
+### File: `src/hooks/useStripeHealth.ts`
 
-### New Table: `page_views`
+Update the edge function name from `create-payment-intent` to `create-checkout-session`, and adjust the health check body to match what that function expects. Since `create-checkout-session` does not have a dedicated health check mode, the approach will be:
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| session_id | text | Anonymous session identifier |
-| path | text | Page path (e.g., `/properties`) |
-| page_title | text | Page title (e.g., "Properties") |
-| referrer | text | Referring URL (if available) |
-| device_type | text | desktop/mobile/tablet |
-| browser | text | Browser name (Chrome, Safari, etc.) |
-| country_code | text | 2-letter country code (from IP lookup) |
-| utm_source | text | UTM source parameter |
-| utm_medium | text | UTM medium parameter |
-| utm_campaign | text | UTM campaign parameter |
-| created_at | timestamp | When the view occurred |
+- Send a request to `create-checkout-session` with a `healthCheck: true` flag
+- The function will attempt to parse the body and likely return an error (missing required fields), but the fact that it responds (even with an error) proves the edge function is reachable
+- Treat any non-network response (including validation errors) as "reachable"
 
-### RLS Policy
-- **Public INSERT**: Allow anonymous inserts (no auth required)
-- **Admin SELECT**: Only admins can read the data
+Specifically:
+- Change `'create-payment-intent'` to `'create-checkout-session'`
+- Update the reachability check logic: if the function responds at all (even with a business logic error), mark `edgeFunctionReachable = true`. Only network-level failures (timeouts, unreachable) should mark it as unreachable.
 
-## Session Tracking Approach
+## Verification Results
 
-Sessions are identified using:
-1. A random UUID generated on first page load
-2. Stored in `sessionStorage` (clears when tab closes)
-3. No cookies, no PII, fully GDPR-compliant
-
-Bounce rate calculated by:
-- Sessions with only 1 page view = bounce
-- Sessions with 2+ page views = engaged
-
-## Files to Create
-
-### 1. `src/hooks/usePageTracking.ts`
-- Custom hook that fires on every route change
-- Collects page metadata (path, title, referrer)
-- Detects device type from user agent
-- Extracts UTM parameters from URL
-- Generates/retrieves session_id
-- Inserts data into `page_views` table
-
-### 2. Update `src/components/layout/PageLayout.tsx`
-- Import and invoke `usePageTracking()` hook
-- No UI changes, just tracking integration
-
-### 3. Update `supabase/functions/website-analytics/index.ts`
-- Replace mock data generation with real database queries
-- Aggregate page_views by date, path, device, etc.
-- Calculate bounce rate from session analysis
-- Calculate average session duration from session timestamps
-
-## Updated Edge Function Logic
-
-The `website-analytics` function will query the real data:
-
-```text
-Summary Queries:
-├── Total unique sessions → Visitors count
-├── Total page_views count → Page Views
-├── Sessions with 1 view / Total sessions → Bounce Rate
-├── First-to-last view per session → Avg Session Duration
-└── Total views / Total sessions → Pages per Visit
-
-Breakdown Queries:
-├── GROUP BY date → Daily traffic
-├── GROUP BY path → Top pages
-├── GROUP BY device_type → Device breakdown
-├── GROUP BY country_code → Geographic distribution
-└── GROUP BY utm_source → Traffic sources (or 'Direct' if null)
-```
-
-## Privacy Considerations
-
-- No cookies used
-- No PII stored (no names, emails, or IPs)
-- Session IDs are anonymous UUIDs
-- Country derived from IP at insert time (IP not stored)
-- Fully compliant with GDPR/CCPA
-
-## Implementation Order
-
-1. Create `page_views` table with RLS policies
-2. Create `usePageTracking` hook
-3. Integrate hook into `PageLayout`
-4. Update `website-analytics` edge function to query real data
-5. Test end-to-end
-
-## Technical Details
-
-### Device Detection
-```javascript
-const getDeviceType = () => {
-  const ua = navigator.userAgent;
-  if (/tablet|ipad/i.test(ua)) return 'Tablet';
-  if (/mobile|android|iphone/i.test(ua)) return 'Mobile';
-  return 'Desktop';
-};
-```
-
-### Session ID Management
-```javascript
-const getSessionId = () => {
-  let sessionId = sessionStorage.getItem('analytics_session_id');
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    sessionStorage.setItem('analytics_session_id', sessionId);
-  }
-  return sessionId;
-};
-```
-
-### Page Title Mapping
-The hook will use a lookup table to map paths to friendly titles:
-- `/` → "Home"
-- `/properties` → "Properties"
-- `/properties/:slug` → "Property Detail"
-- etc.
-
-### Debouncing
-To prevent duplicate tracking on rapid navigations, the hook will debounce inserts by 100ms.
-
+All other pages and functions checked and working:
+- Homepage: hero search, navigation, all sections render
+- Properties, Destinations, Experiences, Blog, About, Contact pages: all functional
+- Admin sidebar: all 20+ links match valid routes in App.tsx
+- Admin Analytics: both Revenue and Website tabs working with real data
+- All other edge function references (7 functions) point to existing deployed functions
+- No other console errors found beyond this single 404
