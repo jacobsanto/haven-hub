@@ -39,13 +39,11 @@ export function useAvailabilityCalendar(
         .gte('date', startDate)
         .lte('date', endDate);
 
-      // Check for active checkout holds (other than our own session)
-      const { data: holds } = await supabase
-        .from('checkout_holds')
-        .select('*')
-        .eq('property_id', propertyId)
-        .eq('released', false)
-        .gt('expires_at', new Date().toISOString());
+      // Check for active checkout holds via server-side function
+      const { data: holdsResponse } = await supabase.functions.invoke('check-holds', {
+        body: { propertyId, checkIn: startDate, checkOut: endDate },
+      });
+      const holds = holdsResponse?.holds || [];
 
       // Get confirmed/pending bookings that may not yet be in availability table
       const { data: directBookings } = await supabase
@@ -187,13 +185,11 @@ export function useCheckDateRangeAvailability(
         .in('status', ['pending', 'confirmed'])
         .or(`check_in.lt.${checkOut},check_out.gt.${checkIn}`);
 
-      // Check active holds (excluding expired)
-      const { data: activeHolds } = await supabase
-        .from('checkout_holds')
-        .select('check_in, check_out, session_id')
-        .eq('property_id', propertyId)
-        .eq('released', false)
-        .gt('expires_at', new Date().toISOString());
+      // Check active holds via server-side function
+      const { data: holdsData } = await supabase.functions.invoke('check-holds', {
+        body: { propertyId, checkIn, checkOut },
+      });
+      const activeHolds = holdsData?.holds || [];
 
       const hasBlockedDates = (blockedDates?.length || 0) > 0;
       const hasOverlappingBookings = (existingBookings?.length || 0) > 0;
