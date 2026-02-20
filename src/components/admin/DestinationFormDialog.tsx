@@ -150,6 +150,8 @@ export function DestinationFormDialog({
           climate: data.climate || null,
           gallery: [],
           highlights: [],
+          latitude: null,
+          longitude: null,
         });
         toast.success('Destination created successfully');
       }

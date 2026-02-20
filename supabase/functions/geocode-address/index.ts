@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
       query.trim()
-    )}&format=json&addressdetails=1&limit=5`;
+    )}&format=json&addressdetails=1&accept-language=en&limit=5`;
 
     const nominatimRes = await fetch(url, {
       headers: {

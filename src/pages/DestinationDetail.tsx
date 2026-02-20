@@ -4,6 +4,7 @@ import { MapPin, Sun, Calendar, Sparkles, ArrowRight, ArrowLeft, Zap } from 'luc
 import { PageLayout } from '@/components/layout/PageLayout';
 import { QuickBookCard } from '@/components/booking/QuickBookCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
+import { WeatherWidget } from '@/components/destinations/WeatherWidget';
 import { useDestination } from '@/hooks/useDestinations';
 import { useProperties } from '@/hooks/useProperties';
 import { Button } from '@/components/ui/button';
@@ -153,17 +154,11 @@ const DestinationDetail = () => {
                   </div>
                 )}
 
-                {destination.climate && (
-                  <div className="card-organic p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Sun className="h-5 w-5 text-primary" />
-                      <h4 className="font-medium">Climate</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {destination.climate}
-                    </p>
-                  </div>
-                )}
+                <WeatherWidget
+                  latitude={destination.latitude}
+                  longitude={destination.longitude}
+                  climateText={destination.climate}
+                />
 
                 <div className="card-organic p-6 bg-primary/5">
                   <h4 className="font-medium mb-2">

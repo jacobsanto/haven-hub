@@ -816,7 +816,9 @@ export type Database = {
           highlights: string[] | null
           id: string
           is_featured: boolean
+          latitude: number | null
           long_description: string | null
+          longitude: number | null
           name: string
           slug: string
           status: Database["public"]["Enums"]["destination_status"]
@@ -833,7 +835,9 @@ export type Database = {
           highlights?: string[] | null
           id?: string
           is_featured?: boolean
+          latitude?: number | null
           long_description?: string | null
+          longitude?: number | null
           name: string
           slug: string
           status?: Database["public"]["Enums"]["destination_status"]
@@ -850,7 +854,9 @@ export type Database = {
           highlights?: string[] | null
           id?: string
           is_featured?: boolean
+          latitude?: number | null
           long_description?: string | null
+          longitude?: number | null
           name?: string
           slug?: string
           status?: Database["public"]["Enums"]["destination_status"]
