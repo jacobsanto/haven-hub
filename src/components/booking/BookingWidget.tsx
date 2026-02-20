@@ -240,10 +240,10 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
   );
 
   return (
-    <div className="border border-border/50 rounded-xl p-6 space-y-6 shadow-sm lg:sticky lg:top-24 border-t-2 border-t-accent">
+    <div className="border border-border/50 rounded-xl p-6 space-y-6 shadow-sm lg:sticky lg:top-24">
       {/* Price Header */}
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-serif font-semibold text-accent">
+        <span className="text-3xl font-serif font-semibold">
           {basePriceFormatted.display}
         </span>
         <span className="text-muted-foreground">/ night</span>

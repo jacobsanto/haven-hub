@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -97,7 +98,7 @@ export function SimilarProperties({
         <h2 className="text-2xl font-serif font-medium">{title}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(limit)].map((_, i) => (
-            <div key={i} className="border border-border/50 rounded-2xl animate-pulse">
+            <div key={i} className="card-organic animate-pulse">
               <div className="aspect-[4/3] bg-muted rounded-t-2xl" />
               <div className="p-5 space-y-3">
                 <div className="h-6 bg-muted rounded w-3/4" />
@@ -115,7 +116,9 @@ export function SimilarProperties({
   }
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       className={cn('space-y-6', className)}
     >
       <div className="flex items-center justify-between">
@@ -133,6 +136,6 @@ export function SimilarProperties({
           <PropertyCard key={property.id} property={property} index={index} />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -62,9 +62,13 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
     : null;
 
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+    >
       <Link to={`/properties/${property.slug}`} className="group block">
-        <div className="border border-border/50 rounded-2xl bg-card overflow-hidden transition-shadow hover:shadow-md">
+        <div className="card-organic overflow-hidden hover-lift">
           {/* Image */}
           <div className="aspect-[4/3] overflow-hidden relative">
             {property.hero_image_url ? (
@@ -196,6 +200,6 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
           </div>
         </div>
       </Link>
-    </div>
+    </motion.div>
   );
 }

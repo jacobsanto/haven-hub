@@ -42,52 +42,6 @@ export function PropertyGallery({ images, heroImage, propertyName }: PropertyGal
     );
   }
 
-  // Full-width hero fallback when fewer than 2 images
-  if (allImages.length === 1) {
-    return (
-      <>
-        <div
-          className="relative rounded-2xl overflow-hidden cursor-pointer group"
-          onClick={() => {
-            setCurrentIndex(0);
-            setLightboxOpen(true);
-          }}
-        >
-          <div className="aspect-[21/9]">
-            <img
-              src={allImages[0]}
-              alt={propertyName}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-
-        {/* Lightbox */}
-        <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-          <DialogContent className="max-w-6xl w-full h-[90vh] p-0 bg-foreground/95 backdrop-blur-xl border-none">
-            <div className="relative w-full h-full flex items-center justify-center p-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 right-4 text-background hover:bg-background/20"
-                onClick={() => setLightboxOpen(false)}
-                aria-label="Close gallery"
-              >
-                <X className="h-6 w-6" />
-              </Button>
-              <img
-                src={allImages[0]}
-                alt={propertyName}
-                className="max-w-full max-h-[80vh] object-contain rounded-lg"
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      </>
-    );
-  }
-
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
   };
