@@ -1,77 +1,73 @@
 
 
-# Property Page Redesign -- Clean, Editorial Luxury
+# Client-Side Image Optimizer for Admin Uploads
 
-## What Changes
+## Problem
 
-The property detail page currently feels busy with too many colored backgrounds (purple highlight badges, accent-tinted At-a-Glance cards, colored icon circles) and inconsistent spacing. The redesign strips it back to a clean, editorial luxury aesthetic using primarily **white, navy text, and subtle grey borders** -- letting the property photos and content breathe.
+Images uploaded through the admin property form go directly to storage without any optimization. Large photos from cameras or phones (often 3-10MB each) slow down the site for visitors and increase storage costs.
 
-## Design Principles
+## Solution
 
-- **White space is the luxury** -- generous padding between sections, no colored card backgrounds
-- **Two colors only** -- navy text and gold accent (sparingly, for CTAs and key price info)
-- **Thin borders over colored backgrounds** -- sections divided by subtle `border-b` lines instead of colored cards
-- **Typography hierarchy** -- let Playfair Display headings and Lato body do the work
+Build a client-side image optimization utility that compresses and resizes images **before** uploading to storage. This runs entirely in the browser using the Canvas API -- no backend changes needed.
 
-## Changes by Component
+## How It Works
 
-### 1. PropertyDetail.tsx (page layout)
-- Remove the `AtAGlanceCards` component entirely -- its info is redundant with the QuickStats bar and the overview section
-- Increase section spacing from `space-y-12` to `space-y-16`
-- Add thin `border-b border-border/30` dividers between major sections
-- Reduce excessive motion animations (remove per-section `whileInView` -- keep only the initial page load fade)
-- Clean up the content grid gap
+1. Admin selects an image file
+2. The optimizer loads it into an off-screen canvas
+3. It resizes to a max dimension (e.g., 1920px for hero, 1200px for gallery)
+4. Converts to WebP format at configurable quality (default 80%)
+5. Shows before/after file size so the admin sees the savings
+6. Uploads the optimized version to storage
 
-### 2. PropertyQuickStats.tsx
-- Remove the frosted glass background (`bg-background/80 backdrop-blur-xl`)
-- Use a clean white card with a thin border instead
-- Remove colored icon backgrounds -- use plain navy icons inline
-- Simplify to a horizontal stat row with text only (no icon circles)
+## Technical Details
 
-### 3. PropertyHighlights.tsx (badges variant)
-- Change from colored `bg-secondary` rounded-full badges to clean text items with a small bullet or dash
-- Remove motion animations on individual badges
-- Use a simple two-column grid with clean typography
+### New Files
 
-### 4. AmenityList.tsx (grid variant)
-- Remove `bg-secondary/30` colored backgrounds on amenity tiles
-- Use clean white cards with thin borders or a simple list layout
-- Remove `whileHover` scale animations -- keep it static and professional
-- Simplify category headers
+**`src/utils/image-optimizer.ts`** -- Pure utility, no UI
+- `optimizeImage(file: File, options?: OptimizeOptions): Promise<OptimizedResult>`
+- Options: `maxWidth`, `maxHeight`, `quality` (0-1), `format` ('webp' | 'jpeg')
+- Returns: `{ blob: Blob, width, height, originalSize, optimizedSize }`
+- Uses `HTMLCanvasElement.toBlob()` with WebP output
+- Falls back to JPEG if WebP is not supported
 
-### 5. RoomBreakdown.tsx
-- Replace `card-organic` (shadowed cards) with clean bordered containers
-- Remove colored icon circles, use inline navy icons
-- Cleaner summary stat presentation
+**`src/components/admin/ImageUploadWithOptimizer.tsx`** -- Reusable upload component
+- Wraps the file input with optimization preview
+- Shows: thumbnail preview, original size, optimized size, savings percentage
+- Quality slider (60-100%) for manual adjustment
+- Upload button triggers after optimization
+- Loading state during optimization and upload
 
-### 6. NeighborhoodInfo.tsx
-- Remove `card-organic` shadow cards, use `border border-border/50` containers
-- Remove colored icon circles (`bg-primary/10`), use plain icons
+### Modified Files
 
-### 7. BookingWidget.tsx
-- Keep the sticky sidebar but simplify -- remove `card-organic` heavy shadow
-- Use clean border card with subtle shadow
-- Keep the gold CTA button as the single accent pop
+**`src/pages/admin/AdminPropertyForm.tsx`**
+- Replace raw `handleImageUpload` with the new `ImageUploadWithOptimizer` component
+- Used for both hero and gallery uploads
 
-### 8. PropertyStickyNav.tsx
-- Simplify active state from `bg-primary text-primary-foreground` (filled pill) to a simple underline indicator
-- Reduce visual weight
+**`src/pages/admin/AdminQuickOnboard.tsx`**
+- Same replacement for the hero image upload step
 
-### 9. HouseRulesAccordion.tsx
-- Ensure consistent clean styling with thin borders
+**`src/pages/admin/AdminSettings.tsx`**
+- Same replacement for logo/brand image uploads
 
-## Files Modified
+### Default Optimization Settings
 
-| File | Change |
-|------|--------|
-| `src/pages/PropertyDetail.tsx` | Remove AtAGlanceCards, add section dividers, increase spacing, reduce motion |
-| `src/components/properties/PropertyQuickStats.tsx` | Clean white card, remove colored icon backgrounds |
-| `src/components/properties/PropertyHighlights.tsx` | Simple grid layout, remove colored badges |
-| `src/components/properties/AmenityList.tsx` | Remove colored tile backgrounds, simplify hover effects |
-| `src/components/properties/RoomBreakdown.tsx` | Clean bordered containers, inline icons |
-| `src/components/properties/NeighborhoodInfo.tsx` | Remove heavy card shadows, use light borders |
-| `src/components/properties/PropertyStickyNav.tsx` | Underline-style active indicator |
-| `src/components/booking/BookingWidget.tsx` | Lighter card shadow, clean borders |
+| Image Type | Max Width | Max Height | Quality | Format |
+|------------|-----------|------------|---------|--------|
+| Hero       | 1920px    | 1080px     | 82%     | WebP   |
+| Gallery    | 1600px    | 1200px     | 80%     | WebP   |
+| Logo/Brand | 800px     | 400px      | 90%     | WebP   |
 
-No database changes. No new files. Pure styling and layout refinement.
+### UI Behavior
+
+- When a file is selected, the optimizer runs automatically (takes under 1 second)
+- A compact card appears showing:
+  - Image thumbnail
+  - Original: "3.2 MB" → Optimized: "180 KB" (94% smaller)
+  - Quality slider for fine-tuning
+  - "Upload" and "Cancel" buttons
+- The upload only proceeds after the admin confirms
+
+### No Backend Changes
+
+Everything runs client-side using browser-native Canvas API. No database migrations, no edge functions, no new storage buckets needed. The optimized WebP blob is uploaded to the existing `property-images` bucket with a `.webp` extension.
 
