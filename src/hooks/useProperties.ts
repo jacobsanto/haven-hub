@@ -13,6 +13,10 @@ function transformProperty(row: any): Property {
     rooms: (row.rooms || []) as RoomConfig[],
     nearby_attractions: (row.nearby_attractions || []) as NearbyAttraction[],
     house_rules: row.house_rules || [],
+    address: row.address || null,
+    latitude: row.latitude != null ? Number(row.latitude) : null,
+    longitude: row.longitude != null ? Number(row.longitude) : null,
+    postal_code: row.postal_code || null,
   };
 }
 

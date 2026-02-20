@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Upload, X, Home, MapPin, DollarSign, Image } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Upload, X, Home, MapPin, DollarSign, Image, Search, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useCreateProperty } from '@/hooks/useProperties';
+import { useDestinations } from '@/hooks/useDestinations';
+import { useGeocode, GeocodeResult } from '@/hooks/useGeocode';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -30,9 +33,13 @@ export default function AdminQuickOnboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const createProperty = useCreateProperty();
+  const { data: destinations } = useDestinations();
+  const geocode = useGeocode();
   const [step, setStep] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [addressQuery, setAddressQuery] = useState('');
+  const [showResults, setShowResults] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -41,6 +48,11 @@ export default function AdminQuickOnboard() {
     city: '',
     country: '',
     region: '',
+    address: '',
+    postal_code: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
+    destination_id: null as string | null,
     property_type: 'villa' as PropertyType,
     bedrooms: 1,
     bathrooms: 1,
@@ -55,6 +67,62 @@ export default function AdminQuickOnboard() {
   const handleNameChange = (value: string) => {
     setForm((prev) => ({ ...prev, name: value, slug: generateSlug(value) }));
   };
+
+  // Auto-match destination based on city/country
+  const autoMatchDestination = (city: string, country: string) => {
+    if (!destinations?.length) return null;
+    const cityLower = city.toLowerCase();
+    const countryLower = country.toLowerCase();
+
+    // 1. Exact city name match
+    const cityMatch = destinations.find(
+      (d) => d.name.toLowerCase() === cityLower && d.status === 'active'
+    );
+    if (cityMatch) return cityMatch.id;
+
+    // 2. City contained in destination name
+    const partialMatch = destinations.find(
+      (d) => d.name.toLowerCase().includes(cityLower) && d.status === 'active'
+    );
+    if (partialMatch) return partialMatch.id;
+
+    // 3. Country match, prefer featured
+    const countryMatches = destinations.filter(
+      (d) => d.country.toLowerCase() === countryLower && d.status === 'active'
+    );
+    if (countryMatches.length) {
+      const featured = countryMatches.find((d) => d.is_featured);
+      return (featured || countryMatches[0]).id;
+    }
+
+    return null;
+  };
+
+  const handleGeocodeLookup = async () => {
+    const results = await geocode.lookup(addressQuery);
+    setShowResults(true);
+    if (results.length === 1) {
+      applyGeocodeResult(results[0]);
+    }
+  };
+
+  const applyGeocodeResult = (result: GeocodeResult) => {
+    const destId = autoMatchDestination(result.city, result.country);
+    setForm((prev) => ({
+      ...prev,
+      city: result.city || prev.city,
+      region: result.region || prev.region,
+      country: result.country || prev.country,
+      address: result.address || prev.address,
+      postal_code: result.postal_code || prev.postal_code,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      destination_id: destId,
+    }));
+    setShowResults(false);
+  };
+
+  const matchedDestination = destinations?.find((d) => d.id === form.destination_id);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -87,7 +155,7 @@ export default function AdminQuickOnboard() {
       case 1: return form.name.trim().length > 0 && form.slug.trim().length > 0;
       case 2: return form.city.trim().length > 0 && form.country.trim().length > 0;
       case 3: return form.base_price > 0 && form.max_guests >= 1;
-      case 4: return true; // photo is optional
+      case 4: return true;
       default: return false;
     }
   };
@@ -109,7 +177,7 @@ export default function AdminQuickOnboard() {
         base_price: form.base_price,
         max_guests: form.max_guests,
         status: 'draft',
-        destination_id: null,
+        destination_id: form.destination_id,
         video_url: null,
         virtual_tour_url: null,
         instant_booking: false,
@@ -126,6 +194,10 @@ export default function AdminQuickOnboard() {
         timezone: 'Europe/Athens',
         check_in_time: '14:00',
         check_out_time: '11:00',
+        address: form.address || null,
+        latitude: form.latitude,
+        longitude: form.longitude,
+        postal_code: form.postal_code || null,
       });
       toast({
         title: 'Property Created as Draft',
@@ -234,6 +306,66 @@ export default function AdminQuickOnboard() {
               <>
                 <h2 className="font-serif text-xl font-medium">Location & Type</h2>
                 <div className="space-y-4">
+                  {/* Address Lookup */}
+                  <div className="space-y-2">
+                    <Label>Address or Place Lookup</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={addressQuery}
+                        onChange={(e) => setAddressQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleGeocodeLookup())}
+                        placeholder="e.g., Oia, Santorini, Greece"
+                        className="input-organic flex-1"
+                        autoFocus
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleGeocodeLookup}
+                        disabled={geocode.loading || addressQuery.trim().length < 2}
+                        className="gap-2"
+                      >
+                        {geocode.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                        Lookup
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Type an address or city and click Lookup to auto-fill location fields
+                    </p>
+                  </div>
+
+                  {/* Geocode results dropdown */}
+                  {showResults && geocode.results.length > 1 && (
+                    <div className="border border-border rounded-lg divide-y divide-border max-h-48 overflow-y-auto">
+                      {geocode.results.map((r, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 transition-colors"
+                          onClick={() => applyGeocodeResult(r)}
+                        >
+                          {r.display_name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {geocode.error && (
+                    <p className="text-sm text-destructive">{geocode.error}</p>
+                  )}
+
+                  {/* Destination auto-match */}
+                  {matchedDestination && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Linked to:</span>
+                      <Badge variant="secondary">{matchedDestination.name}</Badge>
+                    </div>
+                  )}
+                  {form.city && form.country && !matchedDestination && (
+                    <p className="text-xs text-muted-foreground">No matching destination found — you can link one later.</p>
+                  )}
+
+                  {/* Editable location fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">City *</Label>
@@ -243,7 +375,6 @@ export default function AdminQuickOnboard() {
                         onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
                         placeholder="e.g., Florence"
                         className="input-organic"
-                        autoFocus
                       />
                     </div>
                     <div className="space-y-2">
@@ -257,16 +388,35 @@ export default function AdminQuickOnboard() {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="region">Region</Label>
-                    <Input
-                      id="region"
-                      value={form.region}
-                      onChange={(e) => setForm((p) => ({ ...p, region: e.target.value }))}
-                      placeholder="e.g., Tuscany"
-                      className="input-organic"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="region">Region</Label>
+                      <Input
+                        id="region"
+                        value={form.region}
+                        onChange={(e) => setForm((p) => ({ ...p, region: e.target.value }))}
+                        placeholder="e.g., Tuscany"
+                        className="input-organic"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="postal_code">Postal Code</Label>
+                      <Input
+                        id="postal_code"
+                        value={form.postal_code}
+                        onChange={(e) => setForm((p) => ({ ...p, postal_code: e.target.value }))}
+                        placeholder="e.g., 84700"
+                        className="input-organic"
+                      />
+                    </div>
                   </div>
+
+                  {form.latitude != null && form.longitude != null && (
+                    <p className="text-xs text-muted-foreground">
+                      Coordinates: {form.latitude.toFixed(5)}, {form.longitude.toFixed(5)}
+                    </p>
+                  )}
+
                   <div className="space-y-2">
                     <Label>Property Type</Label>
                     <Select
