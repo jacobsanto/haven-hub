@@ -1,6 +1,6 @@
 import { useState, useEffect, KeyboardEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2, Sparkles, Search, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2, Sparkles, Search, Loader2, AlertTriangle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import {
@@ -50,6 +50,8 @@ export default function AdminPropertyForm() {
   const geocode = useGeocode();
   const [addressQuery, setAddressQuery] = useState('');
   const [showGeoResults, setShowGeoResults] = useState(false);
+  const [showDestinationWarning, setShowDestinationWarning] = useState(false);
+  const [confirmNoDestination, setConfirmNoDestination] = useState(false);
 
   const isEditing = !!id;
   const existingProperty = properties?.find((p) => p.id === id);
@@ -253,6 +255,12 @@ export default function AdminPropertyForm() {
         description: 'Please fill in all required fields.',
         variant: 'destructive',
       });
+      return;
+    }
+
+    // Warn about missing destination but allow saving
+    if (!formData.destination_id && !confirmNoDestination) {
+      setShowDestinationWarning(true);
       return;
     }
 
@@ -782,6 +790,42 @@ export default function AdminPropertyForm() {
               selectedAmenities={formData.amenities}
               onToggle={toggleAmenity}
             />
+
+            {/* Destination warning */}
+            {showDestinationWarning && !formData.destination_id && (
+              <div className="flex items-start gap-3 p-4 rounded-lg border border-destructive/30 bg-destructive/10">
+                <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-destructive">No destination linked</p>
+                  <p className="text-xs text-destructive/80 mt-1">
+                    This property won't appear on any destination page. Use the address lookup above to auto-link, or save anyway.
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setConfirmNoDestination(true);
+                        setShowDestinationWarning(false);
+                        // Re-trigger form submit
+                        const form = document.querySelector('form');
+                        form?.requestSubmit();
+                      }}
+                    >
+                      Save Without Destination
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => setShowDestinationWarning(false)}
+                    >
+                      Go Back & Fix
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Submit */}
             <div className="flex gap-4 justify-end">

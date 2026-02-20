@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Upload, X, Home, MapPin, DollarSign, Image, Search, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Upload, X, Home, MapPin, DollarSign, Image, Search, Loader2, AlertTriangle } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useCreateProperty } from '@/hooks/useProperties';
@@ -509,6 +509,20 @@ export default function AdminQuickOnboard() {
               <>
                 <h2 className="font-serif text-xl font-medium">Hero Photo</h2>
                 <p className="text-sm text-muted-foreground">Optional — you can add this later.</p>
+
+                {/* Destination warning */}
+                {!form.destination_id && form.city && form.country && (
+                  <div className="flex items-start gap-3 p-4 rounded-lg border border-destructive/30 bg-destructive/10">
+                    <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-destructive">No destination linked</p>
+                      <p className="text-xs text-destructive/80 mt-1">
+                        This property won't appear under any destination page. You can link it later in the full editor, or go back and use the address lookup.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {form.hero_image_url ? (
                   <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                     <img src={form.hero_image_url} alt="Hero" className="w-full h-full object-cover" />
