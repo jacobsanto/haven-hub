@@ -118,6 +118,18 @@ export default {
           "33%": { transform: "translate(18px, 18px)" },
           "66%": { transform: "translate(-15px, 12px)" },
         },
+        "weather-sun": {
+          "0%, 100%": { transform: "scale(1) rotate(0deg)" },
+          "50%": { transform: "scale(1.1) rotate(15deg)" },
+        },
+        "weather-cloud": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "50%": { transform: "translateX(4px)" },
+        },
+        "weather-rain": {
+          "0%, 100%": { transform: "translateY(0)", opacity: "1" },
+          "50%": { transform: "translateY(2px)", opacity: "0.7" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -129,6 +141,9 @@ export default {
         "float-1": "float-diagonal-1 20s ease-in-out infinite",
         "float-2": "float-diagonal-2 25s ease-in-out infinite",
         "float-3": "float-diagonal-3 18s ease-in-out infinite",
+        "weather-sun": "weather-sun 3s ease-in-out infinite",
+        "weather-cloud": "weather-cloud 4s ease-in-out infinite",
+        "weather-rain": "weather-rain 1.5s ease-in-out infinite",
       },
       boxShadow: {
         organic: "0 4px 6px -1px hsl(244 42% 28% / 0.05), 0 10px 15px -3px hsl(244 42% 28% / 0.08)",

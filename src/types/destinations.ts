@@ -12,6 +12,8 @@ export interface Destination {
   highlights: string[];
   best_time_to_visit: string | null;
   climate: string | null;
+  latitude: number | null;
+  longitude: number | null;
   is_featured: boolean;
   status: DestinationStatus;
   created_at: string;
