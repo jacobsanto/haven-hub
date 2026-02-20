@@ -1,34 +1,94 @@
 
-# Fix: Stripe Health Check - Broken Edge Function Reference
 
-## Problem
+# Enhanced Property Quick-Onboard with Auto-Location and Destination Mapping
 
-The admin dashboard's **Payment System** health widget always shows "Edge Function: Unreachable" because `useStripeHealth.ts` calls a non-existent `create-payment-intent` edge function, producing 404 errors on every dashboard load.
+## What This Delivers
 
-## Root Cause
+The quick-onboard wizard will be upgraded so that when an admin types a property address or city, the system automatically:
+- Fills in city, region, country, and coordinates
+- Matches and links the property to an existing destination
+- Stores a full street address and lat/lng for future map features
 
-The hook references `create-payment-intent` but the actual payment function is named `create-checkout-session`.
+## Changes Overview
 
-## Fix
+### 1. Database: Add Address Fields to Properties Table
 
-### File: `src/hooks/useStripeHealth.ts`
+Add new columns to the `properties` table:
+- `address` (text, nullable) -- full street address
+- `latitude` (numeric, nullable) -- GPS latitude
+- `longitude` (numeric, nullable) -- GPS longitude
+- `postal_code` (text, nullable) -- postal/zip code
 
-Update the edge function name from `create-payment-intent` to `create-checkout-session`, and adjust the health check body to match what that function expects. Since `create-checkout-session` does not have a dedicated health check mode, the approach will be:
+These are all optional so existing properties and the full editor continue to work unchanged.
 
-- Send a request to `create-checkout-session` with a `healthCheck: true` flag
-- The function will attempt to parse the body and likely return an error (missing required fields), but the fact that it responds (even with an error) proves the edge function is reachable
-- Treat any non-network response (including validation errors) as "reachable"
+### 2. Backend Function: Geocoding Service
 
-Specifically:
-- Change `'create-payment-intent'` to `'create-checkout-session'`
-- Update the reachability check logic: if the function responds at all (even with a business logic error), mark `edgeFunctionReachable = true`. Only network-level failures (timeouts, unreachable) should mark it as unreachable.
+Create a new edge function `geocode-address` that:
+- Accepts a free-text address query
+- Calls the OpenStreetMap Nominatim API (free, no API key required)
+- Returns structured location data: city, region, country, postal code, latitude, longitude
+- Includes proper User-Agent header per Nominatim usage policy
 
-## Verification Results
+### 3. Quick-Onboard Wizard Enhancements (Step 2 -- Location)
 
-All other pages and functions checked and working:
-- Homepage: hero search, navigation, all sections render
-- Properties, Destinations, Experiences, Blog, About, Contact pages: all functional
-- Admin sidebar: all 20+ links match valid routes in App.tsx
-- Admin Analytics: both Revenue and Website tabs working with real data
-- All other edge function references (7 functions) point to existing deployed functions
-- No other console errors found beyond this single 404
+Upgrade the Location step with:
+- A single "Address or Place" search input with a "Lookup" button
+- On lookup, calls the geocode function and auto-fills: address, city, region, country, postal code, latitude, longitude
+- Admin can review and override any auto-filled field
+- A destination auto-match: after city/country are filled, the system checks existing destinations and auto-selects the best match (by name matching city or country)
+- If a matching destination is found, it shows a chip like "Linked to: Santorini". If not, it shows "No matching destination" (admin can still select manually)
+
+### 4. Full Property Form Enhancement
+
+Add the same address/coordinates fields to `AdminPropertyForm.tsx`:
+- New "Address" text field and "Lookup" button in the location section
+- Latitude/longitude fields (read-only, populated by lookup)
+- Same geocoding + destination auto-match logic
+
+### 5. Type Updates
+
+Update `Property` interface in `src/types/database.ts` to include `address`, `latitude`, `longitude`, `postal_code`.
+
+---
+
+## Technical Details
+
+### Migration SQL
+```sql
+ALTER TABLE properties
+  ADD COLUMN IF NOT EXISTS address text,
+  ADD COLUMN IF NOT EXISTS latitude numeric,
+  ADD COLUMN IF NOT EXISTS longitude numeric,
+  ADD COLUMN IF NOT EXISTS postal_code text;
+```
+
+### Edge Function: `supabase/functions/geocode-address/index.ts`
+- Accepts `{ query: string }` via POST
+- Calls `https://nominatim.openstreetmap.org/search?q=...&format=json&addressdetails=1&limit=5`
+- Returns array of results with structured address components
+- No API key needed; rate-limited to 1 req/sec by Nominatim policy (acceptable for admin use)
+- CORS headers included
+
+### Destination Auto-Match Logic
+After geocoding fills city/country, the wizard queries existing destinations and matches by:
+1. Exact city name match against destination name
+2. Country match as fallback
+3. If multiple matches, prefer the one marked `is_featured`
+
+This runs client-side using the already-fetched destinations list (via `useDestinations` hook), so no extra database call.
+
+### Files Created
+- `supabase/functions/geocode-address/index.ts` -- geocoding edge function
+- `src/hooks/useGeocode.ts` -- hook wrapping the geocode call
+
+### Files Modified
+- `src/types/database.ts` -- add address/lat/lng/postal_code to Property interface
+- `src/pages/admin/AdminQuickOnboard.tsx` -- add address lookup, destination auto-match, new form fields
+- `src/pages/admin/AdminPropertyForm.tsx` -- add address/coordinates section with lookup
+- `src/hooks/useProperties.ts` -- include new fields in transformProperty
+
+### No Breaking Changes
+- All new columns are nullable with no defaults required
+- Existing properties continue working as-is
+- The full editor gains optional new fields without disrupting current layout
+
