@@ -7,7 +7,6 @@ import { PropertyGallery } from '@/components/properties/PropertyGallery';
 import { PropertyQuickStats } from '@/components/properties/PropertyQuickStats';
 import { PropertyStickyNav } from '@/components/properties/PropertyStickyNav';
 import { PropertyShareSave } from '@/components/properties/PropertyShareSave';
-import { AtAGlanceCards } from '@/components/properties/AtAGlanceCards';
 import { PropertyHighlights } from '@/components/properties/PropertyHighlights';
 import { RoomBreakdown } from '@/components/properties/RoomBreakdown';
 import { NeighborhoodInfo } from '@/components/properties/NeighborhoodInfo';
@@ -184,33 +183,12 @@ export default function PropertyDetail() {
         {/* Quick Stats Bar */}
         <PropertyQuickStats property={property} />
 
-        {/* At a Glance Cards */}
-        <div className="mt-8 mb-12">
-          <AtAGlanceCards 
-            property={property} 
-            specialOffer={activeOffer}
-            destinationName={destination?.name}
-          />
-        </div>
-
         {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-16 mt-12">
           {/* Main Content */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="lg:col-span-2 space-y-12"
-          >
+          <div className="lg:col-span-2 space-y-16">
           {/* Overview Section */}
-            <motion.section 
-              id="overview" 
-              className="scroll-mt-32"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: 0 }}
-            >
+            <section id="overview" className="scroll-mt-32">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-start gap-3">
                   <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium text-foreground">
@@ -241,69 +219,41 @@ export default function PropertyDetail() {
                   </div>
                 )}
               </div>
-            </motion.section>
+            </section>
 
             {/* Highlights */}
             {property.highlights && property.highlights.length > 0 && (
-              <motion.section 
-                id="highlights" 
-                className="scroll-mt-32"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <h2 className="text-xl sm:text-2xl font-serif font-medium mb-4">Highlights</h2>
+              <section id="highlights" className="scroll-mt-32 border-t border-border/30 pt-16">
+                <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Highlights</h2>
                 <PropertyHighlights highlights={property.highlights} variant="badges" />
-              </motion.section>
+              </section>
             )}
 
             {/* Room Breakdown */}
-            <motion.section 
-              id="rooms" 
-              className="scroll-mt-32"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-            >
+            <section id="rooms" className="scroll-mt-32 border-t border-border/30 pt-16">
               <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Rooms & Spaces</h2>
               <RoomBreakdown
                 rooms={property.rooms}
                 bedrooms={property.bedrooms}
                 bathrooms={property.bathrooms}
               />
-            </motion.section>
+            </section>
 
             {/* Amenities */}
             {property.amenities.length > 0 && (
-              <motion.section 
-                id="amenities" 
-                className="scroll-mt-32"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
+              <section id="amenities" className="scroll-mt-32 border-t border-border/30 pt-16">
                 <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Amenities & Features</h2>
                 <AmenityList 
                   amenities={property.amenities} 
                   variant="grid" 
                   showDescriptions={true}
                 />
-              </motion.section>
+              </section>
             )}
 
             {/* Neighborhood & Location */}
-            <motion.section 
-              id="location" 
-              className="scroll-mt-32"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: 0.25 }}
-            >
-              <h2 className="text-xl sm:text-2xl font-serif font-medium mb-4">Location & Neighborhood</h2>
+            <section id="location" className="scroll-mt-32 border-t border-border/30 pt-16">
+              <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Location & Neighborhood</h2>
               <NeighborhoodInfo
                 description={property.neighborhood_description}
                 attractions={property.nearby_attractions}
@@ -311,37 +261,25 @@ export default function PropertyDetail() {
                 region={property.region}
                 country={property.country}
               />
-            </motion.section>
+            </section>
 
             {/* House Rules & Policies */}
-            <motion.section 
-              id="policies" 
-              className="scroll-mt-32"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <h2 className="text-xl sm:text-2xl font-serif font-medium mb-4">House Rules & Policies</h2>
+            <section id="policies" className="scroll-mt-32 border-t border-border/30 pt-16">
+              <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">House Rules & Policies</h2>
               <HouseRulesAccordion
                 houseRules={property.house_rules}
                 cancellationPolicy={property.cancellation_policy}
                 petPolicy={property.pet_policy}
               />
-            </motion.section>
-          </motion.div>
+            </section>
+          </div>
 
           {/* Desktop Booking Widget */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="hidden lg:block"
-          >
+          <div className="hidden lg:block">
             <div className="sticky top-24">
               <BookingWidget property={property} specialOffer={activeOffer} />
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Related Experiences */}
