@@ -11,7 +11,8 @@ import { TrustBadges } from '@/components/booking/TrustBadges';
 import { UrgencyBanner } from '@/components/booking/UrgencyBanner';
 import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useFeaturedProperties } from '@/hooks/useProperties';
-import { useDestinations } from '@/hooks/useDestinations';
+import { useFeaturedDestinations } from '@/hooks/useDestinations';
+import { useProperties } from '@/hooks/useProperties';
 import { useActiveExperiences } from '@/hooks/useExperiences';
 import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { useBrand } from '@/contexts/BrandContext';
@@ -20,7 +21,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
   const { data: properties, isLoading: propertiesLoading } = useFeaturedProperties();
-  const { data: destinations, isLoading: destinationsLoading } = useDestinations();
+  const { data: destinations, isLoading: destinationsLoading } = useFeaturedDestinations();
+  const { data: allProperties } = useProperties();
   const { data: experiences, isLoading: experiencesLoading } = useActiveExperiences();
   const { data: blogPosts, isLoading: blogLoading } = useBlogPosts({ status: 'published' });
   const { brandName } = useBrand();
@@ -29,7 +31,7 @@ const Index = () => {
   const propertiesAvailable = properties?.length || 0;
 
   // Get featured items (limit to 3-4 for homepage)
-  const featuredDestinations = destinations?.filter(d => d.is_featured).slice(0, 3) || destinations?.slice(0, 3);
+  const featuredDestinations = destinations?.slice(0, 3);
   const featuredExperiences = experiences?.filter(e => e.is_featured).slice(0, 4) || experiences?.slice(0, 4);
   const latestBlogPosts = blogPosts?.slice(0, 3);
 
@@ -146,7 +148,7 @@ const Index = () => {
             ) : featuredDestinations && featuredDestinations.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {featuredDestinations.map((destination, index) => (
-                  <DestinationCard key={destination.id} destination={destination} index={index} />
+                  <DestinationCard key={destination.id} destination={destination} index={index} propertyCount={allProperties?.filter(p => p.destination_id === destination.id).length || 0} />
                 ))}
               </div>
             ) : null}
