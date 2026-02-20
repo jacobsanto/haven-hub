@@ -36,6 +36,7 @@ const NotFound = React.lazy(() => import("./pages/NotFound"));
 const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProperties = React.lazy(() => import("./pages/admin/AdminProperties"));
 const AdminPropertyForm = React.lazy(() => import("./pages/admin/AdminPropertyForm"));
+const AdminQuickOnboard = React.lazy(() => import("./pages/admin/AdminQuickOnboard"));
 const AdminBookings = React.lazy(() => import("./pages/admin/AdminBookings"));
 const AdminSettings = React.lazy(() => import("./pages/admin/AdminSettings"));
 const AdminAmenities = React.lazy(() => import("./pages/admin/AdminAmenities"));
@@ -102,6 +103,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/properties" element={<AdminProperties />} />
                 <Route path="/admin/properties/new" element={<AdminPropertyForm />} />
+                <Route path="/admin/properties/quick-onboard" element={<AdminQuickOnboard />} />
                 <Route path="/admin/properties/:id/edit" element={<AdminPropertyForm />} />
                 <Route path="/admin/bookings" element={<AdminBookings />} />
                 
