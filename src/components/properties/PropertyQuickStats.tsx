@@ -1,5 +1,4 @@
-import { motion } from 'framer-motion';
-import { Users, Bed, Bath, Home, Ruler } from 'lucide-react';
+import { Users, Bed, Bath, Home } from 'lucide-react';
 import { Property } from '@/types/database';
 
 interface PropertyQuickStatsProps {
@@ -39,25 +38,12 @@ export function PropertyQuickStats({ property }: PropertyQuickStatsProps) {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.15 }}
-      className="relative -mt-16 z-10 mx-4 md:mx-0"
-    >
-      <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl p-4 md:p-6 shadow-xl">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + index * 0.05 }}
-              className="flex items-center gap-3"
-            >
-              <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-secondary flex items-center justify-center">
-                <stat.icon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-              </div>
+    <div className="relative -mt-12 z-10 mx-4 md:mx-0">
+      <div className="bg-background border border-border/50 rounded-xl p-4 md:p-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+          {stats.map((stat) => (
+            <div key={stat.label} className="flex items-center gap-3">
+              <stat.icon className="h-5 w-5 text-foreground/60 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-lg md:text-xl font-semibold text-foreground truncate">
                   {stat.value}
@@ -66,10 +52,10 @@ export function PropertyQuickStats({ property }: PropertyQuickStatsProps) {
                   {stat.label}
                 </p>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

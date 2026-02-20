@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import {
   UtensilsCrossed,
   Umbrella,
@@ -49,7 +48,6 @@ export function NeighborhoodInfo({
   country,
   className,
 }: NeighborhoodInfoProps) {
-  // Group attractions by type
   const groupedAttractions = attractions.reduce((acc, attraction) => {
     const type = attraction.type;
     if (!acc[type]) {
@@ -62,11 +60,9 @@ export function NeighborhoodInfo({
   return (
     <div className={cn('space-y-6', className)}>
       {/* Location Header */}
-      <div className="card-organic p-6">
+      <div className="border border-border/50 rounded-xl p-6">
         <div className="flex items-start gap-4">
-          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-            <MapPin className="h-6 w-6 text-primary" />
-          </div>
+          <MapPin className="h-5 w-5 text-foreground/60 mt-0.5 flex-shrink-0" />
           <div>
             <h3 className="text-lg font-medium">{city}</h3>
             {region && <p className="text-muted-foreground">{region}</p>}
@@ -91,15 +87,10 @@ export function NeighborhoodInfo({
               const label = attractionLabels[type] || type;
 
               return (
-                <motion.div
-                  key={type}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="card-organic p-4"
-                >
+                <div key={type} className="border border-border/50 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Icon className="h-5 w-5 text-primary" />
-                    <span className="font-medium">{label}</span>
+                    <Icon className="h-4 w-4 text-foreground/60" />
+                    <span className="font-medium text-sm">{label}</span>
                   </div>
                   <div className="space-y-2">
                     {items.map((item, index) => (
@@ -108,13 +99,13 @@ export function NeighborhoodInfo({
                         className="flex items-center justify-between text-sm"
                       >
                         <span className="text-muted-foreground">{item.name}</span>
-                        <span className="text-primary font-medium">
+                        <span className="text-foreground font-medium">
                           {item.distance}
                         </span>
                       </div>
                     ))}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -122,7 +113,7 @@ export function NeighborhoodInfo({
       )}
 
       {/* Map Placeholder */}
-      <div className="card-organic p-4">
+      <div className="border border-border/50 rounded-xl p-4">
         <div className="aspect-video rounded-lg bg-muted flex items-center justify-center">
           <div className="text-center text-muted-foreground">
             <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />

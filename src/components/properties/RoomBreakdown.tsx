@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import {
   Bed,
   Bath,
@@ -50,19 +49,18 @@ export function RoomBreakdown({
   bathrooms,
   className,
 }: RoomBreakdownProps) {
-  // If no detailed rooms, show summary based on counts
   if (!rooms || rooms.length === 0) {
     return (
       <div className={cn('grid grid-cols-2 sm:grid-cols-4 gap-4', className)}>
-        <div className="card-organic p-4 text-center">
-          <Bed className="h-8 w-8 mx-auto mb-2 text-primary" />
+        <div className="border border-border/50 rounded-xl p-4 text-center">
+          <Bed className="h-5 w-5 mx-auto mb-2 text-foreground/60" />
           <p className="text-2xl font-medium">{bedrooms}</p>
           <p className="text-sm text-muted-foreground">
             {bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}
           </p>
         </div>
-        <div className="card-organic p-4 text-center">
-          <Bath className="h-8 w-8 mx-auto mb-2 text-primary" />
+        <div className="border border-border/50 rounded-xl p-4 text-center">
+          <Bath className="h-5 w-5 mx-auto mb-2 text-foreground/60" />
           <p className="text-2xl font-medium">{bathrooms}</p>
           <p className="text-sm text-muted-foreground">
             {bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}
@@ -72,7 +70,6 @@ export function RoomBreakdown({
     );
   }
 
-  // Group rooms by type
   const bedroomRooms = rooms.filter((r) => r.type === 'bedroom');
   const bathroomRooms = rooms.filter((r) => r.type === 'bathroom');
   const otherRooms = rooms.filter(
@@ -83,23 +80,23 @@ export function RoomBreakdown({
     <div className={cn('space-y-6', className)}>
       {/* Summary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="card-organic p-4 text-center">
-          <Bed className="h-8 w-8 mx-auto mb-2 text-primary" />
+        <div className="border border-border/50 rounded-xl p-4 text-center">
+          <Bed className="h-5 w-5 mx-auto mb-2 text-foreground/60" />
           <p className="text-2xl font-medium">{bedrooms}</p>
           <p className="text-sm text-muted-foreground">
             {bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}
           </p>
         </div>
-        <div className="card-organic p-4 text-center">
-          <Bath className="h-8 w-8 mx-auto mb-2 text-primary" />
+        <div className="border border-border/50 rounded-xl p-4 text-center">
+          <Bath className="h-5 w-5 mx-auto mb-2 text-foreground/60" />
           <p className="text-2xl font-medium">{bathrooms}</p>
           <p className="text-sm text-muted-foreground">
             {bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}
           </p>
         </div>
         {otherRooms.length > 0 && (
-          <div className="card-organic p-4 text-center">
-            <Sofa className="h-8 w-8 mx-auto mb-2 text-primary" />
+          <div className="border border-border/50 rounded-xl p-4 text-center">
+            <Sofa className="h-5 w-5 mx-auto mb-2 text-foreground/60" />
             <p className="text-2xl font-medium">{otherRooms.length}</p>
             <p className="text-sm text-muted-foreground">Living Spaces</p>
           </div>
@@ -114,17 +111,9 @@ export function RoomBreakdown({
             {bedroomRooms.map((room, index) => {
               const Icon = roomTypeIcons[room.type] || Bed;
               return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="card-organic p-4"
-                >
+                <div key={index} className="border border-border/50 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-                      <Icon className="h-5 w-5 text-primary" />
-                    </div>
+                    <Icon className="h-5 w-5 text-foreground/60 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="font-medium">{room.name}</p>
                       {room.beds && room.beds.length > 0 && (
@@ -150,7 +139,7 @@ export function RoomBreakdown({
                           {room.features.map((feature, fIndex) => (
                             <span
                               key={fIndex}
-                              className="text-xs px-2 py-0.5 bg-secondary rounded-full"
+                              className="text-xs px-2 py-0.5 border border-border/50 rounded-full text-muted-foreground"
                             >
                               {feature}
                             </span>
@@ -159,7 +148,7 @@ export function RoomBreakdown({
                       )}
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -174,16 +163,11 @@ export function RoomBreakdown({
             {otherRooms.map((room, index) => {
               const Icon = roomTypeIcons[room.type] || Sofa;
               return (
-                <motion.div
+                <div
                   key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="card-organic p-4 flex items-center gap-3"
+                  className="border border-border/50 rounded-xl p-4 flex items-center gap-3"
                 >
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
+                  <Icon className="h-5 w-5 text-foreground/60 flex-shrink-0" />
                   <div>
                     <p className="font-medium">{room.name}</p>
                     {room.features && room.features.length > 0 && (
@@ -192,7 +176,7 @@ export function RoomBreakdown({
                       </p>
                     )}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>

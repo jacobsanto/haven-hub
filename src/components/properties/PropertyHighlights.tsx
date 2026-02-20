@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import * as LucideIcons from 'lucide-react';
 import { LucideIcon, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -88,15 +87,15 @@ export function PropertyHighlights({
           return (
             <span
               key={index}
-              className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-primary/10 text-primary rounded-full"
+              className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 border border-border/50 text-foreground rounded-full"
             >
-              <Icon className="h-3 w-3" />
+              <Icon className="h-3 w-3 text-foreground/60" />
               {highlight}
             </span>
           );
         })}
         {highlights.length > 4 && (
-          <span className="text-xs px-2 py-1 bg-muted rounded-full text-muted-foreground">
+          <span className="text-xs px-2.5 py-1 border border-border/50 rounded-full text-muted-foreground">
             +{highlights.length - 4} more
           </span>
         )}
@@ -110,40 +109,29 @@ export function PropertyHighlights({
         {highlights.map((highlight, index) => {
           const Icon = getIconForHighlight(highlight);
           return (
-            <motion.li
-              key={index}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="flex items-center gap-3"
-            >
-              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                <Icon className="h-4 w-4 text-primary" />
-              </span>
+            <li key={index} className="flex items-center gap-3">
+              <Icon className="h-4 w-4 text-foreground/60" />
               <span className="text-foreground">{highlight}</span>
-            </motion.li>
+            </li>
           );
         })}
       </ul>
     );
   }
 
-  // Default: badges variant
+  // Default: badges variant — clean two-column grid
   return (
-    <div className={cn('flex flex-wrap gap-3', className)}>
+    <div className={cn('grid grid-cols-1 sm:grid-cols-2 gap-3', className)}>
       {highlights.map((highlight, index) => {
         const Icon = getIconForHighlight(highlight);
         return (
-          <motion.div
+          <div
             key={index}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.05 }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-secondary rounded-full"
+            className="flex items-center gap-3 py-2"
           >
-            <Icon className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">{highlight}</span>
-          </motion.div>
+            <Icon className="h-4 w-4 text-foreground/50 flex-shrink-0" />
+            <span className="text-sm text-foreground">{highlight}</span>
+          </div>
         );
       })}
     </div>

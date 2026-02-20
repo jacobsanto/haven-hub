@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import * as LucideIcons from 'lucide-react';
 import { LucideIcon, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAmenityMap, Amenity } from '@/hooks/useAmenities';
 import {
@@ -188,37 +187,22 @@ export function AmenityList({
         {Object.entries(groupedAmenities)
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([category, categoryAmenities]) => (
-            <motion.div 
-              key={category}
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4 }}
-            >
+            <div key={category}>
               <h4 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
                 {category}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {categoryAmenities.map((amenity) => {
                   const Icon = getIconComponent(amenity.icon);
-                  const currentIndex = globalIndex++;
+                  globalIndex++;
                   return (
-                    <motion.div
+                    <div
                       key={amenity.slug}
-                      className="flex items-start gap-3 p-4 bg-secondary/30 rounded-xl transition-colors hover:bg-secondary/50"
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.3, delay: currentIndex * 0.03 }}
-                      whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+                      className="flex items-start gap-3 p-4 border border-border/50 rounded-xl"
                     >
-                      <motion.span 
-                        className="text-primary mt-0.5"
-                        whileHover={{ rotate: 5, scale: 1.1 }}
-                        transition={{ duration: 0.2 }}
-                      >
+                      <span className="text-foreground/60 mt-0.5">
                         <Icon className="h-5 w-5" />
-                      </motion.span>
+                      </span>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">{amenity.name}</p>
                         {amenity.description && (
@@ -227,11 +211,11 @@ export function AmenityList({
                           </p>
                         )}
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
-            </motion.div>
+            </div>
           ))}
       </div>
     );
@@ -239,29 +223,18 @@ export function AmenityList({
 
   // Default grid variant
   return (
-    <div className={cn('grid grid-cols-2 md:grid-cols-3 gap-4', className)}>
-      {enrichedAmenities.map((amenity, index) => {
+    <div className={cn('grid grid-cols-2 md:grid-cols-3 gap-3', className)}>
+      {enrichedAmenities.map((amenity) => {
         const Icon = getIconComponent(amenity.icon);
         return (
           <Tooltip key={amenity.slug}>
             <TooltipTrigger asChild>
-              <motion.div 
-                className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl cursor-default transition-colors hover:bg-secondary/50"
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: index * 0.03 }}
-                whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-              >
-                <motion.span 
-                  className="text-primary"
-                  whileHover={{ rotate: 5, scale: 1.1 }}
-                  transition={{ duration: 0.2 }}
-                >
+              <div className="flex items-center gap-3 p-3 border border-border/50 rounded-xl cursor-default">
+                <span className="text-foreground/60">
                   <Icon className="h-5 w-5" />
-                </motion.span>
+                </span>
                 <span className="text-sm">{amenity.name}</span>
-              </motion.div>
+              </div>
             </TooltipTrigger>
             {amenity.description && (
               <TooltipContent side="top" className="max-w-xs bg-popover">
