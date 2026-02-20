@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Upload, X, Home, MapPin, DollarSign, Image, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
+import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useCreateProperty } from '@/hooks/useProperties';
@@ -523,34 +525,14 @@ export default function AdminQuickOnboard() {
                   </div>
                 )}
 
-                {form.hero_image_url ? (
-                  <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                    <img src={form.hero_image_url} alt="Hero" className="w-full h-full object-cover" />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={() => setForm((p) => ({ ...p, hero_image_url: '' }))}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <label className="block w-full aspect-video border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary transition-colors">
-                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                      <Upload className="h-8 w-8 mb-2" />
-                      <span>{uploading ? 'Uploading...' : 'Click to upload hero image'}</span>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                      disabled={uploading}
-                    />
-                  </label>
-                )}
+                <ImageUploadWithOptimizer
+                  value={form.hero_image_url || undefined}
+                  onUpload={(url) => setForm((p) => ({ ...p, hero_image_url: url }))}
+                  onRemove={() => setForm((p) => ({ ...p, hero_image_url: '' }))}
+                  preset={IMAGE_PRESETS.hero}
+                  storagePath="hero"
+                  label="Click to upload hero image"
+                />
               </>
             )}
           </div>
