@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,51 +10,54 @@ import { BookingProvider } from "@/contexts/BookingContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { UnifiedBookingDialog } from "@/components/booking/UnifiedBookingDialog";
 import Index from "./pages/Index";
-import Properties from "./pages/Properties";
-import PropertyDetail from "./pages/PropertyDetail";
-import BookingConfirm from "./pages/BookingConfirm";
-import Checkout from "./pages/Checkout";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import PaymentCancelled from "./pages/PaymentCancelled";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import Destinations from "./pages/Destinations";
-import DestinationDetail from "./pages/DestinationDetail";
-import Experiences from "./pages/Experiences";
-import ExperienceDetail from "./pages/ExperienceDetail";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProperties from "./pages/admin/AdminProperties";
-import AdminPropertyForm from "./pages/admin/AdminPropertyForm";
-import AdminBookings from "./pages/admin/AdminBookings";
 
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminAmenities from "./pages/admin/AdminAmenities";
-import AdminDestinations from "./pages/admin/AdminDestinations";
-import AdminExperiences from "./pages/admin/AdminExperiences";
-import AdminExperienceEnquiries from "./pages/admin/AdminExperienceEnquiries";
-import AdminBlogPosts from "./pages/admin/AdminBlogPosts";
-import AdminBlogCategories from "./pages/admin/AdminBlogCategories";
-import AdminBlogAuthors from "./pages/admin/AdminBlogAuthors";
-import AdminNewsletterSubscribers from "./pages/admin/AdminNewsletterSubscribers";
-import AdminAddonsManagement from "./pages/admin/AdminAddonsManagement";
-import AdminPromotions from "./pages/admin/AdminPromotions";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import AdminPMSHealth from "./pages/admin/AdminPMSHealth";
-import AdminFees from "./pages/admin/AdminFees";
-import AdminRatePlans from "./pages/admin/AdminRatePlans";
-import AdminSeasonalRatesImport from "./pages/admin/AdminSeasonalRatesImport";
-import AdminAIContent from "./pages/admin/AdminAIContent";
-import AdminContentCalendar from "./pages/admin/AdminContentCalendar";
-import AdminPromotionalCampaigns from "./pages/admin/AdminPromotionalCampaigns";
-import AdminExitIntent from "./pages/admin/AdminExitIntent";
-import AdminUserRoles from "./pages/admin/AdminUserRoles";
-import NotFound from "./pages/NotFound";
+// Lazy-loaded public pages
+const Properties = React.lazy(() => import("./pages/Properties"));
+const PropertyDetail = React.lazy(() => import("./pages/PropertyDetail"));
+const BookingConfirm = React.lazy(() => import("./pages/BookingConfirm"));
+const Checkout = React.lazy(() => import("./pages/Checkout"));
+const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
+const PaymentCancelled = React.lazy(() => import("./pages/PaymentCancelled"));
+const Login = React.lazy(() => import("./pages/Login"));
+const Signup = React.lazy(() => import("./pages/Signup"));
+const About = React.lazy(() => import("./pages/About"));
+const Contact = React.lazy(() => import("./pages/Contact"));
+const Privacy = React.lazy(() => import("./pages/Privacy"));
+const Terms = React.lazy(() => import("./pages/Terms"));
+const Destinations = React.lazy(() => import("./pages/Destinations"));
+const DestinationDetail = React.lazy(() => import("./pages/DestinationDetail"));
+const Experiences = React.lazy(() => import("./pages/Experiences"));
+const ExperienceDetail = React.lazy(() => import("./pages/ExperienceDetail"));
+const Blog = React.lazy(() => import("./pages/Blog"));
+const BlogPost = React.lazy(() => import("./pages/BlogPost"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+
+// Lazy-loaded admin pages
+const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminProperties = React.lazy(() => import("./pages/admin/AdminProperties"));
+const AdminPropertyForm = React.lazy(() => import("./pages/admin/AdminPropertyForm"));
+const AdminBookings = React.lazy(() => import("./pages/admin/AdminBookings"));
+const AdminSettings = React.lazy(() => import("./pages/admin/AdminSettings"));
+const AdminAmenities = React.lazy(() => import("./pages/admin/AdminAmenities"));
+const AdminDestinations = React.lazy(() => import("./pages/admin/AdminDestinations"));
+const AdminExperiences = React.lazy(() => import("./pages/admin/AdminExperiences"));
+const AdminExperienceEnquiries = React.lazy(() => import("./pages/admin/AdminExperienceEnquiries"));
+const AdminBlogPosts = React.lazy(() => import("./pages/admin/AdminBlogPosts"));
+const AdminBlogCategories = React.lazy(() => import("./pages/admin/AdminBlogCategories"));
+const AdminBlogAuthors = React.lazy(() => import("./pages/admin/AdminBlogAuthors"));
+const AdminNewsletterSubscribers = React.lazy(() => import("./pages/admin/AdminNewsletterSubscribers"));
+const AdminAddonsManagement = React.lazy(() => import("./pages/admin/AdminAddonsManagement"));
+const AdminPromotions = React.lazy(() => import("./pages/admin/AdminPromotions"));
+const AdminAnalytics = React.lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminPMSHealth = React.lazy(() => import("./pages/admin/AdminPMSHealth"));
+const AdminFees = React.lazy(() => import("./pages/admin/AdminFees"));
+const AdminRatePlans = React.lazy(() => import("./pages/admin/AdminRatePlans"));
+const AdminSeasonalRatesImport = React.lazy(() => import("./pages/admin/AdminSeasonalRatesImport"));
+const AdminAIContent = React.lazy(() => import("./pages/admin/AdminAIContent"));
+const AdminContentCalendar = React.lazy(() => import("./pages/admin/AdminContentCalendar"));
+const AdminPromotionalCampaigns = React.lazy(() => import("./pages/admin/AdminPromotionalCampaigns"));
+const AdminExitIntent = React.lazy(() => import("./pages/admin/AdminExitIntent"));
+const AdminUserRoles = React.lazy(() => import("./pages/admin/AdminUserRoles"));
 
 const queryClient = new QueryClient();
 
@@ -75,6 +78,7 @@ const App = () => (
             <BrowserRouter>
               <BookingProvider>
                 <UnifiedBookingDialog />
+              <Suspense fallback={null}>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/properties" element={<Properties />} />
@@ -124,6 +128,7 @@ const App = () => (
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
             </BookingProvider>
           </BrowserRouter>
         </TooltipProvider>
