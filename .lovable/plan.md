@@ -1,77 +1,62 @@
 
 
-# Property Page Redesign -- Clean, Editorial Luxury
+# Property Detail Page -- Clean Aesthetic Refinement
 
-## What Changes
+## Current Issues (from visual inspection)
 
-The property detail page currently feels busy with too many colored backgrounds (purple highlight badges, accent-tinted At-a-Glance cards, colored icon circles) and inconsistent spacing. The redesign strips it back to a clean, editorial luxury aesthetic using primarily **white, navy text, and subtle grey borders** -- letting the property photos and content breathe.
+1. **Gallery**: Only the hero image fills the left half when a property has no secondary images -- the right side is completely empty white space
+2. **Description**: Long text appears as a wall of text with no truncation or visual break
+3. **Quick Stats bar**: The `-mt-12` overlap creates awkward spacing between gallery and content
+4. **Booking Widget**: Price header uses default foreground color instead of the gold accent; CTA button class `btn-organic` uses gold but could be more prominent
+5. **Section headings**: Lack the serif weight and subtle gold accent that would tie them to the brand
+6. **Property name**: Could use more visual weight with the navy color being more deliberate
+7. **PropertyCard**: Still uses `card-organic` with shadow and `hover-lift` which feels heavy
 
-## Design Principles
+## Changes
 
-- **White space is the luxury** -- generous padding between sections, no colored card backgrounds
-- **Two colors only** -- navy text and gold accent (sparingly, for CTAs and key price info)
-- **Thin borders over colored backgrounds** -- sections divided by subtle `border-b` lines instead of colored cards
-- **Typography hierarchy** -- let Playfair Display headings and Lato body do the work
+### 1. PropertyGallery.tsx -- Full-width hero fallback
+- When there are fewer than 2 images, render a single full-width hero image instead of the half-empty bento grid
+- Keep the bento grid for properties with 2+ images
 
-## Changes by Component
+### 2. PropertyDetail.tsx -- Description truncation and spacing
+- Add a "Read more / Read less" toggle for descriptions longer than 3 lines (~300 characters)
+- Remove the `-mt-12` overlap on QuickStats -- use standard spacing instead
+- Add a subtle gold accent line under the property name (a small decorative `border-b` or `<hr>` in gold)
+- Increase the top padding after the gallery for cleaner breathing room
 
-### 1. PropertyDetail.tsx (page layout)
-- Remove the `AtAGlanceCards` component entirely -- its info is redundant with the QuickStats bar and the overview section
-- Increase section spacing from `space-y-12` to `space-y-16`
-- Add thin `border-b border-border/30` dividers between major sections
-- Reduce excessive motion animations (remove per-section `whileInView` -- keep only the initial page load fade)
-- Clean up the content grid gap
+### 3. PropertyQuickStats.tsx -- Refined stat bar
+- Remove the `-mt-12 relative z-10` overlap positioning
+- Use a simple horizontal divider approach: stats displayed inline with pipe separators or thin vertical dividers
+- Add subtle gold accent to the stat values (using `text-[hsl(var(--gold-accent))]`)
 
-### 2. PropertyQuickStats.tsx
-- Remove the frosted glass background (`bg-background/80 backdrop-blur-xl`)
-- Use a clean white card with a thin border instead
-- Remove colored icon backgrounds -- use plain navy icons inline
-- Simplify to a horizontal stat row with text only (no icon circles)
+### 4. BookingWidget.tsx -- Gold accent treatment
+- Apply gold color to the price display (`text-[hsl(var(--accent))]` for the price number)
+- Ensure the CTA button uses the gold accent prominently
+- Add a thin gold top border to the widget card for visual distinction
 
-### 3. PropertyHighlights.tsx (badges variant)
-- Change from colored `bg-secondary` rounded-full badges to clean text items with a small bullet or dash
-- Remove motion animations on individual badges
-- Use a simple two-column grid with clean typography
+### 5. PropertyCard.tsx -- Cleaner card styling
+- Replace `card-organic` with a simpler `border border-border/50 rounded-2xl bg-card` 
+- Remove `hover-lift` animation, use subtle `hover:shadow-md` instead
+- Remove the motion animations on individual cards for a more stable feel
 
-### 4. AmenityList.tsx (grid variant)
-- Remove `bg-secondary/30` colored backgrounds on amenity tiles
-- Use clean white cards with thin borders or a simple list layout
-- Remove `whileHover` scale animations -- keep it static and professional
-- Simplify category headers
+### 6. Section headings (PropertyDetail.tsx)
+- Add a small gold decorative element (a short line or bar) before each section heading
+- Keep the existing `font-serif` styling but bump to `font-semibold` for more weight
 
-### 5. RoomBreakdown.tsx
-- Replace `card-organic` (shadowed cards) with clean bordered containers
-- Remove colored icon circles, use inline navy icons
-- Cleaner summary stat presentation
-
-### 6. NeighborhoodInfo.tsx
-- Remove `card-organic` shadow cards, use `border border-border/50` containers
-- Remove colored icon circles (`bg-primary/10`), use plain icons
-
-### 7. BookingWidget.tsx
-- Keep the sticky sidebar but simplify -- remove `card-organic` heavy shadow
-- Use clean border card with subtle shadow
-- Keep the gold CTA button as the single accent pop
-
-### 8. PropertyStickyNav.tsx
-- Simplify active state from `bg-primary text-primary-foreground` (filled pill) to a simple underline indicator
-- Reduce visual weight
-
-### 9. HouseRulesAccordion.tsx
-- Ensure consistent clean styling with thin borders
+### 7. SimilarProperties.tsx -- Cleanup
+- Remove `motion` wrapper animation (consistent with the "reduce motion" principle)
+- Remove `card-organic` reference in loading skeleton
 
 ## Files Modified
 
 | File | Change |
 |------|--------|
-| `src/pages/PropertyDetail.tsx` | Remove AtAGlanceCards, add section dividers, increase spacing, reduce motion |
-| `src/components/properties/PropertyQuickStats.tsx` | Clean white card, remove colored icon backgrounds |
-| `src/components/properties/PropertyHighlights.tsx` | Simple grid layout, remove colored badges |
-| `src/components/properties/AmenityList.tsx` | Remove colored tile backgrounds, simplify hover effects |
-| `src/components/properties/RoomBreakdown.tsx` | Clean bordered containers, inline icons |
-| `src/components/properties/NeighborhoodInfo.tsx` | Remove heavy card shadows, use light borders |
-| `src/components/properties/PropertyStickyNav.tsx` | Underline-style active indicator |
-| `src/components/booking/BookingWidget.tsx` | Lighter card shadow, clean borders |
+| `src/components/properties/PropertyGallery.tsx` | Full-width fallback for single image |
+| `src/pages/PropertyDetail.tsx` | Description truncation, spacing fixes, gold accents on section headings |
+| `src/components/properties/PropertyQuickStats.tsx` | Remove overlap positioning, gold stat values, inline layout |
+| `src/components/booking/BookingWidget.tsx` | Gold price accent, gold top border |
+| `src/components/properties/PropertyCard.tsx` | Cleaner card, remove heavy animations |
+| `src/components/properties/SimilarProperties.tsx` | Remove motion wrapper, clean skeleton |
 
-No database changes. No new files. Pure styling and layout refinement.
+No database changes. No new dependencies.
 
