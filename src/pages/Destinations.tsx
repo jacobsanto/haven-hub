@@ -15,11 +15,9 @@ const Destinations = () => {
   const { data: properties } = useProperties();
 
   // Count properties per destination (by city/village matching)
-  const getPropertyCount = (destinationName: string) => {
+  const getPropertyCount = (destinationId: string) => {
     if (!properties) return 0;
-    return properties.filter(p => 
-      p.city.toLowerCase() === destinationName.toLowerCase()
-    ).length;
+    return properties.filter(p => p.destination_id === destinationId).length;
   };
 
   return (
@@ -79,7 +77,7 @@ const Destinations = () => {
                 <DestinationCard
                   key={destination.id}
                   destination={destination}
-                  propertyCount={getPropertyCount(destination.name)}
+                  propertyCount={getPropertyCount(destination.id)}
                   index={index}
                 />
               ))}
