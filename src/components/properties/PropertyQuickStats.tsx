@@ -38,23 +38,15 @@ export function PropertyQuickStats({ property }: PropertyQuickStatsProps) {
   ];
 
   return (
-    <div className="relative -mt-12 z-10 mx-4 md:mx-0">
-      <div className="bg-background border border-border/50 rounded-xl p-4 md:p-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {stats.map((stat) => (
-            <div key={stat.label} className="flex items-center gap-3">
-              <stat.icon className="h-5 w-5 text-foreground/60 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-lg md:text-xl font-semibold text-foreground truncate">
-                  {stat.value}
-                </p>
-                <p className="text-xs md:text-sm text-muted-foreground truncate">
-                  {stat.label}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="mt-8 mx-4 md:mx-0">
+      <div className="flex flex-wrap items-center divide-x divide-border/50">
+        {stats.map((stat) => (
+          <div key={stat.label} className="flex items-center gap-2 px-5 py-2 first:pl-0">
+            <stat.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-lg font-semibold text-accent">{stat.value}</span>
+            <span className="text-sm text-muted-foreground">{stat.label}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

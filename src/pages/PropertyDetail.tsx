@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Users, Bed, Bath, ChevronRight, Home } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -43,6 +43,38 @@ const SECTIONS = [
   { id: 'location', label: 'Location' },
   { id: 'policies', label: 'Policies' },
 ];
+
+// Reusable section heading with gold accent bar
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-6">
+      <div className="w-10 h-0.5 bg-accent mb-3" />
+      <h2 className="text-xl sm:text-2xl font-serif font-semibold">{children}</h2>
+    </div>
+  );
+}
+
+// Description with read more / read less toggle
+function DescriptionBlock({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const shouldTruncate = text.length > 300;
+
+  return (
+    <div className="prose prose-lg max-w-none mt-6">
+      <p className="text-muted-foreground leading-relaxed">
+        {shouldTruncate && !expanded ? `${text.slice(0, 300)}…` : text}
+      </p>
+      {shouldTruncate && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-sm font-medium text-accent hover:underline mt-1"
+        >
+          {expanded ? 'Read less' : 'Read more'}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function PropertyDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -191,11 +223,14 @@ export default function PropertyDetail() {
             <section id="overview" className="scroll-mt-32">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-start gap-3">
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium text-foreground">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-semibold text-foreground">
                     {property.name}
                   </h1>
                   {property.instant_booking && <InstantBookingBadge />}
                 </div>
+
+                {/* Gold accent line */}
+                <div className="w-16 h-0.5 bg-accent" />
 
                 {/* Special Offer */}
                 {activeOffer && (
@@ -210,13 +245,9 @@ export default function PropertyDetail() {
                   </span>
                 </div>
 
-                {/* Description */}
+                {/* Description with Read more/less */}
                 {property.description && (
-                  <div className="prose prose-lg max-w-none mt-6">
-                    <p className="text-muted-foreground leading-relaxed">
-                      {property.description}
-                    </p>
-                  </div>
+                  <DescriptionBlock text={property.description} />
                 )}
               </div>
             </section>
@@ -224,14 +255,14 @@ export default function PropertyDetail() {
             {/* Highlights */}
             {property.highlights && property.highlights.length > 0 && (
               <section id="highlights" className="scroll-mt-32 border-t border-border/30 pt-16">
-                <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Highlights</h2>
+                <SectionHeading>Highlights</SectionHeading>
                 <PropertyHighlights highlights={property.highlights} variant="badges" />
               </section>
             )}
 
             {/* Room Breakdown */}
             <section id="rooms" className="scroll-mt-32 border-t border-border/30 pt-16">
-              <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Rooms & Spaces</h2>
+              <SectionHeading>Rooms & Spaces</SectionHeading>
               <RoomBreakdown
                 rooms={property.rooms}
                 bedrooms={property.bedrooms}
@@ -242,7 +273,7 @@ export default function PropertyDetail() {
             {/* Amenities */}
             {property.amenities.length > 0 && (
               <section id="amenities" className="scroll-mt-32 border-t border-border/30 pt-16">
-                <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Amenities & Features</h2>
+                <SectionHeading>Amenities & Features</SectionHeading>
                 <AmenityList 
                   amenities={property.amenities} 
                   variant="grid" 
@@ -253,7 +284,7 @@ export default function PropertyDetail() {
 
             {/* Neighborhood & Location */}
             <section id="location" className="scroll-mt-32 border-t border-border/30 pt-16">
-              <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Location & Neighborhood</h2>
+              <SectionHeading>Location & Neighborhood</SectionHeading>
               <NeighborhoodInfo
                 description={property.neighborhood_description}
                 attractions={property.nearby_attractions}
@@ -265,7 +296,7 @@ export default function PropertyDetail() {
 
             {/* House Rules & Policies */}
             <section id="policies" className="scroll-mt-32 border-t border-border/30 pt-16">
-              <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">House Rules & Policies</h2>
+              <SectionHeading>House Rules & Policies</SectionHeading>
               <HouseRulesAccordion
                 houseRules={property.house_rules}
                 cancellationPolicy={property.cancellation_policy}
