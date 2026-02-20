@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useBrandSettings, useUpdateBrandSettings, defaultBrandSettings } from '@/hooks/useBrandSettings';
@@ -11,7 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FontSelector } from '@/components/admin/FontSelector';
 import { CurrencySettingsCard } from '@/components/admin/CurrencySettingsCard';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Type, Building2, Save, RotateCcw, Upload, X, ImageIcon, Coins } from 'lucide-react';
+import { Palette, Type, Building2, Save, RotateCcw, Coins } from 'lucide-react';
+import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
+import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { SupportedCurrency } from '@/types/currency';
 
 const HEADING_FONTS = [
@@ -91,8 +93,6 @@ export default function AdminSettings() {
   const { data: settings, isLoading } = useBrandSettings();
   const updateSettings = useUpdateBrandSettings();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
 
   const [formState, setFormState] = useState<FormState>({
     brand_name: defaultBrandSettings.brand_name,
@@ -134,73 +134,6 @@ export default function AdminSettings() {
 
   const handleInputChange = (field: keyof FormState, value: string) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please upload an image file (PNG, JPG, SVG, etc.)',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: 'File too large',
-        description: 'Logo image must be under 2MB',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `brand-logo-${Date.now()}.${fileExt}`;
-      const filePath = `logos/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('property-images')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('property-images')
-        .getPublicUrl(filePath);
-
-      // Update form state
-      setFormState((prev) => ({ ...prev, logo_url: publicUrl }));
-
-      toast({
-        title: 'Logo uploaded',
-        description: 'Your logo has been uploaded. Click Save Changes to apply.',
-      });
-    } catch (error) {
-      console.error('Logo upload error:', error);
-      toast({
-        title: 'Upload failed',
-        description: 'Failed to upload logo. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
   };
 
   const handleRemoveLogo = () => {
@@ -324,58 +257,19 @@ export default function AdminSettings() {
                   {/* Logo Upload Section */}
                   <div className="space-y-3">
                     <Label>Brand Logo</Label>
-                    <div className="flex items-start gap-6">
-                      {/* Logo Preview */}
-                      <div className="relative">
-                        {formState.logo_url ? (
-                          <div className="relative">
-                            <img
-                              src={formState.logo_url}
-                              alt="Brand logo"
-                              className="h-24 w-auto max-w-[200px] object-contain rounded-lg border bg-card p-2"
-                            />
-                            <button
-                              onClick={handleRemoveLogo}
-                              className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
-                              title="Remove logo"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="h-24 w-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center bg-muted/30">
-                            <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Upload Controls */}
-                      <div className="flex-1 space-y-2">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleLogoUpload}
-                          className="hidden"
-                          id="logo-upload"
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={uploading}
-                          className="gap-2"
-                        >
-                          <Upload className="h-4 w-4" />
-                          {uploading ? 'Uploading...' : 'Upload Logo'}
-                        </Button>
-                        <p className="text-xs text-muted-foreground">
-                          Recommended: PNG or SVG with transparent background. Max 2MB.
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          The logo will appear in the header, footer, and admin sidebar.
-                        </p>
-                      </div>
-                    </div>
+                    <ImageUploadWithOptimizer
+                      value={formState.logo_url || undefined}
+                      onUpload={(url) => setFormState((prev) => ({ ...prev, logo_url: url }))}
+                      onRemove={handleRemoveLogo}
+                      preset={IMAGE_PRESETS.logo}
+                      storagePath="logos"
+                      label="Upload Logo"
+                      aspectClass="aspect-[2/1] max-w-[300px]"
+                      compact
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Recommended: PNG or SVG with transparent background. Auto-optimized before upload.
+                    </p>
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-2">

@@ -1,6 +1,8 @@
 import { useState, useEffect, KeyboardEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2, Sparkles, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
+import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import {
@@ -709,40 +711,14 @@ export default function AdminPropertyForm() {
               {/* Hero Image */}
               <div className="space-y-2">
                 <Label>Hero Image</Label>
-                {formData.hero_image_url ? (
-                  <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                    <img
-                      src={formData.hero_image_url}
-                      alt="Hero"
-                      className="w-full h-full object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={() =>
-                        setFormData((prev) => ({ ...prev, hero_image_url: '' }))
-                      }
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <label className="block w-full aspect-video border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary transition-colors">
-                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                      <Upload className="h-8 w-8 mb-2" />
-                      <span>Click to upload hero image</span>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(e, 'hero')}
-                      disabled={uploading}
-                    />
-                  </label>
-                )}
+                <ImageUploadWithOptimizer
+                  value={formData.hero_image_url || undefined}
+                  onUpload={(url) => setFormData((prev) => ({ ...prev, hero_image_url: url }))}
+                  onRemove={() => setFormData((prev) => ({ ...prev, hero_image_url: '' }))}
+                  preset={IMAGE_PRESETS.hero}
+                  storagePath="hero"
+                  label="Click to upload hero image"
+                />
               </div>
 
               {/* Gallery */}
@@ -770,17 +746,16 @@ export default function AdminPropertyForm() {
                       </Button>
                     </div>
                   ))}
-                  <label className="aspect-square border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center text-muted-foreground">
-                    <Plus className="h-6 w-6 mb-1" />
-                    <span className="text-xs">Add Image</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(e, 'gallery')}
-                      disabled={uploading}
+                  <div className="aspect-square">
+                    <ImageUploadWithOptimizer
+                      onUpload={(url) => setFormData((prev) => ({ ...prev, gallery: [...prev.gallery, url] }))}
+                      preset={IMAGE_PRESETS.gallery}
+                      storagePath="gallery"
+                      label="Add Image"
+                      aspectClass="aspect-square"
+                      compact
                     />
-                  </label>
+                  </div>
                 </div>
               </div>
             </div>
