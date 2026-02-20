@@ -53,10 +53,15 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   property_type: PropertyType;
-  // New timing/timezone fields
+  // Timing/timezone fields
   timezone: string;
   check_in_time: string;
   check_out_time: string;
+  // Address/geo fields
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  postal_code: string | null;
 }
 
 export interface SeasonalRate {

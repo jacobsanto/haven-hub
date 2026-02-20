@@ -1457,6 +1457,7 @@ export type Database = {
       }
       properties: {
         Row: {
+          address: string | null
           amenities: string[] | null
           base_price: number
           bathrooms: number
@@ -1476,11 +1477,14 @@ export type Database = {
           house_rules: string[]
           id: string
           instant_booking: boolean
+          latitude: number | null
+          longitude: number | null
           max_guests: number
           name: string
           nearby_attractions: Json
           neighborhood_description: string | null
           pet_policy: string | null
+          postal_code: string | null
           property_type: string
           region: string | null
           rooms: Json
@@ -1492,6 +1496,7 @@ export type Database = {
           virtual_tour_url: string | null
         }
         Insert: {
+          address?: string | null
           amenities?: string[] | null
           base_price?: number
           bathrooms?: number
@@ -1511,11 +1516,14 @@ export type Database = {
           house_rules?: string[]
           id?: string
           instant_booking?: boolean
+          latitude?: number | null
+          longitude?: number | null
           max_guests?: number
           name: string
           nearby_attractions?: Json
           neighborhood_description?: string | null
           pet_policy?: string | null
+          postal_code?: string | null
           property_type?: string
           region?: string | null
           rooms?: Json
@@ -1527,6 +1535,7 @@ export type Database = {
           virtual_tour_url?: string | null
         }
         Update: {
+          address?: string | null
           amenities?: string[] | null
           base_price?: number
           bathrooms?: number
@@ -1546,11 +1555,14 @@ export type Database = {
           house_rules?: string[]
           id?: string
           instant_booking?: boolean
+          latitude?: number | null
+          longitude?: number | null
           max_guests?: number
           name?: string
           nearby_attractions?: Json
           neighborhood_description?: string | null
           pet_policy?: string | null
+          postal_code?: string | null
           property_type?: string
           region?: string | null
           rooms?: Json

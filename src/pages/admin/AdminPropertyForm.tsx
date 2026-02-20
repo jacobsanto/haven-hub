@@ -1,6 +1,6 @@
 import { useState, useEffect, KeyboardEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2, Sparkles, Search, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import {
@@ -35,6 +35,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { PropertyStatus, PropertyType } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
+import { useGeocode, GeocodeResult } from '@/hooks/useGeocode';
+import { useDestinations } from '@/hooks/useDestinations';
+import { Badge } from '@/components/ui/badge';
 
 export default function AdminPropertyForm() {
   const { id } = useParams<{ id: string }>();
@@ -43,6 +46,10 @@ export default function AdminPropertyForm() {
   const createProperty = useCreateProperty();
   const updateProperty = useUpdateProperty();
   const { data: properties } = useAdminProperties();
+  const { data: destinations } = useDestinations();
+  const geocode = useGeocode();
+  const [addressQuery, setAddressQuery] = useState('');
+  const [showGeoResults, setShowGeoResults] = useState(false);
 
   const isEditing = !!id;
   const existingProperty = properties?.find((p) => p.id === id);
@@ -79,6 +86,11 @@ export default function AdminPropertyForm() {
     timezone: 'Europe/Athens',
     check_in_time: '14:00',
     check_out_time: '11:00',
+    // Address/geo fields
+    address: null as string | null,
+    latitude: null as number | null,
+    longitude: null as number | null,
+    postal_code: null as string | null,
   });
 
   const [uploading, setUploading] = useState(false);
@@ -116,6 +128,10 @@ export default function AdminPropertyForm() {
         timezone: existingProperty.timezone || 'Europe/Athens',
         check_in_time: existingProperty.check_in_time || '14:00',
         check_out_time: existingProperty.check_out_time || '11:00',
+        address: existingProperty.address || null,
+        latitude: existingProperty.latitude ?? null,
+        longitude: existingProperty.longitude ?? null,
+        postal_code: existingProperty.postal_code || null,
       });
     }
   }, [existingProperty]);
@@ -177,6 +193,46 @@ export default function AdminPropertyForm() {
       ...prev,
       gallery: prev.gallery.filter((_, i) => i !== index),
     }));
+  };
+
+  const autoMatchDestination = (city: string, country: string) => {
+    if (!destinations?.length) return null;
+    const cityLower = city.toLowerCase();
+    const countryLower = country.toLowerCase();
+    const cityMatch = destinations.find((d) => d.name.toLowerCase() === cityLower && d.status === 'active');
+    if (cityMatch) return cityMatch.id;
+    const partialMatch = destinations.find((d) => d.name.toLowerCase().includes(cityLower) && d.status === 'active');
+    if (partialMatch) return partialMatch.id;
+    const countryMatches = destinations.filter((d) => d.country.toLowerCase() === countryLower && d.status === 'active');
+    if (countryMatches.length) {
+      const featured = countryMatches.find((d) => d.is_featured);
+      return (featured || countryMatches[0]).id;
+    }
+    return null;
+  };
+
+  const applyGeoResult = (result: GeocodeResult) => {
+    const destId = autoMatchDestination(result.city, result.country);
+    setFormData((prev) => ({
+      ...prev,
+      city: result.city || prev.city,
+      region: result.region || prev.region,
+      country: result.country || prev.country,
+      address: result.address || prev.address,
+      postal_code: result.postal_code || prev.postal_code,
+      latitude: result.latitude,
+      longitude: result.longitude,
+      destination_id: destId ?? prev.destination_id,
+    }));
+    setShowGeoResults(false);
+  };
+
+  const handleAddressLookup = async () => {
+    const results = await geocode.lookup(addressQuery);
+    setShowGeoResults(true);
+    if (results.length === 1) {
+      applyGeoResult(results[0]);
+    }
   };
 
   const toggleAmenity = (amenity: string) => {
@@ -316,6 +372,55 @@ export default function AdminPropertyForm() {
                 />
               </div>
 
+              {/* Address Lookup */}
+              <div className="space-y-2">
+                <Label>Address Lookup</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={addressQuery}
+                    onChange={(e) => setAddressQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddressLookup())}
+                    placeholder="Type address or place name and click Lookup"
+                    className="input-organic flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddressLookup}
+                    disabled={geocode.loading || addressQuery.trim().length < 2}
+                    className="gap-2"
+                  >
+                    {geocode.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                    Lookup
+                  </Button>
+                </div>
+                {showGeoResults && geocode.results.length > 1 && (
+                  <div className="border border-border rounded-lg divide-y divide-border max-h-48 overflow-y-auto">
+                    {geocode.results.map((r, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 transition-colors"
+                        onClick={() => applyGeoResult(r)}
+                      >
+                        {r.display_name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {geocode.error && <p className="text-sm text-destructive">{geocode.error}</p>}
+              </div>
+
+              {/* Matched destination */}
+              {formData.destination_id && destinations && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Linked to:</span>
+                  <Badge variant="secondary">
+                    {destinations.find((d) => d.id === formData.destination_id)?.name || 'Destination'}
+                  </Badge>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="city">City *</Label>
@@ -356,6 +461,41 @@ export default function AdminPropertyForm() {
                     className="input-organic"
                     required
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="address">Full Address</Label>
+                  <Input
+                    id="address"
+                    value={formData.address || ''}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, address: e.target.value || null }))
+                    }
+                    placeholder="Street address"
+                    className="input-organic"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="postal_code">Postal Code</Label>
+                  <Input
+                    id="postal_code"
+                    value={formData.postal_code || ''}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, postal_code: e.target.value || null }))
+                    }
+                    placeholder="e.g., 84700"
+                    className="input-organic"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Coordinates</Label>
+                  <p className="text-sm text-muted-foreground pt-2">
+                    {formData.latitude != null && formData.longitude != null
+                      ? `${formData.latitude.toFixed(5)}, ${formData.longitude.toFixed(5)}`
+                      : 'Not set — use address lookup'}
+                  </p>
                 </div>
               </div>
             </div>
