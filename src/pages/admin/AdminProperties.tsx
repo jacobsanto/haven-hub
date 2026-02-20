@@ -86,12 +86,20 @@ export default function AdminProperties() {
                 Manage your property listings
               </p>
             </div>
-            <Link to="/admin/properties/new">
-              <Button className="rounded-full gap-2">
-                <Plus className="h-4 w-4" />
-                Add Property
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to="/admin/properties/quick-onboard">
+                <Button variant="outline" className="rounded-full gap-2">
+                  <Plus className="h-4 w-4" />
+                  Quick Onboard
+                </Button>
+              </Link>
+              <Link to="/admin/properties/new">
+                <Button className="rounded-full gap-2">
+                  <Plus className="h-4 w-4" />
+                  Full Form
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Search */}
