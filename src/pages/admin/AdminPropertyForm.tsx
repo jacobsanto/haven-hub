@@ -427,9 +427,11 @@ export default function AdminPropertyForm() {
                   <Input
                     id="city"
                     value={formData.city}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, city: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const city = e.target.value;
+                      const destId = autoMatchDestination(city, formData.country);
+                      setFormData((prev) => ({ ...prev, city, destination_id: destId ?? prev.destination_id }));
+                    }}
                     placeholder="e.g., Florence"
                     className="input-organic"
                     required
@@ -454,9 +456,11 @@ export default function AdminPropertyForm() {
                   <Input
                     id="country"
                     value={formData.country}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, country: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const country = e.target.value;
+                      const destId = autoMatchDestination(formData.city, country);
+                      setFormData((prev) => ({ ...prev, country, destination_id: destId ?? prev.destination_id }));
+                    }}
                     placeholder="e.g., Italy"
                     className="input-organic"
                     required

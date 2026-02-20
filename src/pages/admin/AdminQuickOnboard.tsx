@@ -372,7 +372,11 @@ export default function AdminQuickOnboard() {
                       <Input
                         id="city"
                         value={form.city}
-                        onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
+                        onChange={(e) => {
+                          const city = e.target.value;
+                          const destId = autoMatchDestination(city, form.country);
+                          setForm((p) => ({ ...p, city, destination_id: destId ?? p.destination_id }));
+                        }}
                         placeholder="e.g., Florence"
                         className="input-organic"
                       />
@@ -382,7 +386,11 @@ export default function AdminQuickOnboard() {
                       <Input
                         id="country"
                         value={form.country}
-                        onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}
+                        onChange={(e) => {
+                          const country = e.target.value;
+                          const destId = autoMatchDestination(form.city, country);
+                          setForm((p) => ({ ...p, country, destination_id: destId ?? p.destination_id }));
+                        }}
                         placeholder="e.g., Italy"
                         className="input-organic"
                       />
