@@ -1,108 +1,103 @@
-# Immersive Travel-Luxury Visual Overhaul
 
-## What You Want
+# Booking Component Visual Refactor (UI Only)
 
-Based on the reference image, you want a much more dramatic, immersive aesthetic with:
+## Overview
 
-- **Sky/cloud atmospheric backgrounds** -- not flat gradients, but layered, ambient sky imagery
-- **A decorative world map/globe** SVG element as a visual accent
-- **Dramatically frosted glassmorphism panels** -- more visible blur, stronger white borders
-- **Booking widget card** styled like the reference (clean white card with check-in/check-out details)
-- **Feature icons section** at the bottom (like "Smart Check-in", "Local Guides", "Eco-Friendly Stays")
-- **More pill-shaped, blue-filled buttons** (solid blue "Search" button, blue "Book Now")
-- **Overall softer, dreamier, more immersive atmosphere. EVEN COPY THE COLLOR PALLET**
+Restyle the BookingWidget, PriceBreakdown, and QuickBookCard components to a clean, solid-white aesthetic with strict spacing, clear price hierarchy, and minimal motion. Zero changes to business logic, hooks, API calls, or data flow.
 
 ## What Changes
 
-### 1. Atmospheric Background System (index.css)
+### 1. BookingWidget.tsx -- Main booking card
 
-- Replace the flat `hero-gradient` with a multi-layer sky effect using CSS gradients that mimic clouds and atmospheric depth
-- Add a new `.sky-atmosphere` class with stacked radial gradients (soft white cloud shapes, light blue sky layers)
-- Body background shifts to a very light sky-blue with subtle radial cloud-like shapes via CSS
-- Add `.cloud-layer` pseudo-elements for wispy, floating cloud effects behind content
+**Card container** (line 243):
+- Remove: `border-border/50 shadow-sm` (current classes)
+- Apply: `bg-white dark:bg-card rounded-2xl border border-[rgba(30,60,120,0.08)] p-5 space-y-4`
+- Inline style: `box-shadow: var(--shadow-soft)` (no glow, no glass blur)
+- No `backdrop-blur`, no `card-organic` class
 
-### 2. Decorative World Map SVG (new component)
+**Internal spacing** -- tighten from 6-unit to 8px-scale:
+- Outer padding: `p-5` (20px = 2.5 x 8)
+- Section gaps: `space-y-4` (16px)
+- Date picker gap: `space-y-3` (12px)
+- Guest row: `px-3 py-2`
 
-- Create `src/components/decorative/WorldMapDecor.tsx` -- an inline SVG world map outline (simplified continents, dotted connection lines, pin markers)
-- Rendered as a faded, decorative background element in the hero section
-- Styled with `opacity-[0.08]` and primary blue color, positioned absolutely
-- Animated pin markers that subtly pulse
+**All internal borders**: `border-[rgba(30,60,120,0.08)]` -- the subtle navy-tinted border
 
-### 3. Hero Section Overhaul (Index.tsx)
+**Price hierarchy** (both instant and request flows):
+- Subtotal line: `text-xs text-muted-foreground` (smaller, muted)
+- Discount line: `text-xs text-emerald-600` (smaller, green)
+- Total label: `text-sm font-semibold text-foreground`
+- Total value: `text-xl font-bold text-foreground` (large, bold, navy via `--foreground`)
 
-- Add the WorldMapDecor as a background layer in the hero
-- Increase the cloud/sky atmospheric effects with additional FloatingBlob elements (white, larger, more blurred)
-- Add subtle cloud-shaped decorative SVG elements floating in the background
-- "Book Your Perfect Escape" heading gets a softer text-shadow for depth
-- Add a "Your Journey Awaits" tagline section below the search bar
-- Add a feature icons row (Shield/Check-in, MapPin/Local Guides, Leaf/Eco-Friendly) with frosted glass circles
+**Animated total** -- new local `AnimatedTotal` component:
+- Uses `useRef` to track previous value
+- On value change: fade opacity 0 -> 1
+- Duration: `0.25s ease` via inline `transitionDuration`
+- Fade only, no translate, no scale
+- No card-level animation at all
 
-### 4. Search Bar Restyling (SearchBar.tsx)
+**Primary CTA buttons** (Book & Pay Now, Continue, Request Booking):
+- Replace `btn-organic` class with explicit:
+  - `bg-gradient-to-r from-primary to-primary/90 text-primary-foreground`
+  - `rounded-full shadow-soft`
+  - `hover:-translate-y-[2px] hover:shadow-medium`
+  - Transition using existing `--duration-hover` and `--ease-lift` tokens
+  - No glow, no shine sweep, no additional decorative effects
 
-- Hero variant: stronger glassmorphism -- `bg-white/80 backdrop-blur-2xl` with more visible white border
-- "Search" button changes from icon-only to a labeled pill button: blue background, white text, "Search" label
-- Input field backgrounds become more translucent (`bg-white/40`)
-- Overall search bar gets a stronger diffused shadow for that floating effect
+**Popover backgrounds**: `bg-white dark:bg-card` (solid, not `bg-card` which can be translucent)
 
-### 5. Booking Summary Widget (new component)
+### 2. PriceBreakdown.tsx -- Checkout price details
 
-- Create `src/components/booking/BookingSummaryCard.tsx` -- a clean white glassmorphism card
-- Displays: property name, check-in date, check-out date, guests, total price, and "Book Now" button
-- Used on the homepage hero area as a visual element showing a sample booking (or the user's current booking context if available)
-- Clean layout matching the reference: label-value pairs with a prominent blue "Book Now" CTA
+**Full variant** (line 64):
+- Container: `bg-white dark:bg-card rounded-2xl border border-[rgba(30,60,120,0.08)] p-6`
+- Apply `box-shadow: var(--shadow-soft)` via style prop
+- Remove any inherited glassmorphism from `bg-card` being translucent
 
-### 6. Property Cards Enhancement (QuickBookCard.tsx)
+**Price hierarchy in full variant**:
+- All line items (accommodation, add-ons, fees, taxes): keep `text-sm text-muted-foreground`
+- Total label: `font-serif text-lg font-medium` (unchanged)
+- Total value: `font-serif text-2xl font-bold text-foreground` (bumped from `font-semibold` to `font-bold`)
 
-- Image section gets a subtle inner shadow overlay for depth
-- "Book Now" overlay button uses solid blue gradient (not just primary)
-- Price badge becomes a frosted glass pill overlaying the image
-- Card hover adds a stronger glow effect
+**Compact variant**: same hierarchy treatment -- line items `text-sm`, total `font-bold`
 
-### 7. Button Color Shift (button.tsx)
+**Deposit info box**: border changed to `border-[rgba(30,60,120,0.08)]`
 
-- Default variant shifts slightly bluer: `from-[hsl(220,70%,50%)] to-[hsl(220,60%,42%)]` to match the reference's bright blue buttons
-- "Book Now" and "Search" buttons use this brighter blue
-- Maintain the pill shape and glow hover
+### 3. QuickBookCard.tsx -- Property listing card
 
-### 8. Floating Blobs Enhancement (FloatingBlob.tsx)
+**Card container** (line 43):
+- Replace `card-organic` with: `bg-white dark:bg-card rounded-2xl border border-[rgba(30,60,120,0.08)] overflow-hidden`
+- Style: `box-shadow: var(--shadow-soft)`
+- No `backdrop-blur`, no glassmorphism
 
-- Add a new `cloud` variant with white color and very high blur (`blur-[80px]`)
-- Increase size options to include `xl` for larger atmospheric clouds
-- Hero gets 4-5 blobs instead of 2 for a much denser atmospheric feel
+**Hover state**:
+- Remove: `hover:shadow-xl hover:-translate-y-1`
+- Apply: `hover:-translate-y-[2px]` with `hover:shadow-medium`
+- Transition: `transition-[transform,box-shadow] [transition-duration:var(--duration-hover)] [transition-timing-function:var(--ease-lift)]`
+- No glow effects
 
-### 9. "Your Journey Awaits" Feature Section (Index.tsx)
+**Content spacing**:
+- Content area: keep `p-4` (16px, on 8px grid)
+- Stats margin: keep `mb-4` (16px)
+- CTA border: change to `border-[rgba(30,60,120,0.08)]`
 
-- New section below the search bar in the hero area
-- Three feature icons in frosted glass circles: Smart Check-in, Local Guides, Eco-Friendly Stays
-- Matches the bottom portion of the reference image
-- Uses the existing TrustBadges pattern but with new badges and larger icon circles
-
-### 10. Section Backgrounds (Index.tsx)
-
-- Replace flat `bg-secondary/20` section backgrounds with layered sky gradients
-- Add subtle cloud-shaped radial gradients to each section transition
-- The "Why Book Direct" section gets a stronger atmospheric treatment
-- CTA section at bottom uses a deep navy-to-blue gradient with a radial glow Admin dashboard
-- Mobile responsive breakpoints and layout grid Navigation logic and routing Page structure and information architecture
-
-## Files Modified
-
-
-| File                                            | Change                                                                                                         |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `src/index.css`                                 | Cloud/sky atmospheric CSS classes, enhanced hero gradient, cloud layers                                        |
-| `src/components/decorative/FloatingBlob.tsx`    | Add `cloud` variant, `xl` size, white color option                                                             |
-| `src/components/decorative/WorldMapDecor.tsx`   | **New** -- decorative SVG world map with animated pins                                                         |
-| `src/components/booking/BookingSummaryCard.tsx` | **New** -- clean booking summary widget card                                                                   |
-| `src/pages/Index.tsx`                           | World map background, more blobs, feature icons section, booking summary card, atmospheric section backgrounds |
-| `src/components/search/SearchBar.tsx`           | Stronger glassmorphism, labeled "Search" pill button, more translucent inputs                                  |
-| `src/components/ui/button.tsx`                  | Brighter blue gradient for default variant                                                                     |
-| `src/components/booking/QuickBookCard.tsx`      | Enhanced hover glow, frosted price badge                                                                       |
-
+**Hover overlay button**: keep existing gradient button, no changes (this is functional)
 
 ## What Does NOT Change
 
-- Backend integrations (booking flow, PMS, Stripe)
-- Data structure, hooks, services, and API calls
-- Mobile responsive breakpoints and layout grid
-- Functional flow and business logic
+- All hooks: `useCreateBooking`, `useRealtimeAvailability`, `useCurrency`, `useToast`
+- All state management and calculations (nights, baseTotal, discountAmount, totalPrice)
+- All navigation and routing logic
+- All Supabase/PMS calls and data flow
+- AvailabilityCalendar integration and date selection logic
+- Guest form validation and multi-step flow
+- UnifiedBookingDialog (not in scope -- only BookingWidget, PriceBreakdown, QuickBookCard)
+- Currency context and formatting
+- No new CSS tokens or color variables added
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `src/components/booking/BookingWidget.tsx` | Solid white card, subtle border, tightened 8px spacing, price hierarchy, AnimatedTotal component, blue gradient CTA with 2px hover lift |
+| `src/components/booking/PriceBreakdown.tsx` | Solid white container, subtle border, shadow-soft, bold total value |
+| `src/components/booking/QuickBookCard.tsx` | Replace card-organic with solid white card, subtle border, 2px hover lift, no glow |
