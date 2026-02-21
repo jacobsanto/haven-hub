@@ -23,15 +23,10 @@ export function FloatingBookButton() {
   const [isHovered, setIsHovered] = useState(false);
   const { openBooking } = useBooking();
 
-  // Hide on property detail pages where BookingWidget / MobileBookingCTA are visible
-  const isPropertyPage = location.pathname.startsWith('/properties/') && location.pathname !== '/properties';
-
   const handleClick = useCallback(() => {
     triggerHaptic('light');
     openBooking({ mode: 'search' });
   }, [openBooking]);
-
-  if (isPropertyPage) return null;
 
   return (
     <>
