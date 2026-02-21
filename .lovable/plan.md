@@ -1,81 +1,100 @@
 
+# Interactive Map View for Properties Page
 
-# Fix: Checkout Hold RLS Policy + Infinite Retry Loop
+## Overview
 
-## Root Cause
+Replace the "Map View Coming Soon" placeholder with a fully interactive map using **Leaflet** (free, no API key needed) that displays property pins. Hovering over a pin shows a rich villa card popup with image, price, stats, and booking CTA.
 
-Two issues working together to create the flooding error behavior:
+## Approach
 
-1. **RLS Policy Misconfiguration**: The `checkout_holds` INSERT policy "Create checkout holds for booking" is RESTRICTIVE. PostgreSQL requires at least one PERMISSIVE policy to grant base access; RESTRICTIVE policies can only further narrow that access. Since no PERMISSIVE INSERT policy exists for anonymous users, all inserts are denied -- even when the `expires_at` condition is valid.
+Use **Leaflet** + **react-leaflet** -- a free, open-source map library that requires no API keys. OpenStreetMap tiles provide the base map at no cost.
 
-2. **useEffect Retry Loop**: In `Checkout.tsx`, the hold-creation effect depends on `createHold.isPending`. When the mutation fails, `isPending` flips to `false`, re-triggering the effect. Since `holdId` remains `null` (never set on error), the condition passes again, creating an infinite loop of failed INSERT attempts (~3-4 per second).
+### New Dependencies
 
-## Fix 1: Database Migration
+- `leaflet` -- map rendering engine
+- `react-leaflet` -- React bindings for Leaflet
+- `@types/leaflet` -- TypeScript definitions
 
-Drop the current RESTRICTIVE INSERT policy and recreate it as PERMISSIVE:
+### New Component: `PropertyMapView`
 
-```sql
-DROP POLICY IF EXISTS "Create checkout holds for booking" ON public.checkout_holds;
+**File:** `src/components/properties/PropertyMapView.tsx`
 
-CREATE POLICY "Create checkout holds for booking"
-  ON public.checkout_holds
-  FOR INSERT
-  TO anon, authenticated
-  WITH CHECK (
-    (expires_at > now())
-    AND (expires_at < (now() + interval '15 minutes'))
-  );
-```
+A full-height interactive map that:
 
-This makes the policy PERMISSIVE (the default), which correctly grants INSERT access to anonymous and authenticated users when the `expires_at` window is valid. The existing `validate_checkout_hold` trigger still enforces rate limiting and session ID format validation as an additional safety layer.
+1. **Renders pins** for every property that has valid `latitude` and `longitude` values (skips properties without coordinates)
+2. **Custom markers** styled with the brand's primary color (custom SVG pin icon, not the default blue Leaflet marker)
+3. **Auto-fits bounds** to show all property pins on load using `fitBounds`
+4. **Hover popup** -- when hovering a marker, a styled popup appears showing:
+   - Property hero image (aspect 16:9, rounded top)
+   - Property name (font-serif)
+   - Location (city, country)
+   - Key stats row: bedrooms, bathrooms, max guests (with icons)
+   - Price per night (formatted with currency context)
+   - Instant booking badge (if applicable)
+   - Special offer badge (if active)
+   - "View Details" link to the property page
+   - "Book Now" button that opens `PropertyBookingPopup`
+5. **Click behavior** -- clicking the popup's "View Details" navigates to `/properties/{slug}`
+6. **Responsive** -- map takes full available height (min 500px on desktop, 400px on mobile)
+7. **Properties without coordinates** -- a small banner below the map notes "X properties not shown (missing location data)" if any are missing lat/lng
 
-## Fix 2: Stop the Infinite Retry Loop
+### Popup Design
 
-**File: `src/pages/Checkout.tsx`**
-
-Add a `holdFailed` ref that is set to `true` in `onError`. The useEffect checks this ref and skips retrying if a previous attempt already failed. Reset it only when dates change (meaning the user picked new dates and should get a fresh attempt).
+The hover popup mimics the QuickBookCard layout in miniature:
 
 ```text
-Before (simplified):
-  useEffect(() => {
-    if (checkIn && checkOut && property?.id && !holdId && !holdCreationPending.current && !createHold.isPending) {
-      // creates hold...
-    }
-  }, [checkIn, checkOut, property?.id, holdId, sessionId, createHold.isPending]);
-
-After:
-  const holdFailed = useRef(false);
-
-  // Reset failure flag when dates change
-  useEffect(() => {
-    holdFailed.current = false;
-  }, [checkIn, checkOut]);
-
-  useEffect(() => {
-    if (checkIn && checkOut && property?.id && !holdId && !holdCreationPending.current && !createHold.isPending && !holdFailed.current) {
-      holdCreationPending.current = true;
-      createHold.mutate(/* ... */, {
-        onError: () => {
-          holdCreationPending.current = false;
-          holdFailed.current = true;  // prevents retry
-          // show toast once
-        },
-      });
-    }
-  }, [checkIn, checkOut, property?.id, holdId, sessionId, createHold.isPending]);
++---------------------------+
+| [Hero Image - 16:9]       |
+| [Instant Book badge]      |
++---------------------------+
+| Villa Name          price  |
+| City, Country      /night |
+| Bed 3 | Bath 2 | Guests 6 |
+| [View Details] [Book Now] |
++---------------------------+
 ```
 
-Also remove `createHold.isPending` from the dependency array since the `holdCreationPending` ref already guards against concurrent calls, and having the mutation state as a dependency is what causes the re-trigger cycle.
+- Width: 280px
+- White background, rounded-xl, shadow-lg
+- Same border style as QuickBookCard: `border-[rgba(30,60,120,0.08)]`
+
+### Leaflet CSS
+
+Import Leaflet's CSS in the component file. The default Leaflet tile attribution is kept (required by OpenStreetMap license).
+
+### Changes to Properties Page
+
+**File:** `src/pages/Properties.tsx`
+
+Replace the "Map View Coming Soon" placeholder block (lines 323-331) with:
+
+```text
+<PropertyMapView
+  properties={properties || []}
+  isLoading={isLoading}
+/>
+```
+
+No other changes to the page. The grid/map toggle buttons already exist and work.
 
 ## Files Touched
 
-1. **Database migration** -- drop + recreate the checkout_holds INSERT policy as PERMISSIVE
-2. **`src/pages/Checkout.tsx`** -- add `holdFailed` ref guard and clean up useEffect dependencies
+1. **`src/components/properties/PropertyMapView.tsx`** -- NEW: Map component with Leaflet, custom markers, hover popups
+2. **`src/pages/Properties.tsx`** -- Replace placeholder with `PropertyMapView` component
 
 ## What Does NOT Change
 
-- No changes to the hold validation trigger (`validate_checkout_hold`)
-- No changes to the check-holds edge function
-- No changes to booking logic, payment flow, or availability sync
-- All other RLS policies remain unchanged
+- No database changes -- lat/lng fields already exist on properties
+- No backend changes
+- Grid view unchanged
+- Booking flow unchanged
+- QuickBookCard unchanged
+- All filters continue to work (the map receives the already-filtered `properties` array)
 
+## Technical Notes
+
+- Leaflet is ~40KB gzipped, lightweight compared to Google Maps or Mapbox
+- No API key required -- uses free OpenStreetMap tiles
+- Properties without coordinates are gracefully excluded with a count indicator
+- The map re-fits bounds whenever the filtered properties list changes
+- Popup uses React portals via react-leaflet's `Popup` component for full React rendering inside map popups
