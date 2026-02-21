@@ -118,13 +118,13 @@ export function AvailabilityCalendar({
       date > selectedCheckIn && date < selectedCheckOut;
 
     return cn(
-      'relative h-10 w-10 p-0 font-normal flex items-center justify-center rounded-full text-sm transition-colors',
-      isToday(date) && 'ring-1 ring-primary',
+      'relative h-10 w-10 p-0 font-normal flex items-center justify-center rounded-full text-sm transition-colors duration-150',
+      isToday(date) && 'ring-1 ring-primary/60',
       isUnavailable && 'text-muted-foreground/40 line-through cursor-not-allowed',
-      !isUnavailable && 'hover:bg-secondary cursor-pointer',
-      isCheckIn && 'bg-primary text-primary-foreground hover:bg-primary',
-      isCheckOut && 'bg-primary text-primary-foreground hover:bg-primary',
-      isInRange && 'bg-secondary',
+      !isUnavailable && 'hover:bg-primary/10 cursor-pointer',
+      isCheckIn && 'bg-primary/90 text-primary-foreground hover:bg-primary/90',
+      isCheckOut && 'bg-primary/90 text-primary-foreground hover:bg-primary/90',
+      isInRange && 'bg-primary/20 rounded-none',
     );
   };
 
@@ -184,8 +184,8 @@ export function AvailabilityCalendar({
   if (isLoading) {
     return (
       <div className={cn(
-        'bg-card rounded-xl border',
-        variant === 'compact' ? 'p-4' : 'p-6',
+        'bg-white dark:bg-card rounded-xl border border-[rgba(30,60,120,0.08)]',
+        variant === 'compact' ? 'p-2' : 'p-6',
         className
       )}>
         <div className={cn(variant === 'compact' ? 'h-64' : 'h-80', 'flex items-center justify-center')}>
@@ -197,8 +197,8 @@ export function AvailabilityCalendar({
 
   return (
     <div className={cn(
-      'bg-card rounded-xl border',
-      variant === 'compact' ? 'p-4' : 'p-6',
+      'bg-white dark:bg-card rounded-xl border border-[rgba(30,60,120,0.08)]',
+      variant === 'compact' ? 'p-2' : 'p-6',
       className
     )}>
       <div className={cn(

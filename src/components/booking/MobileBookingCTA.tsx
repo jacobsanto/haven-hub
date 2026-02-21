@@ -128,10 +128,10 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
           style={{
             maxHeight: expanded ? '75vh' : '0px',
             opacity: expanded ? 1 : 0,
-            transition: 'max-height 0.25s ease, opacity 0.2s ease',
+            transition: 'max-height 0.25s ease-out, opacity 0.2s ease-out',
           }}
         >
-          <div className="max-h-[75vh] overflow-y-auto">
+          <div className="max-h-[75vh] overflow-y-auto overscroll-contain">
             {/* Section 1: Date Selection */}
             <div className="px-4 pt-4 pb-3">
               <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Dates</h4>
