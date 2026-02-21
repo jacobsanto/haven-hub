@@ -1,70 +1,62 @@
 
-# Add Booking Summary Review Step
+# Fix Map View: Replace react-leaflet with Vanilla Leaflet
 
-## What This Does
+## The Problem
 
-Adds a new "Review" step between Guest Details and Payment in the checkout flow. This gives guests a clear, comprehensive summary of their entire booking before they proceed to pay -- reducing errors, abandoned checkouts, and post-booking support requests.
+The `render2 is not a function` error keeps recurring because `react-leaflet` uses React's internal `Context.Consumer` pattern, and the Vite dependency cache is serving a stale, incompatible bundle. Multiple attempts to fix via version pinning and deduplication have not resolved this.
 
-## Current Flow vs. New Flow
+## The Solution
 
-```text
-Current:  Dates -> Add-ons -> Guest Details -> Payment
-New:      Dates -> Add-ons -> Guest Details -> Review -> Payment
-```
+Remove `react-leaflet` and `@react-leaflet/core` entirely. Rewrite `PropertyMapView` to use vanilla Leaflet directly via React refs. This gives us the exact same map with zero React version conflicts.
 
-## Review Page Content
+The map appearance, pins, popups, and all interactions remain identical -- only the internal wiring changes from react-leaflet's JSX components to imperative Leaflet API calls.
 
-The Review step shows everything in one clean, scannable layout:
+## What Changes
 
-- **Property card** -- hero image, name, location
-- **Stay details** -- check-in/check-out dates, number of nights, guest breakdown (adults + children)
-- **Selected add-ons** -- each add-on with quantity, unit price, and line total (or "No add-ons selected")
-- **Guest information** -- name, email, phone, country, special requests
-- **Price breakdown** -- full itemized breakdown (accommodation, add-ons, fees, taxes, discount) with bold total
-- **Cancellation policy** -- the applicable policy displayed for reference
-- **Edit buttons** -- each section has an "Edit" link that jumps back to the relevant step
-- **Confirm and Pay** button to proceed to Payment
-- **Back** button to return to Guest Details
+### 1. Remove Dependencies
+- Remove `react-leaflet` and `@react-leaflet/core` from package.json
+- Keep `leaflet` and `@types/leaflet` (these have no React dependency)
 
-## Technical Changes
+### 2. Rewrite `src/components/properties/PropertyMapView.tsx`
 
-### File: `src/pages/Checkout.tsx`
+Replace the react-leaflet JSX approach with vanilla Leaflet:
 
-1. Add `'review'` to the `CheckoutStep` type:
-   ```
-   type CheckoutStep = 'dates' | 'addons' | 'guest' | 'review' | 'payment';
-   ```
+- Use a `useRef<HTMLDivElement>` for the map container
+- Initialize the Leaflet map in a `useEffect` with `L.map()`
+- Add the OpenStreetMap tile layer with `L.tileLayer()`
+- Create markers with `L.marker()` using the same custom SVG pin icon
+- Bind popups with `marker.bindPopup()` using HTML strings for the popup content
+- Fit bounds with `map.fitBounds()` when properties change
+- Clean up with `map.remove()` on unmount
 
-2. Update the step progression array and navigation:
-   - Progress bar shows 5 steps: dates, addons, guest, review, payment
-   - Guest form `onSubmit` now navigates to `'review'` instead of `'payment'`
-   - "Continue to Payment" button text becomes "Review Booking"
+Key differences in popup handling:
+- Popups will use HTML strings instead of React components (Leaflet's native approach)
+- The "View Details" link works natively as an anchor tag
+- The "Book Now" button will navigate to the property page's booking section since we can't render React components inside vanilla Leaflet popups
+- Price formatting will be done before building the HTML string
 
-3. Add the Review step section between the Guest and Payment blocks -- a new render block that displays all collected booking data in a read-only summary layout using existing Card components and the existing `PriceBreakdownDisplay` component.
+### 3. Popup Content
 
-4. The Review step renders:
-   - Property summary card (image + name + location)
-   - Dates and guests summary row
-   - Add-ons list (reuses data from `selectedAddons` state)
-   - Guest info card (from `guestInfo` state)
-   - Full price breakdown (reuses existing `PriceBreakdownDisplay` component)
-   - Cancellation policy (reuses existing `CancellationPolicyDisplay` component)
-   - "Edit" buttons per section that call `setCurrentStep()` to jump back
-   - "Confirm and Proceed to Payment" CTA button
-
-### No New Files Needed
-
-The review step is implemented inline within the existing Checkout page, following the same pattern as the other steps (dates, addons, guest, payment). No new components or hooks are required -- it purely reads from existing state and reuses existing display components.
-
-### No Database or Backend Changes
-
-This is a purely frontend UI addition. No new tables, RLS policies, or edge functions are needed.
+The popup keeps the same visual design but is built as an HTML string:
+- Property hero image (16:9 aspect ratio)
+- Instant booking and special offer badges
+- Property name, location, price per night
+- Bedroom/bathroom/guest stats with SVG icons
+- "View Details" and "Book Now" buttons (both as links)
 
 ## What Does NOT Change
 
-- Booking confirmation logic and payment flow remain identical
-- PriceBreakdown calculation is unchanged
-- Hold management is unchanged
-- Guest form validation is unchanged
-- All existing steps continue to work as before
-- The BookingConfirm page (post-payment) is unchanged
+- Map appearance and tile source (OpenStreetMap)
+- Custom pin icon design
+- Auto-fit bounds behavior
+- Missing-coordinates warning banner
+- Loading state
+- The Properties page integration (same props interface)
+- No database or backend changes
+
+## Technical Details
+
+- `leaflet` (v1.9.4) is a pure JavaScript library with zero framework dependencies
+- Vanilla Leaflet popups use HTML strings, which avoids all React context issues
+- The map instance lifecycle is managed entirely through `useEffect` cleanup
+- Property data is passed to popup HTML via template literals with pre-formatted values
