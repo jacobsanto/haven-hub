@@ -53,7 +53,7 @@ const Index = () => {
             transition={{ duration: 0.8 }}
             className="max-w-4xl mx-auto text-center mb-12"
           >
-            <h1 className="text-5xl md:text-7xl font-serif font-medium text-foreground mb-6 leading-tight">
+            <h1 className="text-5xl md:text-7xl font-serif font-medium text-foreground mb-6 leading-tight" style={{ textShadow: '0 2px 8px hsla(244, 42%, 28%, 0.06)' }}>
               Book Your Perfect
               <span className="block text-primary">Escape</span>
             </h1>
@@ -157,7 +157,7 @@ const Index = () => {
       )}
 
       {/* Featured Properties - Booking Focused */}
-      <section className="py-24 bg-secondary/30">
+      <section className="py-24 bg-gradient-to-b from-secondary/20 to-secondary/40">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -268,7 +268,7 @@ const Index = () => {
       )}
 
       {/* Why Book Direct Section */}
-      <section className="py-24 bg-secondary/30">
+      <section className="py-24 bg-gradient-to-b from-secondary/20 to-secondary/40">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -313,9 +313,9 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="text-center p-6 card-organic"
+                className="text-center p-6 card-organic hover-lift"
               >
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-white/60 dark:bg-primary/10 backdrop-blur-sm border border-white/40 dark:border-border/30 flex items-center justify-center shadow-sm">
                   <feature.icon className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-lg font-serif font-medium mb-2">{feature.title}</h3>
@@ -387,7 +387,7 @@ const Index = () => {
       )}
 
       {/* CTA Section - Booking Focused */}
-      <section className="py-24 bg-foreground text-background">
+      <section className="py-24 bg-gradient-to-br from-foreground via-foreground to-primary/90 text-background relative overflow-hidden">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
