@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle, Leaf, Smartphone } from 'lucide-react';
+import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -10,8 +10,6 @@ import { BlogPostCard } from '@/components/blog/BlogPostCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
 import { UrgencyBanner } from '@/components/booking/UrgencyBanner';
 import { FloatingBlob } from '@/components/decorative/FloatingBlob';
-import { WorldMapDecor } from '@/components/decorative/WorldMapDecor';
-import { BookingSummaryCard } from '@/components/booking/BookingSummaryCard';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useFeaturedDestinations } from '@/hooks/useDestinations';
 import { useProperties } from '@/hooks/useProperties';
@@ -29,127 +27,93 @@ const Index = () => {
   const { data: blogPosts, isLoading: blogLoading } = useBlogPosts({ status: 'published' });
   const { brandName } = useBrand();
 
+  // Properties count for social proof
   const propertiesAvailable = properties?.length || 0;
+
+  // Get featured items (limit to 3-4 for homepage)
   const featuredDestinations = destinations?.slice(0, 3);
   const featuredExperiences = experiences?.filter(e => e.is_featured).slice(0, 4) || experiences?.slice(0, 4);
   const latestBlogPosts = blogPosts?.slice(0, 3);
 
   return (
     <PageLayout>
+      {/* Urgency Banner */}
       <UrgencyBanner variant="rotating" />
 
-      {/* Hero Section — Immersive Sky Atmosphere */}
-      <section className="relative min-h-[90vh] flex items-center justify-center hero-gradient texture-overlay cloud-layer overflow-hidden">
-        {/* World Map Background */}
-        <WorldMapDecor />
-
-        {/* Cloud Blobs — Dense atmospheric feel */}
-        <FloatingBlob position="top-left" variant="cloud" size="xl" animationVariant={1} />
-        <FloatingBlob position="top-right" variant="cloud" size="lg" animationVariant={2} />
-        <FloatingBlob position="bottom-left" variant="cloud" size="xl" animationVariant={3} />
-        <FloatingBlob position="center-right" variant="cloud" size="lg" animationVariant={4} />
-        <FloatingBlob position="bottom-right" variant="primary" size="md" animationVariant={2} />
+      {/* Hero Section */}
+      <section className="relative min-h-[90vh] flex items-center justify-center hero-gradient texture-overlay overflow-hidden">
+        {/* Decorative Elements */}
+        <FloatingBlob position="top-left" variant="primary" size="md" animationVariant={1} />
+        <FloatingBlob position="bottom-right" variant="accent" size="lg" animationVariant={2} />
         
         <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="flex items-start justify-center gap-8">
-            {/* Main hero content */}
-            <div className="flex-1 max-w-4xl">
-              <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="text-center mb-12"
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-4xl mx-auto text-center mb-12"
+          >
+            <h1 className="text-5xl md:text-7xl font-serif font-medium text-foreground mb-6 leading-tight" style={{ textShadow: '0 2px 8px hsla(244, 42%, 28%, 0.06)' }}>
+              Book Your Perfect
+              <span className="block text-primary">Escape</span>
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-4">
+              Discover extraordinary vacation homes in the world's most desirable destinations. 
+              Direct booking. Best rates. Instant confirmation.
+            </p>
+            
+            {propertiesAvailable > 0 && (
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="text-sm text-primary font-medium flex items-center justify-center gap-2"
               >
-                <h1 className="text-5xl md:text-7xl font-serif font-medium text-foreground mb-6 leading-tight" style={{ textShadow: '0 2px 12px hsla(220, 60%, 20%, 0.08)' }}>
-                  Book Your Perfect
-                  <span className="block text-primary">Escape</span>
-                </h1>
-                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-4">
-                  Discover extraordinary vacation homes in the world's most desirable destinations. 
-                  Direct booking. Best rates. Instant confirmation.
-                </p>
-                
-                {propertiesAvailable > 0 && (
-                  <motion.p 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="text-sm text-primary font-medium flex items-center justify-center gap-2"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    {propertiesAvailable} properties available for booking
-                  </motion.p>
-                )}
-              </motion.div>
+                <Calendar className="h-4 w-4" />
+                {propertiesAvailable} properties available for booking
+              </motion.p>
+            )}
+          </motion.div>
 
-              {/* Search Bar */}
-              <div className="max-w-4xl mx-auto">
-                <SearchBar variant="hero" />
-              </div>
-
-              {/* Secondary Action */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-center mt-6"
-              >
-                <Link to="/properties">
-                  <Button variant="outline" className="rounded-full gap-2">
-                    View All Properties
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </motion.div>
-
-              {/* Trust Badges */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="mt-10"
-              >
-                <TrustBadges 
-                  variant="compact" 
-                  badges={['price', 'cancellation', 'instant']}
-                  className="justify-center"
-                />
-              </motion.div>
-            </div>
-
-            {/* Booking Summary Card — decorative widget */}
-            <BookingSummaryCard />
+          {/* Search Bar - Primary Entry Point */}
+          <div className="max-w-4xl mx-auto">
+            <SearchBar variant="hero" />
           </div>
 
-          {/* Feature Icons — "Your Journey Awaits" */}
+          {/* Secondary Action */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="mt-16 text-center"
+            transition={{ delay: 0.4 }}
+            className="text-center mt-6"
           >
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-8">Your Journey Awaits</p>
-            <div className="flex flex-wrap justify-center gap-8 md:gap-16">
-              {[
-                { icon: Smartphone, label: 'Smart Check-in' },
-                { icon: MapPin, label: 'Local Guides' },
-                { icon: Leaf, label: 'Eco-Friendly Stays' },
-              ].map((item) => (
-                <div key={item.label} className="flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 rounded-full bg-white/70 dark:bg-card/70 backdrop-blur-xl border border-white/50 dark:border-border/30 flex items-center justify-center shadow-glass">
-                    <item.icon className="h-7 w-7 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground/80">{item.label}</span>
-                </div>
-              ))}
-            </div>
+            <Link to="/properties">
+              <Button variant="outline" className="rounded-full gap-2">
+                View All Properties
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </motion.div>
+
+          {/* Trust Badges below search */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-10"
+          >
+            <TrustBadges 
+              variant="compact" 
+              badges={['price', 'cancellation', 'instant']}
+              className="justify-center"
+            />
           </motion.div>
         </div>
       </section>
 
       {/* Featured Destinations */}
       {(destinationsLoading || (featuredDestinations && featuredDestinations.length > 0)) && (
-        <section className="py-24 sky-atmosphere">
+        <section className="py-24 bg-background">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -192,9 +156,9 @@ const Index = () => {
         </section>
       )}
 
-      {/* Featured Properties */}
-      <section className="py-24 sky-atmosphere cloud-layer relative overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
+      {/* Featured Properties - Booking Focused */}
+      <section className="py-24 bg-gradient-to-b from-secondary/20 to-secondary/40">
+        <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -256,7 +220,7 @@ const Index = () => {
 
       {/* Featured Experiences */}
       {(experiencesLoading || (featuredExperiences && featuredExperiences.length > 0)) && (
-        <section className="py-24 sky-atmosphere">
+        <section className="py-24 bg-background">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -303,9 +267,9 @@ const Index = () => {
         </section>
       )}
 
-      {/* Why Book Direct */}
-      <section className="py-24 sky-atmosphere cloud-layer relative overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
+      {/* Why Book Direct Section */}
+      <section className="py-24 bg-gradient-to-b from-secondary/20 to-secondary/40">
+        <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -322,10 +286,26 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {[
-              { icon: Shield, title: 'Best Price Guarantee', description: 'Our direct rates are always the lowest. Find it cheaper elsewhere? We\'ll match it.' },
-              { icon: Clock, title: 'Free Cancellation', description: 'Flexible booking with free cancellation up to 48 hours before check-in.' },
-              { icon: CheckCircle, title: 'Instant Confirmation', description: 'Book and receive your confirmation immediately. No waiting.' },
-              { icon: Calendar, title: '24/7 Support', description: 'Our concierge team is available around the clock for your needs.' },
+              {
+                icon: Shield,
+                title: 'Best Price Guarantee',
+                description: 'Our direct rates are always the lowest. Find it cheaper elsewhere? We\'ll match it.',
+              },
+              {
+                icon: Clock,
+                title: 'Free Cancellation',
+                description: 'Flexible booking with free cancellation up to 48 hours before check-in.',
+              },
+              {
+                icon: CheckCircle,
+                title: 'Instant Confirmation',
+                description: 'Book and receive your confirmation immediately. No waiting.',
+              },
+              {
+                icon: Calendar,
+                title: '24/7 Support',
+                description: 'Our concierge team is available around the clock for your needs.',
+              },
             ].map((feature, index) => (
               <motion.div
                 key={feature.title}
@@ -335,7 +315,7 @@ const Index = () => {
                 transition={{ delay: index * 0.1 }}
                 className="text-center p-6 card-organic hover-lift"
               >
-                <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-white/70 dark:bg-primary/10 backdrop-blur-xl border border-white/50 dark:border-border/30 flex items-center justify-center shadow-glass">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-white/60 dark:bg-primary/10 backdrop-blur-sm border border-white/40 dark:border-border/30 flex items-center justify-center shadow-sm">
                   <feature.icon className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-lg font-serif font-medium mb-2">{feature.title}</h3>
@@ -344,6 +324,7 @@ const Index = () => {
             ))}
           </div>
 
+          {/* Central booking CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -360,9 +341,9 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Blog */}
+      {/* Latest Blog Posts */}
       {(blogLoading || (latestBlogPosts && latestBlogPosts.length > 0)) && (
-        <section className="py-24 sky-atmosphere">
+        <section className="py-24 bg-background">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -405,10 +386,9 @@ const Index = () => {
         </section>
       )}
 
-      {/* CTA — Deep navy gradient with radial glow */}
-      <section className="py-24 relative overflow-hidden text-white" style={{ background: 'linear-gradient(135deg, hsl(220, 60%, 15%) 0%, hsl(220, 70%, 25%) 50%, hsl(220, 60%, 35%) 100%)' }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 50%, hsla(220, 70%, 50%, 0.2), transparent 70%)' }} />
-        <div className="container mx-auto px-4 text-center relative z-10">
+      {/* CTA Section - Booking Focused */}
+      <section className="py-24 bg-gradient-to-br from-foreground via-foreground to-primary/90 text-background relative overflow-hidden">
+        <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -424,13 +404,13 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/properties">
-                <Button size="lg" className="rounded-full gap-2 px-8 bg-white text-foreground hover:bg-white/90 hover:shadow-glow">
+                <Button size="lg" variant="secondary" className="rounded-full gap-2 px-8">
                   Browse Properties
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/contact">
-                <Button size="lg" variant="outline" className="rounded-full gap-2 px-8 border-white/40 text-white hover:bg-white/10">
+                <Button size="lg" variant="secondary" className="rounded-full gap-2 px-8">
                   Contact Us
                 </Button>
               </Link>

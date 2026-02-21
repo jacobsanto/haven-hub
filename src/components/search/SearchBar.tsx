@@ -134,7 +134,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
       className={cn(
-        'bg-white/80 dark:bg-card/90 backdrop-blur-2xl border border-white/50 dark:border-border rounded-2xl p-5 shadow-glass-lg',
+        'bg-white/70 dark:bg-card/90 backdrop-blur-xl border border-white/40 dark:border-border rounded-2xl p-4 shadow-glass-lg',
         className
       )}
     >
@@ -302,10 +302,9 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
             <Button
               onClick={handleSearch}
               size="lg"
-              className="rounded-full bg-primary hover:bg-primary/90 hover:shadow-glow text-primary-foreground px-8 gap-2"
+              className="rounded-full bg-gradient-to-r from-primary to-primary/80 hover:shadow-glow text-primary-foreground px-6"
             >
-              <Search className="h-4 w-4" />
-              Search
+              <Search className="h-5 w-5" />
             </Button>
           </div>
         </div>

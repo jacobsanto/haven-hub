@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Arivia Villas Brand Design System — Immersive Travel-Luxury */
+/* Arivia Villas Brand Design System — Soft Premium Glassmorphism */
 
 @layer base {
   :root {
@@ -23,21 +23,21 @@
     --popover: 0 0% 100%;
     --popover-foreground: 244 42% 28%;
 
-    /* Primary - Vivid Blue (matching reference) */
-    --primary: 220 70% 50%;
+    /* Primary - Primary Blue */
+    --primary: 245 51% 19%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Pale Blue */
     --secondary: 215 40% 93%;
-    --secondary-foreground: 220 60% 30%;
+    --secondary-foreground: 245 51% 19%;
 
     /* Muted */
     --muted: 215 30% 92%;
-    --muted-foreground: 220 15% 50%;
+    --muted-foreground: 243 10% 55%;
 
     /* Accent - Gold */
     --accent: 32 48% 66%;
-    --accent-foreground: 220 60% 30%;
+    --accent-foreground: 245 51% 19%;
 
     /* Destructive */
     --destructive: 0 55% 55%;
@@ -46,72 +46,72 @@
     /* Borders and inputs */
     --border: 215 25% 88%;
     --input: 215 25% 88%;
-    --ring: 220 70% 50%;
+    --ring: 32 48% 66%;
 
     --radius: 1rem;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 244 42% 28%;
-    --sidebar-primary: 220 70% 50%;
+    --sidebar-primary: 245 51% 19%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 40% 93%;
     --sidebar-accent-foreground: 244 42% 28%;
     --sidebar-border: 215 25% 88%;
-    --sidebar-ring: 220 70% 50%;
+    --sidebar-ring: 32 48% 66%;
 
     /* Custom brand tokens */
-    --navy-blue: 220 60% 20%;
-    --primary-blue: 220 70% 50%;
+    --navy-blue: 244 42% 28%;
+    --primary-blue: 245 51% 19%;
     --gold-accent: 32 48% 66%;
     --sand-brown: 38 83% 61%;
-    --light-blue: 210 60% 75%;
-    --pale-blue: 210 50% 95%;
+    --light-blue: 215 20% 60%;
+    --pale-blue: 215 40% 93%;
 
     /* Glassmorphism tokens */
-    --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 0 0% 100% / 0.45;
-    --glass-shadow: 0 8px 32px -4px hsla(220, 60%, 20%, 0.08);
-    --glass-shadow-hover: 0 16px 48px -8px hsla(220, 60%, 20%, 0.14);
+    --glass-bg: 0 0% 100% / 0.65;
+    --glass-border: 0 0% 100% / 0.35;
+    --glass-shadow: 0 8px 32px -4px hsla(244, 42%, 28%, 0.08);
+    --glass-shadow-hover: 0 16px 48px -8px hsla(244, 42%, 28%, 0.12);
   }
 
   .dark {
-    --background: 220 30% 8%;
+    --background: 244 42% 8%;
     --foreground: 215 40% 93%;
 
-    --card: 220 30% 10%;
+    --card: 244 42% 10%;
     --card-foreground: 215 40% 93%;
 
-    --popover: 220 30% 10%;
+    --popover: 244 42% 10%;
     --popover-foreground: 215 40% 93%;
 
-    --primary: 220 70% 55%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 32 48% 66%;
+    --primary-foreground: 244 42% 8%;
 
-    --secondary: 220 30% 20%;
+    --secondary: 244 30% 20%;
     --secondary-foreground: 215 40% 93%;
 
-    --muted: 220 30% 15%;
+    --muted: 244 30% 15%;
     --muted-foreground: 215 20% 60%;
 
     --accent: 38 83% 61%;
-    --accent-foreground: 220 30% 8%;
+    --accent-foreground: 244 42% 8%;
 
     --destructive: 0 50% 45%;
     --destructive-foreground: 215 40% 93%;
 
-    --border: 220 30% 18%;
-    --input: 220 30% 18%;
-    --ring: 220 70% 55%;
+    --border: 244 30% 18%;
+    --input: 244 30% 18%;
+    --ring: 32 48% 66%;
 
-    --sidebar-background: 220 30% 10%;
+    --sidebar-background: 244 42% 10%;
     --sidebar-foreground: 215 40% 93%;
-    --sidebar-primary: 220 70% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 30% 15%;
+    --sidebar-primary: 32 48% 66%;
+    --sidebar-primary-foreground: 244 42% 8%;
+    --sidebar-accent: 244 30% 15%;
     --sidebar-accent-foreground: 215 40% 93%;
-    --sidebar-border: 220 30% 18%;
-    --sidebar-ring: 220 70% 55%;
+    --sidebar-border: 244 30% 18%;
+    --sidebar-ring: 32 48% 66%;
   }
 }
 
@@ -134,9 +134,9 @@
 @layer components {
   /* Glassmorphism card */
   .card-organic {
-    @apply bg-white/75 dark:bg-card rounded-2xl border border-white/50 dark:border-border/50;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    @apply bg-white/70 dark:bg-card rounded-2xl border border-white/40 dark:border-border/50;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     box-shadow: var(--glass-shadow);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
   }
@@ -147,9 +147,9 @@
 
   /* Glass panel utility */
   .glass-panel {
-    @apply bg-white/65 dark:bg-card/80 border border-white/40 dark:border-border/50;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    @apply bg-white/60 dark:bg-card/80 border border-white/30 dark:border-border/50;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     box-shadow: var(--glass-shadow);
   }
 
@@ -168,68 +168,28 @@
   /* Soft input styling */
   .input-organic {
     @apply rounded-xl border-border/50 bg-white/80 dark:bg-background px-4 py-3 transition-all duration-200;
-    @apply focus:border-primary focus:ring-2 focus:ring-primary/20;
+    @apply focus:border-accent focus:ring-2 focus:ring-accent/20;
   }
 
-  /* Hero section gradient — immersive sky atmosphere */
+  /* Hero section gradient - rich sky ambient */
   .hero-gradient {
-    background:
-      radial-gradient(ellipse 120% 80% at 20% 30%, hsla(210, 80%, 90%, 0.6), transparent 60%),
-      radial-gradient(ellipse 100% 60% at 80% 20%, hsla(200, 70%, 92%, 0.5), transparent 50%),
-      radial-gradient(ellipse 80% 40% at 50% 80%, hsla(215, 50%, 94%, 0.4), transparent 50%),
-      linear-gradient(
-        180deg,
-        hsl(205 60% 96%) 0%,
-        hsl(210 50% 94%) 30%,
-        hsl(215 45% 92%) 60%,
-        hsl(210 40% 95%) 100%
-      );
+    background: linear-gradient(
+      180deg,
+      hsl(210 45% 97%) 0%,
+      hsl(215 40% 95%) 40%,
+      hsl(220 35% 92%) 100%
+    );
   }
 
   .hero-gradient::after {
     content: '';
     position: absolute;
-    top: 10%;
+    top: 20%;
     left: 50%;
     transform: translateX(-50%);
-    width: 90%;
-    height: 70%;
-    background: radial-gradient(ellipse, hsla(210, 70%, 95%, 0.6), transparent 65%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* Sky atmosphere for sections */
-  .sky-atmosphere {
-    background:
-      radial-gradient(ellipse 100% 50% at 30% 0%, hsla(210, 60%, 94%, 0.5), transparent 60%),
-      radial-gradient(ellipse 80% 40% at 70% 100%, hsla(200, 50%, 95%, 0.4), transparent 50%),
-      linear-gradient(180deg, hsl(210 40% 97%) 0%, hsl(215 35% 95%) 100%);
-  }
-
-  /* Cloud layer pseudo-elements */
-  .cloud-layer {
-    position: relative;
-  }
-  .cloud-layer::before {
-    content: '';
-    position: absolute;
-    top: -5%;
-    left: -10%;
-    width: 120%;
-    height: 40%;
-    background: radial-gradient(ellipse, hsla(210, 60%, 97%, 0.7), transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
-  .cloud-layer::after {
-    content: '';
-    position: absolute;
-    bottom: -5%;
-    right: -10%;
-    width: 100%;
-    height: 35%;
-    background: radial-gradient(ellipse, hsla(200, 50%, 96%, 0.5), transparent 65%);
+    width: 80%;
+    height: 60%;
+    background: radial-gradient(ellipse, hsl(215 60% 92% / 0.5), transparent 70%);
     pointer-events: none;
     z-index: 0;
   }
@@ -240,15 +200,9 @@
     filter: blur(40px);
   }
 
-  /* Cloud blob variant */
-  .cloud-blob {
-    border-radius: 50% 60% 40% 55% / 45% 50% 55% 50%;
-    filter: blur(80px);
-  }
-
   /* Luxury text gradient */
   .text-gradient {
-    @apply bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
   }
 
   /* Subtle texture overlay */
@@ -261,13 +215,13 @@
     position: absolute;
     inset: 0;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.012;
+    opacity: 0.015;
     pointer-events: none;
   }
 
   /* Frosted pill badge */
   .badge-frosted {
-    @apply bg-white/65 dark:bg-card/60 backdrop-blur-md border border-white/50 dark:border-border/30 rounded-full;
+    @apply bg-white/60 dark:bg-card/60 backdrop-blur-sm border border-white/40 dark:border-border/30 rounded-full;
   }
 }
 
@@ -301,16 +255,6 @@
     to { opacity: 1; }
   }
 
-  /* Pulse glow for pins */
-  @keyframes pulseGlow {
-    0%, 100% { opacity: 0.6; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.4); }
-  }
-
-  .animate-pulse-glow {
-    animation: pulseGlow 2.5s ease-in-out infinite;
-  }
-
   /* Staggered animation delays */
   .animation-delay-100 { animation-delay: 100ms; }
   .animation-delay-200 { animation-delay: 200ms; }
@@ -336,9 +280,6 @@
   }
   .animate-float-3 {
     animation: float-diagonal-3 18s linear infinite;
-  }
-  .animate-float-4 {
-    animation: float-diagonal-1 30s linear infinite reverse;
   }
 
   @keyframes float-diagonal-1 {
