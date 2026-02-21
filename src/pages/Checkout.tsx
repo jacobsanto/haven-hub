@@ -95,13 +95,20 @@ export default function Checkout() {
   // Create hold when dates are selected
   // Use a ref to prevent duplicate calls during React strict mode or re-renders
   const holdCreationPending = useRef(false);
+  const holdFailed = useRef(false);
+
+  // Reset failure flag when dates change so a fresh attempt can be made
+  useEffect(() => {
+    holdFailed.current = false;
+  }, [checkIn, checkOut]);
   
   useEffect(() => {
     // Only create hold if:
     // 1. We have valid dates and property
     // 2. No existing hold
     // 3. Not already pending a hold creation
-    if (checkIn && checkOut && property?.id && !holdId && !holdCreationPending.current && !createHold.isPending) {
+    // 4. Previous attempt did not fail (prevents infinite retry loop)
+    if (checkIn && checkOut && property?.id && !holdId && !holdCreationPending.current && !holdFailed.current) {
       holdCreationPending.current = true;
       
       createHold.mutate(
@@ -124,6 +131,7 @@ export default function Checkout() {
           },
           onError: () => {
             holdCreationPending.current = false;
+            holdFailed.current = true;
             toast({
               title: 'Could not reserve dates',
               description: 'These dates may no longer be available.',
@@ -133,7 +141,7 @@ export default function Checkout() {
         }
       );
     }
-  }, [checkIn, checkOut, property?.id, holdId, sessionId, createHold.isPending]);
+  }, [checkIn, checkOut, property?.id, holdId, sessionId]);
 
   // Step navigation
   const canProceedFromDates = checkIn && checkOut && nights >= 2;
