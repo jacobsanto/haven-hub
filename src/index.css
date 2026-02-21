@@ -71,8 +71,17 @@
     /* Glassmorphism tokens */
     --glass-bg: 0 0% 100% / 0.65;
     --glass-border: 0 0% 100% / 0.35;
-    --glass-shadow: 0 8px 32px -4px hsla(244, 42%, 28%, 0.08);
-    --glass-shadow-hover: 0 16px 48px -8px hsla(244, 42%, 28%, 0.12);
+    --glass-shadow: 0 8px 32px -4px hsl(var(--foreground) / 0.08);
+    --glass-shadow-hover: 0 16px 48px -8px hsl(var(--foreground) / 0.12);
+
+    /* Shadow tokens */
+    --shadow-soft: 0 2px 8px -2px hsl(var(--foreground) / 0.06);
+    --shadow-medium: 0 8px 24px -4px hsl(var(--foreground) / 0.08);
+    --shadow-elevated: 0 16px 48px -8px hsl(var(--foreground) / 0.12);
+
+    /* Motion tokens */
+    --ease-lift: cubic-bezier(0.25, 1, 0.4, 1);
+    --duration-hover: 250ms;
   }
 
   .dark {
@@ -137,12 +146,13 @@
     @apply bg-white/70 dark:bg-card rounded-2xl border border-white/40 dark:border-border/50;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: var(--glass-shadow);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    box-shadow: var(--shadow-medium);
+    transition: box-shadow var(--duration-hover) var(--ease-lift),
+                transform var(--duration-hover) var(--ease-lift);
   }
 
   .card-organic:hover {
-    box-shadow: var(--glass-shadow-hover);
+    box-shadow: var(--shadow-elevated);
   }
 
   /* Glass panel utility */
@@ -150,19 +160,22 @@
     @apply bg-white/60 dark:bg-card/80 border border-white/30 dark:border-border/50;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--shadow-soft);
   }
 
   /* Brand button styles - gradient gold */
   .btn-organic {
-    @apply relative overflow-hidden rounded-full px-8 py-3 font-medium transition-all duration-300;
+    @apply relative overflow-hidden rounded-full px-8 py-3 font-medium;
     @apply text-accent-foreground;
     background: linear-gradient(135deg, hsl(var(--gold-accent)), hsl(var(--sand-brown)));
-    @apply hover:shadow-lg;
+    box-shadow: var(--shadow-soft);
+    transition: box-shadow var(--duration-hover) var(--ease-lift),
+                transform var(--duration-hover) var(--ease-lift);
   }
 
   .btn-organic:hover {
     background: linear-gradient(135deg, hsl(var(--sand-brown)), hsl(var(--gold-accent)));
+    box-shadow: var(--shadow-medium);
   }
 
   /* Soft input styling */
@@ -226,14 +239,15 @@
 }
 
 @layer utilities {
-  /* Hover effects - glass lift */
+  /* Hover effects — shared motion utility */
   .hover-lift {
-    @apply transition-all duration-300 ease-out;
+    transition: transform var(--duration-hover) var(--ease-lift),
+                box-shadow var(--duration-hover) var(--ease-lift);
   }
-  
+
   .hover-lift:hover {
-    @apply -translate-y-1;
-    box-shadow: var(--glass-shadow-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elevated);
   }
 
   /* Animation utilities */
