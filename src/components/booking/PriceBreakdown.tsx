@@ -47,7 +47,7 @@ export function PriceBreakdownDisplay({
           </div>
         )}
         <Separator />
-        <div className="flex justify-between font-semibold">
+        <div className="flex justify-between font-bold text-foreground">
           <span>Total</span>
           <span>{totalFormatted.display}</span>
         </div>
@@ -61,7 +61,7 @@ export function PriceBreakdownDisplay({
   }
 
   return (
-    <div className={cn('bg-card rounded-xl border p-6', className)}>
+    <div className={cn('bg-white dark:bg-card rounded-2xl border border-[rgba(30,60,120,0.08)] p-6', className)} style={{ boxShadow: 'var(--shadow-soft)' }}>
       <h3 className="font-serif text-lg font-medium mb-4">Price Details</h3>
       
       <div className="space-y-3">
@@ -153,7 +153,7 @@ export function PriceBreakdownDisplay({
         <Separator className="my-3" />
         <div className="flex justify-between items-center">
           <span className="font-serif text-lg font-medium">Total</span>
-          <span className="font-serif text-2xl font-semibold">{totalFormatted.display}</span>
+          <span className="font-serif text-2xl font-bold text-foreground">{totalFormatted.display}</span>
         </div>
         {totalFormatted.isConverted && (
           <div className="text-sm text-muted-foreground text-right">
@@ -163,7 +163,7 @@ export function PriceBreakdownDisplay({
 
         {/* Deposit info */}
         {showDeposit && breakdown.depositAmount && breakdown.balanceAmount && (
-          <div className="mt-4 p-4 bg-secondary/50 rounded-lg space-y-2">
+          <div className="mt-4 p-4 bg-secondary/50 rounded-lg border border-[rgba(30,60,120,0.08)] space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Info className="h-4 w-4 text-primary" />
               Payment Options

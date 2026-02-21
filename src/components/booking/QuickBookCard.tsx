@@ -40,7 +40,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
       className="group relative"
     >
       <Link to={`/properties/${property.slug}`}>
-        <div className="card-organic overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div className="bg-white dark:bg-card rounded-2xl border border-[rgba(30,60,120,0.08)] overflow-hidden hover:-translate-y-[2px] hover:shadow-medium transition-[transform,box-shadow] [transition-duration:var(--duration-hover)] [transition-timing-function:var(--ease-lift)]" style={{ boxShadow: 'var(--shadow-soft)' }}>
           {/* Image Container */}
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
@@ -138,7 +138,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
             </div>
 
             {/* CTA */}
-            <div className="flex items-center justify-between pt-3 border-t border-border">
+            <div className="flex items-center justify-between pt-3 border-t border-[rgba(30,60,120,0.08)]">
               <span className="text-xs text-muted-foreground">
                 {property.instant_booking ? 'Instant confirmation' : 'Book direct & save'}
               </span>
