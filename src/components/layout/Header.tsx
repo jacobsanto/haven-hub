@@ -61,7 +61,7 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/60 dark:bg-background/80 backdrop-blur-xl border-b border-white/30 dark:border-border/50 shadow-glass">
       <nav role="navigation" aria-label="Main navigation" className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
@@ -160,7 +160,7 @@ export function Header() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="md:hidden bg-background border-b border-border"
+          className="md:hidden bg-white/80 dark:bg-background backdrop-blur-xl border-b border-white/30 dark:border-border"
         >
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
             {/* Mobile Search CTA */}
