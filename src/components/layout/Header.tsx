@@ -32,24 +32,26 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Track scroll position for header style changes
+  // Scroll threshold: 60px as specified
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100);
+      setIsScrolled(window.scrollY > 60);
     };
-    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // check on mount
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Don't show search on homepage (has its own hero search)
   const showSearch = location.pathname !== '/';
+  const isHomepage = location.pathname === '/';
 
-  // Split brand name for styling (e.g., "Arivia Villas" -> "Arivia" + "Villas")
+  // Transparent-over-hero only on homepage
+  const isTransparent = isHomepage && !isScrolled;
+
   const nameParts = brandName.split(' ');
   const primaryPart = nameParts[0] || brandName;
   const secondaryPart = nameParts.slice(1).join(' ');
 
-  // Check if a path is currently active
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -61,24 +63,45 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/60 dark:bg-background/80 backdrop-blur-xl border-b border-white/30 dark:border-border/50 shadow-glass">
+    <header
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50",
+        "transition-[background-color,border-color,backdrop-filter] [transition-duration:var(--duration-hover)] [transition-timing-function:var(--ease-lift)]",
+        isTransparent
+          ? "bg-transparent border-b border-transparent"
+          : "bg-white/95 dark:bg-background/95 backdrop-blur-[14px] border-b border-border/40 shadow-soft"
+      )}
+    >
       <nav role="navigation" aria-label="Main navigation" className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <motion.div
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.25, ease: [0.25, 1, 0.4, 1] }}
             className="flex items-center"
           >
             {logoUrl ? (
-              <img 
-                src={logoUrl} 
-                alt={brandName} 
-                className="h-10 w-auto max-w-[160px] object-contain"
+              <img
+                src={logoUrl}
+                alt={brandName}
+                className={cn(
+                  "h-10 w-auto max-w-[160px] object-contain transition-[filter] [transition-duration:var(--duration-hover)] [transition-timing-function:var(--ease-lift)]",
+                  isTransparent ? "brightness-0 invert" : ""
+                )}
               />
             ) : (
-              <span className="text-2xl font-serif font-semibold text-foreground">
-                <span className="text-primary">{primaryPart}</span>
-                {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
+              <span className={cn(
+                "text-2xl font-serif font-semibold transition-colors [transition-duration:var(--duration-hover)] [transition-timing-function:var(--ease-lift)]",
+                isTransparent ? "text-white" : "text-foreground"
+              )}>
+                <span className={cn(
+                  isTransparent ? "text-white" : "text-primary"
+                )}>{primaryPart}</span>
+                {secondaryPart && (
+                  <span className={cn(
+                    isTransparent ? "text-white/80" : "text-muted-foreground"
+                  )}> {secondaryPart}</span>
+                )}
               </span>
             )}
           </motion.div>
@@ -92,13 +115,24 @@ export function Header() {
               to={item.path}
               aria-current={isActive(item.path) ? 'page' : undefined}
               className={cn(
-                "text-sm font-medium transition-colors relative",
-                "after:absolute after:bottom-[-4px] after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300",
+                "text-sm font-medium relative",
+                "transition-colors [transition-duration:var(--duration-hover)] [transition-timing-function:var(--ease-lift)]",
+                "after:absolute after:bottom-[-4px] after:left-0 after:h-0.5 after:w-0 after:transition-all after:duration-300",
                 "hover:after:w-full focus-visible:after:w-full",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm",
-                isActive(item.path)
-                  ? "text-foreground after:w-full"
-                  : "text-muted-foreground hover:text-foreground"
+                isTransparent
+                  ? cn(
+                      "after:bg-white",
+                      isActive(item.path)
+                        ? "text-white after:w-full"
+                        : "text-white/70 hover:text-white"
+                    )
+                  : cn(
+                      "after:bg-primary",
+                      isActive(item.path)
+                        ? "text-foreground after:w-full"
+                        : "text-muted-foreground hover:text-foreground"
+                    )
               )}
             >
               {item.label}
@@ -113,7 +147,15 @@ export function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full" aria-label="User menu">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "rounded-full",
+                    isTransparent && "text-white hover:bg-white/10"
+                  )}
+                  aria-label="User menu"
+                >
                   <User className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -136,7 +178,10 @@ export function Header() {
             <Button
               variant="outline"
               onClick={() => navigate('/login')}
-              className="rounded-full"
+              className={cn(
+                "rounded-full",
+                isTransparent && "border-white/40 text-white bg-white/10 hover:bg-white/20 hover:text-white"
+              )}
             >
               Sign In
             </Button>
@@ -145,7 +190,10 @@ export function Header() {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden p-2"
+          className={cn(
+            "md:hidden p-2 transition-colors [transition-duration:var(--duration-hover)]",
+            isTransparent ? "text-white" : "text-foreground"
+          )}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileMenuOpen}
@@ -154,16 +202,15 @@ export function Header() {
         </button>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu — always solid background */}
       {mobileMenuOpen && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="md:hidden bg-white/80 dark:bg-background backdrop-blur-xl border-b border-white/30 dark:border-border"
+          className="md:hidden bg-white/95 dark:bg-background/95 backdrop-blur-[14px] border-b border-border/40"
         >
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
-            {/* Mobile Search CTA */}
             <Button
               onClick={() => {
                 navigate('/properties');
