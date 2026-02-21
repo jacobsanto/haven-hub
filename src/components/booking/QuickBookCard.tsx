@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Users, Bed, Bath, Zap, Calendar, ArrowRight, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { InstantBookingBadge } from '@/components/properties/InstantBookingBadge';
-import { useBooking } from '@/contexts/BookingContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
 import type { Property } from '@/types/database';
@@ -17,7 +16,7 @@ interface QuickBookCardProps {
 
 export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { openBooking } = useBooking();
+  const navigate = useNavigate();
   const { formatPrice } = useCurrency();
   const { data: specialOffer } = useActiveSpecialOffer(property.id);
 
@@ -26,8 +25,8 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
   const handleBookNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Open unified booking dialog with this property pre-selected (direct booking mode)
-    openBooking({ mode: 'direct', property });
+    // Navigate directly to property page where the proper booking widget lives
+    navigate(`/properties/${property.slug}`);
   };
 
   return (

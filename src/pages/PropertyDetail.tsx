@@ -23,6 +23,7 @@ import { useProperty } from '@/hooks/useProperties';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { useCurrency } from '@/hooks/useCurrency';
+import { usePropertyBookingState } from '@/hooks/usePropertyBookingState';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -74,8 +75,6 @@ export default function PropertyDetail() {
     enabled: !!property?.destination_id,
   });
 
-  // Price display using CurrencyContext for guest-facing multi-currency support
-
   if (isLoading) {
     return (
       <PageLayout>
@@ -108,6 +107,30 @@ export default function PropertyDetail() {
       </PageLayout>
     );
   }
+
+  return (
+    <PropertyDetailContent
+      property={property}
+      activeOffer={activeOffer}
+      destination={destination}
+      formatPrice={formatPrice}
+    />
+  );
+}
+
+function PropertyDetailContent({
+  property,
+  activeOffer,
+  destination,
+  formatPrice,
+}: {
+  property: NonNullable<ReturnType<typeof useProperty>['data']>;
+  activeOffer: ReturnType<typeof useActiveSpecialOffer>['data'];
+  destination: any;
+  formatPrice: ReturnType<typeof useCurrency>['formatPrice'];
+}) {
+  // Shared booking state — lifted here so BookingWidget (desktop) and MobileBookingCTA (mobile) share the same dates/guests/prices
+  const bookingState = usePropertyBookingState(property, activeOffer);
 
   // Filter sections based on available data
   const availableSections = SECTIONS.filter(section => {
@@ -277,7 +300,7 @@ export default function PropertyDetail() {
           {/* Desktop Booking Widget */}
           <div className="hidden lg:block">
             <div className="sticky top-24">
-              <BookingWidget property={property} specialOffer={activeOffer} />
+              <BookingWidget property={property} specialOffer={activeOffer} bookingState={bookingState} />
             </div>
           </div>
         </div>
@@ -307,6 +330,7 @@ export default function PropertyDetail() {
           property={property} 
           priceDisplay={formatPrice(property.base_price).display}
           specialOffer={activeOffer}
+          bookingState={bookingState}
         />
       </div>
     </PageLayout>

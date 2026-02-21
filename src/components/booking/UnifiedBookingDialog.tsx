@@ -53,7 +53,6 @@ export function UnifiedBookingDialog() {
   const { 
     isOpen, 
     closeBooking, 
-    mode, 
     selectedProperty, 
     setSelectedProperty,
     dateRange,
@@ -70,9 +69,7 @@ export function UnifiedBookingDialog() {
   // Real-time availability subscription for selected property
   useRealtimeAvailability(selectedProperty?.id);
   
-  // Determine initial step based on mode
   const getInitialStep = (): Step => {
-    if (mode === 'direct' && selectedProperty) return 'dates';
     return 'search';
   };
 
@@ -82,10 +79,10 @@ export function UnifiedBookingDialog() {
   // Reset step when dialog opens
   useEffect(() => {
     if (isOpen) {
-      setStep(getInitialStep());
+      setStep('search');
       setSelectedDestinationName(searchLocation);
     }
-  }, [isOpen, mode, selectedProperty, searchLocation]);
+  }, [isOpen, searchLocation]);
 
   // Filter properties based on selected destination
   const filteredProperties = useMemo(() => {
@@ -144,15 +141,11 @@ export function UnifiedBookingDialog() {
     if (step === 'guests') {
       setStep('dates');
     } else if (step === 'dates') {
-      if (mode === 'direct') {
-        // Can't go back from dates in direct mode
-        return;
-      }
       setStep('property');
     } else if (step === 'property') {
       setStep('search');
     }
-  }, [step, mode]);
+  }, [step]);
 
   const handleProceed = useCallback(() => {
     if (!selectedProperty) return;
@@ -189,10 +182,6 @@ export function UnifiedBookingDialog() {
 
   // Get step info for progress indicator
   const getStepNumber = () => {
-    if (mode === 'direct') {
-      if (step === 'dates') return 1;
-      if (step === 'guests') return 2;
-    }
     if (step === 'search') return 1;
     if (step === 'property') return 2;
     if (step === 'dates') return 3;
@@ -200,13 +189,13 @@ export function UnifiedBookingDialog() {
     return 1;
   };
 
-  const totalSteps = mode === 'direct' ? 2 : 4;
+  const totalSteps = 4;
 
   const renderContent = () => (
     <>
       <AnimatePresence mode="wait">
         {/* Search Step - General search mode only */}
-        {step === 'search' && mode === 'search' && (
+        {step === 'search' && (
           <motion.div
             key="search"
             initial={{ opacity: 0, x: -20 }}
@@ -558,13 +547,7 @@ export function UnifiedBookingDialog() {
 
       {/* Footer Actions */}
       <div className="flex gap-3 pt-4 border-t mt-4">
-        {step !== 'search' && step !== 'dates' && (
-          <Button variant="outline" onClick={handlePrevStep} className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-        )}
-        {step === 'dates' && mode === 'search' && (
+        {step !== 'search' && (
           <Button variant="outline" onClick={handlePrevStep} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -605,21 +588,14 @@ export function UnifiedBookingDialog() {
         )}
 
         {step === 'dates' && (
-          <>
-            {mode === 'direct' && (
-              <Button variant="outline" onClick={closeBooking}>
-                Cancel
-              </Button>
-            )}
-            <Button
-              onClick={() => setStep('guests')}
-              disabled={!dateRange?.from}
-              className="flex-1 gap-2"
-            >
-              {dateRange?.from && dateRange?.to ? 'Select Guests' : 'Skip Dates'}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </>
+          <Button
+            onClick={() => setStep('guests')}
+            disabled={!dateRange?.from}
+            className="flex-1 gap-2"
+          >
+            {dateRange?.from && dateRange?.to ? 'Select Guests' : 'Skip Dates'}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         )}
 
         {step === 'guests' && (

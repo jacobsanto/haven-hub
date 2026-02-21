@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/contexts/BookingContext';
@@ -18,14 +19,19 @@ const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
 };
 
 export function FloatingBookButton() {
+  const location = useLocation();
   const [isHovered, setIsHovered] = useState(false);
   const { openBooking } = useBooking();
 
+  // Hide on property detail pages where BookingWidget / MobileBookingCTA are visible
+  const isPropertyPage = location.pathname.startsWith('/properties/') && location.pathname !== '/properties';
+
   const handleClick = useCallback(() => {
     triggerHaptic('light');
-    // Open unified booking dialog in search mode (browse all properties)
     openBooking({ mode: 'search' });
   }, [openBooking]);
+
+  if (isPropertyPage) return null;
 
   return (
     <>
