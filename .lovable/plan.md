@@ -1,100 +1,70 @@
 
-# Interactive Map View for Properties Page
+# Add Booking Summary Review Step
 
-## Overview
+## What This Does
 
-Replace the "Map View Coming Soon" placeholder with a fully interactive map using **Leaflet** (free, no API key needed) that displays property pins. Hovering over a pin shows a rich villa card popup with image, price, stats, and booking CTA.
+Adds a new "Review" step between Guest Details and Payment in the checkout flow. This gives guests a clear, comprehensive summary of their entire booking before they proceed to pay -- reducing errors, abandoned checkouts, and post-booking support requests.
 
-## Approach
-
-Use **Leaflet** + **react-leaflet** -- a free, open-source map library that requires no API keys. OpenStreetMap tiles provide the base map at no cost.
-
-### New Dependencies
-
-- `leaflet` -- map rendering engine
-- `react-leaflet` -- React bindings for Leaflet
-- `@types/leaflet` -- TypeScript definitions
-
-### New Component: `PropertyMapView`
-
-**File:** `src/components/properties/PropertyMapView.tsx`
-
-A full-height interactive map that:
-
-1. **Renders pins** for every property that has valid `latitude` and `longitude` values (skips properties without coordinates)
-2. **Custom markers** styled with the brand's primary color (custom SVG pin icon, not the default blue Leaflet marker)
-3. **Auto-fits bounds** to show all property pins on load using `fitBounds`
-4. **Hover popup** -- when hovering a marker, a styled popup appears showing:
-   - Property hero image (aspect 16:9, rounded top)
-   - Property name (font-serif)
-   - Location (city, country)
-   - Key stats row: bedrooms, bathrooms, max guests (with icons)
-   - Price per night (formatted with currency context)
-   - Instant booking badge (if applicable)
-   - Special offer badge (if active)
-   - "View Details" link to the property page
-   - "Book Now" button that opens `PropertyBookingPopup`
-5. **Click behavior** -- clicking the popup's "View Details" navigates to `/properties/{slug}`
-6. **Responsive** -- map takes full available height (min 500px on desktop, 400px on mobile)
-7. **Properties without coordinates** -- a small banner below the map notes "X properties not shown (missing location data)" if any are missing lat/lng
-
-### Popup Design
-
-The hover popup mimics the QuickBookCard layout in miniature:
+## Current Flow vs. New Flow
 
 ```text
-+---------------------------+
-| [Hero Image - 16:9]       |
-| [Instant Book badge]      |
-+---------------------------+
-| Villa Name          price  |
-| City, Country      /night |
-| Bed 3 | Bath 2 | Guests 6 |
-| [View Details] [Book Now] |
-+---------------------------+
+Current:  Dates -> Add-ons -> Guest Details -> Payment
+New:      Dates -> Add-ons -> Guest Details -> Review -> Payment
 ```
 
-- Width: 280px
-- White background, rounded-xl, shadow-lg
-- Same border style as QuickBookCard: `border-[rgba(30,60,120,0.08)]`
+## Review Page Content
 
-### Leaflet CSS
+The Review step shows everything in one clean, scannable layout:
 
-Import Leaflet's CSS in the component file. The default Leaflet tile attribution is kept (required by OpenStreetMap license).
+- **Property card** -- hero image, name, location
+- **Stay details** -- check-in/check-out dates, number of nights, guest breakdown (adults + children)
+- **Selected add-ons** -- each add-on with quantity, unit price, and line total (or "No add-ons selected")
+- **Guest information** -- name, email, phone, country, special requests
+- **Price breakdown** -- full itemized breakdown (accommodation, add-ons, fees, taxes, discount) with bold total
+- **Cancellation policy** -- the applicable policy displayed for reference
+- **Edit buttons** -- each section has an "Edit" link that jumps back to the relevant step
+- **Confirm and Pay** button to proceed to Payment
+- **Back** button to return to Guest Details
 
-### Changes to Properties Page
+## Technical Changes
 
-**File:** `src/pages/Properties.tsx`
+### File: `src/pages/Checkout.tsx`
 
-Replace the "Map View Coming Soon" placeholder block (lines 323-331) with:
+1. Add `'review'` to the `CheckoutStep` type:
+   ```
+   type CheckoutStep = 'dates' | 'addons' | 'guest' | 'review' | 'payment';
+   ```
 
-```text
-<PropertyMapView
-  properties={properties || []}
-  isLoading={isLoading}
-/>
-```
+2. Update the step progression array and navigation:
+   - Progress bar shows 5 steps: dates, addons, guest, review, payment
+   - Guest form `onSubmit` now navigates to `'review'` instead of `'payment'`
+   - "Continue to Payment" button text becomes "Review Booking"
 
-No other changes to the page. The grid/map toggle buttons already exist and work.
+3. Add the Review step section between the Guest and Payment blocks -- a new render block that displays all collected booking data in a read-only summary layout using existing Card components and the existing `PriceBreakdownDisplay` component.
 
-## Files Touched
+4. The Review step renders:
+   - Property summary card (image + name + location)
+   - Dates and guests summary row
+   - Add-ons list (reuses data from `selectedAddons` state)
+   - Guest info card (from `guestInfo` state)
+   - Full price breakdown (reuses existing `PriceBreakdownDisplay` component)
+   - Cancellation policy (reuses existing `CancellationPolicyDisplay` component)
+   - "Edit" buttons per section that call `setCurrentStep()` to jump back
+   - "Confirm and Proceed to Payment" CTA button
 
-1. **`src/components/properties/PropertyMapView.tsx`** -- NEW: Map component with Leaflet, custom markers, hover popups
-2. **`src/pages/Properties.tsx`** -- Replace placeholder with `PropertyMapView` component
+### No New Files Needed
+
+The review step is implemented inline within the existing Checkout page, following the same pattern as the other steps (dates, addons, guest, payment). No new components or hooks are required -- it purely reads from existing state and reuses existing display components.
+
+### No Database or Backend Changes
+
+This is a purely frontend UI addition. No new tables, RLS policies, or edge functions are needed.
 
 ## What Does NOT Change
 
-- No database changes -- lat/lng fields already exist on properties
-- No backend changes
-- Grid view unchanged
-- Booking flow unchanged
-- QuickBookCard unchanged
-- All filters continue to work (the map receives the already-filtered `properties` array)
-
-## Technical Notes
-
-- Leaflet is ~40KB gzipped, lightweight compared to Google Maps or Mapbox
-- No API key required -- uses free OpenStreetMap tiles
-- Properties without coordinates are gracefully excluded with a count indicator
-- The map re-fits bounds whenever the filtered properties list changes
-- Popup uses React portals via react-leaflet's `Popup` component for full React rendering inside map popups
+- Booking confirmation logic and payment flow remain identical
+- PriceBreakdown calculation is unchanged
+- Hold management is unchanged
+- Guest form validation is unchanged
+- All existing steps continue to work as before
+- The BookingConfirm page (post-payment) is unchanged
