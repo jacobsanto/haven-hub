@@ -1,121 +1,103 @@
 
 
-# Booking Component Consolidation
+# QuickBookCard as the Primary Booking Entry Point
 
-## The Problem
+## Goal
 
-There are currently 5 booking-related UI components with 3 separate state management systems and 2 competing buttons visible simultaneously on mobile property pages. This creates a confusing, inconsistent experience.
+Make the QuickBookCard's "Instant Book" / "Book Now" button the **foundational booking interaction** across the entire site. When clicked on any property card (homepage, listings, destinations), a lightweight property-specific booking popup appears -- no multi-step wizard, no page navigation.
 
-## Strategy: Two Flows, Not Four
+The FloatingBookButton remains visible on all pages.
 
-Every booking interaction falls into one of two categories:
+## What Changes
 
-1. **Discovery flow** -- User does NOT have a property yet. They need to search/browse.
-2. **Property flow** -- User IS on a property page. They need dates, guests, and a CTA.
+### 1. New Component: `PropertyBookingPopup`
 
-All five components should map cleanly to one of these two flows.
+A focused dialog/sheet that handles one property's booking flow in a single screen.
 
-## Changes
+**Contents (single view, no steps):**
+- Property thumbnail + name (compact header)
+- Availability calendar (using existing `AvailabilityCalendar`)
+- Guest selector (reuses same +/- pattern)
+- Price breakdown (line items + total with 0.25s fade animation)
+- Full-width CTA button ("Book & Pay Now" for instant, "Request Booking" for non-instant)
 
-### 1. Remove FloatingBookButton from Property Pages
+**Rendering:**
+- Desktop: `Dialog` (Radix) centered, ~480px wide
+- Mobile: `Drawer` (vaul) sliding from bottom, 90vh
 
-The `FloatingBookButton` currently appears on property detail pages on mobile, directly competing with `MobileBookingCTA`. It should be hidden there, just like `HeaderSearchToggle` already is.
+**State:** Uses `usePropertyBookingState` hook internally -- the same hook already powering the property detail page. No new state management needed.
 
-**File:** `src/components/booking/FloatingBookButton.tsx`
-- Add route detection (same pattern as `HeaderSearchToggle`)
-- Return `null` when on `/properties/:slug` pages
-- Keep it on homepage, listings, destinations, blog, etc.
+**Styling:** Matches existing design system -- white background, `border-[rgba(30,60,120,0.08)]`, blue gradient CTA, 8px spacing scale.
 
-### 2. QuickBookCard: Navigate to Property Page Instead of Opening Dialog
+**File:** `src/components/booking/PropertyBookingPopup.tsx`
 
-Currently, hovering a property card and clicking "Instant Book" opens the `UnifiedBookingDialog` (multi-step flow with destination selection). This makes no sense when the property is already known.
+### 2. Update `QuickBookCard`
+
+Change `handleBookNow` from `navigate('/properties/...')` to opening the new `PropertyBookingPopup`.
+
+- Add local state: `const [bookingOpen, setBookingOpen] = useState(false)`
+- `handleBookNow` sets `bookingOpen = true` instead of navigating
+- Render `<PropertyBookingPopup>` inside the card component, controlled by `bookingOpen`
 
 **File:** `src/components/booking/QuickBookCard.tsx`
-- Change `handleBookNow` to navigate to `/properties/{slug}` instead of calling `openBooking({ mode: 'direct', property })`
-- The property detail page already has the proper booking widget
-- The card already links to the property page on regular click -- so the hover CTA becomes a more prominent version of the same action
 
-### 3. UnifiedBookingDialog: Remove "Direct" Mode
+### 3. FloatingBookButton stays as-is
 
-With QuickBookCard no longer opening the dialog in direct mode, `UnifiedBookingDialog` becomes a pure discovery/search tool.
+Already re-enabled on all pages. No changes needed. It continues to open the discovery flow (`UnifiedBookingDialog`) for users who don't have a property in mind.
 
-**File:** `src/components/booking/UnifiedBookingDialog.tsx`
-- Remove the `direct` mode branch and related step-skipping logic
-- Simplify to always start at `search` step
-- This makes the dialog's purpose unambiguous: find a property, then go to its page
+### 4. BookingContext `direct` mode cleanup
 
-**File:** `src/contexts/BookingContext.tsx`
-- Remove `BookingMode` type and `mode` state (optional cleanup -- can also just leave it unused)
+The `direct` mode in BookingContext is now unused (nothing calls `openBooking({ mode: 'direct' })`). The new popup manages its own state via the hook. No context changes needed -- `direct` mode can stay as dead code for now or be removed as optional cleanup.
 
-### 4. MobileBookingCTA: Share State with BookingWidget
+## What Does NOT Change
 
-Currently `BookingWidget` (desktop) and `MobileBookingCTA` (mobile) each maintain their own `checkIn`, `checkOut`, `guests`, and price calculations. This means if a user somehow switches between desktop and mobile views, or if any shared logic is needed, the two are completely disconnected.
+- No database, backend, or booking logic changes
+- `BookingWidget` (desktop property page) unchanged
+- `MobileBookingCTA` (mobile property page) unchanged
+- `UnifiedBookingDialog` (discovery flow) unchanged
+- `usePropertyBookingState` hook unchanged (reused as-is)
+- `useBookingEngine`, `useCompleteBooking`, `useCheckoutFlow` untouched
+- All existing checkout and payment flows remain identical
 
-**Approach:** Extract shared property-booking state into a small hook.
+## Component Responsibility Summary After Changes
 
-**New file:** `src/hooks/usePropertyBookingState.ts`
-- Manages: `checkIn`, `checkOut`, `guests`, derived `nights`, derived price calculations
-- Accepts: `property`, `specialOffer` as inputs
-- Returns: all state + setters + computed values (nights, total, formatted prices)
-- Both `BookingWidget` and `MobileBookingCTA` consume this hook instead of managing their own state
-
-**Files modified:**
-- `src/components/booking/BookingWidget.tsx` -- replace local state with hook
-- `src/components/booking/MobileBookingCTA.tsx` -- replace local state with hook
-
-To share state between the two components (since both render on the property page simultaneously), the hook should use React context scoped to the property detail page, or be lifted into `PropertyDetail.tsx` and passed down as props.
-
-**Recommended approach:** Lift state into `PropertyDetail.tsx`, pass down via props. This is the simplest pattern and avoids creating another context.
-
-### 5. Summary of Final Component Responsibilities
-
-| Component | Scope | Flow |
+| Component | Where | Purpose |
 |---|---|---|
-| `HeaderSearchToggle` | Header (non-property pages) | Opens discovery dialog |
-| `FloatingBookButton` | Non-property pages only | Opens discovery dialog |
-| `UnifiedBookingDialog` | Global overlay | Discovery: search, browse, then navigate to property page |
-| `BookingWidget` | Property page, desktop only | Property booking (dates, guests, price, CTA) |
-| `MobileBookingCTA` | Property page, mobile only | Same property booking, mobile-optimized layout |
+| **PropertyBookingPopup** (NEW) | Anywhere a property card exists | Quick single-screen booking for a known property |
+| QuickBookCard | Homepage, listings, destinations | Property card -- "Instant Book" opens PropertyBookingPopup |
+| FloatingBookButton | All pages | Opens discovery flow (UnifiedBookingDialog) |
+| HeaderSearchToggle | Header (non-property pages) | Opens discovery flow |
+| UnifiedBookingDialog | Global overlay | Discovery: search destinations, browse properties |
+| BookingWidget | Property detail (desktop) | Full booking widget with calendar + price |
+| MobileBookingCTA | Property detail (mobile) | Sticky bar with expandable booking sections |
 
 ## Technical Details
 
-### usePropertyBookingState hook
+### PropertyBookingPopup Props
 
 ```text
-Input: property, specialOffer
-State: checkIn, checkOut, guests
-Derived: nights, baseTotal, discountAmount, totalPrice, formatted prices
-Methods: handleDateSelect, setGuests, handleInstantBook, handleRequestBooking
+interface PropertyBookingPopupProps {
+  property: Property;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 ```
 
-### PropertyDetail.tsx changes
+### Internal Structure
 
 ```text
-const bookingState = usePropertyBookingState(property, activeOffer);
-
-// Desktop
-<BookingWidget {...bookingState} property={property} />
-
-// Mobile
-<MobileBookingCTA {...bookingState} property={property} />
+PropertyBookingPopup
+  -- usePropertyBookingState(property, specialOffer)  // reuse existing hook
+  -- useActiveSpecialOffer(property.id)               // reuse existing hook
+  -- useIsMobile()                                    // for Dialog vs Drawer
+  -- AvailabilityCalendar (compact variant)
+  -- Guest +/- controls
+  -- Price breakdown (same math as BookingWidget)
+  -- CTA button -> handleInstantBook or handleRequestBooking
 ```
 
-### Files touched (6 files)
+### Files Touched
 
-1. `src/hooks/usePropertyBookingState.ts` -- NEW: shared booking state hook
-2. `src/components/booking/FloatingBookButton.tsx` -- hide on property pages
-3. `src/components/booking/QuickBookCard.tsx` -- navigate instead of opening dialog
-4. `src/components/booking/UnifiedBookingDialog.tsx` -- remove direct mode
-5. `src/components/booking/BookingWidget.tsx` -- consume shared state
-6. `src/components/booking/MobileBookingCTA.tsx` -- consume shared state
-7. `src/pages/PropertyDetail.tsx` -- lift booking state, pass to both components
-
-### What does NOT change
-
-- No database, Supabase, or backend changes
-- No booking calculation logic changes (same math, just moved into hook)
-- No checkout or payment flow changes
-- No changes to `useBookingEngine`, `useCompleteBooking`, or `useCheckoutFlow`
-- Desktop BookingWidget visual design unchanged
-- Mobile MobileBookingCTA visual design unchanged
+1. `src/components/booking/PropertyBookingPopup.tsx` -- NEW
+2. `src/components/booking/QuickBookCard.tsx` -- wire up popup instead of navigate
 
