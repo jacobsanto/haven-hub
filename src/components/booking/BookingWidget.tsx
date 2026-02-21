@@ -1,16 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { Calendar, Users, Zap, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
-import { useCreateBooking } from '@/hooks/useBookings';
-import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
-import { useToast } from '@/hooks/use-toast';
-import { useCurrency } from '@/contexts/CurrencyContext';
 import { Property, SpecialOffer } from '@/types/database';
+import { PropertyBookingState } from '@/hooks/usePropertyBookingState';
 import { cn } from '@/lib/utils';
 
 // Animated total: fade-only on value change
@@ -42,136 +38,49 @@ function AnimatedTotal({ display }: { display: string }) {
 interface BookingWidgetProps {
   property: Property;
   specialOffer?: SpecialOffer | null;
+  bookingState: PropertyBookingState;
 }
 
-export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const createBooking = useCreateBooking();
-  const { formatPrice, selectedCurrency } = useCurrency();
-  
-  // Real-time availability subscription
-  useRealtimeAvailability(property.id);
+export function BookingWidget({ property, specialOffer, bookingState }: BookingWidgetProps) {
+  const {
+    checkIn,
+    checkOut,
+    guests,
+    nights,
+    basePriceFormatted,
+    baseTotalFormatted,
+    discountFormatted,
+    totalFormatted,
+    discountAmount,
+    handleDateSelect,
+    setGuests,
+    handleInstantBook,
+    handleRequestBooking,
+    createBookingPending,
+    checkInOpen,
+    setCheckInOpen,
+    checkOutOpen,
+    setCheckOutOpen,
+  } = bookingState;
 
-  const [checkIn, setCheckIn] = useState<Date>();
-  const [checkOut, setCheckOut] = useState<Date>();
-  const [guests, setGuests] = useState(1);
-  const [checkInOpen, setCheckInOpen] = useState(false);
-  const [checkOutOpen, setCheckOutOpen] = useState(false);
-  
   // Request-based flow state (only used when instant_booking is false)
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [step, setStep] = useState<'dates' | 'details' | 'confirm'>('dates');
 
-  const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
-  const baseTotal = nights * property.base_price;
-  const discountAmount = specialOffer ? (baseTotal * specialOffer.discount_percent) / 100 : 0;
-  const totalPrice = baseTotal - discountAmount;
-
-  // Format prices using currency context
-  const basePriceFormatted = formatPrice(property.base_price);
-  const baseTotalFormatted = formatPrice(baseTotal);
-  const discountFormatted = formatPrice(discountAmount);
-  const totalFormatted = formatPrice(totalPrice);
-
-  // Handle date selection from AvailabilityCalendar
-  const handleDateSelect = (date: Date, type: 'checkIn' | 'checkOut') => {
-    if (type === 'checkIn') {
-      setCheckIn(date);
-      setCheckOut(undefined);
-      setCheckInOpen(false);
-      setTimeout(() => setCheckOutOpen(true), 100);
-    } else {
-      setCheckOut(date);
-      setCheckOutOpen(false);
-    }
-  };
-
-  // Instant booking - route to checkout
-  const handleInstantBook = () => {
-    if (!checkIn || !checkOut) {
-      toast({
-        title: 'Please select dates',
-        description: 'Choose your check-in and check-out dates.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const params = new URLSearchParams({
-      property: property.slug,
-      guests: String(guests),
-      checkIn: format(checkIn, 'yyyy-MM-dd'),
-      checkOut: format(checkOut, 'yyyy-MM-dd'),
-    });
-
-    navigate(`/checkout?${params.toString()}`);
-  };
-
   // Request-based flow - continue through multi-step form
   const handleContinue = () => {
     if (step === 'dates') {
       if (!checkIn || !checkOut) {
-        toast({
-          title: 'Please select dates',
-          description: 'Choose your check-in and check-out dates.',
-          variant: 'destructive',
-        });
         return;
       }
       setStep('details');
     } else if (step === 'details') {
       if (!guestName || !guestEmail) {
-        toast({
-          title: 'Please fill in your details',
-          description: 'Name and email are required.',
-          variant: 'destructive',
-        });
         return;
       }
       setStep('confirm');
-    }
-  };
-
-  // Request-based booking submission
-  const handleRequestBooking = async () => {
-    if (!checkIn || !checkOut) return;
-
-    try {
-      await createBooking.mutateAsync({
-        propertyId: property.id,
-        guestName,
-        guestEmail,
-        guestPhone,
-        checkIn,
-        checkOut,
-        guests,
-        basePrice: property.base_price,
-      });
-
-      toast({
-        title: 'Booking Request Submitted!',
-        description: 'We will confirm your reservation shortly.',
-      });
-
-      navigate('/booking/confirm', {
-        state: {
-          propertyName: property.name,
-          checkIn: format(checkIn, 'MMM d, yyyy'),
-          checkOut: format(checkOut, 'MMM d, yyyy'),
-          nights,
-          totalPrice,
-          isRequest: true,
-        },
-      });
-    } catch (error) {
-      toast({
-        title: 'Booking Failed',
-        description: 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      });
     }
   };
 
@@ -398,12 +307,12 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
           {/* Action Button */}
           {step === 'confirm' ? (
             <Button
-              onClick={handleRequestBooking}
-              disabled={createBooking.isPending}
+              onClick={() => handleRequestBooking(guestName, guestEmail, guestPhone)}
+              disabled={createBookingPending}
               className={ctaClassName}
             >
               <Clock className="h-4 w-4" />
-              {createBooking.isPending ? 'Submitting...' : 'Request Booking'}
+              {createBookingPending ? 'Submitting...' : 'Request Booking'}
             </Button>
           ) : (
             <Button onClick={handleContinue} className={ctaClassName}>

@@ -1,15 +1,13 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { Calendar as CalendarIcon, Zap, Percent, Users, Minus, Plus, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { BookingWidget } from './BookingWidget';
 import { Property, SpecialOffer } from '@/types/database';
-import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
-import { useCurrency } from '@/hooks/useCurrency';
+import { PropertyBookingState } from '@/hooks/usePropertyBookingState';
 import { cn } from '@/lib/utils';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 
 // Haptic feedback utility
 const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
@@ -49,27 +47,29 @@ interface MobileBookingCTAProps {
   property: Property;
   priceDisplay: string;
   specialOffer?: SpecialOffer | null;
+  bookingState: PropertyBookingState;
 }
 
-export function MobileBookingCTA({ property, priceDisplay, specialOffer }: MobileBookingCTAProps) {
-  const navigate = useNavigate();
+export function MobileBookingCTA({ property, priceDisplay, specialOffer, bookingState }: MobileBookingCTAProps) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [guests, setGuests] = useState(2);
-  const [checkIn, setCheckIn] = useState<Date | undefined>();
-  const [checkOut, setCheckOut] = useState<Date | undefined>();
-  const { formatPrice } = useCurrency();
 
-  // Real-time availability subscription
-  useRealtimeAvailability(property.id);
+  const {
+    checkIn,
+    checkOut,
+    guests,
+    nights,
+    nightlyRate,
+    totalPrice,
+    totalFormatted,
+    handleDateSelect: rawHandleDateSelect,
+    handleGuestChange: rawHandleGuestChange,
+    handleInstantBook,
+  } = bookingState;
 
   const discountedPrice = specialOffer
     ? property.base_price * (1 - specialOffer.discount_percent / 100)
     : null;
-
-  const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
-  const nightlyRate = discountedPrice ?? property.base_price;
-  const totalPrice = nights > 0 ? nightlyRate * nights : null;
 
   const handleOpenSheet = useCallback(() => {
     triggerHaptic('light');
@@ -83,26 +83,18 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
 
   const handleQuickBook = useCallback(() => {
     triggerHaptic('success');
-    const params = new URLSearchParams({ property: property.slug, guests: String(guests) });
-    if (checkIn) params.set('checkIn', format(checkIn, 'yyyy-MM-dd'));
-    if (checkOut) params.set('checkOut', format(checkOut, 'yyyy-MM-dd'));
-    navigate(`/checkout?${params.toString()}`);
-  }, [navigate, property.slug, guests, checkIn, checkOut]);
+    handleInstantBook();
+  }, [handleInstantBook]);
 
   const handleGuestChange = useCallback((delta: number) => {
     triggerHaptic('light');
-    setGuests(prev => Math.max(1, Math.min(property.max_guests, prev + delta)));
-  }, [property.max_guests]);
+    rawHandleGuestChange(delta);
+  }, [rawHandleGuestChange]);
 
   const handleDateSelect = useCallback((date: Date, type: 'checkIn' | 'checkOut') => {
     triggerHaptic('light');
-    if (type === 'checkIn') {
-      setCheckIn(date);
-      setCheckOut(undefined);
-    } else {
-      setCheckOut(date);
-    }
-  }, []);
+    rawHandleDateSelect(date, type);
+  }, [rawHandleDateSelect]);
 
   const toggleExpanded = useCallback(() => {
     triggerHaptic('light');
@@ -187,13 +179,13 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
             </div>
 
             {/* Section 3: Price Breakdown */}
-            {nights > 0 && totalPrice !== null && (
+            {nights > 0 && totalPrice > 0 && (
               <div className="px-4 py-3 border-t border-[rgba(30,60,120,0.08)]">
                 <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Price</h4>
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{formatPrice(nightlyRate).display} × {nights} night{nights > 1 ? 's' : ''}</span>
-                    <span>{formatPrice(totalPrice).display}</span>
+                    <span>{bookingState.basePriceFormatted.display} × {nights} night{nights > 1 ? 's' : ''}</span>
+                    <span>{bookingState.baseTotalFormatted.display}</span>
                   </div>
                   {specialOffer && discountedPrice && (
                     <div className="flex justify-between text-xs text-emerald-600">
@@ -204,7 +196,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
                   <div className="border-t border-[rgba(30,60,120,0.08)] pt-2 mt-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-semibold text-foreground">Total</span>
-                      <MobileAnimatedTotal display={formatPrice(totalPrice).display} />
+                      <MobileAnimatedTotal display={totalFormatted.display} />
                     </div>
                   </div>
                 </div>
@@ -239,7 +231,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
                       </SheetTitle>
                     </SheetHeader>
                     <div className="p-5">
-                      <BookingWidget property={property} specialOffer={specialOffer} />
+                      <BookingWidget property={property} specialOffer={specialOffer} bookingState={bookingState} />
                     </div>
                   </SheetContent>
                 </Sheet>
@@ -256,7 +248,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer }: Mobil
               {specialOffer && discountedPrice ? (
                 <>
                   <span className="text-lg font-bold text-foreground">
-                    {formatPrice(discountedPrice).display}
+                    {bookingState.basePriceFormatted.display}
                   </span>
                   <span className="text-xs text-muted-foreground line-through">
                     {priceDisplay}
