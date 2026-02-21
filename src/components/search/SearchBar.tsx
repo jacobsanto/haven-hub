@@ -128,187 +128,187 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
 
   }
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
-      className={cn("bg-card/95 backdrop-blur-sm border border-border rounded-2xl p-4 shadow-organic-lg mx-0 px-0 py-0 my-0",
+  return;
 
-      className
-      )}>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Destination Dropdown */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Destination
-          </label>
-          <Popover open={destinationOpen} onOpenChange={setDestinationOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={destinationOpen}
-                className={cn(
-                  'w-full justify-between text-left font-normal border-0 bg-muted/50 rounded-xl h-11',
-                  !selectedDestination && 'text-muted-foreground'
-                )}>
 
-                <div className="flex items-center gap-2 truncate">
-                  <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
-                  <span className="truncate">
-                    {selectedDestinationData ?
-                    `${selectedDestinationData.name}, ${selectedDestinationData.country}` :
-                    'All Destinations'
-                    }
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {selectedDestination &&
-                  <X
-                    className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer"
-                    onClick={handleClearDestination} />
 
-                  }
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[280px] p-0 bg-card border border-border z-50" align="start">
-              <Command>
-                <CommandInput placeholder="Search villages..." />
-                <CommandList>
-                  <CommandEmpty>No destinations found.</CommandEmpty>
-                  <CommandGroup heading="Available Destinations">
-                    <CommandItem
-                      value="all-destinations"
-                      onSelect={() => {
-                        setSelectedDestination('');
-                        setDestinationOpen(false);
-                      }}>
 
-                      <MapPin className="mr-2 h-4 w-4" />
-                      All Destinations
-                    </CommandItem>
-                    {destinationsLoading ?
-                    <div className="p-2 space-y-2">
-                        <Skeleton className="h-8 w-full" />
-                        <Skeleton className="h-8 w-full" />
-                        <Skeleton className="h-8 w-full" />
-                      </div> :
 
-                    destinations?.map((destination) =>
-                    <CommandItem
-                      key={destination.id}
-                      value={destination.name}
-                      onSelect={() => {
-                        setSelectedDestination(destination.name);
-                        setDestinationOpen(false);
-                      }}>
 
-                          <MapPin className="mr-2 h-4 w-4" />
-                          <span className="flex-1">{destination.name}, {destination.country}</span>
-                        </CommandItem>
-                    )
-                    }
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
 
-        {/* Check In */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Check In
-          </label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  'w-full justify-start text-left font-normal border-0 bg-muted/50 rounded-xl',
-                  !checkIn && 'text-muted-foreground'
-                )}>
 
-                <Calendar className="mr-2 h-4 w-4" />
-                {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Add date'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-card" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={checkIn}
-                onSelect={setCheckIn}
-                disabled={(date) => date < new Date()}
-                initialFocus
-                className="pointer-events-auto" />
 
-            </PopoverContent>
-          </Popover>
-        </div>
 
-        {/* Check Out */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Check Out
-          </label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  'w-full justify-start text-left font-normal border-0 bg-muted/50 rounded-xl',
-                  !checkOut && 'text-muted-foreground'
-                )}>
 
-                <Calendar className="mr-2 h-4 w-4" />
-                {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Add date'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-card" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={checkOut}
-                onSelect={setCheckOut}
-                disabled={(date) => date < (checkIn || new Date())}
-                initialFocus
-                className="pointer-events-auto" />
 
-            </PopoverContent>
-          </Popover>
-        </div>
 
-        {/* Guests & Search */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Guests
-          </label>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 flex-1 bg-muted/50 rounded-xl px-3 py-2">
-              <Users className="h-5 w-5 text-primary" />
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={guests}
-                onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-                className="border-0 bg-transparent focus-visible:outline-none p-0 h-auto flex-1" />
 
-              <span className="text-sm text-muted-foreground">guests</span>
-            </div>
-            <Button
-              onClick={handleSearch}
-              size="lg"
-              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground px-6">
 
-              <Search className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </motion.div>);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
