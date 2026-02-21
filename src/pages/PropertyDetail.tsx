@@ -31,21 +31,21 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
+  BreadcrumbSeparator } from
+'@/components/ui/breadcrumb';
 
 // Section IDs for sticky navigation
 const SECTIONS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'highlights', label: 'Highlights' },
-  { id: 'rooms', label: 'Rooms' },
-  { id: 'amenities', label: 'Amenities' },
-  { id: 'location', label: 'Location' },
-  { id: 'policies', label: 'Policies' },
-];
+{ id: 'overview', label: 'Overview' },
+{ id: 'highlights', label: 'Highlights' },
+{ id: 'rooms', label: 'Rooms' },
+{ id: 'amenities', label: 'Amenities' },
+{ id: 'location', label: 'Location' },
+{ id: 'policies', label: 'Policies' }];
+
 
 export default function PropertyDetail() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams<{slug: string;}>();
   const { data: property, isLoading, error } = useProperty(slug || '');
   const { data: activeOffer } = useActiveSpecialOffer(property?.id || '');
   const { addToRecentlyViewed } = useRecentlyViewed();
@@ -63,15 +63,15 @@ export default function PropertyDetail() {
     queryKey: ['destination', property?.destination_id],
     queryFn: async () => {
       if (!property?.destination_id) return null;
-      const { data, error } = await supabase
-        .from('destinations')
-        .select('*')
-        .eq('id', property.destination_id)
-        .single();
+      const { data, error } = await supabase.
+      from('destinations').
+      select('*').
+      eq('id', property.destination_id).
+      single();
       if (error) throw error;
       return data;
     },
-    enabled: !!property?.destination_id,
+    enabled: !!property?.destination_id
   });
 
   // Price display using CurrencyContext for guest-facing multi-currency support
@@ -92,8 +92,8 @@ export default function PropertyDetail() {
             </div>
           </div>
         </div>
-      </PageLayout>
-    );
+      </PageLayout>);
+
   }
 
   if (error || !property) {
@@ -105,12 +105,12 @@ export default function PropertyDetail() {
             The property you're looking for doesn't exist or is no longer available.
           </p>
         </div>
-      </PageLayout>
-    );
+      </PageLayout>);
+
   }
 
   // Filter sections based on available data
-  const availableSections = SECTIONS.filter(section => {
+  const availableSections = SECTIONS.filter((section) => {
     if (section.id === 'highlights' && (!property.highlights || property.highlights.length === 0)) return false;
     if (section.id === 'rooms' && (!property.rooms || property.rooms.length === 0) && property.bedrooms === 0) return false;
     if (section.id === 'amenities' && (!property.amenities || property.amenities.length === 0)) return false;
@@ -140,8 +140,8 @@ export default function PropertyDetail() {
             <BreadcrumbSeparator>
               <ChevronRight className="h-4 w-4" />
             </BreadcrumbSeparator>
-            {destination && (
-              <>
+            {destination &&
+            <>
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
                     <Link to={`/destinations/${destination.slug}`}>
@@ -153,7 +153,7 @@ export default function PropertyDetail() {
                   <ChevronRight className="h-4 w-4" />
                 </BreadcrumbSeparator>
               </>
-            )}
+            }
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link to="/properties">Properties</Link>
@@ -171,13 +171,13 @@ export default function PropertyDetail() {
         {/* Hero Gallery */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+          animate={{ opacity: 1, y: 0 }}>
+
           <PropertyGallery
             images={property.gallery}
             heroImage={property.hero_image_url}
-            propertyName={property.name}
-          />
+            propertyName={property.name} />
+
         </motion.div>
 
         {/* Quick Stats Bar */}
@@ -198,9 +198,9 @@ export default function PropertyDetail() {
                 </div>
 
                 {/* Special Offer */}
-                {activeOffer && (
-                  <SpecialOfferBadge offer={activeOffer} variant="card" />
-                )}
+                {activeOffer &&
+                <SpecialOfferBadge offer={activeOffer} variant="card" />
+                }
 
                 <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
                   <span className="flex items-center gap-1.5">
@@ -211,23 +211,23 @@ export default function PropertyDetail() {
                 </div>
 
                 {/* Description */}
-                {property.description && (
-                  <div className="prose prose-lg max-w-none mt-6">
-                    <p className="text-muted-foreground leading-relaxed">
+                {property.description &&
+                <div className="prose prose-lg max-w-none mt-6">
+                    <p className="text-muted-foreground leading-relaxed mx-[10px] px-[13px] my-[21px] py-[9px] font-light text-left text-sm">
                       {property.description}
                     </p>
                   </div>
-                )}
+                }
               </div>
             </section>
 
             {/* Highlights */}
-            {property.highlights && property.highlights.length > 0 && (
-              <section id="highlights" className="scroll-mt-32 border-t border-border/30 pt-16">
+            {property.highlights && property.highlights.length > 0 &&
+            <section id="highlights" className="scroll-mt-32 border-t border-border/30 pt-16">
                 <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Highlights</h2>
                 <PropertyHighlights highlights={property.highlights} variant="badges" />
               </section>
-            )}
+            }
 
             {/* Room Breakdown */}
             <section id="rooms" className="scroll-mt-32 border-t border-border/30 pt-16">
@@ -235,21 +235,21 @@ export default function PropertyDetail() {
               <RoomBreakdown
                 rooms={property.rooms}
                 bedrooms={property.bedrooms}
-                bathrooms={property.bathrooms}
-              />
+                bathrooms={property.bathrooms} />
+
             </section>
 
             {/* Amenities */}
-            {property.amenities.length > 0 && (
-              <section id="amenities" className="scroll-mt-32 border-t border-border/30 pt-16">
+            {property.amenities.length > 0 &&
+            <section id="amenities" className="scroll-mt-32 border-t border-border/30 pt-16">
                 <h2 className="text-xl sm:text-2xl font-serif font-medium mb-6">Amenities & Features</h2>
-                <AmenityList 
-                  amenities={property.amenities} 
-                  variant="grid" 
-                  showDescriptions={true}
-                />
+                <AmenityList
+                amenities={property.amenities}
+                variant="grid"
+                showDescriptions={true} />
+
               </section>
-            )}
+            }
 
             {/* Neighborhood & Location */}
             <section id="location" className="scroll-mt-32 border-t border-border/30 pt-16">
@@ -259,8 +259,8 @@ export default function PropertyDetail() {
                 attractions={property.nearby_attractions}
                 city={property.city}
                 region={property.region}
-                country={property.country}
-              />
+                country={property.country} />
+
             </section>
 
             {/* House Rules & Policies */}
@@ -269,8 +269,8 @@ export default function PropertyDetail() {
               <HouseRulesAccordion
                 houseRules={property.house_rules}
                 cancellationPolicy={property.cancellation_policy}
-                petPolicy={property.pet_policy}
-              />
+                petPolicy={property.pet_policy} />
+
             </section>
           </div>
 
@@ -283,14 +283,14 @@ export default function PropertyDetail() {
         </div>
 
         {/* Related Experiences */}
-        {property.destination_id && (
-          <div className="mt-16">
+        {property.destination_id &&
+        <div className="mt-16">
             <RelatedExperiences
-              destinationId={property.destination_id}
-              title="Enhance Your Stay"
-            />
+            destinationId={property.destination_id}
+            title="Enhance Your Stay" />
+
           </div>
-        )}
+        }
 
         {/* Similar Properties */}
         <div className="mt-16">
@@ -298,17 +298,17 @@ export default function PropertyDetail() {
             currentPropertyId={property.id}
             destinationId={property.destination_id}
             country={property.country}
-            title={destination ? `More Properties in ${destination.name}` : 'Similar Properties'}
-          />
+            title={destination ? `More Properties in ${destination.name}` : 'Similar Properties'} />
+
         </div>
 
         {/* Mobile Booking CTA */}
-        <MobileBookingCTA 
-          property={property} 
+        <MobileBookingCTA
+          property={property}
           priceDisplay={formatPrice(property.base_price).display}
-          specialOffer={activeOffer}
-        />
+          specialOffer={activeOffer} />
+
       </div>
-    </PageLayout>
-  );
+    </PageLayout>);
+
 }
