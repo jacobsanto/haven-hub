@@ -1,103 +1,121 @@
 
-# Booking Component Visual Refactor (UI Only)
 
-## Overview
+# Booking Component Consolidation
 
-Restyle the BookingWidget, PriceBreakdown, and QuickBookCard components to a clean, solid-white aesthetic with strict spacing, clear price hierarchy, and minimal motion. Zero changes to business logic, hooks, API calls, or data flow.
+## The Problem
 
-## What Changes
+There are currently 5 booking-related UI components with 3 separate state management systems and 2 competing buttons visible simultaneously on mobile property pages. This creates a confusing, inconsistent experience.
 
-### 1. BookingWidget.tsx -- Main booking card
+## Strategy: Two Flows, Not Four
 
-**Card container** (line 243):
-- Remove: `border-border/50 shadow-sm` (current classes)
-- Apply: `bg-white dark:bg-card rounded-2xl border border-[rgba(30,60,120,0.08)] p-5 space-y-4`
-- Inline style: `box-shadow: var(--shadow-soft)` (no glow, no glass blur)
-- No `backdrop-blur`, no `card-organic` class
+Every booking interaction falls into one of two categories:
 
-**Internal spacing** -- tighten from 6-unit to 8px-scale:
-- Outer padding: `p-5` (20px = 2.5 x 8)
-- Section gaps: `space-y-4` (16px)
-- Date picker gap: `space-y-3` (12px)
-- Guest row: `px-3 py-2`
+1. **Discovery flow** -- User does NOT have a property yet. They need to search/browse.
+2. **Property flow** -- User IS on a property page. They need dates, guests, and a CTA.
 
-**All internal borders**: `border-[rgba(30,60,120,0.08)]` -- the subtle navy-tinted border
+All five components should map cleanly to one of these two flows.
 
-**Price hierarchy** (both instant and request flows):
-- Subtotal line: `text-xs text-muted-foreground` (smaller, muted)
-- Discount line: `text-xs text-emerald-600` (smaller, green)
-- Total label: `text-sm font-semibold text-foreground`
-- Total value: `text-xl font-bold text-foreground` (large, bold, navy via `--foreground`)
+## Changes
 
-**Animated total** -- new local `AnimatedTotal` component:
-- Uses `useRef` to track previous value
-- On value change: fade opacity 0 -> 1
-- Duration: `0.25s ease` via inline `transitionDuration`
-- Fade only, no translate, no scale
-- No card-level animation at all
+### 1. Remove FloatingBookButton from Property Pages
 
-**Primary CTA buttons** (Book & Pay Now, Continue, Request Booking):
-- Replace `btn-organic` class with explicit:
-  - `bg-gradient-to-r from-primary to-primary/90 text-primary-foreground`
-  - `rounded-full shadow-soft`
-  - `hover:-translate-y-[2px] hover:shadow-medium`
-  - Transition using existing `--duration-hover` and `--ease-lift` tokens
-  - No glow, no shine sweep, no additional decorative effects
+The `FloatingBookButton` currently appears on property detail pages on mobile, directly competing with `MobileBookingCTA`. It should be hidden there, just like `HeaderSearchToggle` already is.
 
-**Popover backgrounds**: `bg-white dark:bg-card` (solid, not `bg-card` which can be translucent)
+**File:** `src/components/booking/FloatingBookButton.tsx`
+- Add route detection (same pattern as `HeaderSearchToggle`)
+- Return `null` when on `/properties/:slug` pages
+- Keep it on homepage, listings, destinations, blog, etc.
 
-### 2. PriceBreakdown.tsx -- Checkout price details
+### 2. QuickBookCard: Navigate to Property Page Instead of Opening Dialog
 
-**Full variant** (line 64):
-- Container: `bg-white dark:bg-card rounded-2xl border border-[rgba(30,60,120,0.08)] p-6`
-- Apply `box-shadow: var(--shadow-soft)` via style prop
-- Remove any inherited glassmorphism from `bg-card` being translucent
+Currently, hovering a property card and clicking "Instant Book" opens the `UnifiedBookingDialog` (multi-step flow with destination selection). This makes no sense when the property is already known.
 
-**Price hierarchy in full variant**:
-- All line items (accommodation, add-ons, fees, taxes): keep `text-sm text-muted-foreground`
-- Total label: `font-serif text-lg font-medium` (unchanged)
-- Total value: `font-serif text-2xl font-bold text-foreground` (bumped from `font-semibold` to `font-bold`)
+**File:** `src/components/booking/QuickBookCard.tsx`
+- Change `handleBookNow` to navigate to `/properties/{slug}` instead of calling `openBooking({ mode: 'direct', property })`
+- The property detail page already has the proper booking widget
+- The card already links to the property page on regular click -- so the hover CTA becomes a more prominent version of the same action
 
-**Compact variant**: same hierarchy treatment -- line items `text-sm`, total `font-bold`
+### 3. UnifiedBookingDialog: Remove "Direct" Mode
 
-**Deposit info box**: border changed to `border-[rgba(30,60,120,0.08)]`
+With QuickBookCard no longer opening the dialog in direct mode, `UnifiedBookingDialog` becomes a pure discovery/search tool.
 
-### 3. QuickBookCard.tsx -- Property listing card
+**File:** `src/components/booking/UnifiedBookingDialog.tsx`
+- Remove the `direct` mode branch and related step-skipping logic
+- Simplify to always start at `search` step
+- This makes the dialog's purpose unambiguous: find a property, then go to its page
 
-**Card container** (line 43):
-- Replace `card-organic` with: `bg-white dark:bg-card rounded-2xl border border-[rgba(30,60,120,0.08)] overflow-hidden`
-- Style: `box-shadow: var(--shadow-soft)`
-- No `backdrop-blur`, no glassmorphism
+**File:** `src/contexts/BookingContext.tsx`
+- Remove `BookingMode` type and `mode` state (optional cleanup -- can also just leave it unused)
 
-**Hover state**:
-- Remove: `hover:shadow-xl hover:-translate-y-1`
-- Apply: `hover:-translate-y-[2px]` with `hover:shadow-medium`
-- Transition: `transition-[transform,box-shadow] [transition-duration:var(--duration-hover)] [transition-timing-function:var(--ease-lift)]`
-- No glow effects
+### 4. MobileBookingCTA: Share State with BookingWidget
 
-**Content spacing**:
-- Content area: keep `p-4` (16px, on 8px grid)
-- Stats margin: keep `mb-4` (16px)
-- CTA border: change to `border-[rgba(30,60,120,0.08)]`
+Currently `BookingWidget` (desktop) and `MobileBookingCTA` (mobile) each maintain their own `checkIn`, `checkOut`, `guests`, and price calculations. This means if a user somehow switches between desktop and mobile views, or if any shared logic is needed, the two are completely disconnected.
 
-**Hover overlay button**: keep existing gradient button, no changes (this is functional)
+**Approach:** Extract shared property-booking state into a small hook.
 
-## What Does NOT Change
+**New file:** `src/hooks/usePropertyBookingState.ts`
+- Manages: `checkIn`, `checkOut`, `guests`, derived `nights`, derived price calculations
+- Accepts: `property`, `specialOffer` as inputs
+- Returns: all state + setters + computed values (nights, total, formatted prices)
+- Both `BookingWidget` and `MobileBookingCTA` consume this hook instead of managing their own state
 
-- All hooks: `useCreateBooking`, `useRealtimeAvailability`, `useCurrency`, `useToast`
-- All state management and calculations (nights, baseTotal, discountAmount, totalPrice)
-- All navigation and routing logic
-- All Supabase/PMS calls and data flow
-- AvailabilityCalendar integration and date selection logic
-- Guest form validation and multi-step flow
-- UnifiedBookingDialog (not in scope -- only BookingWidget, PriceBreakdown, QuickBookCard)
-- Currency context and formatting
-- No new CSS tokens or color variables added
+**Files modified:**
+- `src/components/booking/BookingWidget.tsx` -- replace local state with hook
+- `src/components/booking/MobileBookingCTA.tsx` -- replace local state with hook
 
-## Files Modified
+To share state between the two components (since both render on the property page simultaneously), the hook should use React context scoped to the property detail page, or be lifted into `PropertyDetail.tsx` and passed down as props.
 
-| File | Change |
-|------|--------|
-| `src/components/booking/BookingWidget.tsx` | Solid white card, subtle border, tightened 8px spacing, price hierarchy, AnimatedTotal component, blue gradient CTA with 2px hover lift |
-| `src/components/booking/PriceBreakdown.tsx` | Solid white container, subtle border, shadow-soft, bold total value |
-| `src/components/booking/QuickBookCard.tsx` | Replace card-organic with solid white card, subtle border, 2px hover lift, no glow |
+**Recommended approach:** Lift state into `PropertyDetail.tsx`, pass down via props. This is the simplest pattern and avoids creating another context.
+
+### 5. Summary of Final Component Responsibilities
+
+| Component | Scope | Flow |
+|---|---|---|
+| `HeaderSearchToggle` | Header (non-property pages) | Opens discovery dialog |
+| `FloatingBookButton` | Non-property pages only | Opens discovery dialog |
+| `UnifiedBookingDialog` | Global overlay | Discovery: search, browse, then navigate to property page |
+| `BookingWidget` | Property page, desktop only | Property booking (dates, guests, price, CTA) |
+| `MobileBookingCTA` | Property page, mobile only | Same property booking, mobile-optimized layout |
+
+## Technical Details
+
+### usePropertyBookingState hook
+
+```text
+Input: property, specialOffer
+State: checkIn, checkOut, guests
+Derived: nights, baseTotal, discountAmount, totalPrice, formatted prices
+Methods: handleDateSelect, setGuests, handleInstantBook, handleRequestBooking
+```
+
+### PropertyDetail.tsx changes
+
+```text
+const bookingState = usePropertyBookingState(property, activeOffer);
+
+// Desktop
+<BookingWidget {...bookingState} property={property} />
+
+// Mobile
+<MobileBookingCTA {...bookingState} property={property} />
+```
+
+### Files touched (6 files)
+
+1. `src/hooks/usePropertyBookingState.ts` -- NEW: shared booking state hook
+2. `src/components/booking/FloatingBookButton.tsx` -- hide on property pages
+3. `src/components/booking/QuickBookCard.tsx` -- navigate instead of opening dialog
+4. `src/components/booking/UnifiedBookingDialog.tsx` -- remove direct mode
+5. `src/components/booking/BookingWidget.tsx` -- consume shared state
+6. `src/components/booking/MobileBookingCTA.tsx` -- consume shared state
+7. `src/pages/PropertyDetail.tsx` -- lift booking state, pass to both components
+
+### What does NOT change
+
+- No database, Supabase, or backend changes
+- No booking calculation logic changes (same math, just moved into hook)
+- No checkout or payment flow changes
+- No changes to `useBookingEngine`, `useCompleteBooking`, or `useCheckoutFlow`
+- Desktop BookingWidget visual design unchanged
+- Mobile MobileBookingCTA visual design unchanged
+
