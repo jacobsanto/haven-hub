@@ -44,14 +44,17 @@ export function PropertyBookingPopup({ property, open, onOpenChange }: PropertyB
       )}
 
       {/* Calendar */}
-      <AvailabilityCalendar
-        propertyId={property.id}
-        selectedCheckIn={state.checkIn}
-        selectedCheckOut={state.checkOut}
-        onDateSelect={state.handleDateSelect}
-        variant="compact"
-        showPrices={false}
-      />
+      <div className="overflow-hidden rounded-xl">
+        <AvailabilityCalendar
+          propertyId={property.id}
+          selectedCheckIn={state.checkIn}
+          selectedCheckOut={state.checkOut}
+          onDateSelect={state.handleDateSelect}
+          variant="compact"
+          showPrices={false}
+          numberOfMonths={1}
+        />
+      </div>
 
       {/* Guest selector */}
       <div className="flex items-center justify-between py-2 px-1">
@@ -159,7 +162,7 @@ export function PropertyBookingPopup({ property, open, onOpenChange }: PropertyB
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[480px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader className="sr-only">
           <DialogTitle>Book {property.name}</DialogTitle>
           <DialogDescription>Select dates and guests to book this property</DialogDescription>
