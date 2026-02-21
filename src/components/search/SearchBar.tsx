@@ -133,7 +133,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className={cn("bg-card/95 backdrop-blur-sm border border-border rounded-2xl p-4 shadow-organic-lg px-[26px] mx-[159px] my-[56px] py-[21px]",
+      className={cn("bg-card/95 backdrop-blur-sm border border-border rounded-2xl p-4 shadow-organic-lg mx-0 px-0 py-0 my-0",
 
       className
       )}>
