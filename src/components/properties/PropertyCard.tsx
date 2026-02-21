@@ -41,7 +41,7 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
     e.preventDefault();
     e.stopPropagation();
     // Open unified booking dialog with this property pre-selected
-    openBooking({ mode: 'direct', property });
+    openBooking({ mode: 'search', property });
   };
 
   // Get amenity data (from DB or fallback)

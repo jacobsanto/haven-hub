@@ -2,7 +2,7 @@ import { createContext, useContext, useState, ReactNode, useCallback } from 'rea
 import { DateRange } from 'react-day-picker';
 import { Property } from '@/types/database';
 
-export type BookingMode = 'search' | 'direct';
+export type BookingMode = 'search';
 
 interface BookingContextType {
   // Dialog state
@@ -63,7 +63,6 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     if (options?.mode) setMode(options.mode);
     if (options?.property) {
       setSelectedProperty(options.property);
-      setMode('direct');
     }
     if (options?.dateRange) setDateRange(options.dateRange);
     if (options?.guests) setGuests(options.guests);

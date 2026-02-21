@@ -20,6 +20,8 @@ interface AvailabilityCalendarProps {
   variant?: 'full' | 'compact';
   /** Show prices below dates (default: true for full, false for compact) */
   showPrices?: boolean;
+  /** Override the number of months shown (default: 1 on mobile, 2 on desktop) */
+  numberOfMonths?: number;
 }
 
 export function AvailabilityCalendar({
@@ -32,6 +34,7 @@ export function AvailabilityCalendar({
   className,
   variant = 'full',
   showPrices,
+  numberOfMonths: numberOfMonthsOverride,
 }: AvailabilityCalendarProps) {
   const isMobile = useIsMobile();
   const shouldShowPrices = showPrices ?? (variant === 'full');
@@ -59,8 +62,8 @@ export function AvailabilityCalendar({
     return map;
   }, [availabilityData]);
 
-  // Show 1 month on mobile, 2 on desktop (for compact variant, always show based on screen size)
-  const monthCount = isMobile ? 1 : 2;
+  // Show 1 month on mobile, 2 on desktop — unless overridden
+  const monthCount = numberOfMonthsOverride ?? (isMobile ? 1 : 2);
   
   const months = useMemo(() => {
     const result = [currentMonth];
