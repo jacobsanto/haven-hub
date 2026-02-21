@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
-import { ArrowLeft, MapPin, Users, Calendar, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Calendar, Loader2, Pencil, Package, User, CreditCard } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
@@ -20,7 +20,7 @@ import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { SelectedAddon, CouponPromo, BookingGuestWithCounts, PaymentType, PriceBreakdown } from '@/types/booking-engine';
 import { toast } from '@/hooks/use-toast';
 
-type CheckoutStep = 'dates' | 'addons' | 'guest' | 'payment';
+type CheckoutStep = 'dates' | 'addons' | 'guest' | 'review' | 'payment';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -157,7 +157,10 @@ export default function Checkout() {
         setCurrentStep('guest');
         break;
       case 'guest':
-        if (canProceedFromGuest) setCurrentStep('payment');
+        if (canProceedFromGuest) setCurrentStep('review');
+        break;
+      case 'review':
+        setCurrentStep('payment');
         break;
     }
   };
@@ -210,7 +213,7 @@ export default function Checkout() {
         <div className="bg-card border-b">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center gap-2 text-sm">
-              {['dates', 'addons', 'guest', 'payment'].map((step, index) => (
+              {['dates', 'addons', 'guest', 'review', 'payment'].map((step, index) => (
                 <div key={step} className="flex items-center gap-2">
                   <button
                     onClick={() => {
@@ -226,7 +229,7 @@ export default function Checkout() {
                   >
                     {step}
                   </button>
-                  {index < 3 && <span className="text-muted-foreground">→</span>}
+                  {index < 4 && <span className="text-muted-foreground">→</span>}
                 </div>
               ))}
             </div>
@@ -334,7 +337,7 @@ export default function Checkout() {
                       setAdults(data.adults);
                       setChildren(data.children);
                       setGuests(data.adults + data.children);
-                      setCurrentStep('payment');
+                      setCurrentStep('review');
                     }}
                     defaultValues={guestInfo ? {
                       firstName: guestInfo.firstName,
@@ -367,7 +370,175 @@ export default function Checkout() {
                       type="submit"
                       form="guest-form"
                     >
-                      Continue to Payment
+                      Review Booking
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Step: Review */}
+              {currentStep === 'review' && checkIn && checkOut && guestInfo && priceBreakdown && (
+                <>
+                  {/* Property Summary */}
+                  <div className="bg-card rounded-xl border overflow-hidden">
+                    <div className="flex gap-4 p-4">
+                      {property.hero_image_url && (
+                        <img
+                          src={property.hero_image_url}
+                          alt={property.name}
+                          className="w-24 h-24 rounded-lg object-cover flex-shrink-0"
+                        />
+                      )}
+                      <div>
+                        <h3 className="font-serif text-lg font-medium">{property.name}</h3>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{property.city}, {property.country}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stay Details */}
+                  <div className="bg-card rounded-xl border p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-medium flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        Stay Details
+                      </h3>
+                      <button
+                        onClick={() => setCurrentStep('dates')}
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Pencil className="h-3 w-3" /> Edit
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Check-in</span>
+                        <p className="font-medium">{format(checkIn, 'EEE, MMM d, yyyy')}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Check-out</span>
+                        <p className="font-medium">{format(checkOut, 'EEE, MMM d, yyyy')}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Duration</span>
+                        <p className="font-medium">{nights} night{nights > 1 ? 's' : ''}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Guests</span>
+                        <p className="font-medium">
+                          {adults} adult{adults !== 1 ? 's' : ''}
+                          {children > 0 && `, ${children} child${children !== 1 ? 'ren' : ''}`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Add-ons */}
+                  <div className="bg-card rounded-xl border p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-medium flex items-center gap-2">
+                        <Package className="h-4 w-4 text-primary" />
+                        Add-ons
+                      </h3>
+                      <button
+                        onClick={() => setCurrentStep('addons')}
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Pencil className="h-3 w-3" /> Edit
+                      </button>
+                    </div>
+                    {selectedAddons.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No add-ons selected</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {selectedAddons.map((sa) => (
+                          <li key={sa.addon.id} className="flex justify-between text-sm">
+                            <span>
+                              {sa.addon.name}
+                              {sa.quantity > 1 && <span className="text-muted-foreground"> ×{sa.quantity}</span>}
+                            </span>
+                            <span className="font-medium">€{(sa.addon.price * sa.quantity).toFixed(2)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* Guest Information */}
+                  <div className="bg-card rounded-xl border p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-medium flex items-center gap-2">
+                        <User className="h-4 w-4 text-primary" />
+                        Guest Information
+                      </h3>
+                      <button
+                        onClick={() => setCurrentStep('guest')}
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Pencil className="h-3 w-3" /> Edit
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Name</span>
+                        <p className="font-medium">{guestInfo.firstName} {guestInfo.lastName}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Email</span>
+                        <p className="font-medium">{guestInfo.email}</p>
+                      </div>
+                      {guestInfo.phone && (
+                        <div>
+                          <span className="text-muted-foreground">Phone</span>
+                          <p className="font-medium">{guestInfo.phone}</p>
+                        </div>
+                      )}
+                      {guestInfo.country && (
+                        <div>
+                          <span className="text-muted-foreground">Country</span>
+                          <p className="font-medium">{guestInfo.country}</p>
+                        </div>
+                      )}
+                    </div>
+                    {guestInfo.specialRequests && (
+                      <div className="mt-3 pt-3 border-t text-sm">
+                        <span className="text-muted-foreground">Special Requests</span>
+                        <p className="mt-1">{guestInfo.specialRequests}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Price Breakdown */}
+                  <PriceBreakdownDisplay
+                    breakdown={priceBreakdown}
+                    showDeposit={paymentType === 'deposit'}
+                  />
+
+                  {/* Cancellation Policy */}
+                  <CancellationPolicyDisplay
+                    policyKey="moderate"
+                    checkInDate={checkIn}
+                  />
+
+                  {/* Navigation */}
+                  <div className="flex gap-4">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setCurrentStep('guest')}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      size="lg"
+                      className="flex-1"
+                      onClick={() => setCurrentStep('payment')}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Confirm &amp; Proceed to Payment
                     </Button>
                   </div>
                 </>
