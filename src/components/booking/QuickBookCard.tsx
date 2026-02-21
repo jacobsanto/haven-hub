@@ -40,7 +40,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
       className="group relative"
     >
       <Link to={`/properties/${property.slug}`}>
-        <div className="card-organic overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div className="card-organic overflow-hidden hover-lift">
           {/* Image Container */}
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
@@ -49,8 +49,9 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
             
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            {/* Gradient Overlay + inner shadow for depth */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            <div className="absolute inset-0 shadow-[inset_0_-40px_40px_-20px_rgba(0,0,0,0.15)]" />
 
             {/* Badges */}
             <div className="absolute top-3 left-3 flex flex-col gap-2">
@@ -71,10 +72,10 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
               {property.property_type}
             </Badge>
 
-            {/* Price on Image */}
-            <div className="absolute bottom-3 left-3 text-white">
-              <span className="text-2xl font-bold">{priceInfo.display}</span>
-              <span className="text-sm opacity-80">/night</span>
+            {/* Price — Frosted Glass Pill */}
+            <div className="absolute bottom-3 left-3 badge-frosted px-3 py-1.5 text-foreground">
+              <span className="text-lg font-bold">{priceInfo.display}</span>
+              <span className="text-xs opacity-70 ml-1">/night</span>
             </div>
 
             {/* Quick Action Overlay */}
