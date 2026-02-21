@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { InstantBookingBadge } from '@/components/properties/InstantBookingBadge';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
+import { PropertyBookingPopup } from '@/components/booking/PropertyBookingPopup';
 import type { Property } from '@/types/database';
 
 interface QuickBookCardProps {
@@ -16,6 +17,7 @@ interface QuickBookCardProps {
 
 export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
   const navigate = useNavigate();
   const { formatPrice } = useCurrency();
   const { data: specialOffer } = useActiveSpecialOffer(property.id);
@@ -25,8 +27,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
   const handleBookNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Navigate directly to property page where the proper booking widget lives
-    navigate(`/properties/${property.slug}`);
+    setBookingOpen(true);
   };
 
   return (
@@ -149,6 +150,12 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
           </div>
         </div>
       </Link>
+
+      <PropertyBookingPopup
+        property={property}
+        open={bookingOpen}
+        onOpenChange={setBookingOpen}
+      />
     </motion.div>
   );
 }
