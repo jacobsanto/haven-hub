@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Filter, Zap, LayoutGrid, Map, Shield, Clock, ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
+import { PropertyMapView } from '@/components/properties/PropertyMapView';
 import { SearchBar } from '@/components/search/SearchBar';
 import { QuickBookCard } from '@/components/booking/QuickBookCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
@@ -321,13 +322,10 @@ export default function Properties() {
                 )}
               </>
             ) : (
-              <div className="card-organic p-8 text-center">
-                <Map className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="font-serif text-xl font-medium mb-2">Map View Coming Soon</h3>
-                <p className="text-muted-foreground">
-                  Interactive map view with property pins is in development.
-                </p>
-              </div>
+              <PropertyMapView
+                properties={properties || []}
+                isLoading={isLoading}
+              />
             )}
 
             {/* Recently Viewed Section */}
