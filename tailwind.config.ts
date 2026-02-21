@@ -77,13 +77,13 @@ export default {
         "3xl": "1.5rem",
       },
       boxShadow: {
-        glass: "0 8px 32px -4px hsla(244, 42%, 28%, 0.08)",
-        "glass-lg": "0 16px 48px -8px hsla(244, 42%, 28%, 0.12)",
-        glow: "0 0 20px -4px hsla(245, 51%, 19%, 0.15)",
+        glass: "0 8px 32px -4px hsla(220, 60%, 20%, 0.08)",
+        "glass-lg": "0 16px 48px -8px hsla(220, 60%, 20%, 0.14)",
+        glow: "0 0 24px -4px hsla(220, 70%, 50%, 0.25)",
         "glow-gold": "0 0 24px -4px hsla(32, 48%, 66%, 0.25)",
-        organic: "0 4px 6px -1px hsl(244 42% 28% / 0.05), 0 10px 15px -3px hsl(244 42% 28% / 0.08)",
-        "organic-lg": "0 20px 25px -5px hsl(244 42% 28% / 0.08), 0 8px 10px -6px hsl(244 42% 28% / 0.05)",
-        "organic-xl": "0 25px 50px -12px hsl(244 42% 28% / 0.15)",
+        organic: "0 4px 6px -1px hsl(220 60% 20% / 0.05), 0 10px 15px -3px hsl(220 60% 20% / 0.08)",
+        "organic-lg": "0 20px 25px -5px hsl(220 60% 20% / 0.08), 0 8px 10px -6px hsl(220 60% 20% / 0.05)",
+        "organic-xl": "0 25px 50px -12px hsl(220 60% 20% / 0.15)",
       },
       keyframes: {
         "accordion-down": {
