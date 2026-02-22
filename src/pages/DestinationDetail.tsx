@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Sun, Calendar, Sparkles, ArrowRight, ArrowLeft, Zap } from 'lucide-react';
+import { MapPin, Calendar, Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { QuickBookCard } from '@/components/booking/QuickBookCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
