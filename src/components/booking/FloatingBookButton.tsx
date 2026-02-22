@@ -1,29 +1,35 @@
-import { useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/contexts/BookingContext';
-import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Haptic feedback utility using Web Vibration API
+const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
+  if ('vibrate' in navigator) {
+    const patterns = {
+      light: [10],
+      medium: [20],
+      success: [10, 50, 20],
+    };
+    navigator.vibrate(patterns[pattern]);
+  }
+};
 
 export function FloatingBookButton() {
-  const location = useLocation();
+  const [isHovered, setIsHovered] = useState(false);
   const { openBooking } = useBooking();
 
-  // Hide on property detail pages — BookingWidget / MobileBookingCTA own that context
-  const isPropertyPage = /^\/properties\/[^/]+$/.test(location.pathname);
-  // Also hide on checkout / payment pages
-  const isBookingFlow = location.pathname.startsWith('/checkout') || location.pathname.startsWith('/payment');
-
   const handleClick = useCallback(() => {
-    if ('vibrate' in navigator) navigator.vibrate([10]);
+    triggerHaptic('light');
+    // Open unified booking dialog in search mode (browse all properties)
     openBooking({ mode: 'search' });
   }, [openBooking]);
 
-  if (isPropertyPage || isBookingFlow) return null;
-
   return (
     <>
-      {/* Desktop — pill button, bottom-right */}
+      {/* Desktop Floating Button */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -33,27 +39,42 @@ export function FloatingBookButton() {
         <Button
           size="lg"
           onClick={handleClick}
-          className="h-12 rounded-full px-5 gap-2 shadow-lg hover:shadow-xl transition-shadow"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className={cn(
+            'h-14 rounded-full shadow-lg transition-all duration-300',
+            isHovered ? 'px-6' : 'w-14 px-0'
+          )}
         >
-          <Search className="h-4 w-4" />
-          <span className="font-medium">Find a Stay</span>
+          <CalendarIcon className="h-5 w-5 flex-shrink-0" />
+          <AnimatePresence>
+            {isHovered && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="ml-2 whitespace-nowrap overflow-hidden"
+              >
+                Book Now
+              </motion.span>
+            )}
+          </AnimatePresence>
         </Button>
       </motion.div>
 
-      {/* Mobile — pill button, bottom-center */}
+      {/* Mobile Floating Button */}
       <motion.div
-        initial={{ y: 60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 1, type: 'spring', stiffness: 200 }}
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 lg:hidden"
+        className="fixed bottom-4 right-4 z-50 lg:hidden"
       >
         <Button
           size="lg"
-          className="h-12 rounded-full px-5 gap-2 shadow-lg active:scale-95 transition-transform"
+          className="h-14 w-14 rounded-full shadow-lg active:scale-95 transition-transform"
           onClick={handleClick}
         >
-          <Search className="h-4 w-4" />
-          <span className="font-medium text-sm">Search</span>
+          <CalendarIcon className="h-6 w-6" />
         </Button>
       </motion.div>
     </>

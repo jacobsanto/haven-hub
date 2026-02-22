@@ -20,8 +20,6 @@ interface AvailabilityCalendarProps {
   variant?: 'full' | 'compact';
   /** Show prices below dates (default: true for full, false for compact) */
   showPrices?: boolean;
-  /** Override the number of months shown (default: 1 on mobile, 2 on desktop) */
-  numberOfMonths?: number;
 }
 
 export function AvailabilityCalendar({
@@ -34,7 +32,6 @@ export function AvailabilityCalendar({
   className,
   variant = 'full',
   showPrices,
-  numberOfMonths: numberOfMonthsOverride,
 }: AvailabilityCalendarProps) {
   const isMobile = useIsMobile();
   const shouldShowPrices = showPrices ?? (variant === 'full');
@@ -62,8 +59,8 @@ export function AvailabilityCalendar({
     return map;
   }, [availabilityData]);
 
-  // Show 1 month on mobile, 2 on desktop — unless overridden
-  const monthCount = numberOfMonthsOverride ?? (isMobile ? 1 : 2);
+  // Show 1 month on mobile, 2 on desktop (for compact variant, always show based on screen size)
+  const monthCount = isMobile ? 1 : 2;
   
   const months = useMemo(() => {
     const result = [currentMonth];
@@ -121,13 +118,13 @@ export function AvailabilityCalendar({
       date > selectedCheckIn && date < selectedCheckOut;
 
     return cn(
-      'relative h-10 w-10 p-0 font-normal flex items-center justify-center rounded-full text-sm transition-colors duration-150',
-      isToday(date) && 'ring-1 ring-primary/60',
+      'relative h-10 w-10 p-0 font-normal flex items-center justify-center rounded-full text-sm transition-colors',
+      isToday(date) && 'ring-1 ring-primary',
       isUnavailable && 'text-muted-foreground/40 line-through cursor-not-allowed',
-      !isUnavailable && 'hover:bg-primary/10 cursor-pointer',
-      isCheckIn && 'bg-primary/90 text-primary-foreground hover:bg-primary/90',
-      isCheckOut && 'bg-primary/90 text-primary-foreground hover:bg-primary/90',
-      isInRange && 'bg-primary/20 rounded-none',
+      !isUnavailable && 'hover:bg-secondary cursor-pointer',
+      isCheckIn && 'bg-primary text-primary-foreground hover:bg-primary',
+      isCheckOut && 'bg-primary text-primary-foreground hover:bg-primary',
+      isInRange && 'bg-secondary',
     );
   };
 
@@ -187,8 +184,8 @@ export function AvailabilityCalendar({
   if (isLoading) {
     return (
       <div className={cn(
-        'bg-white dark:bg-card rounded-xl border border-[rgba(30,60,120,0.08)]',
-        variant === 'compact' ? 'p-2' : 'p-6',
+        'bg-card rounded-xl border',
+        variant === 'compact' ? 'p-4' : 'p-6',
         className
       )}>
         <div className={cn(variant === 'compact' ? 'h-64' : 'h-80', 'flex items-center justify-center')}>
@@ -200,8 +197,8 @@ export function AvailabilityCalendar({
 
   return (
     <div className={cn(
-      'bg-white dark:bg-card rounded-xl border border-[rgba(30,60,120,0.08)]',
-      variant === 'compact' ? 'p-2' : 'p-6',
+      'bg-card rounded-xl border',
+      variant === 'compact' ? 'p-4' : 'p-6',
       className
     )}>
       <div className={cn(

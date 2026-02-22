@@ -1,75 +1,57 @@
-import { useCallback, useState, useRef, useEffect } from 'react';
-import { Calendar as CalendarIcon, Zap, Percent, Users, Minus, Plus, ChevronUp } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar as CalendarIcon, Zap, Percent, Users, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { BookingWidget } from './BookingWidget';
 import { Property, SpecialOffer } from '@/types/database';
-import { PropertyBookingState } from '@/hooks/usePropertyBookingState';
+import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
+import { useCurrency } from '@/hooks/useCurrency';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 // Haptic feedback utility
 const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
   if ('vibrate' in navigator) {
-    const patterns = { light: [10], medium: [20], success: [10, 50, 20] };
+    const patterns = {
+      light: [10],
+      medium: [20],
+      success: [10, 50, 20],
+    };
     navigator.vibrate(patterns[pattern]);
   }
 };
-
-// Fade-only animated total for mobile
-function MobileAnimatedTotal({ display }: { display: string }) {
-  const prevRef = useRef(display);
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    if (display !== prevRef.current) {
-      setVisible(false);
-      const t = setTimeout(() => {
-        prevRef.current = display;
-        setVisible(true);
-      }, 80);
-      return () => clearTimeout(t);
-    }
-  }, [display]);
-
-  return (
-    <span
-      className="text-xl font-bold text-foreground"
-      style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.25s ease' }}
-    >
-      {visible ? display : prevRef.current}
-    </span>
-  );
-}
 
 interface MobileBookingCTAProps {
   property: Property;
   priceDisplay: string;
   specialOffer?: SpecialOffer | null;
-  bookingState: PropertyBookingState;
 }
 
-export function MobileBookingCTA({ property, priceDisplay, specialOffer, bookingState }: MobileBookingCTAProps) {
+export function MobileBookingCTA({ property, priceDisplay, specialOffer }: MobileBookingCTAProps) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [guests, setGuests] = useState(2);
+  const [showGuestSelector, setShowGuestSelector] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [checkIn, setCheckIn] = useState<Date | undefined>();
+  const [checkOut, setCheckOut] = useState<Date | undefined>();
+  const { formatPrice } = useCurrency();
 
-  const {
-    checkIn,
-    checkOut,
-    guests,
-    nights,
-    nightlyRate,
-    totalPrice,
-    totalFormatted,
-    handleDateSelect: rawHandleDateSelect,
-    handleGuestChange: rawHandleGuestChange,
-    handleInstantBook,
-  } = bookingState;
+  // Real-time availability subscription
+  useRealtimeAvailability(property.id);
 
-  const discountedPrice = specialOffer
+  const discountedPrice = specialOffer 
     ? property.base_price * (1 - specialOffer.discount_percent / 100)
     : null;
+
+  const nights = checkIn && checkOut 
+    ? differenceInDays(checkOut, checkIn) 
+    : 0;
+
+  // Use CurrencyContext for price formatting
 
   const handleOpenSheet = useCallback(() => {
     triggerHaptic('light');
@@ -77,57 +59,109 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, booking
   }, []);
 
   const handleSheetChange = useCallback((isOpen: boolean) => {
-    if (!isOpen) triggerHaptic('light');
+    if (!isOpen) {
+      triggerHaptic('light');
+    }
     setOpen(isOpen);
   }, []);
 
   const handleQuickBook = useCallback(() => {
     triggerHaptic('success');
-    handleInstantBook();
-  }, [handleInstantBook]);
+    const params = new URLSearchParams({ property: property.slug, guests: String(guests) });
+    if (checkIn) params.set('checkIn', format(checkIn, 'yyyy-MM-dd'));
+    if (checkOut) params.set('checkOut', format(checkOut, 'yyyy-MM-dd'));
+    navigate(`/checkout?${params.toString()}`);
+  }, [navigate, property.slug, guests, checkIn, checkOut]);
 
   const handleGuestChange = useCallback((delta: number) => {
     triggerHaptic('light');
-    rawHandleGuestChange(delta);
-  }, [rawHandleGuestChange]);
+    setGuests(prev => Math.max(1, Math.min(property.max_guests, prev + delta)));
+  }, [property.max_guests]);
+
+  const toggleGuestSelector = useCallback(() => {
+    triggerHaptic('light');
+    setShowGuestSelector(prev => !prev);
+    if (!showGuestSelector) setShowDatePicker(false);
+  }, [showGuestSelector]);
+
+  const toggleDatePicker = useCallback(() => {
+    triggerHaptic('light');
+    setShowDatePicker(prev => !prev);
+    if (!showDatePicker) setShowGuestSelector(false);
+  }, [showDatePicker]);
 
   const handleDateSelect = useCallback((date: Date, type: 'checkIn' | 'checkOut') => {
     triggerHaptic('light');
-    rawHandleDateSelect(date, type);
-  }, [rawHandleDateSelect]);
-
-  const toggleExpanded = useCallback(() => {
-    triggerHaptic('light');
-    setExpanded(prev => !prev);
+    if (type === 'checkIn') {
+      setCheckIn(date);
+      setCheckOut(undefined);
+    } else {
+      setCheckOut(date);
+    }
   }, []);
-
-  const dateLabel = checkIn && checkOut
-    ? `${format(checkIn, 'MMM d')} – ${format(checkOut, 'MMM d')}`
-    : 'Select dates';
-
-  const ctaClassName = "min-h-[48px] px-6 rounded-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-soft hover:-translate-y-[2px] hover:shadow-medium transition-[transform,box-shadow] [transition-duration:var(--duration-hover)] [transition-timing-function:var(--ease-lift)]";
 
   return (
     <>
-      {/* Sticky Bottom Bar — mobile only */}
-      <div
-        className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-inset-bottom bg-white dark:bg-card border-t border-[rgba(30,60,120,0.08)]"
-        style={{ boxShadow: '0 -2px 12px rgba(30,60,120,0.05)' }}
+      {/* Floating CTA Bar */}
+      <motion.div 
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 25 }}
+        className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50 lg:hidden safe-area-inset-bottom"
       >
-        {/* Expandable panel: 4 vertical sections */}
-        <div
-          className="overflow-hidden"
-          style={{
-            maxHeight: expanded ? '75vh' : '0px',
-            opacity: expanded ? 1 : 0,
-            transition: 'max-height 0.25s ease-out, opacity 0.2s ease-out',
-          }}
-        >
-          <div className="max-h-[75vh] overflow-y-auto overscroll-contain">
-            {/* Section 1: Date Selection */}
-            <div className="px-4 pt-4 pb-3">
-              <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Dates</h4>
-              <div className="flex justify-center">
+        {/* Guest Selector Panel */}
+        <AnimatePresence>
+          {showGuestSelector && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="border-b border-border overflow-hidden"
+            >
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Guests</span>
+                  <span className="text-xs text-muted-foreground">(max {property.max_guests})</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => handleGuestChange(-1)}
+                    disabled={guests <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-lg font-semibold w-6 text-center">{guests}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => handleGuestChange(1)}
+                    disabled={guests >= property.max_guests}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Date Picker Panel - Now uses AvailabilityCalendar */}
+        <AnimatePresence>
+          {showDatePicker && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="border-b border-border overflow-hidden"
+            >
+              <div className="p-3 flex flex-col items-center">
                 <AvailabilityCalendar
                   propertyId={property.id}
                   variant="compact"
@@ -137,162 +171,142 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, booking
                   onDateSelect={handleDateSelect}
                   minStay={2}
                 />
-              </div>
-              {nights > 0 && (
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  {nights} night{nights > 1 ? 's' : ''} selected
-                </p>
-              )}
-            </div>
-
-            {/* Section 2: Guest Selection */}
-            <div className="px-4 py-3 border-t border-[rgba(30,60,120,0.08)]">
-              <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Guests</h4>
-              <div className="flex items-center justify-between px-3 py-2 border border-[rgba(30,60,120,0.08)] rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{guests} guest{guests > 1 ? 's' : ''}</span>
-                  <span className="text-[11px] text-muted-foreground">(max {property.max_guests})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-full border-[rgba(30,60,120,0.08)]"
-                    onClick={() => handleGuestChange(-1)}
-                    disabled={guests <= 1}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </Button>
-                  <span className="w-6 text-center font-semibold">{guests}</span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-full border-[rgba(30,60,120,0.08)]"
-                    onClick={() => handleGuestChange(1)}
-                    disabled={guests >= property.max_guests}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 3: Price Breakdown */}
-            {nights > 0 && totalPrice > 0 && (
-              <div className="px-4 py-3 border-t border-[rgba(30,60,120,0.08)]">
-                <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Price</h4>
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{bookingState.basePriceFormatted.display} × {nights} night{nights > 1 ? 's' : ''}</span>
-                    <span>{bookingState.baseTotalFormatted.display}</span>
+                {nights > 0 && (
+                  <div className="text-sm text-muted-foreground mt-2">
+                    {nights} night{nights > 1 ? 's' : ''} selected
                   </div>
-                  {specialOffer && discountedPrice && (
-                    <div className="flex justify-between text-xs text-emerald-600">
-                      <span>{specialOffer.discount_percent}% off applied</span>
-                    </div>
-                  )}
-                  {/* Divider above total */}
-                  <div className="border-t border-[rgba(30,60,120,0.08)] pt-2 mt-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-semibold text-foreground">Total</span>
-                      <MobileAnimatedTotal display={totalFormatted.display} />
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
-            )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            {/* Section 4: Full-width CTA inside expanded panel */}
-            <div className="px-4 pt-2 pb-4">
-              {property.instant_booking ? (
-                <Button size="lg" onClick={handleQuickBook} className={cn(ctaClassName, 'w-full')}>
-                  <Zap className="h-4 w-4 fill-current" />
-                  Book Now
-                </Button>
-              ) : (
-                <Sheet open={open} onOpenChange={handleSheetChange}>
-                  <SheetTrigger asChild>
-                    <Button size="lg" onClick={handleOpenSheet} className={cn(ctaClassName, 'w-full')}>
-                      <CalendarIcon className="h-4 w-4" />
-                      Check Availability
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent
-                    side="bottom"
-                    className="h-[90vh] rounded-t-3xl p-0 overflow-auto focus:outline-none bg-white dark:bg-card"
-                  >
-                    <div className="sticky top-0 bg-white dark:bg-card pt-3 pb-2 z-10">
-                      <div className="mx-auto h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-                    </div>
-                    <SheetHeader className="px-6 pb-4 border-b border-[rgba(30,60,120,0.08)]">
-                      <SheetTitle className="font-serif text-xl text-left">
-                        Book {property.name}
-                      </SheetTitle>
-                    </SheetHeader>
-                    <div className="p-5">
-                      <BookingWidget property={property} specialOffer={specialOffer} bookingState={bookingState} />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Compact summary bar (always visible) */}
-        <div className="px-4 py-3 flex items-center justify-between gap-3">
-          {/* Price + date summary — tappable to expand */}
-          <div className="flex-1 min-w-0" onClick={toggleExpanded} role="button" tabIndex={0}>
-            <div className="flex items-baseline gap-1.5">
+        <div className="p-4 flex items-center justify-between gap-3">
+          {/* Price Section */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2">
               {specialOffer && discountedPrice ? (
                 <>
-                  <span className="text-lg font-bold text-foreground">
-                    {bookingState.basePriceFormatted.display}
+                  <span className="text-xl font-bold text-primary">
+                    {formatPrice(discountedPrice).display}
                   </span>
-                  <span className="text-xs text-muted-foreground line-through">
+                  <span className="text-sm text-muted-foreground line-through">
                     {priceDisplay}
                   </span>
                 </>
               ) : (
-                <span className="text-lg font-bold text-foreground">{priceDisplay}</span>
+                <span className="text-xl font-bold">{priceDisplay}</span>
               )}
-              <span className="text-xs text-muted-foreground">/night</span>
+              <span className="text-sm text-muted-foreground">/night</span>
             </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-[11px] text-muted-foreground">{dateLabel}</span>
+            
+            {/* Special offer badge */}
+            <AnimatePresence>
               {specialOffer && (
-                <span className="inline-flex items-center gap-0.5 px-1 py-px bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-medium">
-                  <Percent className="h-2.5 w-2.5" />
-                  {specialOffer.discount_percent}%
-                </span>
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-center gap-1.5 mt-1"
+                >
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent text-accent-foreground rounded-full text-xs font-medium">
+                    <Percent className="h-3 w-3" />
+                    {specialOffer.discount_percent}% off
+                  </span>
+                </motion.div>
               )}
-              <ChevronUp
-                className={cn(
-                  "h-3 w-3 text-muted-foreground",
-                  "transition-transform duration-200",
-                  expanded && "rotate-180"
-                )}
-              />
-            </div>
+            </AnimatePresence>
+
+            {/* Instant booking indicator */}
+            {property.instant_booking && !specialOffer && (
+              <div className="flex items-center gap-1 text-xs text-primary mt-1">
+                <Zap className="h-3 w-3 fill-current" />
+                <span>Instant confirmation</span>
+              </div>
+            )}
           </div>
 
-          {/* Compact CTA (collapsed state) */}
-          {!expanded && (
-            <Button
-              size="lg"
-              onClick={toggleExpanded}
-              className={ctaClassName}
-            >
-              {property.instant_booking && <Zap className="h-4 w-4 fill-current" />}
-              Book
-            </Button>
-          )}
-        </div>
-      </div>
+          {/* Date Picker Toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleDatePicker}
+            className={cn(
+              "h-10 px-3 rounded-xl gap-1.5 shrink-0",
+              showDatePicker && "ring-2 ring-primary"
+            )}
+          >
+            <CalendarIcon className="h-4 w-4" />
+            <span className="text-xs">
+              {checkIn && checkOut 
+                ? `${format(checkIn, 'MMM d')} - ${format(checkOut, 'MMM d')}`
+                : 'Dates'
+              }
+            </span>
+          </Button>
 
-      {/* Spacer */}
-      <div className="h-20 lg:hidden" />
+          {/* Guest Selector Toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleGuestSelector}
+            className={cn(
+              "h-10 px-3 rounded-xl gap-1.5 shrink-0",
+              showGuestSelector && "ring-2 ring-primary"
+            )}
+          >
+            <Users className="h-4 w-4" />
+            <span>{guests}</span>
+          </Button>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            {property.instant_booking ? (
+              <Button
+                size="lg"
+                onClick={handleQuickBook}
+                className="min-h-[48px] px-6 rounded-xl gap-2 active:scale-[0.98] transition-transform"
+              >
+                <Zap className="h-4 w-4 fill-current" />
+                Book Now
+              </Button>
+            ) : (
+              <Sheet open={open} onOpenChange={handleSheetChange}>
+                <SheetTrigger asChild>
+                  <Button 
+                    size="lg" 
+                    onClick={handleOpenSheet}
+                    className="min-h-[48px] px-6 rounded-xl gap-2 active:scale-[0.98] transition-transform"
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                    Check Dates
+                  </Button>
+                </SheetTrigger>
+                <SheetContent 
+                  side="bottom" 
+                  className="h-[90vh] rounded-t-3xl p-0 overflow-auto focus:outline-none"
+                >
+                  {/* Swipe handle */}
+                  <div className="sticky top-0 bg-background pt-3 pb-2 z-10">
+                    <div className="mx-auto h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+                  </div>
+                  <SheetHeader className="px-6 pb-4 border-b border-border">
+                    <SheetTitle className="font-serif text-xl text-left">
+                      Book {property.name}
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="p-6">
+                    <BookingWidget property={property} specialOffer={specialOffer} />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
+          </div>
+        </div>
+      </motion.div>
+      
+      {/* Spacer to prevent content from being hidden behind the CTA */}
+      <div className="h-28 lg:hidden" />
     </>
   );
 }

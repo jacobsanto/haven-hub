@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Users, Bed, Bath, Zap, Calendar, ArrowRight, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { InstantBookingBadge } from '@/components/properties/InstantBookingBadge';
+import { useBooking } from '@/contexts/BookingContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
-import { PropertyBookingPopup } from '@/components/booking/PropertyBookingPopup';
 import type { Property } from '@/types/database';
 
 interface QuickBookCardProps {
@@ -17,8 +17,7 @@ interface QuickBookCardProps {
 
 export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [bookingOpen, setBookingOpen] = useState(false);
-  const navigate = useNavigate();
+  const { openBooking } = useBooking();
   const { formatPrice } = useCurrency();
   const { data: specialOffer } = useActiveSpecialOffer(property.id);
 
@@ -27,7 +26,8 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
   const handleBookNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setBookingOpen(true);
+    // Open unified booking dialog with this property pre-selected (direct booking mode)
+    openBooking({ mode: 'direct', property });
   };
 
   return (
@@ -40,7 +40,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
       className="group relative"
     >
       <Link to={`/properties/${property.slug}`}>
-        <div className="bg-white dark:bg-card rounded-2xl border border-[rgba(30,60,120,0.08)] overflow-hidden hover:-translate-y-[2px] hover:shadow-medium transition-[transform,box-shadow] [transition-duration:var(--duration-hover)] [transition-timing-function:var(--ease-lift)]" style={{ boxShadow: 'var(--shadow-soft)' }}>
+        <div className="card-organic overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
           {/* Image Container */}
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
@@ -138,7 +138,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
             </div>
 
             {/* CTA */}
-            <div className="flex items-center justify-between pt-3 border-t border-[rgba(30,60,120,0.08)]">
+            <div className="flex items-center justify-between pt-3 border-t border-border">
               <span className="text-xs text-muted-foreground">
                 {property.instant_booking ? 'Instant confirmation' : 'Book direct & save'}
               </span>
@@ -150,12 +150,6 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
           </div>
         </div>
       </Link>
-
-      <PropertyBookingPopup
-        property={property}
-        open={bookingOpen}
-        onOpenChange={setBookingOpen}
-      />
     </motion.div>
   );
 }

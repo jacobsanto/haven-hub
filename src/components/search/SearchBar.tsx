@@ -45,7 +45,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
 
   if (variant === 'compact') {
     return (
-      <div className={cn('flex items-center gap-2 bg-white/60 dark:bg-card backdrop-blur-lg border border-white/40 dark:border-border rounded-full p-2 shadow-glass', className)}>
+      <div className={cn('flex items-center gap-2 bg-card border border-border rounded-full p-2', className)}>
         <Popover open={destinationOpen} onOpenChange={setDestinationOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -134,7 +134,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
       className={cn(
-        'bg-white/70 dark:bg-card/90 backdrop-blur-xl border border-white/40 dark:border-border rounded-2xl p-4 shadow-glass-lg',
+        'bg-card/95 backdrop-blur-sm border border-border rounded-2xl p-4 shadow-organic-lg',
         className
       )}
     >
@@ -302,7 +302,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
             <Button
               onClick={handleSearch}
               size="lg"
-              className="rounded-full bg-gradient-to-r from-primary to-primary/80 hover:shadow-glow text-primary-foreground px-6"
+              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground px-6"
             >
               <Search className="h-5 w-5" />
             </Button>

@@ -17,15 +17,12 @@ import { SpecialOfferBadge } from '@/components/properties/SpecialOfferBadge';
 import { InstantBookingBadge } from '@/components/properties/InstantBookingBadge';
 import { AmenityList } from '@/components/properties/AmenityList';
 import { BookingWidget } from '@/components/booking/BookingWidget';
-import { GuestyBookingWidget } from '@/components/booking/GuestyBookingWidget';
-import { useGuestySettings } from '@/hooks/useGuestySettings';
 import { MobileBookingCTA } from '@/components/booking/MobileBookingCTA';
 import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidget';
 import { useProperty } from '@/hooks/useProperties';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { useCurrency } from '@/hooks/useCurrency';
-import { usePropertyBookingState } from '@/hooks/usePropertyBookingState';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -77,6 +74,8 @@ export default function PropertyDetail() {
     enabled: !!property?.destination_id,
   });
 
+  // Price display using CurrencyContext for guest-facing multi-currency support
+
   if (isLoading) {
     return (
       <PageLayout>
@@ -109,32 +108,6 @@ export default function PropertyDetail() {
       </PageLayout>
     );
   }
-
-  return (
-    <PropertyDetailContent
-      property={property}
-      activeOffer={activeOffer}
-      destination={destination}
-      formatPrice={formatPrice}
-    />
-  );
-}
-
-function PropertyDetailContent({
-  property,
-  activeOffer,
-  destination,
-  formatPrice,
-}: {
-  property: NonNullable<ReturnType<typeof useProperty>['data']>;
-  activeOffer: ReturnType<typeof useActiveSpecialOffer>['data'];
-  destination: any;
-  formatPrice: ReturnType<typeof useCurrency>['formatPrice'];
-}) {
-  // Shared booking state — lifted here so BookingWidget (desktop) and MobileBookingCTA (mobile) share the same dates/guests/prices
-  const bookingState = usePropertyBookingState(property, activeOffer);
-  const { data: guestySettings } = useGuestySettings();
-  const useGuesty = guestySettings?.enabled ?? false;
 
   // Filter sections based on available data
   const availableSections = SECTIONS.filter(section => {
@@ -304,11 +277,7 @@ function PropertyDetailContent({
           {/* Desktop Booking Widget */}
           <div className="hidden lg:block">
             <div className="sticky top-24">
-              {useGuesty ? (
-                <GuestyBookingWidget propertyId={property.id} variant="compact" />
-              ) : (
-                <BookingWidget property={property} specialOffer={activeOffer} bookingState={bookingState} />
-              )}
+              <BookingWidget property={property} specialOffer={activeOffer} />
             </div>
           </div>
         </div>
@@ -338,7 +307,6 @@ function PropertyDetailContent({
           property={property} 
           priceDisplay={formatPrice(property.base_price).display}
           specialOffer={activeOffer}
-          bookingState={bookingState}
         />
       </div>
     </PageLayout>

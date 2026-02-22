@@ -22,8 +22,8 @@ const sizeClasses = {
 };
 
 const variantClasses = {
-  primary: 'bg-primary/8',
-  accent: 'bg-accent/12',
+  primary: 'bg-primary/5',
+  accent: 'bg-accent/10',
 };
 
 const animationClasses = {

@@ -802,36 +802,6 @@ export default function AdminPropertyForm() {
               </div>
             )}
 
-            {/* Guesty Widget Override */}
-            <Collapsible>
-              <div className="card-organic p-6 space-y-4">
-                <CollapsibleTrigger asChild>
-                  <button type="button" className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                      <Settings2 className="h-5 w-5 text-primary" />
-                      <h2 className="font-serif text-xl font-medium">Guesty Booking Widget</h2>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4 pt-2">
-                  <p className="text-sm text-muted-foreground">
-                    Optionally override the global Guesty widget ID for this property. Leave empty to use the global setting from Brand Settings → Integrations.
-                  </p>
-                  <div className="space-y-2 max-w-md">
-                    <Label htmlFor="guesty_widget_id">Property-specific Widget ID</Label>
-                    <Input
-                      id="guesty_widget_id"
-                      value={(formData as any).guesty_widget_id || ''}
-                      onChange={(e) => setFormData((prev: any) => ({ ...prev, guesty_widget_id: e.target.value || null }))}
-                      placeholder="Leave empty to use global setting"
-                      className="input-organic"
-                    />
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
-
             {/* Submit */}
             <div className="flex gap-4 justify-end">
               <Button

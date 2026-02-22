@@ -76,7 +76,7 @@ export function Footer() {
   return (
     <footer role="contentinfo" className="bg-foreground text-background">
       {/* Booking CTA Section */}
-      <div className="bg-gradient-to-r from-primary via-primary to-primary/90 py-12">
+      <div className="bg-primary py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
@@ -307,21 +307,21 @@ export function Footer() {
               <a 
                 href="#" 
                 aria-label="Follow us on Instagram"
-                className="opacity-60 hover:opacity-100 transition-all duration-200 hover:-translate-y-0.5 p-2 rounded-full hover:bg-background/10"
+                className="opacity-60 hover:opacity-100 transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Instagram className="h-5 w-5" />
               </a>
               <a 
                 href="#" 
                 aria-label="Follow us on Facebook"
-                className="opacity-60 hover:opacity-100 transition-all duration-200 hover:-translate-y-0.5 p-2 rounded-full hover:bg-background/10"
+                className="opacity-60 hover:opacity-100 transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Facebook className="h-5 w-5" />
               </a>
               <a 
                 href="#" 
                 aria-label="Follow us on X (Twitter)"
-                className="opacity-60 hover:opacity-100 transition-all duration-200 hover:-translate-y-0.5 p-2 rounded-full hover:bg-background/10"
+                className="opacity-60 hover:opacity-100 transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Twitter className="h-5 w-5" />
               </a>

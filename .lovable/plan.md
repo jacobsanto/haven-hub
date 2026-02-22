@@ -1,62 +1,73 @@
 
 
-# Fix Guesty Widget: Container Not Found on Init
+# Client-Side Image Optimizer for Admin Uploads
 
-## Root Cause
+## Problem
 
-The console error `[Guesty]: Cannot read properties of null (reading 'style')` reveals the problem: Guesty's `create(config)` runs immediately on script load, but it internally does `document.getElementById("search-widget_IO312PWQ")` and gets `null` because:
+Images uploaded through the admin property form go directly to storage without any optimization. Large photos from cameras or phones (often 3-10MB each) slow down the site for visitors and increase storage costs.
 
-1. The container div's `id` is set via `containerRef.current.id = containerId` inside the same `useEffect` that loads the script -- but the script's `onload` can fire before the browser flushes the DOM attribute change.
-2. On re-navigation, the cleanup function removes the script and CSS tags, so when revisiting a property page, the script reloads but the old global `GuestySearchBarWidget` might be stale.
+## Solution
 
-## Fix (single file change)
+Build a client-side image optimization utility that compresses and resizes images **before** uploading to storage. This runs entirely in the browser using the Canvas API -- no backend changes needed.
 
-### `src/components/booking/GuestyBookingWidget.tsx`
+## How It Works
 
-**Change 1 -- Set the container ID directly in JSX, not in useEffect**
+1. Admin selects an image file
+2. The optimizer loads it into an off-screen canvas
+3. It resizes to a max dimension (e.g., 1920px for hero, 1200px for gallery)
+4. Converts to WebP format at configurable quality (default 80%)
+5. Shows before/after file size so the admin sees the savings
+6. Uploads the optimized version to storage
 
-Instead of setting `containerRef.current.id = containerId` inside the effect, render the div with the correct `id` directly in JSX. This guarantees the ID is in the DOM before any script tries to find it.
+## Technical Details
 
-Replace the container div render:
-```tsx
-<div
-  ref={containerRef}
-  id={widgetId ? `search-widget_${widgetId}` : undefined}
-  className="min-h-[200px] relative"
->
-```
+### New Files
 
-Remove the `containerRef.current.id = containerId` lines from the useEffect (lines 49-51).
+**`src/utils/image-optimizer.ts`** -- Pure utility, no UI
+- `optimizeImage(file: File, options?: OptimizeOptions): Promise<OptimizedResult>`
+- Options: `maxWidth`, `maxHeight`, `quality` (0-1), `format` ('webp' | 'jpeg')
+- Returns: `{ blob: Blob, width, height, originalSize, optimizedSize }`
+- Uses `HTMLCanvasElement.toBlob()` with WebP output
+- Falls back to JPEG if WebP is not supported
 
-**Change 2 -- Delay `create()` call with `requestAnimationFrame`**
+**`src/components/admin/ImageUploadWithOptimizer.tsx`** -- Reusable upload component
+- Wraps the file input with optimization preview
+- Shows: thumbnail preview, original size, optimized size, savings percentage
+- Quality slider (60-100%) for manual adjustment
+- Upload button triggers after optimization
+- Loading state during optimization and upload
 
-Wrap the `GuestySearchBarWidget.create(config)` calls (both in onload and the "already loaded" branch) in `requestAnimationFrame` to ensure the browser has painted the container div before Guesty tries to query it:
+### Modified Files
 
-```tsx
-const initWidget = () => {
-  const win = window as any;
-  if (win.GuestySearchBarWidget) {
-    // Wait one frame so the container div is definitely in the DOM
-    requestAnimationFrame(() => {
-      win.GuestySearchBarWidget.create(config).catch((e: any) =>
-        console.log('[Guesty]:', e.message)
-      );
-    });
-  }
-};
-```
+**`src/pages/admin/AdminPropertyForm.tsx`**
+- Replace raw `handleImageUpload` with the new `ImageUploadWithOptimizer` component
+- Used for both hero and gallery uploads
 
-Use `initWidget()` in both the `script.onload` handler and the "already loaded" branch.
+**`src/pages/admin/AdminQuickOnboard.tsx`**
+- Same replacement for the hero image upload step
 
-**Change 3 -- Don't remove script/CSS on unmount**
+**`src/pages/admin/AdminSettings.tsx`**
+- Same replacement for logo/brand image uploads
 
-The cleanup function currently removes the Guesty script and CSS from the DOM on unmount. This causes issues on re-navigation because the global `GuestySearchBarWidget` object gets destroyed. Remove the cleanup return entirely -- Guesty's script is a global singleton and should persist.
+### Default Optimization Settings
 
-## What Does NOT Change
+| Image Type | Max Width | Max Height | Quality | Format |
+|------------|-----------|------------|---------|--------|
+| Hero       | 1920px    | 1080px     | 82%     | WebP   |
+| Gallery    | 1600px    | 1200px     | 80%     | WebP   |
+| Logo/Brand | 800px     | 400px      | 90%     | WebP   |
 
-- Database settings (already populated correctly)
-- Admin settings UI
-- PropertyDetail conditional rendering
-- CSS overrides
-- No schema changes
+### UI Behavior
+
+- When a file is selected, the optimizer runs automatically (takes under 1 second)
+- A compact card appears showing:
+  - Image thumbnail
+  - Original: "3.2 MB" → Optimized: "180 KB" (94% smaller)
+  - Quality slider for fine-tuning
+  - "Upload" and "Cancel" buttons
+- The upload only proceeds after the admin confirms
+
+### No Backend Changes
+
+Everything runs client-side using browser-native Canvas API. No database migrations, no edge functions, no new storage buckets needed. The optimized WebP blob is uploaded to the existing `property-images` bucket with a `.webp` extension.
 

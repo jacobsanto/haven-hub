@@ -4,20 +4,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Arivia Villas Brand Design System — Soft Premium Glassmorphism */
+/* Arivia Villas Brand Design System */
 
 @layer base {
   :root {
-    /* Typography */
+    /* Typography - default fonts (overridden by BrandContext) */
     --font-serif: "Playfair Display", serif;
     --font-sans: "Lato", sans-serif;
 
-    /* Soft sky-tinted background */
-    --background: 210 40% 98%;
+    /* White background */
+    --background: 0 0% 100%;
     --foreground: 244 42% 28%;
 
-    /* Card surfaces */
-    --card: 210 40% 100%;
+    /* Card surfaces - white */
+    --card: 0 0% 100%;
     --card-foreground: 244 42% 28%;
 
     --popover: 0 0% 100%;
@@ -28,12 +28,12 @@
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Pale Blue */
-    --secondary: 215 40% 93%;
+    --secondary: 243 29% 86%;
     --secondary-foreground: 245 51% 19%;
 
-    /* Muted */
-    --muted: 215 30% 92%;
-    --muted-foreground: 243 10% 55%;
+    /* Muted - Pale Blue */
+    --muted: 243 29% 86%;
+    --muted-foreground: 243 10% 62%;
 
     /* Accent - Gold */
     --accent: 32 48% 66%;
@@ -43,82 +43,67 @@
     --destructive: 0 55% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders and inputs */
-    --border: 215 25% 88%;
-    --input: 215 25% 88%;
+    /* Borders and inputs - Pale Blue */
+    --border: 243 29% 86%;
+    --input: 243 29% 86%;
     --ring: 32 48% 66%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 244 42% 28%;
     --sidebar-primary: 245 51% 19%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 40% 93%;
+    --sidebar-accent: 243 29% 86%;
     --sidebar-accent-foreground: 244 42% 28%;
-    --sidebar-border: 215 25% 88%;
+    --sidebar-border: 243 29% 86%;
     --sidebar-ring: 32 48% 66%;
 
-    /* Custom brand tokens */
+    /* Custom Arivia Villas brand tokens */
     --navy-blue: 244 42% 28%;
     --primary-blue: 245 51% 19%;
     --gold-accent: 32 48% 66%;
     --sand-brown: 38 83% 61%;
-    --light-blue: 215 20% 60%;
-    --pale-blue: 215 40% 93%;
-
-    /* Glassmorphism tokens */
-    --glass-bg: 0 0% 100% / 0.65;
-    --glass-border: 0 0% 100% / 0.35;
-    --glass-shadow: 0 8px 32px -4px hsl(var(--foreground) / 0.08);
-    --glass-shadow-hover: 0 16px 48px -8px hsl(var(--foreground) / 0.12);
-
-    /* Shadow tokens */
-    --shadow-soft: 0 2px 8px -2px hsl(var(--foreground) / 0.06);
-    --shadow-medium: 0 8px 24px -4px hsl(var(--foreground) / 0.08);
-    --shadow-elevated: 0 16px 48px -8px hsl(var(--foreground) / 0.12);
-
-    /* Motion tokens */
-    --ease-lift: cubic-bezier(0.25, 1, 0.4, 1);
-    --duration-hover: 250ms;
+    --light-blue: 243 10% 62%;
+    --pale-blue: 243 29% 86%;
   }
 
   .dark {
     --background: 244 42% 8%;
-    --foreground: 215 40% 93%;
+    --foreground: 243 29% 86%;
 
     --card: 244 42% 10%;
-    --card-foreground: 215 40% 93%;
+    --card-foreground: 243 29% 86%;
 
     --popover: 244 42% 10%;
-    --popover-foreground: 215 40% 93%;
+    --popover-foreground: 243 29% 86%;
 
     --primary: 32 48% 66%;
     --primary-foreground: 244 42% 8%;
 
     --secondary: 244 30% 20%;
-    --secondary-foreground: 215 40% 93%;
+    --secondary-foreground: 243 29% 86%;
 
     --muted: 244 30% 15%;
-    --muted-foreground: 215 20% 60%;
+    --muted-foreground: 243 10% 62%;
 
     --accent: 38 83% 61%;
     --accent-foreground: 244 42% 8%;
 
     --destructive: 0 50% 45%;
-    --destructive-foreground: 215 40% 93%;
+    --destructive-foreground: 243 29% 86%;
 
     --border: 244 30% 18%;
     --input: 244 30% 18%;
     --ring: 32 48% 66%;
 
     --sidebar-background: 244 42% 10%;
-    --sidebar-foreground: 215 40% 93%;
+    --sidebar-foreground: 243 29% 86%;
     --sidebar-primary: 32 48% 66%;
     --sidebar-primary-foreground: 244 42% 8%;
     --sidebar-accent: 244 30% 15%;
-    --sidebar-accent-foreground: 215 40% 93%;
+    --sidebar-accent-foreground: 243 29% 86%;
     --sidebar-border: 244 30% 18%;
     --sidebar-ring: 32 48% 66%;
   }
@@ -141,76 +126,44 @@
 }
 
 @layer components {
-  /* Glassmorphism card */
-  .card-organic {
-    @apply bg-white/70 dark:bg-card rounded-2xl border border-white/40 dark:border-border/50;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: var(--shadow-medium);
-    transition: box-shadow var(--duration-hover) var(--ease-lift),
-                transform var(--duration-hover) var(--ease-lift);
-  }
-
-  .card-organic:hover {
-    box-shadow: var(--shadow-elevated);
-  }
-
-  /* Glass panel utility */
-  .glass-panel {
-    @apply bg-white/60 dark:bg-card/80 border border-white/30 dark:border-border/50;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: var(--shadow-soft);
-  }
-
-  /* Brand button styles - gradient gold */
+  /* Brand button styles */
   .btn-organic {
-    @apply relative overflow-hidden rounded-full px-8 py-3 font-medium;
-    @apply text-accent-foreground;
-    background: linear-gradient(135deg, hsl(var(--gold-accent)), hsl(var(--sand-brown)));
-    box-shadow: var(--shadow-soft);
-    transition: box-shadow var(--duration-hover) var(--ease-lift),
-                transform var(--duration-hover) var(--ease-lift);
+    @apply relative overflow-hidden rounded-full px-8 py-3 font-medium transition-all duration-300;
+    @apply bg-accent text-accent-foreground;
+    @apply hover:shadow-lg;
+    background-color: hsl(var(--gold-accent));
   }
 
   .btn-organic:hover {
-    background: linear-gradient(135deg, hsl(var(--sand-brown)), hsl(var(--gold-accent)));
-    box-shadow: var(--shadow-medium);
+    background-color: hsl(var(--sand-brown));
+  }
+
+  /* Card with refined shadow */
+  .card-organic {
+    @apply bg-card rounded-2xl border border-border/50;
+    box-shadow: 
+      0 4px 6px -1px hsl(var(--navy-blue) / 0.05),
+      0 10px 15px -3px hsl(var(--navy-blue) / 0.08);
   }
 
   /* Soft input styling */
   .input-organic {
-    @apply rounded-xl border-border/50 bg-white/80 dark:bg-background px-4 py-3 transition-all duration-200;
+    @apply rounded-xl border-border bg-background px-4 py-3 transition-all duration-200;
     @apply focus:border-accent focus:ring-2 focus:ring-accent/20;
   }
 
-  /* Hero section gradient - rich sky ambient */
+  /* Hero section gradient */
   .hero-gradient {
     background: linear-gradient(
       180deg,
-      hsl(210 45% 97%) 0%,
-      hsl(215 40% 95%) 40%,
-      hsl(220 35% 92%) 100%
+      hsl(var(--background)) 0%,
+      hsl(var(--pale-blue)) 100%
     );
-  }
-
-  .hero-gradient::after {
-    content: '';
-    position: absolute;
-    top: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    height: 60%;
-    background: radial-gradient(ellipse, hsl(215 60% 92% / 0.5), transparent 70%);
-    pointer-events: none;
-    z-index: 0;
   }
 
   /* Decorative organic shapes */
   .organic-blob {
     border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-    filter: blur(40px);
   }
 
   /* Luxury text gradient */
@@ -228,26 +181,22 @@
     position: absolute;
     inset: 0;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.015;
+    opacity: 0.02;
     pointer-events: none;
-  }
-
-  /* Frosted pill badge */
-  .badge-frosted {
-    @apply bg-white/60 dark:bg-card/60 backdrop-blur-sm border border-white/40 dark:border-border/30 rounded-full;
   }
 }
 
 @layer utilities {
-  /* Hover effects — shared motion utility */
+  /* Hover effects */
   .hover-lift {
-    transition: transform var(--duration-hover) var(--ease-lift),
-                box-shadow var(--duration-hover) var(--ease-lift);
+    @apply transition-all duration-300 ease-out;
   }
-
+  
   .hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-elevated);
+    @apply -translate-y-1;
+    box-shadow: 
+      0 20px 25px -5px hsl(var(--navy-blue) / 0.08),
+      0 8px 10px -6px hsl(var(--navy-blue) / 0.05);
   }
 
   /* Animation utilities */
@@ -260,13 +209,23 @@
   }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   /* Staggered animation delays */
@@ -276,22 +235,25 @@
   .animation-delay-400 { animation-delay: 400ms; }
   .animation-delay-500 { animation-delay: 500ms; }
 
-  /* Hide scrollbar */
+  /* Hide scrollbar but allow scrolling */
   .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
+  
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+    display: none;  /* Chrome, Safari, Opera */
   }
 
-  /* Floating blob animations */
+  /* Floating blob animations for hero sections */
   .animate-float-1 {
     animation: float-diagonal-1 20s linear infinite;
   }
+
   .animate-float-2 {
     animation: float-diagonal-2 25s linear infinite;
   }
+
   .animate-float-3 {
     animation: float-diagonal-3 18s linear infinite;
   }

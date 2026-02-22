@@ -1089,36 +1089,6 @@ export type Database = {
           },
         ]
       }
-      guesty_widget_settings: {
-        Row: {
-          accent_color: string | null
-          created_at: string
-          enabled: boolean
-          id: string
-          site_url: string
-          updated_at: string
-          widget_id: string
-        }
-        Insert: {
-          accent_color?: string | null
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          site_url: string
-          updated_at?: string
-          widget_id: string
-        }
-        Update: {
-          accent_color?: string | null
-          created_at?: string
-          enabled?: boolean
-          id?: string
-          site_url?: string
-          updated_at?: string
-          widget_id?: string
-        }
-        Relationships: []
-      }
       newsletter_subscribers: {
         Row: {
           email: string
@@ -1508,7 +1478,6 @@ export type Database = {
           destination_id: string | null
           display_name: string | null
           gallery: string[] | null
-          guesty_widget_id: string | null
           hero_image_url: string | null
           highlights: string[]
           house_rules: string[]
@@ -1548,7 +1517,6 @@ export type Database = {
           destination_id?: string | null
           display_name?: string | null
           gallery?: string[] | null
-          guesty_widget_id?: string | null
           hero_image_url?: string | null
           highlights?: string[]
           house_rules?: string[]
@@ -1588,7 +1556,6 @@ export type Database = {
           destination_id?: string | null
           display_name?: string | null
           gallery?: string[] | null
-          guesty_widget_id?: string | null
           hero_image_url?: string | null
           highlights?: string[]
           house_rules?: string[]

@@ -61,7 +61,7 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Custom brand colors
+        // Custom Arivia Villas brand colors
         "navy-blue": "hsl(var(--navy-blue))",
         "primary-blue": "hsl(var(--primary-blue))",
         "gold-accent": "hsl(var(--gold-accent))",
@@ -75,18 +75,6 @@ export default {
         sm: "calc(var(--radius) - 4px)",
         "2xl": "1rem",
         "3xl": "1.5rem",
-      },
-      boxShadow: {
-        /* Design-system shadow tokens */
-        soft: "0 2px 8px -2px hsl(var(--foreground) / 0.06)",
-        medium: "0 8px 24px -4px hsl(var(--foreground) / 0.08)",
-        elevated: "0 16px 48px -8px hsl(var(--foreground) / 0.12)",
-        /* Glassmorphism */
-        glass: "var(--glass-shadow)",
-        "glass-lg": "var(--glass-shadow-hover)",
-        /* Glow effects */
-        glow: "0 0 20px -4px hsl(var(--primary) / 0.15)",
-        "glow-gold": "0 0 24px -4px hsl(var(--accent) / 0.25)",
       },
       keyframes: {
         "accordion-down": {
@@ -156,6 +144,11 @@ export default {
         "weather-sun": "weather-sun 3s ease-in-out infinite",
         "weather-cloud": "weather-cloud 4s ease-in-out infinite",
         "weather-rain": "weather-rain 1.5s ease-in-out infinite",
+      },
+      boxShadow: {
+        organic: "0 4px 6px -1px hsl(244 42% 28% / 0.05), 0 10px 15px -3px hsl(244 42% 28% / 0.08)",
+        "organic-lg": "0 20px 25px -5px hsl(244 42% 28% / 0.08), 0 8px 10px -6px hsl(244 42% 28% / 0.05)",
+        "organic-xl": "0 25px 50px -12px hsl(244 42% 28% / 0.15)",
       },
     },
   },

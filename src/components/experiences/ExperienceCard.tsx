@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Clock, DollarSign } from 'lucide-react';
 import { Experience } from '@/types/experiences';
-
+import { Badge } from '@/components/ui/badge';
 
 interface ExperienceCardProps {
   experience: Experience;
@@ -19,7 +19,7 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
     >
       <Link 
         to={`/experiences/${experience.slug}`}
-        className="group block card-organic overflow-hidden hover-lift"
+        className="group block card-organic overflow-hidden"
       >
         {/* Image */}
         <div className="aspect-[4/3] relative overflow-hidden">
@@ -36,15 +36,15 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
           )}
           
           {/* Category badge */}
-          <span className="absolute top-4 left-4 badge-frosted text-foreground text-xs font-medium px-3 py-1.5">
+          <Badge className="absolute top-4 left-4">
             {experience.category}
-          </span>
+          </Badge>
           
           {/* Featured badge */}
           {experience.is_featured && (
-            <span className="absolute top-4 right-4 badge-frosted text-foreground text-xs font-medium px-3 py-1.5">
+            <Badge variant="secondary" className="absolute top-4 right-4">
               Featured
-            </span>
+            </Badge>
           )}
         </div>
 
