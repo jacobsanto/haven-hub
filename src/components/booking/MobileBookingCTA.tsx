@@ -28,16 +28,19 @@ interface MobileBookingCTAProps {
   property: Property;
   priceDisplay: string;
   specialOffer?: SpecialOffer | null;
+  initialCheckIn?: Date;
+  initialCheckOut?: Date;
+  initialGuests?: number;
 }
 
-export function MobileBookingCTA({ property, priceDisplay, specialOffer }: MobileBookingCTAProps) {
+export function MobileBookingCTA({ property, priceDisplay, specialOffer, initialCheckIn, initialCheckOut, initialGuests }: MobileBookingCTAProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState(initialGuests || 2);
   const [showGuestSelector, setShowGuestSelector] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [checkIn, setCheckIn] = useState<Date | undefined>();
-  const [checkOut, setCheckOut] = useState<Date | undefined>();
+  const [checkIn, setCheckIn] = useState<Date | undefined>(initialCheckIn);
+  const [checkOut, setCheckOut] = useState<Date | undefined>(initialCheckOut);
   const { formatPrice } = useCurrency();
 
   // Real-time availability subscription

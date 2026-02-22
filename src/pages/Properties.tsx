@@ -361,6 +361,9 @@ export default function Properties() {
                         property={property}
                         index={index}
                         nights={nights}
+                        checkIn={checkIn}
+                        checkOut={checkOut}
+                        guests={guests}
                       />
                     ))}
                   </div>

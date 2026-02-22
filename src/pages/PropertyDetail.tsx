@@ -1,5 +1,6 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
+import { parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import { MapPin, Users, Bed, Bath, ChevronRight, Home } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -46,6 +47,12 @@ const SECTIONS = [
 
 export default function PropertyDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
+  
+  // Pre-fill booking widgets from search params
+  const initialCheckIn = searchParams.get('checkIn') ? parseISO(searchParams.get('checkIn')!) : undefined;
+  const initialCheckOut = searchParams.get('checkOut') ? parseISO(searchParams.get('checkOut')!) : undefined;
+  const initialGuests = searchParams.get('guests') ? parseInt(searchParams.get('guests')!, 10) : undefined;
   const { data: property, isLoading, error } = useProperty(slug || '');
   const { data: activeOffer } = useActiveSpecialOffer(property?.id || '');
   const { addToRecentlyViewed } = useRecentlyViewed();
@@ -277,7 +284,7 @@ export default function PropertyDetail() {
           {/* Desktop Booking Widget */}
           <div className="hidden lg:block">
             <div className="sticky top-24">
-              <BookingWidget property={property} specialOffer={activeOffer} />
+              <BookingWidget property={property} specialOffer={activeOffer} initialCheckIn={initialCheckIn} initialCheckOut={initialCheckOut} initialGuests={initialGuests} />
             </div>
           </div>
         </div>
@@ -307,6 +314,9 @@ export default function PropertyDetail() {
           property={property} 
           priceDisplay={formatPrice(property.base_price).display}
           specialOffer={activeOffer}
+          initialCheckIn={initialCheckIn}
+          initialCheckOut={initialCheckOut}
+          initialGuests={initialGuests}
         />
       </div>
     </PageLayout>

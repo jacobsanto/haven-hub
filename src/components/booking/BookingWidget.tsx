@@ -16,9 +16,12 @@ import { cn } from '@/lib/utils';
 interface BookingWidgetProps {
   property: Property;
   specialOffer?: SpecialOffer | null;
+  initialCheckIn?: Date;
+  initialCheckOut?: Date;
+  initialGuests?: number;
 }
 
-export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
+export function BookingWidget({ property, specialOffer, initialCheckIn, initialCheckOut, initialGuests }: BookingWidgetProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const createBooking = useCreateBooking();
@@ -27,9 +30,9 @@ export function BookingWidget({ property, specialOffer }: BookingWidgetProps) {
   // Real-time availability subscription
   useRealtimeAvailability(property.id);
 
-  const [checkIn, setCheckIn] = useState<Date>();
-  const [checkOut, setCheckOut] = useState<Date>();
-  const [guests, setGuests] = useState(1);
+  const [checkIn, setCheckIn] = useState<Date | undefined>(initialCheckIn);
+  const [checkOut, setCheckOut] = useState<Date | undefined>(initialCheckOut);
+  const [guests, setGuests] = useState(initialGuests || 1);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [checkOutOpen, setCheckOutOpen] = useState(false);
   
