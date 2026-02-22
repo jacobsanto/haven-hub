@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Users, Bed, Bath, Zap, Calendar, ArrowRight, Percent } from 'lucide-react';
@@ -15,7 +15,7 @@ interface QuickBookCardProps {
   index?: number;
 }
 
-export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
+export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(function QuickBookCard({ property, index = 0 }, ref) {
   const [isHovered, setIsHovered] = useState(false);
   const { openBooking } = useBooking();
   const { formatPrice } = useCurrency();
@@ -32,6 +32,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
@@ -56,7 +57,7 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
             <div className="absolute top-3 left-3 flex flex-col gap-2">
               {property.instant_booking && <InstantBookingBadge size="sm" />}
               {specialOffer && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-full text-sm font-medium">
                   <Percent className="h-4 w-4" />
                   <span>{specialOffer.discount_percent}% off</span>
                 </div>
@@ -152,4 +153,4 @@ export function QuickBookCard({ property, index = 0 }: QuickBookCardProps) {
       </Link>
     </motion.div>
   );
-}
+});

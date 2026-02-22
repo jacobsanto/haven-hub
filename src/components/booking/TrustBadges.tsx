@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, CreditCard, Clock, HeadphonesIcon, Award, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -57,12 +58,12 @@ const badgeKeys = {
   instant: 5,
 };
 
-export function TrustBadges({ 
+export const TrustBadges = forwardRef<HTMLDivElement, TrustBadgesProps>(function TrustBadges({ 
   variant = 'horizontal', 
   badges = ['price', 'secure', 'cancellation', 'support'],
   showDescriptions = true,
   className 
-}: TrustBadgesProps) {
+}, ref) {
   const selectedBadges = badges.map(key => allBadges[badgeKeys[key]]);
 
   if (variant === 'compact') {
@@ -149,4 +150,4 @@ export function TrustBadges({
       ))}
     </div>
   );
-}
+});
