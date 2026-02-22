@@ -1,73 +1,47 @@
 
+# Inline Header Search Bar
 
-# Client-Side Image Optimizer for Admin Uploads
+## Overview
 
-## Problem
+Replace the current "Find Your Stay" button in the header with a pill-shaped inline search bar that matches the reference design. The search bar sits in the sticky header between the nav links and the auth/currency controls, and is visible on all pages except the homepage.
 
-Images uploaded through the admin property form go directly to storage without any optimization. Large photos from cameras or phones (often 3-10MB each) slow down the site for visitors and increase storage costs.
+## Design (from reference screenshot)
 
-## Solution
+- **Container**: Rounded-full pill, white/card background, subtle border + shadow, segments divided by light dividers
+- **4 segments** as buttons: WHERE, CHECK IN, CHECK OUT, GUESTS -- each shows a tiny uppercase label with the value below in muted text
+- **Active segment** gets a highlighted background (e.g. `bg-muted rounded-full`)
+- **Search button**: Circular primary-colored button at the right end with a search icon
+- **Guests popover**: Dropdown card with +/- stepper rows for Adults (ages 13+), Children (ages 2-12), Infants (under 2), and an "Apply" button
+- **Where popover**: Destination command list (reusing `useActiveDestinations`)
+- **Check In / Check Out popovers**: Calendar date pickers
+- **Hidden on mobile** (`hidden lg:flex`) -- mobile keeps the existing "Find Your Stay" CTA button
 
-Build a client-side image optimization utility that compresses and resizes images **before** uploading to storage. This runs entirely in the browser using the Canvas API -- no backend changes needed.
+## Files to Change
 
-## How It Works
+### 1. Create `src/components/search/HeaderSearchBar.tsx` (New)
 
-1. Admin selects an image file
-2. The optimizer loads it into an off-screen canvas
-3. It resizes to a max dimension (e.g., 1920px for hero, 1200px for gallery)
-4. Converts to WebP format at configurable quality (default 80%)
-5. Shows before/after file size so the admin sees the savings
-6. Uploads the optimized version to storage
+A self-contained pill search bar component:
+
+- Internal state: `selectedDestination`, `checkIn` (Date), `checkOut` (Date), `adults` (default 2, min 1), `children` (default 0), `infants` (default 0)
+- `activeSegment` state to track which popover is open (where / checkin / checkout / guests / null)
+- **Where segment**: Opens Popover with `Command` list from `useActiveDestinations` (same pattern as existing `SearchBar.tsx`)
+- **Check In segment**: Opens Popover with `Calendar` component, disabled dates before today
+- **Check Out segment**: Opens Popover with `Calendar` component, disabled dates before check-in
+- **Guests segment**: Opens Popover with stepper controls (+/- buttons) for Adults, Children, Infants. Each row shows category name, age description, and value with increment/decrement buttons styled as circular bordered buttons
+- **Search button**: `w-10 h-10 bg-primary rounded-full` with search icon. On click, navigates to `/properties` with query params (location, checkIn, checkOut, guests = adults + children)
+- Container styling: `flex items-center bg-card border border-border rounded-full shadow-sm divide-x divide-border/50 p-1`
+- Each segment button: `px-4 py-2 hover:bg-muted/50 text-left transition-colors` with `text-[10px] font-bold uppercase tracking-wider` for the label and `text-sm text-muted-foreground font-medium` for the value
+
+### 2. Modify `src/components/layout/Header.tsx`
+
+- Replace `HeaderSearchToggle` import with `HeaderSearchBar`
+- In the desktop section, replace `{showSearch && <HeaderSearchToggle />}` with `{showSearch && <HeaderSearchBar />}`
+- Keep mobile menu "Find Your Stay" button as-is (no change)
 
 ## Technical Details
 
-### New Files
-
-**`src/utils/image-optimizer.ts`** -- Pure utility, no UI
-- `optimizeImage(file: File, options?: OptimizeOptions): Promise<OptimizedResult>`
-- Options: `maxWidth`, `maxHeight`, `quality` (0-1), `format` ('webp' | 'jpeg')
-- Returns: `{ blob: Blob, width, height, originalSize, optimizedSize }`
-- Uses `HTMLCanvasElement.toBlob()` with WebP output
-- Falls back to JPEG if WebP is not supported
-
-**`src/components/admin/ImageUploadWithOptimizer.tsx`** -- Reusable upload component
-- Wraps the file input with optimization preview
-- Shows: thumbnail preview, original size, optimized size, savings percentage
-- Quality slider (60-100%) for manual adjustment
-- Upload button triggers after optimization
-- Loading state during optimization and upload
-
-### Modified Files
-
-**`src/pages/admin/AdminPropertyForm.tsx`**
-- Replace raw `handleImageUpload` with the new `ImageUploadWithOptimizer` component
-- Used for both hero and gallery uploads
-
-**`src/pages/admin/AdminQuickOnboard.tsx`**
-- Same replacement for the hero image upload step
-
-**`src/pages/admin/AdminSettings.tsx`**
-- Same replacement for logo/brand image uploads
-
-### Default Optimization Settings
-
-| Image Type | Max Width | Max Height | Quality | Format |
-|------------|-----------|------------|---------|--------|
-| Hero       | 1920px    | 1080px     | 82%     | WebP   |
-| Gallery    | 1600px    | 1200px     | 80%     | WebP   |
-| Logo/Brand | 800px     | 400px      | 90%     | WebP   |
-
-### UI Behavior
-
-- When a file is selected, the optimizer runs automatically (takes under 1 second)
-- A compact card appears showing:
-  - Image thumbnail
-  - Original: "3.2 MB" → Optimized: "180 KB" (94% smaller)
-  - Quality slider for fine-tuning
-  - "Upload" and "Cancel" buttons
-- The upload only proceeds after the admin confirms
-
-### No Backend Changes
-
-Everything runs client-side using browser-native Canvas API. No database migrations, no edge functions, no new storage buckets needed. The optimized WebP blob is uploaded to the existing `property-images` bucket with a `.webp` extension.
-
+- Reuses existing `Popover`, `Calendar`, `Command` UI components already in the project
+- Reuses `useActiveDestinations` hook for destination data
+- Guest stepper logic is local to the component (no context changes needed)
+- Total guests passed as query param = `adults + children` (infants don't count toward occupancy)
+- The `PropertyStickyNav` (z-40) and header (z-50) will not conflict since the header always sits above
