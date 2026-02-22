@@ -78,7 +78,7 @@ export function HeaderSearchBar() {
         <PopoverTrigger asChild>
           <button
             className={cn(
-            'px-3 py-1.5 text-left transition-colors rounded-full',
+            'px-3 py-2 text-left transition-colors rounded-full',
             activeSegment === 'where' ? 'bg-muted' : 'hover:bg-muted/50'
           )}
         >
@@ -131,7 +131,7 @@ export function HeaderSearchBar() {
         <PopoverTrigger asChild>
           <button
             className={cn(
-            'px-3 py-1.5 text-left transition-colors rounded-full',
+            'px-3 py-2 text-left transition-colors rounded-full',
             activeSegment === 'checkin' ? 'bg-muted' : 'hover:bg-muted/50'
             )}
           >
@@ -160,7 +160,7 @@ export function HeaderSearchBar() {
         <PopoverTrigger asChild>
           <button
             className={cn(
-            'px-3 py-1.5 text-left transition-colors rounded-full',
+            'px-3 py-2 text-left transition-colors rounded-full',
             activeSegment === 'checkout' ? 'bg-muted' : 'hover:bg-muted/50'
             )}
           >
@@ -189,7 +189,7 @@ export function HeaderSearchBar() {
         <PopoverTrigger asChild>
           <button
             className={cn(
-            'px-3 py-1.5 text-left transition-colors rounded-full',
+            'px-3 py-2 text-left transition-colors rounded-full',
             activeSegment === 'guests' ? 'bg-muted' : 'hover:bg-muted/50'
             )}
           >
