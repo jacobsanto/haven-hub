@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
-import { HeaderSearchToggle } from '@/components/booking/HeaderSearchToggle';
+import { HeaderSearchBar } from '@/components/search/HeaderSearchBar';
 import { CurrencySwitcher } from '@/components/ui/CurrencySwitcher';
 import { cn } from '@/lib/utils';
 import {
@@ -108,7 +108,7 @@ export function Header() {
 
         {/* Search, Currency & Auth */}
         <div className="hidden md:flex items-center gap-2">
-          {showSearch && <HeaderSearchToggle />}
+          {showSearch && <HeaderSearchBar />}
           <CurrencySwitcher variant="icon" />
           {user ? (
             <DropdownMenu>
