@@ -13,6 +13,9 @@ interface SearchResultCardProps {
   property: Property;
   index?: number;
   nights?: number;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
 }
 
 const fallbackIconMap: Record<string, string> = {
@@ -26,7 +29,16 @@ function getIconComponent(iconName: string): LucideIcon {
   return IconComponent || Sparkles;
 }
 
-export function SearchResultCard({ property, index = 0, nights }: SearchResultCardProps) {
+function buildQueryString(checkIn?: string, checkOut?: string, guests?: number): string {
+  const params = new URLSearchParams();
+  if (checkIn) params.set('checkIn', checkIn);
+  if (checkOut) params.set('checkOut', checkOut);
+  if (guests) params.set('guests', String(guests));
+  const str = params.toString();
+  return str ? `?${str}` : '';
+}
+
+export function SearchResultCard({ property, index = 0, nights, checkIn, checkOut, guests }: SearchResultCardProps) {
   const amenityMap = useAmenityMap();
   const { data: activeOffer } = useActiveSpecialOffer(property.id);
   const { formatPrice } = useCurrency();
@@ -54,7 +66,7 @@ export function SearchResultCard({ property, index = 0, nights }: SearchResultCa
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06 }}
     >
-      <Link to={`/properties/${property.slug}`} className="group block">
+      <Link to={`/properties/${property.slug}${buildQueryString(checkIn, checkOut, guests)}`} className="group block">
         <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-soft hover:shadow-medium transition-shadow duration-300 flex flex-col md:flex-row">
           {/* Image */}
           <div className="relative md:w-[280px] lg:w-[320px] flex-shrink-0 aspect-[4/3] md:aspect-auto md:min-h-[220px]">
