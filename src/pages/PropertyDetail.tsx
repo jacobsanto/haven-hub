@@ -17,6 +17,8 @@ import { SpecialOfferBadge } from '@/components/properties/SpecialOfferBadge';
 import { InstantBookingBadge } from '@/components/properties/InstantBookingBadge';
 import { AmenityList } from '@/components/properties/AmenityList';
 import { BookingWidget } from '@/components/booking/BookingWidget';
+import { GuestyBookingWidget } from '@/components/booking/GuestyBookingWidget';
+import { useGuestySettings } from '@/hooks/useGuestySettings';
 import { MobileBookingCTA } from '@/components/booking/MobileBookingCTA';
 import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidget';
 import { useProperty } from '@/hooks/useProperties';
@@ -131,6 +133,8 @@ function PropertyDetailContent({
 }) {
   // Shared booking state — lifted here so BookingWidget (desktop) and MobileBookingCTA (mobile) share the same dates/guests/prices
   const bookingState = usePropertyBookingState(property, activeOffer);
+  const { data: guestySettings } = useGuestySettings();
+  const useGuesty = guestySettings?.enabled ?? false;
 
   // Filter sections based on available data
   const availableSections = SECTIONS.filter(section => {
@@ -300,7 +304,11 @@ function PropertyDetailContent({
           {/* Desktop Booking Widget */}
           <div className="hidden lg:block">
             <div className="sticky top-24">
-              <BookingWidget property={property} specialOffer={activeOffer} bookingState={bookingState} />
+              {useGuesty ? (
+                <GuestyBookingWidget propertyId={property.id} variant="compact" />
+              ) : (
+                <BookingWidget property={property} specialOffer={activeOffer} bookingState={bookingState} />
+              )}
             </div>
           </div>
         </div>
