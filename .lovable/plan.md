@@ -1,29 +1,34 @@
 
+# Header Search Bar Visibility and Availability Calendar
 
-# Responsive Header with Taller Search Bar Area
+## 1. Hide Header Search Bar on Homepage
 
-## Current State
-The header works but is too short (h-16 / 64px), making the search bar feel cramped and squeezed against the nav links and auth controls.
+The search bar should only appear on non-homepage routes.
 
-## Changes
+### `src/components/layout/Header.tsx`
+- Add a `showSearch` condition: `const showSearch = location.pathname !== '/';`
+- Wrap the search bar container with this condition: `{showSearch && (...)}`
+- On the homepage (`/`), the search bar will be hidden, giving the hero section full focus
+- On all other pages (`/properties`, `/destinations`, etc.), the search bar remains visible in the header
 
-### 1. `src/components/layout/Header.tsx`
-- Increase header height from `h-16` to `h-[72px]` to give the search bar more breathing room
-- Keep the current layout structure: Logo + priority nav links (left), search bar (center), currency + auth (right)
-- No other structural changes needed -- the current layout already matches the reference
+### `src/components/search/HeaderSearchBar.tsx`
+- No changes needed -- the component itself stays the same; visibility is controlled by the parent
 
-### 2. `src/components/search/HeaderSearchBar.tsx`
-- Increase segment padding from `py-1.5` to `py-2` so the text has more vertical space inside each segment
-- This makes the pill search bar slightly taller and more comfortable to read
+## 2. Property Availability Calendar (Already Implemented)
 
-## Technical Details
+The system already has a fully functional availability calendar synced with the local database:
 
-### Header.tsx (line 64)
-- Change `h-16` to `h-[72px]` on the nav element
+- **`AvailabilityCalendar` component** (`src/components/booking/AvailabilityCalendar.tsx`) renders date grids with availability, pricing, and selection logic
+- **`useAvailabilityCalendar` hook** (`src/hooks/useCheckoutFlow.ts`) reads from the local `availability` table (synced from PMS), merges with checkout holds and direct bookings
+- **`useRealtimeAvailability` hook** (`src/hooks/useRealtimeAvailability.ts`) subscribes to Supabase Realtime on `availability`, `bookings`, and `checkout_holds` tables, instantly invalidating queries when data changes
+- The calendar is used in `BookingWidget`, `MobileBookingCTA`, `UnifiedBookingDialog`, and the `Checkout` page
 
-### HeaderSearchBar.tsx (lines 81, 134, 163, 192)
-- Change `py-1.5` to `py-2` on each segment button
+No code changes are needed for the availability calendar -- it is already synced with the local database and reflects real-time booking slots.
 
-### Impact
-- All pages that reference header height via `pt-16` spacing may need updating to `pt-[72px]` -- will search for and update any affected layout files
+## Summary of Changes
 
+| File | Change |
+|------|--------|
+| `src/components/layout/Header.tsx` | Add `showSearch` condition to hide search bar on `/` |
+
+This is a single-line logic change in the Header component.
