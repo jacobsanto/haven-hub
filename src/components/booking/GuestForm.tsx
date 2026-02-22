@@ -41,6 +41,7 @@ interface GuestFormProps {
   className?: string;
   maxGuests?: number;
   initialGuests?: number;
+  hidePreferences?: boolean;
 }
 
 export function GuestForm({
@@ -50,6 +51,7 @@ export function GuestForm({
   className,
   maxGuests = 10,
   initialGuests = 2,
+  hidePreferences = false,
 }: GuestFormProps) {
   const form = useForm<GuestFormValues>({
     resolver: zodResolver(guestFormSchema),
@@ -300,53 +302,55 @@ export function GuestForm({
         </div>
 
         {/* Preferences & Terms */}
-        <div className="bg-card rounded-xl border p-6 space-y-4">
-          <h3 className="font-serif text-lg font-medium">Preferences & Terms</h3>
+        {!hidePreferences && (
+          <div className="bg-card rounded-xl border p-6 space-y-4">
+            <h3 className="font-serif text-lg font-medium">Preferences & Terms</h3>
 
-          <FormField
-            control={form.control}
-            name="marketingConsent"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="font-normal">
-                    Send me exclusive offers and updates
-                  </FormLabel>
-                  <FormDescription>
-                    Get early access to deals and new properties
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="marketingConsent"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="font-normal">
+                      Send me exclusive offers and updates
+                    </FormLabel>
+                    <FormDescription>
+                      Get early access to deals and new properties
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="termsAccepted"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel className="font-normal">
-                    I accept the <a href="/terms" className="text-primary underline" target="_blank">Terms & Conditions</a> and <a href="/privacy" className="text-primary underline" target="_blank">Privacy Policy</a> *
-                  </FormLabel>
-                  <FormMessage />
-                </div>
-              </FormItem>
-            )}
-          />
-        </div>
+            <FormField
+              control={form.control}
+              name="termsAccepted"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="font-normal">
+                      I accept the <a href="/terms" className="text-primary underline" target="_blank">Terms & Conditions</a> and <a href="/privacy" className="text-primary underline" target="_blank">Privacy Policy</a> *
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
       </form>
     </Form>
   );

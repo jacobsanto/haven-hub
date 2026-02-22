@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Loader2, Lock, Shield, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
+import { Loader2, Lock, Shield, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { PriceBreakdown, SelectedAddon, BookingGuestWithCounts, PaymentType } from '@/types/booking-engine';
 
@@ -51,8 +53,12 @@ export function PaymentStep({
   const [stage, setStage] = useState<PaymentStage>('ready');
   const [error, setError] = useState<string | null>(null);
   const [bookingReference, setBookingReference] = useState<string | null>(null);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handlePayment = async () => {
+    if (!termsAccepted) return;
+
     setStage('redirecting');
     setError(null);
 
@@ -90,24 +96,14 @@ export function PaymentStep({
         },
       });
 
-      if (fnError) {
-        throw new Error(fnError.message);
-      }
+      if (fnError) throw new Error(fnError.message);
+      if (data?.error) throw new Error(data.message || 'Failed to create checkout session');
+      if (!data?.url) throw new Error('No checkout URL returned');
 
-      if (data?.error) {
-        throw new Error(data.message || 'Failed to create checkout session');
-      }
-
-      if (!data?.url) {
-        throw new Error('No checkout URL returned');
-      }
-
-      // Store booking reference for reference
       if (data.bookingReference) {
         setBookingReference(data.bookingReference);
       }
 
-      // Redirect to Stripe Checkout
       window.location.href = data.url;
       
     } catch (err) {
@@ -138,7 +134,7 @@ export function PaymentStep({
     );
   }
 
-  // Error state with retry
+  // Error state
   if (stage === 'error' && error) {
     return (
       <div className="space-y-6">
@@ -146,11 +142,8 @@ export function PaymentStep({
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-
         <div className="flex gap-4">
-          <Button variant="outline" size="lg" onClick={onBack}>
-            Back
-          </Button>
+          <Button variant="outline" size="lg" onClick={onBack}>Back</Button>
           <Button size="lg" className="flex-1" onClick={handleRetry}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Try Again
@@ -160,42 +153,70 @@ export function PaymentStep({
     );
   }
 
-  // Ready state - show payment button
+  // Ready state — Review and Pay
   return (
     <div className="space-y-6">
-      {/* Payment summary */}
-      <div className="bg-muted/50 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <span className="font-medium">Total to Pay</span>
-          <span className="text-xl font-serif font-semibold">
-            €{priceBreakdown.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-        <p className="text-sm text-muted-foreground mt-2">
-          You will be redirected to a secure Stripe payment page to complete your booking.
+      <div>
+        <h2 className="font-serif text-2xl font-medium mb-1">Review and Pay</h2>
+        <p className="text-sm text-muted-foreground">
+          Please review your details and complete your booking.
         </p>
       </div>
 
-      {/* Payment methods info */}
-      <div className="bg-card rounded-xl border p-6">
-        <h3 className="font-medium mb-4">Accepted Payment Methods</h3>
-        <div className="flex flex-wrap gap-3">
-          <div className="px-3 py-1.5 bg-muted rounded-md text-sm font-medium">
-            💳 Credit/Debit Cards
+      {/* Preferences & Terms */}
+      <div className="bg-card rounded-xl border p-6 space-y-5">
+        <h3 className="font-medium">Preferences & Terms</h3>
+
+        <div className="flex items-start space-x-3">
+          <Checkbox
+            id="marketing-consent"
+            checked={marketingConsent}
+            onCheckedChange={(v) => setMarketingConsent(v === true)}
+          />
+          <div className="space-y-0.5 leading-none">
+            <Label htmlFor="marketing-consent" className="font-normal cursor-pointer">
+              Send me exclusive offers and updates
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Get early access to deals and new properties
+            </p>
           </div>
-          <div className="px-3 py-1.5 bg-muted rounded-md text-sm font-medium">
-            Apple Pay
-          </div>
-          <div className="px-3 py-1.5 bg-muted rounded-md text-sm font-medium">
-            Google Pay
-          </div>
-          <div className="px-3 py-1.5 bg-muted rounded-md text-sm font-medium">
-            Link
+        </div>
+
+        <div className="flex items-start space-x-3">
+          <Checkbox
+            id="terms-accepted"
+            checked={termsAccepted}
+            onCheckedChange={(v) => setTermsAccepted(v === true)}
+          />
+          <div className="space-y-0.5 leading-none">
+            <Label htmlFor="terms-accepted" className="font-normal cursor-pointer">
+              I accept the{' '}
+              <a href="/terms" className="text-primary underline" target="_blank">Terms & Conditions</a>
+              {' '}and{' '}
+              <a href="/privacy" className="text-primary underline" target="_blank">Privacy Policy</a> *
+            </Label>
           </div>
         </div>
       </div>
 
-      {/* Security badges */}
+      {/* Action buttons */}
+      <div className="flex gap-4">
+        <Button type="button" variant="outline" size="lg" onClick={onBack}>
+          Back
+        </Button>
+        <Button
+          size="lg"
+          className="flex-1"
+          onClick={handlePayment}
+          disabled={!termsAccepted}
+        >
+          <Lock className="h-4 w-4 mr-2" />
+          Confirm and Pay €{priceBreakdown.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+        </Button>
+      </div>
+
+      {/* Security note */}
       <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <Lock className="h-4 w-4" />
@@ -206,26 +227,9 @@ export function PaymentStep({
           <span>PCI Compliant</span>
         </div>
       </div>
-
-      {/* Action buttons */}
-      <div className="flex gap-4">
-        <Button 
-          type="button" 
-          variant="outline" 
-          size="lg" 
-          onClick={onBack}
-        >
-          Back
-        </Button>
-        <Button
-          size="lg"
-          className="flex-1"
-          onClick={handlePayment}
-        >
-          Pay €{priceBreakdown.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          <ExternalLink className="h-4 w-4 ml-2" />
-        </Button>
-      </div>
+      <p className="text-xs text-center text-muted-foreground">
+        Your payment information is encrypted and secure. You will be redirected to a secure payment page.
+      </p>
     </div>
   );
 }
