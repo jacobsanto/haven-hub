@@ -53,8 +53,8 @@ export function GuestyBookingWidget({ propertyId, variant = 'compact', className
     // Guesty widget loader IIFE
     const loadWidget = () => {
       try {
-        const cssUrl = `https://s3.amazonaws.com/guesty-assets/search-bar/search-bar-production.css`;
-        const jsUrl = `https://s3.amazonaws.com/guesty-assets/search-bar/search-bar-production.js`;
+        const cssUrl = `https://s3.amazonaws.com/guesty-frontend-production/search-bar-production.css`;
+        const jsUrl = `https://s3.amazonaws.com/guesty-frontend-production/search-bar-production.js`;
 
         const config: Record<string, string> = { siteUrl };
         if (accentColor) config.color = accentColor;
@@ -81,7 +81,7 @@ export function GuestyBookingWidget({ propertyId, variant = 'compact', className
             // Initialize the widget if the global function exists
             const win = window as any;
             if (win.GuestySearchBarWidget) {
-              win.GuestySearchBarWidget(containerId, config);
+              win.GuestySearchBarWidget.create(config).catch((e: any) => console.log('[Guesty]:', e.message));
             }
           };
           script.onerror = () => setScriptError(true);
@@ -90,7 +90,7 @@ export function GuestyBookingWidget({ propertyId, variant = 'compact', className
           // Script already loaded, try to reinitialize
           const win = window as any;
           if (win.GuestySearchBarWidget) {
-            win.GuestySearchBarWidget(containerId, config);
+            win.GuestySearchBarWidget.create(config).catch((e: any) => console.log('[Guesty]:', e.message));
           }
           setScriptLoaded(true);
         }
