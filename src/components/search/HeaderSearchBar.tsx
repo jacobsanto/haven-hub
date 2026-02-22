@@ -78,12 +78,12 @@ export function HeaderSearchBar() {
         <PopoverTrigger asChild>
           <button
             className={cn(
-              'px-4 py-1.5 text-left transition-colors rounded-full',
-              activeSegment === 'where' ? 'bg-muted' : 'hover:bg-muted/50'
-            )}
-          >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Where</div>
-            <div className="text-sm font-medium text-foreground truncate max-w-[120px]">
+            'px-3 py-1.5 text-left transition-colors rounded-full',
+            activeSegment === 'where' ? 'bg-muted' : 'hover:bg-muted/50'
+          )}
+        >
+          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Where</div>
+          <div className="text-sm font-medium text-foreground truncate max-w-[100px]">
               {selectedDestination || 'Any destination'}
             </div>
           </button>
@@ -131,8 +131,8 @@ export function HeaderSearchBar() {
         <PopoverTrigger asChild>
           <button
             className={cn(
-              'px-4 py-1.5 text-left transition-colors rounded-full',
-              activeSegment === 'checkin' ? 'bg-muted' : 'hover:bg-muted/50'
+            'px-3 py-1.5 text-left transition-colors rounded-full',
+            activeSegment === 'checkin' ? 'bg-muted' : 'hover:bg-muted/50'
             )}
           >
             <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Check in</div>
@@ -160,8 +160,8 @@ export function HeaderSearchBar() {
         <PopoverTrigger asChild>
           <button
             className={cn(
-              'px-4 py-1.5 text-left transition-colors rounded-full',
-              activeSegment === 'checkout' ? 'bg-muted' : 'hover:bg-muted/50'
+            'px-3 py-1.5 text-left transition-colors rounded-full',
+            activeSegment === 'checkout' ? 'bg-muted' : 'hover:bg-muted/50'
             )}
           >
             <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Check out</div>
@@ -189,8 +189,8 @@ export function HeaderSearchBar() {
         <PopoverTrigger asChild>
           <button
             className={cn(
-              'px-4 py-1.5 text-left transition-colors rounded-full',
-              activeSegment === 'guests' ? 'bg-muted' : 'hover:bg-muted/50'
+            'px-3 py-1.5 text-left transition-colors rounded-full',
+            activeSegment === 'guests' ? 'bg-muted' : 'hover:bg-muted/50'
             )}
           >
             <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Guests</div>

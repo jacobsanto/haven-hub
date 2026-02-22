@@ -41,8 +41,7 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Don't show search on homepage (has its own hero search)
-  const showSearch = location.pathname !== '/';
+  // Search bar is always visible in the header
 
   // Split brand name for styling (e.g., "Arivia Villas" -> "Arivia" + "Villas")
   const nameParts = brandName.split(' ');
@@ -62,30 +61,29 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-      <nav role="navigation" aria-label="Main navigation" className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center"
-          >
-            {logoUrl ? (
-              <img 
-                src={logoUrl} 
-                alt={brandName} 
-                className="h-10 w-auto max-w-[160px] object-contain"
-              />
-            ) : (
-              <span className="text-2xl font-serif font-semibold text-foreground">
-                <span className="text-primary">{primaryPart}</span>
-                {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
-              </span>
-            )}
-          </motion.div>
-        </Link>
-
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
+      <nav role="navigation" aria-label="Main navigation" className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        {/* Logo + Nav */}
+        <div className="hidden md:flex items-center gap-6 flex-shrink-0">
+          <Link to="/" className="flex items-center gap-2">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center"
+            >
+              {logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt={brandName} 
+                  className="h-10 w-auto max-w-[160px] object-contain"
+                />
+              ) : (
+                <span className="text-2xl font-serif font-semibold text-foreground">
+                  <span className="text-primary">{primaryPart}</span>
+                  {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
+                </span>
+              )}
+            </motion.div>
+          </Link>
+          <div className="flex items-center gap-6">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -104,11 +102,16 @@ export function Header() {
               {item.label}
             </Link>
           ))}
+          </div>
         </div>
 
-        {/* Search, Currency & Auth */}
-        <div className="hidden md:flex items-center gap-2">
-          {showSearch && <HeaderSearchBar />}
+        {/* Search Bar - Center */}
+        <div className="hidden lg:flex flex-1 justify-center min-w-0">
+          <HeaderSearchBar />
+        </div>
+
+        {/* Currency & Auth */}
+        <div className="hidden md:flex items-center gap-2 flex-shrink-0">
           <CurrencySwitcher variant="icon" />
           {user ? (
             <DropdownMenu>
@@ -142,6 +145,20 @@ export function Header() {
             </Button>
           )}
         </div>
+
+        {/* Mobile Logo (visible only on mobile) */}
+        <Link to="/" className="flex items-center gap-2 md:hidden">
+          <motion.div whileHover={{ scale: 1.05 }} className="flex items-center">
+            {logoUrl ? (
+              <img src={logoUrl} alt={brandName} className="h-10 w-auto max-w-[140px] object-contain" />
+            ) : (
+              <span className="text-xl font-serif font-semibold text-foreground">
+                <span className="text-primary">{primaryPart}</span>
+                {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
+              </span>
+            )}
+          </motion.div>
+        </Link>
 
         {/* Mobile Menu Button */}
         <button
