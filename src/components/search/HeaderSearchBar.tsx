@@ -72,7 +72,7 @@ export function HeaderSearchBar() {
   };
 
   return (
-    <div className="hidden lg:flex items-center bg-card border border-border rounded-full shadow-sm p-1">
+    <div className="hidden lg:flex items-center bg-card/60 border border-border/40 rounded-full shadow-soft p-1 backdrop-blur-sm">
       {/* WHERE */}
       <Popover open={activeSegment === 'where'} onOpenChange={(open) => setActiveSegment(open ? 'where' : null)}>
         <PopoverTrigger asChild>
@@ -82,8 +82,8 @@ export function HeaderSearchBar() {
             activeSegment === 'where' ? 'bg-muted' : 'hover:bg-muted/50'
           )}
         >
-          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Where</div>
-          <div className="text-sm font-medium text-foreground truncate max-w-[100px]">
+          <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Where</div>
+          <div className="text-xs font-medium text-foreground/80 truncate max-w-[100px]">
               {selectedDestination || 'Any destination'}
             </div>
           </button>
@@ -135,8 +135,8 @@ export function HeaderSearchBar() {
             activeSegment === 'checkin' ? 'bg-muted' : 'hover:bg-muted/50'
             )}
           >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Check in</div>
-            <div className="text-sm font-medium text-foreground">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Check in</div>
+            <div className="text-xs font-medium text-foreground/80">
               {checkIn ? format(checkIn, 'MMM d') : 'Add date'}
             </div>
           </button>
@@ -164,8 +164,8 @@ export function HeaderSearchBar() {
             activeSegment === 'checkout' ? 'bg-muted' : 'hover:bg-muted/50'
             )}
           >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Check out</div>
-            <div className="text-sm font-medium text-foreground">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Check out</div>
+            <div className="text-xs font-medium text-foreground/80">
               {checkOut ? format(checkOut, 'MMM d') : 'Add date'}
             </div>
           </button>
@@ -193,8 +193,8 @@ export function HeaderSearchBar() {
             activeSegment === 'guests' ? 'bg-muted' : 'hover:bg-muted/50'
             )}
           >
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Guests</div>
-            <div className="text-sm font-medium text-foreground">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/70">Guests</div>
+            <div className="text-xs font-medium text-foreground/80">
               {guestLabel}{infants > 0 ? `, ${infants} infant${infants > 1 ? 's' : ''}` : ''}
             </div>
           </button>
@@ -240,10 +240,10 @@ export function HeaderSearchBar() {
       {/* SEARCH BUTTON */}
       <button
         onClick={handleSearch}
-        className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors ml-1 flex-shrink-0"
+        className="w-9 h-9 bg-primary/90 rounded-full flex items-center justify-center text-primary-foreground hover:bg-primary transition-colors ml-1 flex-shrink-0"
         aria-label="Search properties"
       >
-        <Search className="h-4 w-4" />
+        <Search className="h-3.5 w-3.5" />
       </button>
     </div>
   );
