@@ -40,59 +40,96 @@ function StepIndicator({
   onStepClick: (step: CheckoutStep) => void;
 }) {
   const currentIndex = steps.findIndex(s => s.key === currentStep);
+  const stepRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, index: number) => {
+      let targetIndex: number | null = null;
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        targetIndex = Math.min(index + 1, steps.length - 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        targetIndex = Math.max(index - 1, 0);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        targetIndex = 0;
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        targetIndex = steps.length - 1;
+      }
+
+      if (targetIndex !== null) {
+        stepRefs.current[targetIndex]?.focus();
+      }
+    },
+    [steps.length]
+  );
 
   return (
-    <div className="flex items-center justify-center gap-0">
-      {steps.map((step, index) => {
-        const isCompleted = index < currentIndex;
-        const isCurrent = index === currentIndex;
-        const isFuture = index > currentIndex;
+    <nav aria-label="Checkout steps">
+      <ol className="flex items-center justify-center gap-0" role="list">
+        {steps.map((step, index) => {
+          const isCompleted = index < currentIndex;
+          const isCurrent = index === currentIndex;
+          const isFuture = index > currentIndex;
+          const isClickable = isCompleted;
 
-        return (
-          <div key={step.key} className="flex items-center">
-            <button
-              type="button"
-              onClick={() => {
-                if (isCompleted) onStepClick(step.key);
-              }}
-              className={cn(
-                'flex flex-col items-center gap-1.5',
-                isCompleted && 'cursor-pointer',
-                isFuture && 'cursor-default'
+          return (
+            <li key={step.key} className="flex items-center">
+              <button
+                ref={(el) => { stepRefs.current[index] = el; }}
+                type="button"
+                role="tab"
+                aria-selected={isCurrent}
+                aria-current={isCurrent ? 'step' : undefined}
+                aria-label={`Step ${index + 1}: ${step.label}${isCompleted ? ' (completed)' : isCurrent ? ' (current)' : ''}`}
+                tabIndex={isCurrent ? 0 : -1}
+                onClick={() => {
+                  if (isClickable) onStepClick(step.key);
+                }}
+                onKeyDown={(e) => handleKeyDown(e, index)}
+                className={cn(
+                  'flex flex-col items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg p-1',
+                  isClickable && 'cursor-pointer',
+                  isFuture && 'cursor-default opacity-70'
+                )}
+                disabled={isFuture}
+              >
+                <div
+                  className={cn(
+                    'w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-colors border-2',
+                    isCompleted && 'bg-primary border-primary text-primary-foreground',
+                    isCurrent && 'bg-primary border-primary text-primary-foreground',
+                    isFuture && 'bg-background border-muted-foreground/30 text-muted-foreground'
+                  )}
+                >
+                  {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
+                </div>
+                <span
+                  className={cn(
+                    'text-xs font-medium',
+                    (isCompleted || isCurrent) ? 'text-foreground' : 'text-muted-foreground'
+                  )}
+                >
+                  {step.label}
+                </span>
+              </button>
+              {index < steps.length - 1 && (
+                <div
+                  aria-hidden="true"
+                  className={cn(
+                    'w-12 sm:w-20 h-0.5 mx-1 mb-5',
+                    index < currentIndex ? 'bg-primary' : 'bg-muted-foreground/20'
+                  )}
+                />
               )}
-              disabled={isFuture}
-            >
-              <div
-                className={cn(
-                  'w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-colors border-2',
-                  isCompleted && 'bg-primary border-primary text-primary-foreground',
-                  isCurrent && 'bg-primary border-primary text-primary-foreground',
-                  isFuture && 'bg-background border-muted-foreground/30 text-muted-foreground'
-                )}
-              >
-                {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
-              </div>
-              <span
-                className={cn(
-                  'text-xs font-medium',
-                  (isCompleted || isCurrent) ? 'text-foreground' : 'text-muted-foreground'
-                )}
-              >
-                {step.label}
-              </span>
-            </button>
-            {index < steps.length - 1 && (
-              <div
-                className={cn(
-                  'w-12 sm:w-20 h-0.5 mx-1 mb-5',
-                  index < currentIndex ? 'bg-primary' : 'bg-muted-foreground/20'
-                )}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }
 
