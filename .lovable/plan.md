@@ -1,47 +1,31 @@
 
-# Inline Header Search Bar
+# Fix: Header Search Bar Visibility and Layout
 
-## Overview
+## Problem
+The search bar is currently hidden on the homepage (where you are now) and overflows the header on other pages. Two issues to fix:
 
-Replace the current "Find Your Stay" button in the header with a pill-shaped inline search bar that matches the reference design. The search bar sits in the sticky header between the nav links and the auth/currency controls, and is visible on all pages except the homepage.
+1. **Not visible on homepage** -- The code explicitly hides the search bar when on `/`
+2. **Overflows on other pages** -- The header layout doesn't give the search bar enough room, causing it to clip off the right edge
 
-## Design (from reference screenshot)
+## Changes
 
-- **Container**: Rounded-full pill, white/card background, subtle border + shadow, segments divided by light dividers
-- **4 segments** as buttons: WHERE, CHECK IN, CHECK OUT, GUESTS -- each shows a tiny uppercase label with the value below in muted text
-- **Active segment** gets a highlighted background (e.g. `bg-muted rounded-full`)
-- **Search button**: Circular primary-colored button at the right end with a search icon
-- **Guests popover**: Dropdown card with +/- stepper rows for Adults (ages 13+), Children (ages 2-12), Infants (under 2), and an "Apply" button
-- **Where popover**: Destination command list (reusing `useActiveDestinations`)
-- **Check In / Check Out popovers**: Calendar date pickers
-- **Hidden on mobile** (`hidden lg:flex`) -- mobile keeps the existing "Find Your Stay" CTA button
+### 1. `src/components/layout/Header.tsx`
 
-## Files to Change
+- **Remove the `showSearch` condition** so the search bar appears on every page including the homepage
+- **Restructure the header layout**: Instead of three separate sections (logo | nav | search+auth), use a layout where the search bar is centered and the logo/auth are on the sides. This prevents the search bar from competing for space with nav links.
+- Move nav links into a more compact arrangement or allow the search bar to take priority in the center of the header
 
-### 1. Create `src/components/search/HeaderSearchBar.tsx` (New)
+Specifically:
+- Remove `const showSearch = location.pathname !== '/';`
+- Change `{showSearch && <HeaderSearchBar />}` to just `<HeaderSearchBar />`
+- Adjust the nav container to use `flex-1` on the left and right sections, with the search bar taking the center space
+- Reduce nav link gap from `gap-8` to `gap-6` to free up horizontal space
 
-A self-contained pill search bar component:
+### 2. `src/components/search/HeaderSearchBar.tsx`
 
-- Internal state: `selectedDestination`, `checkIn` (Date), `checkOut` (Date), `adults` (default 2, min 1), `children` (default 0), `infants` (default 0)
-- `activeSegment` state to track which popover is open (where / checkin / checkout / guests / null)
-- **Where segment**: Opens Popover with `Command` list from `useActiveDestinations` (same pattern as existing `SearchBar.tsx`)
-- **Check In segment**: Opens Popover with `Calendar` component, disabled dates before today
-- **Check Out segment**: Opens Popover with `Calendar` component, disabled dates before check-in
-- **Guests segment**: Opens Popover with stepper controls (+/- buttons) for Adults, Children, Infants. Each row shows category name, age description, and value with increment/decrement buttons styled as circular bordered buttons
-- **Search button**: `w-10 h-10 bg-primary rounded-full` with search icon. On click, navigates to `/properties` with query params (location, checkIn, checkOut, guests = adults + children)
-- Container styling: `flex items-center bg-card border border-border rounded-full shadow-sm divide-x divide-border/50 p-1`
-- Each segment button: `px-4 py-2 hover:bg-muted/50 text-left transition-colors` with `text-[10px] font-bold uppercase tracking-wider` for the label and `text-sm text-muted-foreground font-medium` for the value
+- Reduce padding on segments from `px-4` to `px-3` to make the bar more compact
+- Reduce the max-width on the destination text from `max-w-[120px]` to `max-w-[100px]`
+- These small tweaks ensure the bar fits comfortably in the header at common screen widths (1024px+)
 
-### 2. Modify `src/components/layout/Header.tsx`
-
-- Replace `HeaderSearchToggle` import with `HeaderSearchBar`
-- In the desktop section, replace `{showSearch && <HeaderSearchToggle />}` with `{showSearch && <HeaderSearchBar />}`
-- Keep mobile menu "Find Your Stay" button as-is (no change)
-
-## Technical Details
-
-- Reuses existing `Popover`, `Calendar`, `Command` UI components already in the project
-- Reuses `useActiveDestinations` hook for destination data
-- Guest stepper logic is local to the component (no context changes needed)
-- Total guests passed as query param = `adults + children` (infants don't count toward occupancy)
-- The `PropertyStickyNav` (z-40) and header (z-50) will not conflict since the header always sits above
+## Result
+The search bar will be visible and properly contained in the sticky header on every page, including the homepage.
