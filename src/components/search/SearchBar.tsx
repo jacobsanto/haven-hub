@@ -19,14 +19,14 @@ interface SearchBarProps {
 export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
   const navigate = useNavigate();
   const { data: destinations, isLoading: destinationsLoading } = useActiveDestinations();
-  
+
   const [selectedDestination, setSelectedDestination] = useState<string>('');
   const [destinationOpen, setDestinationOpen] = useState(false);
   const [guests, setGuests] = useState(2);
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
 
-  const selectedDestinationData = destinations?.find(d => d.name === selectedDestination);
+  const selectedDestinationData = destinations?.find((d) => d.name === selectedDestination);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -44,88 +44,88 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
   };
 
   if (variant === 'compact') {
-    return (
-      <div className={cn('flex items-center gap-2 bg-card border border-border rounded-full p-2', className)}>
-        <Popover open={destinationOpen} onOpenChange={setDestinationOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              role="combobox"
-              aria-expanded={destinationOpen}
-              className="flex items-center gap-2 px-3 h-auto py-1"
-            >
-              <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className={cn(
-                "text-sm truncate max-w-24",
-                !selectedDestination && "text-muted-foreground"
-              )}>
-                {selectedDestination || 'All'}
-              </span>
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56 p-0 bg-card border border-border z-50" align="start">
-            <Command>
-              <CommandInput placeholder="Search villages..." />
-              <CommandList>
-                <CommandEmpty>No destinations found.</CommandEmpty>
-                <CommandGroup>
-                  <CommandItem
-                    value=""
-                    onSelect={() => {
-                      setSelectedDestination('');
-                      setDestinationOpen(false);
-                    }}
-                  >
-                    <MapPin className="mr-2 h-4 w-4" />
-                    All Destinations
-                  </CommandItem>
-                  {destinationsLoading ? (
-                    <div className="p-2 space-y-2">
-                      <Skeleton className="h-8 w-full" />
-                      <Skeleton className="h-8 w-full" />
-                    </div>
-                  ) : (
-                    destinations?.map((destination) => (
-                      <CommandItem
-                        key={destination.id}
-                        value={destination.name}
-                        onSelect={() => {
-                          setSelectedDestination(destination.name);
-                          setDestinationOpen(false);
-                        }}
-                      >
-                        <MapPin className="mr-2 h-4 w-4" />
-                        {destination.name}, {destination.country}
-                      </CommandItem>
-                    ))
-                  )}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-        <div className="h-6 w-px bg-border" />
-        <div className="flex items-center gap-2 px-3">
-          <Users className="h-4 w-4 text-muted-foreground" />
-          <input
-            type="number"
-            min={1}
-            max={20}
-            value={guests}
-            onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-            className="border-0 bg-transparent focus-visible:outline-none p-0 h-auto text-sm w-8"
-          />
-        </div>
-        <Button
-          onClick={handleSearch}
-          size="icon"
-          className="rounded-full bg-primary text-primary-foreground"
-        >
-          <Search className="h-4 w-4" />
-        </Button>
-      </div>
-    );
+    return;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   }
 
   return (
@@ -136,8 +136,8 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
       className={cn(
         'bg-card/95 backdrop-blur-sm border border-border rounded-2xl p-4 shadow-organic-lg',
         className
-      )}
-    >
+      )}>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Destination Dropdown */}
         <div className="space-y-2">
@@ -153,24 +153,24 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
                 className={cn(
                   'w-full justify-between text-left font-normal border-0 bg-muted/50 rounded-xl h-11',
                   !selectedDestination && 'text-muted-foreground'
-                )}
-              >
+                )}>
+
                 <div className="flex items-center gap-2 truncate">
                   <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
                   <span className="truncate">
-                    {selectedDestinationData 
-                      ? `${selectedDestinationData.name}, ${selectedDestinationData.country}`
-                      : 'All Destinations'
+                    {selectedDestinationData ?
+                    `${selectedDestinationData.name}, ${selectedDestinationData.country}` :
+                    'All Destinations'
                     }
                   </span>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  {selectedDestination && (
-                    <X 
-                      className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer" 
-                      onClick={handleClearDestination}
-                    />
-                  )}
+                  {selectedDestination &&
+                  <X
+                    className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                    onClick={handleClearDestination} />
+
+                  }
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </div>
               </Button>
@@ -186,32 +186,32 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
                       onSelect={() => {
                         setSelectedDestination('');
                         setDestinationOpen(false);
-                      }}
-                    >
+                      }}>
+
                       <MapPin className="mr-2 h-4 w-4" />
                       All Destinations
                     </CommandItem>
-                    {destinationsLoading ? (
-                      <div className="p-2 space-y-2">
+                    {destinationsLoading ?
+                    <div className="p-2 space-y-2">
                         <Skeleton className="h-8 w-full" />
                         <Skeleton className="h-8 w-full" />
                         <Skeleton className="h-8 w-full" />
-                      </div>
-                    ) : (
-                      destinations?.map((destination) => (
-                        <CommandItem
-                          key={destination.id}
-                          value={destination.name}
-                          onSelect={() => {
-                            setSelectedDestination(destination.name);
-                            setDestinationOpen(false);
-                          }}
-                        >
+                      </div> :
+
+                    destinations?.map((destination) =>
+                    <CommandItem
+                      key={destination.id}
+                      value={destination.name}
+                      onSelect={() => {
+                        setSelectedDestination(destination.name);
+                        setDestinationOpen(false);
+                      }}>
+
                           <MapPin className="mr-2 h-4 w-4" />
                           <span className="flex-1">{destination.name}, {destination.country}</span>
                         </CommandItem>
-                      ))
-                    )}
+                    )
+                    }
                   </CommandGroup>
                 </CommandList>
               </Command>
@@ -231,8 +231,8 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
                 className={cn(
                   'w-full justify-start text-left font-normal border-0 bg-muted/50 rounded-xl',
                   !checkIn && 'text-muted-foreground'
-                )}
-              >
+                )}>
+
                 <Calendar className="mr-2 h-4 w-4" />
                 {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Add date'}
               </Button>
@@ -244,8 +244,8 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
                 onSelect={setCheckIn}
                 disabled={(date) => date < new Date()}
                 initialFocus
-                className="pointer-events-auto"
-              />
+                className="pointer-events-auto" />
+
             </PopoverContent>
           </Popover>
         </div>
@@ -262,8 +262,8 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
                 className={cn(
                   'w-full justify-start text-left font-normal border-0 bg-muted/50 rounded-xl',
                   !checkOut && 'text-muted-foreground'
-                )}
-              >
+                )}>
+
                 <Calendar className="mr-2 h-4 w-4" />
                 {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Add date'}
               </Button>
@@ -275,8 +275,8 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
                 onSelect={setCheckOut}
                 disabled={(date) => date < (checkIn || new Date())}
                 initialFocus
-                className="pointer-events-auto"
-              />
+                className="pointer-events-auto" />
+
             </PopoverContent>
           </Popover>
         </div>
@@ -295,20 +295,20 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
                 max={20}
                 value={guests}
                 onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-                className="border-0 bg-transparent focus-visible:outline-none p-0 h-auto flex-1"
-              />
+                className="border-0 bg-transparent focus-visible:outline-none p-0 h-auto flex-1" />
+
               <span className="text-sm text-muted-foreground">guests</span>
             </div>
             <Button
               onClick={handleSearch}
               size="lg"
-              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground px-6"
-            >
+              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground px-6">
+
               <Search className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
-    </motion.div>
-  );
+    </motion.div>);
+
 }
