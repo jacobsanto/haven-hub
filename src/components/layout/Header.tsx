@@ -62,50 +62,38 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
       <nav role="navigation" aria-label="Main navigation" className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        {/* Logo + Nav */}
-        <div className="hidden md:flex items-center gap-6 flex-shrink-0">
-          <Link to="/" className="flex items-center gap-2">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center"
-            >
-              {logoUrl ? (
-                <img 
-                  src={logoUrl} 
-                  alt={brandName} 
-                  className="h-10 w-auto max-w-[160px] object-contain"
-                />
-              ) : (
-                <span className="text-2xl font-serif font-semibold text-foreground">
-                  <span className="text-primary">{primaryPart}</span>
-                  {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
-                </span>
-              )}
-            </motion.div>
-          </Link>
-          <div className="flex items-center gap-6">
+        {/* Logo */}
+        <Link to="/" className="hidden md:flex items-center gap-2 flex-shrink-0">
+          <motion.div whileHover={{ scale: 1.05 }} className="flex items-center">
+            {logoUrl ? (
+              <img src={logoUrl} alt={brandName} className="h-10 w-auto max-w-[140px] object-contain" />
+            ) : (
+              <span className="text-xl font-serif font-semibold text-foreground">
+                <span className="text-primary">{primaryPart}</span>
+                {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
+              </span>
+            )}
+          </motion.div>
+        </Link>
+
+        {/* Desktop Nav Links - shown on md, hidden on lg+ where search bar takes over */}
+        <div className="hidden md:flex lg:hidden items-center gap-6">
           {navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
               aria-current={isActive(item.path) ? 'page' : undefined}
               className={cn(
-                "text-sm font-medium transition-colors relative",
-                "after:absolute after:bottom-[-4px] after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300",
-                "hover:after:w-full focus-visible:after:w-full",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm",
-                isActive(item.path)
-                  ? "text-foreground after:w-full"
-                  : "text-muted-foreground hover:text-foreground"
+                "text-sm font-medium transition-colors relative whitespace-nowrap",
+                isActive(item.path) ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               )}
             >
               {item.label}
             </Link>
           ))}
-          </div>
         </div>
 
-        {/* Search Bar - Center */}
+        {/* Search Bar - visible on lg+ */}
         <div className="hidden lg:flex flex-1 justify-center min-w-0">
           <HeaderSearchBar />
         </div>
