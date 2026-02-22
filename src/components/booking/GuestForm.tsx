@@ -12,7 +12,7 @@ import { COUNTRIES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { Minus, Plus, Users } from 'lucide-react';
 
-const guestFormSchema = z.object({
+const guestFormSchemaBase = z.object({
   firstName: z.string().min(2, 'First name is required'),
   lastName: z.string().min(2, 'Last name is required'),
   email: z.string().email('Valid email is required'),
@@ -22,12 +22,16 @@ const guestFormSchema = z.object({
   children: z.number().min(0),
   specialRequests: z.string().optional(),
   marketingConsent: z.boolean().default(false),
+  termsAccepted: z.boolean().default(false),
+});
+
+const guestFormSchemaWithTerms = guestFormSchemaBase.extend({
   termsAccepted: z.boolean().refine(val => val === true, {
     message: 'You must accept the terms and conditions',
   }),
 });
 
-type GuestFormValues = z.infer<typeof guestFormSchema>;
+type GuestFormValues = z.infer<typeof guestFormSchemaBase>;
 
 interface GuestFormProps {
   onSubmit: (data: BookingGuest & { 
@@ -54,7 +58,7 @@ export function GuestForm({
   hidePreferences = false,
 }: GuestFormProps) {
   const form = useForm<GuestFormValues>({
-    resolver: zodResolver(guestFormSchema),
+    resolver: zodResolver(hidePreferences ? guestFormSchemaBase : guestFormSchemaWithTerms),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -357,5 +361,5 @@ export function GuestForm({
 }
 
 // Re-export form for parent control
-export { guestFormSchema };
+export { guestFormSchemaBase, guestFormSchemaWithTerms };
 export type { GuestFormValues };
