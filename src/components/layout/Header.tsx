@@ -92,10 +92,12 @@ export function Header() {
           ))}
         </div>
 
-        {/* Search Bar - Center */}
-        <div className="hidden lg:flex flex-1 justify-center min-w-0">
-          <HeaderSearchBar />
-        </div>
+        {/* Search Bar - Center (hidden on homepage) */}
+        {location.pathname !== '/' && (
+          <div className="hidden lg:flex flex-1 justify-center min-w-0">
+            <HeaderSearchBar />
+          </div>
+        )}
 
         {/* Currency & Auth */}
         <div className="hidden md:flex items-center gap-2 flex-shrink-0">
