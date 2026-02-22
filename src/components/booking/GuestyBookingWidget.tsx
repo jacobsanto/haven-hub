@@ -43,14 +43,7 @@ export function GuestyBookingWidget({ propertyId, variant = 'compact', className
   useEffect(() => {
     if (!widgetId || !siteUrl || !enabled) return;
 
-    const containerId = `search-widget_${widgetId}`;
-
-    // Set the container ID
-    if (containerRef.current) {
-      containerRef.current.id = containerId;
-    }
-
-    // Guesty widget loader IIFE
+    // Guesty widget loader
     const loadWidget = () => {
       try {
         const cssUrl = `https://s3.amazonaws.com/guesty-frontend-production/search-bar-production.css`;
@@ -58,6 +51,17 @@ export function GuestyBookingWidget({ propertyId, variant = 'compact', className
 
         const config: Record<string, string> = { siteUrl };
         if (accentColor) config.color = accentColor;
+
+        const initWidget = () => {
+          const win = window as any;
+          if (win.GuestySearchBarWidget) {
+            requestAnimationFrame(() => {
+              win.GuestySearchBarWidget.create(config).catch((e: any) =>
+                console.log('[Guesty]:', e.message)
+              );
+            });
+          }
+        };
 
         // Inject CSS
         const existingCss = document.getElementById(`guesty-css-${widgetId}`);
@@ -78,21 +82,13 @@ export function GuestyBookingWidget({ propertyId, variant = 'compact', className
           script.async = true;
           script.onload = () => {
             setScriptLoaded(true);
-            // Initialize the widget if the global function exists
-            const win = window as any;
-            if (win.GuestySearchBarWidget) {
-              win.GuestySearchBarWidget.create(config).catch((e: any) => console.log('[Guesty]:', e.message));
-            }
+            initWidget();
           };
           script.onerror = () => setScriptError(true);
           document.body.appendChild(script);
         } else {
-          // Script already loaded, try to reinitialize
-          const win = window as any;
-          if (win.GuestySearchBarWidget) {
-            win.GuestySearchBarWidget.create(config).catch((e: any) => console.log('[Guesty]:', e.message));
-          }
           setScriptLoaded(true);
+          initWidget();
         }
       } catch {
         setScriptError(true);
@@ -100,14 +96,6 @@ export function GuestyBookingWidget({ propertyId, variant = 'compact', className
     };
 
     loadWidget();
-
-    // Cleanup on unmount
-    return () => {
-      const cssEl = document.getElementById(`guesty-css-${widgetId}`);
-      const jsEl = document.getElementById(`guesty-js-${widgetId}`);
-      cssEl?.remove();
-      jsEl?.remove();
-    };
   }, [widgetId, siteUrl, accentColor, enabled]);
 
   if (settingsLoading) {
@@ -145,6 +133,7 @@ export function GuestyBookingWidget({ propertyId, variant = 'compact', className
     )}>
       <div
         ref={containerRef}
+        id={widgetId ? `search-widget_${widgetId}` : undefined}
         className="min-h-[200px] relative"
       >
         {!scriptLoaded && (
