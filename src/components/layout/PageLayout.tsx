@@ -54,7 +54,7 @@ function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
         exit="exit"
         variants={pageVariants}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="flex-1 pt-16"
+        className="flex-1 pt-[72px]"
       >
         {children}
       </motion.main>
