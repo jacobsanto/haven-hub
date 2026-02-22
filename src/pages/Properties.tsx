@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Filter, Zap, LayoutGrid, Map, Shield, Clock, ArrowRight } from 'lucide-react';
+import { Filter, Zap, LayoutGrid, List, Map, Calendar as CalendarIcon } from 'lucide-react';
+import { format, parseISO, differenceInDays } from 'date-fns';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { QuickBookCard } from '@/components/booking/QuickBookCard';
+import { SearchResultCard } from '@/components/properties/SearchResultCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
 import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidget';
 import { useProperties } from '@/hooks/useProperties';
+import { useAvailableProperties } from '@/hooks/useAvailableProperties';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -29,9 +32,8 @@ export default function Properties() {
   const [priceRange, setPriceRange] = useState([0, 5000]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
   
-  // New advanced filters
   const [bedrooms, setBedrooms] = useState<number | undefined>(undefined);
   const [bathrooms, setBathrooms] = useState<number | undefined>(undefined);
   const [propertyType, setPropertyType] = useState<PropertyType | undefined>(undefined);
@@ -39,10 +41,18 @@ export default function Properties() {
 
   const location = searchParams.get('location') || undefined;
   const guests = searchParams.get('guests') ? parseInt(searchParams.get('guests')!) : undefined;
+  const checkIn = searchParams.get('checkIn') || undefined;
+  const checkOut = searchParams.get('checkOut') || undefined;
 
-  const { data: properties, isLoading } = useProperties({
+  const hasDateSearch = !!checkIn && !!checkOut;
+  const nights = hasDateSearch ? differenceInDays(parseISO(checkOut!), parseISO(checkIn!)) : undefined;
+
+  // Use availability-filtered hook when dates are present, otherwise standard
+  const searchParams_ = {
     location,
     guests,
+    checkIn,
+    checkOut,
     minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
     maxPrice: priceRange[1] < 5000 ? priceRange[1] : undefined,
     amenities: selectedAmenities.length > 0 ? selectedAmenities : undefined,
@@ -50,7 +60,21 @@ export default function Properties() {
     bathrooms,
     propertyType,
     instantBooking: instantBooking ? true : undefined,
+  };
+
+  const { data: availableProperties, isLoading: availLoading } = useAvailableProperties(searchParams_);
+  const { data: allProperties, isLoading: allLoading } = useProperties({
+    ...searchParams_,
+    checkIn: undefined,
+    checkOut: undefined,
   });
+
+  // When dates are present, use availability-filtered results; otherwise standard
+  const properties = hasDateSearch ? availableProperties : allProperties;
+  const isLoading = hasDateSearch ? availLoading : allLoading;
+
+  // Auto-switch to list view when dates are searched
+  const effectiveView = hasDateSearch && viewMode === 'grid' ? 'list' : viewMode;
 
   const toggleAmenity = (amenity: string) => {
     setSelectedAmenities((prev) =>
@@ -204,7 +228,7 @@ export default function Properties() {
   return (
     <PageLayout>
       <div className="min-h-screen bg-background">
-        {/* Header with Booking Focus */}
+        {/* Header */}
         <div className="bg-secondary/30 py-12">
           <div className="container mx-auto px-4">
             <motion.div
@@ -212,22 +236,43 @@ export default function Properties() {
               animate={{ opacity: 1, y: 0 }}
               className="text-center mb-8"
             >
-              <h1 className="text-4xl md:text-5xl font-serif font-medium mb-4">
-                {location ? `Book Your Stay in ${location}` : 'Find & Book Your Perfect Stay'}
+              <h1 className="text-3xl md:text-4xl font-serif font-medium mb-3">
+                {hasDateSearch && location
+                  ? `Stays in ${location}`
+                  : location
+                  ? `Book Your Stay in ${location}`
+                  : 'Find & Book Your Perfect Stay'}
               </h1>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Best rates guaranteed when you book direct. Instant confirmation available.
-              </p>
+              {hasDateSearch && (
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground flex-wrap">
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>
+                    {format(parseISO(checkIn!), 'MMM d')} – {format(parseISO(checkOut!), 'MMM d')}
+                  </span>
+                  <span>·</span>
+                  <span>{guests || 2} Guest{(guests || 2) > 1 ? 's' : ''}</span>
+                  <span>·</span>
+                  <span>{properties?.length || 0} properties found</span>
+                </div>
+              )}
+              {!hasDateSearch && (
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  Best rates guaranteed when you book direct. Instant confirmation available.
+                </p>
+              )}
             </motion.div>
-            <div className="max-w-3xl mx-auto mb-6">
-              <SearchBar variant="compact" className="justify-center" />
-            </div>
-            {/* Trust badges */}
-            <TrustBadges 
-              variant="compact" 
-              badges={['price', 'cancellation', 'instant']} 
-              className="justify-center"
-            />
+            {!hasDateSearch && (
+              <>
+                <div className="max-w-3xl mx-auto mb-6">
+                  <SearchBar variant="compact" className="justify-center" />
+                </div>
+                <TrustBadges 
+                  variant="compact" 
+                  badges={['price', 'cancellation', 'instant']} 
+                  className="justify-center"
+                />
+              </>
+            )}
           </div>
         </div>
 
@@ -244,17 +289,18 @@ export default function Properties() {
                 </div>
               </SheetContent>
 
-              {/* Toolbar: Results Count, Filters Button, View Toggle */}
+              {/* Toolbar */}
               <div className="flex items-center justify-between mb-6">
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {isLoading
-                    ? 'Loading...'
+                    ? 'Checking availability...'
                     : `${properties?.length || 0} properties found`}
                 </p>
                 <div className="flex items-center gap-2">
                   <SheetTrigger asChild>
                     <Button
                       variant="outline"
+                      size="sm"
                       className="gap-2"
                     >
                       <Filter className="h-4 w-4" />
@@ -266,30 +312,73 @@ export default function Properties() {
                       )}
                     </Button>
                   </SheetTrigger>
+                  {hasDateSearch && (
+                    <Button
+                      variant={effectiveView === 'list' ? 'default' : 'outline'}
+                      size="icon"
+                      onClick={() => setViewMode('list')}
+                      className="rounded-full h-8 w-8"
+                      aria-label="List view"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
-                    variant={viewMode === 'grid' ? 'default' : 'outline'}
+                    variant={effectiveView === 'grid' ? 'default' : 'outline'}
                     size="icon"
                     onClick={() => setViewMode('grid')}
-                    className="rounded-full"
+                    className="rounded-full h-8 w-8"
                     aria-label="Grid view"
                   >
                     <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'map' ? 'default' : 'outline'}
-                    size="icon"
-                    onClick={() => setViewMode('map')}
-                    className="rounded-full"
-                    aria-label="Map view"
-                  >
-                    <Map className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </Sheet>
 
-            {/* Properties Grid */}
-            {viewMode === 'grid' ? (
+            {/* Results */}
+            {effectiveView === 'list' ? (
+              <>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="bg-card border border-border/60 rounded-xl overflow-hidden animate-pulse flex flex-col md:flex-row">
+                        <div className="md:w-[280px] lg:w-[320px] aspect-[4/3] md:aspect-auto md:min-h-[220px] bg-muted" />
+                        <div className="flex-1 p-6 space-y-4">
+                          <div className="h-6 bg-muted rounded w-1/3" />
+                          <div className="h-4 bg-muted rounded w-1/4" />
+                          <div className="h-4 bg-muted rounded w-1/2" />
+                          <div className="h-8 bg-muted rounded w-1/3 mt-auto" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : properties && properties.length > 0 ? (
+                  <div className="space-y-4">
+                    {properties.map((property, index) => (
+                      <SearchResultCard
+                        key={property.id}
+                        property={property}
+                        index={index}
+                        nights={nights}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 bg-card border border-border/60 rounded-xl">
+                    <p className="text-muted-foreground text-lg mb-2">
+                      No properties available for these dates
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Try adjusting your dates or filters
+                    </p>
+                    <Button variant="outline" onClick={clearFilters}>
+                      Clear Filters
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : effectiveView === 'grid' ? (
               <>
                 {isLoading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -330,7 +419,6 @@ export default function Properties() {
               </div>
             )}
 
-            {/* Recently Viewed Section */}
             <RecentlyViewedWidget variant="inline" className="mt-12" />
           </div>
         </div>
