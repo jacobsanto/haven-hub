@@ -11,7 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FontSelector } from '@/components/admin/FontSelector';
 import { CurrencySettingsCard } from '@/components/admin/CurrencySettingsCard';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Type, Building2, Save, RotateCcw, Coins } from 'lucide-react';
+import { Palette, Type, Building2, Save, RotateCcw, Coins, Plug } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { useGuestySettings, useUpsertGuestySettings } from '@/hooks/useGuestySettings';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { SupportedCurrency } from '@/types/currency';
@@ -225,7 +227,7 @@ export default function AdminSettings() {
           </div>
 
           <Tabs defaultValue="identity" className="space-y-6">
-            <TabsList className="grid w-full max-w-lg grid-cols-4">
+            <TabsList className="grid w-full max-w-2xl grid-cols-5">
               <TabsTrigger value="identity" className="gap-2">
                 <Building2 className="h-4 w-4" />
                 Identity
@@ -241,6 +243,10 @@ export default function AdminSettings() {
               <TabsTrigger value="currency" className="gap-2">
                 <Coins className="h-4 w-4" />
                 Currency
+              </TabsTrigger>
+              <TabsTrigger value="integrations" className="gap-2">
+                <Plug className="h-4 w-4" />
+                Integrations
               </TabsTrigger>
             </TabsList>
 
@@ -471,16 +477,121 @@ export default function AdminSettings() {
               </Card>
             </TabsContent>
 
-            {/* Currency Tab */}
-            <TabsContent value="currency">
-              <CurrencySettingsCard
-                value={formState.base_currency}
-                onChange={(currency) => handleInputChange('base_currency', currency)}
-              />
+            {/* Integrations Tab */}
+            <TabsContent value="integrations">
+              <GuestyIntegrationCard />
             </TabsContent>
           </Tabs>
         </div>
       </AdminLayout>
     </AdminGuard>
+  );
+}
+
+function GuestyIntegrationCard() {
+  const { data: settings, isLoading } = useGuestySettings();
+  const upsert = useUpsertGuestySettings();
+  const { toast } = useToast();
+
+  const [siteUrl, setSiteUrl] = useState('');
+  const [widgetId, setWidgetId] = useState('');
+  const [accentColor, setAccentColor] = useState('');
+  const [enabled, setEnabled] = useState(true);
+
+  useEffect(() => {
+    if (settings) {
+      setSiteUrl(settings.site_url);
+      setWidgetId(settings.widget_id);
+      setAccentColor(settings.accent_color || '');
+      setEnabled(settings.enabled);
+    }
+  }, [settings]);
+
+  const handleSave = async () => {
+    if (!siteUrl || !widgetId) {
+      toast({ title: 'Missing fields', description: 'Site URL and Widget ID are required.', variant: 'destructive' });
+      return;
+    }
+    try {
+      await upsert.mutateAsync({
+        site_url: siteUrl,
+        widget_id: widgetId,
+        accent_color: accentColor || null,
+        enabled,
+      });
+      toast({ title: 'Saved', description: 'Guesty widget settings updated.' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
+    }
+  };
+
+  if (isLoading) {
+    return <div className="h-48 flex items-center justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" /></div>;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Guesty Booking Engine</CardTitle>
+        <CardDescription>
+          Connect Guesty's booking widget to display availability and checkout on your property pages.
+          When enabled, the Guesty widget replaces the native booking sidebar.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>Enable Guesty Widget</Label>
+            <p className="text-xs text-muted-foreground">Show Guesty widget on property pages</p>
+          </div>
+          <Switch checked={enabled} onCheckedChange={setEnabled} />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="guesty_site_url">Booking Engine URL *</Label>
+            <Input
+              id="guesty_site_url"
+              value={siteUrl}
+              onChange={(e) => setSiteUrl(e.target.value)}
+              placeholder="yoursite.guestybookings.com"
+            />
+            <p className="text-xs text-muted-foreground">
+              Found in Guesty → Distribution → Booking Engine → URL
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="guesty_widget_id">Widget ID *</Label>
+            <Input
+              id="guesty_widget_id"
+              value={widgetId}
+              onChange={(e) => setWidgetId(e.target.value)}
+              placeholder="e.g., abc123"
+            />
+            <p className="text-xs text-muted-foreground">
+              The suffix from the widget container ID (search-widget_XXXX)
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2 max-w-xs">
+          <Label htmlFor="guesty_accent">Accent Color (optional)</Label>
+          <Input
+            id="guesty_accent"
+            value={accentColor}
+            onChange={(e) => setAccentColor(e.target.value)}
+            placeholder="#e2c2a1"
+          />
+          <p className="text-xs text-muted-foreground">
+            Defaults to your brand primary color if left empty
+          </p>
+        </div>
+
+        <Button onClick={handleSave} disabled={upsert.isPending} className="gap-2">
+          <Save className="h-4 w-4" />
+          {upsert.isPending ? 'Saving...' : 'Save Guesty Settings'}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

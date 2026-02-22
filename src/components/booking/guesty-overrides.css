@@ -1,0 +1,77 @@
+/* Guesty Booking Engine Widget — Brand Override Layer */
+/* These selectors target Guesty's known widget class names and apply
+   brand design tokens so the external widget blends with the site. */
+
+/* Font overrides */
+[id^="search-widget"] *,
+[id^="search-widget"] input,
+[id^="search-widget"] button,
+[id^="search-widget"] select {
+  font-family: var(--font-sans, sans-serif) !important;
+}
+
+[id^="search-widget"] h1,
+[id^="search-widget"] h2,
+[id^="search-widget"] h3,
+[id^="search-widget"] h4 {
+  font-family: var(--font-serif, serif) !important;
+}
+
+/* Primary button overrides */
+[id^="search-widget"] button[type="submit"],
+[id^="search-widget"] .search-bar__submit,
+[id^="search-widget"] .btn-primary,
+[id^="search-widget"] [class*="submit"],
+[id^="search-widget"] [class*="Button"] {
+  background-color: hsl(var(--primary)) !important;
+  border-color: hsl(var(--primary)) !important;
+  border-radius: 9999px !important;
+  font-weight: 500 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+[id^="search-widget"] button[type="submit"]:hover,
+[id^="search-widget"] .search-bar__submit:hover,
+[id^="search-widget"] .btn-primary:hover {
+  opacity: 0.9 !important;
+}
+
+/* Input field overrides */
+[id^="search-widget"] input,
+[id^="search-widget"] select {
+  border-radius: 0.75rem !important;
+  border-color: rgba(30, 60, 120, 0.08) !important;
+  padding: 0.625rem 0.875rem !important;
+}
+
+[id^="search-widget"] input:focus,
+[id^="search-widget"] select:focus {
+  border-color: hsl(var(--primary)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.15) !important;
+  outline: none !important;
+}
+
+/* Calendar cell overrides */
+[id^="search-widget"] [class*="calendar"] [class*="selected"],
+[id^="search-widget"] [class*="Calendar"] [class*="selected"] {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+[id^="search-widget"] [class*="calendar"] [class*="today"],
+[id^="search-widget"] [class*="Calendar"] [class*="today"] {
+  border-color: hsl(var(--primary)) !important;
+}
+
+/* Container-level overrides */
+[id^="search-widget"] {
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  [id^="search-widget"] {
+    padding: 0.5rem !important;
+  }
+}
