@@ -11,6 +11,7 @@ import { PropertyShareSave } from '@/components/properties/PropertyShareSave';
 import { PropertyHighlights } from '@/components/properties/PropertyHighlights';
 import { RoomBreakdown } from '@/components/properties/RoomBreakdown';
 import { NeighborhoodInfo } from '@/components/properties/NeighborhoodInfo';
+import { CollapsibleDescription } from '@/components/properties/CollapsibleDescription';
 import { HouseRulesAccordion } from '@/components/properties/HouseRulesAccordion';
 import { SimilarProperties } from '@/components/properties/SimilarProperties';
 import { RelatedExperiences } from '@/components/properties/RelatedExperiences';
@@ -218,13 +219,15 @@ export default function PropertyDetail() {
                 </div>
 
                 {/* Description */}
-                {property.description && (
-                  <div className="prose prose-lg max-w-none mt-6">
-                    <p className="text-muted-foreground leading-relaxed">
-                      {property.description}
-                    </p>
-                  </div>
-                )}
+                <CollapsibleDescription
+                  shortDescription={(property as any).short_description}
+                  fullDescription={property.description}
+                  visibleCount={2}
+                  collapseThreshold={3}
+                  dropCap={true}
+                  variant="overview"
+                  className="mt-6"
+                />
               </div>
             </section>
 

@@ -1525,6 +1525,7 @@ export type Database = {
           property_type: string
           region: string | null
           rooms: Json
+          short_description: string | null
           slug: string
           status: Database["public"]["Enums"]["property_status"]
           timezone: string | null
@@ -1565,6 +1566,7 @@ export type Database = {
           property_type?: string
           region?: string | null
           rooms?: Json
+          short_description?: string | null
           slug: string
           status?: Database["public"]["Enums"]["property_status"]
           timezone?: string | null
@@ -1605,6 +1607,7 @@ export type Database = {
           property_type?: string
           region?: string | null
           rooms?: Json
+          short_description?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["property_status"]
           timezone?: string | null

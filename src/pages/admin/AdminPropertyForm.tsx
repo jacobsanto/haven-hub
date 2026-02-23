@@ -62,6 +62,7 @@ export default function AdminPropertyForm() {
     name: '',
     display_name: null as string | null,
     slug: '',
+    short_description: null as string | null,
     description: '',
     hero_image_url: '',
     gallery: [] as string[],
@@ -105,6 +106,7 @@ export default function AdminPropertyForm() {
         name: existingProperty.name,
         display_name: existingProperty.display_name || null,
         slug: existingProperty.slug,
+        short_description: (existingProperty as any).short_description || null,
         description: existingProperty.description || '',
         hero_image_url: existingProperty.hero_image_url || '',
         gallery: existingProperty.gallery || [],
@@ -370,16 +372,51 @@ export default function AdminPropertyForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="short_description">Short Description</Label>
+                <Textarea
+                  id="short_description"
+                  value={formData.short_description || ''}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, short_description: e.target.value || null }))
+                  }
+                  placeholder="A compelling 1-2 sentence intro that is always visible to guests"
+                  className="input-organic min-h-[80px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This editorial hook is always displayed — make it count
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Full Description</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, description: e.target.value }))
                   }
-                  placeholder="Describe the property..."
-                  className="input-organic min-h-[120px]"
+                  placeholder="Detailed property description. Use blank lines to separate paragraphs."
+                  className="input-organic min-h-[160px]"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Use blank lines between paragraphs for proper formatting on the property page
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="neighborhood_description">Neighborhood Description</Label>
+                <Textarea
+                  id="neighborhood_description"
+                  value={formData.neighborhood_description || ''}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, neighborhood_description: e.target.value || null }))
+                  }
+                  placeholder="Describe the area, vibe, and what makes the location special"
+                  className="input-organic min-h-[100px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Shown in the Location & Neighborhood section of the property page
+                </p>
               </div>
 
               {/* Address Lookup */}

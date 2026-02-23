@@ -1,3 +1,4 @@
+import { CollapsibleDescription } from '@/components/properties/CollapsibleDescription';
 import {
   UtensilsCrossed,
   Umbrella,
@@ -79,9 +80,13 @@ export function NeighborhoodInfo({
         </div>
 
         {description && (
-          <p className="mt-4 text-muted-foreground leading-relaxed">
-            {description}
-          </p>
+          <CollapsibleDescription
+            fullDescription={description}
+            visibleCount={1}
+            collapseThreshold={2}
+            variant="neighborhood"
+            className="mt-4"
+          />
         )}
       </div>
 
