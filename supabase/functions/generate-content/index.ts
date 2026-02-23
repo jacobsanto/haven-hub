@@ -93,8 +93,9 @@ Emphasize exclusivity, authenticity, and the transformative nature of each exper
   property: {
     system: `You are a luxury real estate copywriter specializing in vacation rentals.
 Create aspirational property descriptions that highlight architectural details, amenities, and the lifestyle offered.
-Paint a picture of what it feels like to stay at the property.`,
-    fields: ["description", "highlights", "neighborhood_description"],
+Paint a picture of what it feels like to stay at the property.
+Generate a separate "short_description" — a compelling 1-2 sentence editorial hook that captures the essence of the property. This should be distinct from and shorter than the full description.`,
+    fields: ["short_description", "description", "highlights", "neighborhood_description"],
   },
 };
 
@@ -144,6 +145,7 @@ function buildToolDefinition(contentType: ContentType) {
       includes: { type: "array", items: { type: "string" }, description: "5-8 items included in the experience" },
     },
     property: {
+      short_description: { type: "string", description: "A compelling 1-2 sentence editorial hook that is always visible to guests" },
       description: { type: "string", description: "Aspirational property description (3-4 paragraphs)" },
       highlights: { type: "array", items: { type: "string" }, description: "6-8 key property highlights" },
       neighborhood_description: { type: "string", description: "Description of the surrounding area and neighborhood" },

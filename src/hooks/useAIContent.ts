@@ -118,6 +118,7 @@ export interface ExperienceContent {
 }
 
 export interface PropertyContent {
+  short_description: string;
   description: string;
   highlights: string[];
   neighborhood_description: string;

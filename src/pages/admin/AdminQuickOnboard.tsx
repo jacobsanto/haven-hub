@@ -200,6 +200,7 @@ export default function AdminQuickOnboard() {
         latitude: form.latitude,
         longitude: form.longitude,
         postal_code: form.postal_code || null,
+        short_description: null,
       });
       toast({
         title: 'Property Created as Draft',

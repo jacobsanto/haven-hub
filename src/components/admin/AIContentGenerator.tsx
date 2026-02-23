@@ -293,7 +293,8 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
       includes: "What's Included",
     },
     property: {
-      description: 'Description',
+      short_description: 'Short Description (Intro)',
+      description: 'Full Description',
       highlights: 'Highlights',
       neighborhood_description: 'Neighborhood',
     },

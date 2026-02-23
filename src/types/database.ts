@@ -62,6 +62,7 @@ export interface Property {
   latitude: number | null;
   longitude: number | null;
   postal_code: string | null;
+  short_description: string | null;
 }
 
 export interface SeasonalRate {
