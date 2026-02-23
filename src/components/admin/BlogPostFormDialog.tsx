@@ -23,6 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { ImageFieldWithAI } from '@/components/admin/ImageFieldWithAI';
 import {
   Select,
   SelectContent,
@@ -280,9 +281,17 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
               name="featured_image_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Featured Image URL</FormLabel>
+                  <FormLabel>Featured Image</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://example.com/image.jpg" />
+                    <ImageFieldWithAI
+                      value={field.value || undefined}
+                      onUpload={(url) => form.setValue('featured_image_url', url)}
+                      onRemove={() => form.setValue('featured_image_url', '')}
+                      storagePath="blog"
+                      label="Upload Featured Image"
+                      generatePrompt={`Beautiful editorial blog featured image for article titled "${form.watch('title') || 'travel blog post'}". Ultra high resolution, magazine quality, travel photography.`}
+                      promptLabel="Generate featured image"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

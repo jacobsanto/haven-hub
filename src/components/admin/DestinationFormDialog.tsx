@@ -26,6 +26,7 @@ import {
   useCreateDestination,
   useUpdateDestination,
 } from '@/hooks/useDestinations';
+import { ImageFieldWithAI } from '@/components/admin/ImageFieldWithAI';
 import { toast } from 'sonner';
 
 const destinationSchema = z.object({
@@ -238,11 +239,15 @@ export function DestinationFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hero_image_url">Hero Image URL</Label>
-            <Input
-              id="hero_image_url"
-              placeholder="https://..."
-              {...register('hero_image_url')}
+            <Label>Hero Image</Label>
+            <ImageFieldWithAI
+              value={watch('hero_image_url') || undefined}
+              onUpload={(url) => setValue('hero_image_url', url)}
+              onRemove={() => setValue('hero_image_url', '')}
+              storagePath="destinations"
+              label="Upload Hero Image"
+              generatePrompt={`Beautiful high-resolution travel hero photograph of ${name || 'a destination'}, ${watch('country') || 'scenic landscape'}. Ultra high resolution, cinematic lighting, editorial travel photography style.`}
+              promptLabel="Generate destination hero"
             />
           </div>
 

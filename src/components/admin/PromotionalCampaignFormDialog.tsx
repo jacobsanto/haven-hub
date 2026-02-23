@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { ImageFieldWithAI } from '@/components/admin/ImageFieldWithAI';
 import {
   Select,
   SelectContent,
@@ -233,9 +234,17 @@ export function PromotionalCampaignFormDialog({
                   name="image_url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Banner Image URL</FormLabel>
+                      <FormLabel>Banner Image</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://..." {...field} />
+                        <ImageFieldWithAI
+                          value={field.value || undefined}
+                          onUpload={(url) => form.setValue('image_url', url)}
+                          onRemove={() => form.setValue('image_url', '')}
+                          storagePath="campaigns"
+                          label="Upload Banner Image"
+                          generatePrompt={`Promotional campaign banner for "${form.watch('title') || 'luxury travel promotion'}". ${form.watch('description') || 'Elegant, aspirational travel imagery'}. Ultra high resolution, wide format, marketing quality.`}
+                          promptLabel="Generate banner image"
+                        />
                       </FormControl>
                       <FormDescription>
                         Visual artwork for the pop-up
