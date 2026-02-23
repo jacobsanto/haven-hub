@@ -140,7 +140,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
   };
 
   // Shared date/guest picker component with real availability
-  const DateGuestPicker = () => {};
+  const DateGuestPicker = () => { return null; };
 
 
 
@@ -231,8 +231,12 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
   return (
     <div className="border border-border/50 rounded-xl p-6 space-y-6 shadow-sm lg:sticky lg:top-24">
       {/* Price Header */}
-      
-
+      <div className="flex items-baseline gap-2">
+        <span className="text-2xl font-bold font-serif text-foreground">
+          {basePriceFormatted.display}
+        </span>
+        <span className="text-sm text-muted-foreground">/night</span>
+      </div>
 
 
 
