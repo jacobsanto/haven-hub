@@ -24,13 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+// Category chips replace dropdown select
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -139,31 +133,52 @@ export default function AdminAmenities() {
             </Button>
           </div>
 
-          {/* Filters */}
+          {/* Category Quick Filters */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setCategoryFilter('all')}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                categoryFilter === 'all'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              }`}
+            >
+              All ({amenities?.length || 0})
+            </button>
+            {categories.map((category) => {
+              const count = amenities?.filter((a) => a.category === category).length || 0;
+              const isEssentials = category === 'Essentials';
+              const isActive = categoryFilter === category;
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setCategoryFilter(category)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : isEssentials
+                        ? 'bg-accent text-accent-foreground ring-1 ring-primary/30 hover:bg-accent/80'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                  }`}
+                >
+                  {isEssentials ? '⭐ ' : ''}{category} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search */}
           <div className="card-organic p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search amenities..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent className="bg-card">
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search amenities..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
             </div>
           </div>
 
