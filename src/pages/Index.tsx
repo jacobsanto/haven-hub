@@ -30,6 +30,10 @@ const Index = () => {
   // Properties count for social proof
   const propertiesAvailable = properties?.length || 0;
 
+  // Location-aware hero: use the first featured property's hero image
+  const heroProperty = properties?.[0];
+  const heroImageUrl = heroProperty?.hero_image_url;
+
   // Get featured items (limit to 3-4 for homepage)
   const featuredDestinations = destinations?.slice(0, 3);
   const featuredExperiences = experiences?.filter(e => e.is_featured).slice(0, 4) || experiences?.slice(0, 4);
@@ -41,7 +45,20 @@ const Index = () => {
       <UrgencyBanner variant="rotating" />
 
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center justify-center hero-gradient texture-overlay overflow-hidden">
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Dynamic hero background from first available property */}
+        {heroImageUrl ? (
+          <>
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+              style={{ backgroundImage: `url(${heroImageUrl})` }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background/90" />
+          </>
+        ) : (
+          <div className="absolute inset-0 hero-gradient texture-overlay" />
+        )}
+
         {/* Decorative Elements */}
         <FloatingBlob position="top-left" variant="primary" size="md" animationVariant={1} />
         <FloatingBlob position="bottom-right" variant="accent" size="lg" animationVariant={2} />
@@ -71,6 +88,18 @@ const Index = () => {
               >
                 <Calendar className="h-4 w-4" />
                 {propertiesAvailable} properties available for booking
+              </motion.p>
+            )}
+
+            {heroProperty && heroImageUrl && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+                className="text-xs text-muted-foreground/70 flex items-center justify-center gap-1.5 mt-2"
+              >
+                <MapPin className="h-3 w-3" />
+                {heroProperty.display_name || heroProperty.name} — {heroProperty.city}, {heroProperty.country}
               </motion.p>
             )}
           </motion.div>
