@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Search, Pencil, MoreVertical } from 'lucide-react';
+import { Plus, Search, Pencil, MoreVertical, Library } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { AmenityDialog } from '@/components/admin/AmenityDialog';
@@ -127,10 +128,18 @@ export default function AdminAmenities() {
                 Manage property amenities and features
               </p>
             </div>
-            <Button onClick={openCreateDialog} className="rounded-full gap-2">
-              <Plus className="h-4 w-4" />
-              Add Amenity
-            </Button>
+            <div className="flex gap-2">
+              <Link to="/admin/amenities/icons">
+                <Button variant="outline" className="rounded-full gap-2">
+                  <Library className="h-4 w-4" />
+                  Icon Library
+                </Button>
+              </Link>
+              <Button onClick={openCreateDialog} className="rounded-full gap-2">
+                <Plus className="h-4 w-4" />
+                Add Amenity
+              </Button>
+            </div>
           </div>
 
           {/* Category Quick Filters */}

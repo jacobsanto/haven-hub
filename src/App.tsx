@@ -40,6 +40,7 @@ const AdminQuickOnboard = React.lazy(() => import("./pages/admin/AdminQuickOnboa
 const AdminBookings = React.lazy(() => import("./pages/admin/AdminBookings"));
 const AdminSettings = React.lazy(() => import("./pages/admin/AdminSettings"));
 const AdminAmenities = React.lazy(() => import("./pages/admin/AdminAmenities"));
+const AdminIconLibrary = React.lazy(() => import("./pages/admin/AdminIconLibrary"));
 const AdminDestinations = React.lazy(() => import("./pages/admin/AdminDestinations"));
 const AdminExperiences = React.lazy(() => import("./pages/admin/AdminExperiences"));
 const AdminExperienceEnquiries = React.lazy(() => import("./pages/admin/AdminExperienceEnquiries"));
@@ -108,6 +109,7 @@ const App = () => (
                 <Route path="/admin/bookings" element={<AdminBookings />} />
                 
                 <Route path="/admin/amenities" element={<AdminAmenities />} />
+                <Route path="/admin/amenities/icons" element={<AdminIconLibrary />} />
                 <Route path="/admin/destinations" element={<AdminDestinations />} />
                 <Route path="/admin/experiences" element={<AdminExperiences />} />
                 <Route path="/admin/experience-enquiries" element={<AdminExperienceEnquiries />} />
