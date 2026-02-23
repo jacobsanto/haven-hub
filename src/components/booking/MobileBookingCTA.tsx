@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { BookingWidget } from './BookingWidget';
+import { BookingFlowDialog } from '@/components/booking/BookingFlowDialog';
 import { Property, SpecialOffer } from '@/types/database';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -41,6 +42,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [checkIn, setCheckIn] = useState<Date | undefined>(initialCheckIn);
   const [checkOut, setCheckOut] = useState<Date | undefined>(initialCheckOut);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const { formatPrice } = useCurrency();
 
   // Real-time availability subscription
@@ -70,11 +72,8 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
 
   const handleQuickBook = useCallback(() => {
     triggerHaptic('success');
-    const params = new URLSearchParams({ property: property.slug, guests: String(guests) });
-    if (checkIn) params.set('checkIn', format(checkIn, 'yyyy-MM-dd'));
-    if (checkOut) params.set('checkOut', format(checkOut, 'yyyy-MM-dd'));
-    navigate(`/checkout?${params.toString()}`);
-  }, [navigate, property.slug, guests, checkIn, checkOut]);
+    setBookingDialogOpen(true);
+  }, []);
 
   const handleGuestChange = useCallback((delta: number) => {
     triggerHaptic('light');
@@ -310,6 +309,17 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
       
       {/* Spacer to prevent content from being hidden behind the CTA */}
       <div className="h-28 lg:hidden" />
+
+      {/* Booking Flow Dialog */}
+      <BookingFlowDialog
+        property={property}
+        specialOffer={specialOffer}
+        open={bookingDialogOpen}
+        onOpenChange={setBookingDialogOpen}
+        initialCheckIn={checkIn}
+        initialCheckOut={checkOut}
+        initialGuests={guests}
+      />
     </>
   );
 }
