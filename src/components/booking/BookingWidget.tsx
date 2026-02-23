@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
+import { BookingFlowDialog } from '@/components/booking/BookingFlowDialog';
 import { useCreateBooking } from '@/hooks/useBookings';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +36,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
   const [guests, setGuests] = useState(initialGuests || 1);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [checkOutOpen, setCheckOutOpen] = useState(false);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   
   // Request-based flow state (only used when instant_booking is false)
   const [guestName, setGuestName] = useState('');
@@ -67,25 +69,9 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
     }
   };
 
-  // Instant booking - route to checkout
+  // Instant booking - open dialog flow
   const handleInstantBook = () => {
-    if (!checkIn || !checkOut) {
-      toast({
-        title: 'Please select dates',
-        description: 'Choose your check-in and check-out dates.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const params = new URLSearchParams({
-      property: property.slug,
-      guests: String(guests),
-      checkIn: format(checkIn, 'yyyy-MM-dd'),
-      checkOut: format(checkOut, 'yyyy-MM-dd'),
-    });
-
-    navigate(`/checkout?${params.toString()}`);
+    setBookingDialogOpen(true);
   };
 
   // Request-based flow - continue through multi-step form
@@ -413,6 +399,17 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
           </p>
         </>
       )}
+
+      {/* Booking Flow Dialog for instant booking */}
+      <BookingFlowDialog
+        property={property}
+        specialOffer={specialOffer}
+        open={bookingDialogOpen}
+        onOpenChange={setBookingDialogOpen}
+        initialCheckIn={checkIn}
+        initialCheckOut={checkOut}
+        initialGuests={guests}
+      />
     </div>
   );
 }
