@@ -1,82 +1,95 @@
 
-# Replace All URL Text Inputs with Image Upload + AI Generation
 
-## Summary
-Six admin form dialogs still use plain text `<Input>` fields for image URLs instead of the existing `ImageUploadWithOptimizer` component. This plan replaces all of them with proper upload fields and adds an AI image generation button to each, so admins can either upload a photo or generate one contextually.
+# Fix AI Image Generation to Produce Location-Relevant Images
 
-## Forms to Update
+## Problem
+The current AI image generation produces generic, repetitive images because:
+1. **Prompts are too vague** -- they use generic photography jargon ("cinematic lighting", "editorial style") without specific visual details about the actual place
+2. **No backend prompt enrichment** -- the edge function passes the client prompt directly to the AI model without adding context
+3. **Fallback text is meaningless** -- when fields are empty, prompts default to "a destination" or "travel experience"
 
-| Form Dialog | Field | Context for AI Generation |
-|---|---|---|
-| `DestinationFormDialog.tsx` | `hero_image_url` | Destination name + country |
-| `ExperienceFormDialog.tsx` | `hero_image_url` | Experience name + category |
-| `BlogPostFormDialog.tsx` | `featured_image_url` | Blog post title + category |
-| `BlogAuthorFormDialog.tsx` | `avatar_url` | Author name (portrait style) |
-| `AddonFormDialog.tsx` | `image_url` | Addon name + category |
-| `PromotionalCampaignFormDialog.tsx` | `image_url` | Campaign title + description |
+## Solution
+Two changes: enhance the backend to build richer, context-aware prompts with a system message, and improve the client-side prompt templates to include more form fields.
 
 ## Changes
 
-### 1. New Edge Function: `generate-image`
-- Calls Lovable AI Gateway with `google/gemini-2.5-flash-image` model
-- Accepts a `prompt` string, returns a generated image
-- Uploads the generated image to the `property-images` bucket under `ai-generated/` path
-- Returns the public URL (not raw base64) to keep things lightweight
-- Handles 429/402 errors gracefully
+### 1. Upgrade the `generate-image` Edge Function
 
-### 2. New Component: `ImageFieldWithAI`
-A wrapper around `ImageUploadWithOptimizer` that adds an "Generate with AI" button.
+Instead of sending the raw user prompt as a single message, add a **system message** that instructs the model to generate a specific, realistic photograph of the described subject. Also accept an optional `context` object from the client with structured data (name, country, description, category) so the backend can build a much richer prompt.
 
-**Props:** Same as `ImageUploadWithOptimizer` plus:
-- `generatePrompt: string` -- the prompt to send for AI generation
-- `promptLabel?: string` -- tooltip or label describing what will be generated
+**Key changes:**
+- Accept `{ prompt, context }` where context is optional structured data
+- Add a system message that enforces realistic, location-specific imagery
+- Build an enriched prompt on the backend using the context fields
+- Log the final prompt for debugging
 
-**Behavior:**
-- Shows the standard upload area from `ImageUploadWithOptimizer`
-- Adds a "Generate Image" button below
-- On click, calls the `generate-image` edge function with the prompt
-- Shows a loading spinner while generating
-- On success, sets the value via `onUpload(url)`
+### 2. Update `ImageFieldWithAI` Component
 
-### 3. Update Each Form Dialog
-Replace the `<Input placeholder="https://...">` with `<ImageFieldWithAI>`:
+Pass a `context` object alongside the prompt so the backend has structured data to work with.
 
-- **DestinationFormDialog**: preset = `hero`, prompt built from destination name + country
-- **ExperienceFormDialog**: preset = `hero`, prompt built from experience name + category  
-- **BlogPostFormDialog**: preset = `hero`, prompt built from post title
-- **BlogAuthorFormDialog**: preset = `logo` (smaller dimensions for avatar), prompt = professional portrait description
-- **AddonFormDialog**: preset = `gallery`, prompt from addon name + category
-- **PromotionalCampaignFormDialog**: preset = `hero`, prompt from campaign title
+### 3. Improve Prompt Templates in Each Form Dialog
 
-Each form's zod schema for the image field stays as `z.string().optional().or(z.literal(''))` -- no schema changes needed since the component now provides a URL string.
+Make prompts reference more fields from the form (description, climate, long_description) so the AI has real content to work with.
 
-### 4. Update `config.toml`
-Add the new `generate-image` function with `verify_jwt = false`.
+| Form | Current Prompt Uses | Will Now Also Use |
+|---|---|---|
+| DestinationFormDialog | name, country | description, climate, best_time_to_visit |
+| ExperienceFormDialog | name, category | description, duration, destination name |
+| BlogPostFormDialog | title | category, excerpt/content hint |
+| BlogAuthorFormDialog | name | bio snippet |
+| AddonFormDialog | name, category | description |
+| PromotionalCampaignFormDialog | title, description | discount type, target |
 
 ## Technical Details
 
-### Edge Function (`supabase/functions/generate-image/index.ts`)
+### Edge Function Changes (`supabase/functions/generate-image/index.ts`)
+
 ```text
-1. Receive POST { prompt: string }
-2. Call Lovable AI gateway with gemini-2.5-flash-image model + modalities: ["image", "text"]
-3. Extract base64 image from response
-4. Upload to property-images bucket under ai-generated/{timestamp}.webp
-5. Return { url: publicUrl }
+Current flow:
+  Client sends { prompt } -> model receives [{ role: "user", content: prompt }]
+
+New flow:
+  Client sends { prompt, context } -> backend builds enriched prompt ->
+  model receives [
+    { role: "system", content: "You are a professional travel photographer..." },
+    { role: "user", content: enrichedPrompt }
+  ]
 ```
 
-### ImageFieldWithAI Component
-- Located at `src/components/admin/ImageFieldWithAI.tsx`
-- Composes `ImageUploadWithOptimizer` + a "Generate" button
-- Uses `supabase.functions.invoke('generate-image', { body: { prompt } })`
-- Loading state with spinner, error handling with toast
+The system message will instruct:
+- Generate a realistic, high-resolution photograph (not illustration, not stock photo)
+- The image must depict the specific location, landmark, or scene described
+- Include distinctive local architecture, vegetation, colors, and atmosphere
+- No text overlays, no watermarks, no borders
+
+The enriched prompt will combine:
+- The base prompt from the client
+- Structured context fields (country, climate, description) woven into a detailed scene description
+
+### Client-Side Prompt Improvements (Example: Destination)
+
+Before:
+```
+Beautiful high-resolution travel hero photograph of ${name || 'a destination'},
+${country || 'scenic landscape'}. Ultra high resolution, cinematic lighting...
+```
+
+After:
+```
+A breathtaking photograph of ${name}, ${country}.
+${description ? `The scene shows: ${description}.` : ''}
+${climate ? `The climate is ${climate}.` : ''}
+Capture the distinctive architecture, natural landscape, and atmosphere
+unique to this specific location.
+```
 
 ### File Changes Summary
-- **New**: `supabase/functions/generate-image/index.ts`
-- **New**: `src/components/admin/ImageFieldWithAI.tsx`
-- **Edit**: `supabase/config.toml` (add function entry)
-- **Edit**: `src/components/admin/DestinationFormDialog.tsx`
-- **Edit**: `src/components/admin/ExperienceFormDialog.tsx`
-- **Edit**: `src/components/admin/BlogPostFormDialog.tsx`
-- **Edit**: `src/components/admin/BlogAuthorFormDialog.tsx`
-- **Edit**: `src/components/admin/AddonFormDialog.tsx`
-- **Edit**: `src/components/admin/PromotionalCampaignFormDialog.tsx`
+- **Edit**: `supabase/functions/generate-image/index.ts` -- add system message and context-aware prompt building
+- **Edit**: `src/components/admin/ImageFieldWithAI.tsx` -- pass context object alongside prompt
+- **Edit**: `src/components/admin/DestinationFormDialog.tsx` -- richer prompt with description, climate
+- **Edit**: `src/components/admin/ExperienceFormDialog.tsx` -- include description, destination context
+- **Edit**: `src/components/admin/BlogPostFormDialog.tsx` -- include category context
+- **Edit**: `src/components/admin/BlogAuthorFormDialog.tsx` -- include bio snippet
+- **Edit**: `src/components/admin/AddonFormDialog.tsx` -- include description
+- **Edit**: `src/components/admin/PromotionalCampaignFormDialog.tsx` -- include more campaign details
+
