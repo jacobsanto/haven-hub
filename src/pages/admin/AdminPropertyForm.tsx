@@ -96,6 +96,7 @@ export default function AdminPropertyForm() {
     latitude: null as number | null,
     longitude: null as number | null,
     postal_code: null as string | null,
+    area_sqm: null as number | null,
   });
 
   const [uploading, setUploading] = useState(false);
@@ -138,6 +139,7 @@ export default function AdminPropertyForm() {
         latitude: existingProperty.latitude ?? null,
         longitude: existingProperty.longitude ?? null,
         postal_code: existingProperty.postal_code || null,
+        area_sqm: (existingProperty as any).area_sqm ?? null,
       });
     }
   }, [existingProperty]);
@@ -611,6 +613,24 @@ export default function AdminPropertyForm() {
                         bathrooms: parseFloat(e.target.value) || 1,
                       }))
                     }
+                    className="input-organic"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="area_sqm">Size (m²)</Label>
+                  <Input
+                    id="area_sqm"
+                    type="number"
+                    min={0}
+                    value={formData.area_sqm ?? ''}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        area_sqm: e.target.value ? parseInt(e.target.value) : null,
+                      }))
+                    }
+                    placeholder="e.g., 250"
                     className="input-organic"
                   />
                 </div>

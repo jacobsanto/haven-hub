@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import * as LucideIcons from 'lucide-react';
-import { LucideIcon, Sparkles } from 'lucide-react';
+import { LucideIcon, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAmenityMap, Amenity } from '@/hooks/useAmenities';
 import {
@@ -8,6 +8,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 // Fallback icon and label maps for amenities not in the database
 const fallbackIconMap: Record<string, string> = {
@@ -76,6 +81,8 @@ interface AmenityListProps {
   amenities: string[];
   variant?: 'grid' | 'list' | 'compact';
   showDescriptions?: boolean;
+  collapsible?: boolean;
+  initialVisible?: number;
   className?: string;
 }
 
@@ -83,9 +90,12 @@ export function AmenityList({
   amenities, 
   variant = 'grid', 
   showDescriptions = false,
+  collapsible = false,
+  initialVisible = 8,
   className 
 }: AmenityListProps) {
   const amenityMap = useAmenityMap();
+  const [isOpen, setIsOpen] = useState(false);
 
   // Enrich amenities with database data or fallbacks
   const enrichedAmenities = useMemo(() => {
@@ -221,29 +231,83 @@ export function AmenityList({
     );
   }
 
-  // Default grid variant
+  // Default grid variant — with optional collapsible
+  const visibleAmenities = collapsible && !isOpen 
+    ? enrichedAmenities.slice(0, initialVisible) 
+    : enrichedAmenities;
+  const hiddenCount = enrichedAmenities.length - initialVisible;
+
   return (
-    <div className={cn('grid grid-cols-2 md:grid-cols-3 gap-3', className)}>
-      {enrichedAmenities.map((amenity) => {
-        const Icon = getIconComponent(amenity.icon);
-        return (
-          <Tooltip key={amenity.slug}>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-3 p-3 border border-border/50 rounded-xl cursor-default">
-                <span className="text-foreground/60">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <span className="text-sm">{amenity.name}</span>
-              </div>
-            </TooltipTrigger>
-            {amenity.description && (
-              <TooltipContent side="top" className="max-w-xs bg-popover">
-                <p className="text-sm">{amenity.description}</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        );
-      })}
+    <div className={cn('space-y-4', className)}>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {visibleAmenities.map((amenity) => {
+          const Icon = getIconComponent(amenity.icon);
+          return (
+            <Tooltip key={amenity.slug}>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-3 p-3 border border-border/50 rounded-xl cursor-default">
+                  <span className="text-foreground/60">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="text-sm">{amenity.name}</span>
+                </div>
+              </TooltipTrigger>
+              {amenity.description && (
+                <TooltipContent side="top" className="max-w-xs bg-popover">
+                  <p className="text-sm">{amenity.description}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          );
+        })}
+      </div>
+
+      {collapsible && hiddenCount > 0 && (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              {isOpen ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Show fewer amenities
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Show all {enrichedAmenities.length} amenities
+                </>
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+              {enrichedAmenities.slice(initialVisible).map((amenity) => {
+                const Icon = getIconComponent(amenity.icon);
+                return (
+                  <Tooltip key={amenity.slug}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-3 p-3 border border-border/50 rounded-xl cursor-default">
+                        <span className="text-foreground/60">
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="text-sm">{amenity.name}</span>
+                      </div>
+                    </TooltipTrigger>
+                    {amenity.description && (
+                      <TooltipContent side="top" className="max-w-xs bg-popover">
+                        <p className="text-sm">{amenity.description}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </div>
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE properties ADD COLUMN area_sqm integer;

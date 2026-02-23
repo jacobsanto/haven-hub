@@ -8,7 +8,7 @@ export type PropertyType = 'villa' | 'apartment' | 'estate' | 'cottage' | 'penth
 
 // Room configuration for property
 export interface RoomConfig {
-  type: 'bedroom' | 'bathroom' | 'living' | 'kitchen' | 'dining' | 'office';
+  type: 'bedroom' | 'bathroom' | 'living' | 'kitchen' | 'dining' | 'office' | 'terrace' | 'balcony' | 'laundry' | 'garage' | 'storage' | 'outdoor';
   name: string;
   beds?: { type: 'king' | 'queen' | 'double' | 'twin' | 'sofa'; count: number }[];
   features?: string[];
@@ -63,6 +63,7 @@ export interface Property {
   longitude: number | null;
   postal_code: string | null;
   short_description: string | null;
+  area_sqm: number | null;
 }
 
 export interface SeasonalRate {

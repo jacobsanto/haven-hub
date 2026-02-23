@@ -256,7 +256,9 @@ export default function PropertyDetail() {
                 <AmenityList 
                   amenities={property.amenities} 
                   variant="grid" 
-                  showDescriptions={true}
+                  showDescriptions={false}
+                  collapsible={true}
+                  initialVisible={8}
                 />
               </section>
             )}

@@ -7,6 +7,12 @@ import {
   Laptop2,
   BedDouble,
   BedSingle,
+  TreePalm,
+  Fence,
+  WashingMachine,
+  Car,
+  Sun,
+  Archive,
 } from 'lucide-react';
 import { RoomConfig } from '@/types/database';
 import { cn } from '@/lib/utils';
@@ -25,6 +31,12 @@ const roomTypeIcons: Record<string, React.FC<{ className?: string }>> = {
   kitchen: ChefHat,
   dining: UtensilsCrossed,
   office: Laptop2,
+  terrace: TreePalm,
+  balcony: Fence,
+  laundry: WashingMachine,
+  garage: Car,
+  storage: Archive,
+  outdoor: Sun,
 };
 
 const bedTypeIcons: Record<string, React.FC<{ className?: string }>> = {
@@ -158,23 +170,32 @@ export function RoomBreakdown({
       {/* Other Rooms */}
       {otherRooms.length > 0 && (
         <div>
-          <h4 className="font-medium mb-4">Other Spaces</h4>
+          <h4 className="font-medium mb-4">Living Spaces & Outdoor Areas</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {otherRooms.map((room, index) => {
               const Icon = roomTypeIcons[room.type] || Sofa;
               return (
                 <div
                   key={index}
-                  className="border border-border/50 rounded-xl p-4 flex items-center gap-3"
+                  className="border border-border/50 rounded-xl p-4"
                 >
-                  <Icon className="h-5 w-5 text-foreground/60 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">{room.name}</p>
-                    {room.features && room.features.length > 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        {room.features.join(', ')}
-                      </p>
-                    )}
+                  <div className="flex items-start gap-3">
+                    <Icon className="h-5 w-5 text-foreground/60 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium">{room.name}</p>
+                      {room.features && room.features.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {room.features.map((feature, fIndex) => (
+                            <span
+                              key={fIndex}
+                              className="text-xs px-2 py-0.5 border border-border/50 rounded-full text-muted-foreground"
+                            >
+                              {feature}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
