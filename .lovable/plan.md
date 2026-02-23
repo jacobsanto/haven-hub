@@ -1,76 +1,111 @@
 
-# Redesign Checkout Page to Match Reference Layout
+# Booking Flow Redesign: Dialog Steps + Redesigned Confirmation
 
-## Current State
-The checkout page has 4 steps: **Dates > Addons > Guest > Payment**, each shown separately. The stepper is a simple text-based row. The payment step is a simple button that redirects to Stripe Checkout.
+## Overview
 
-## Target State (from screenshots)
-Restructure into a cleaner 4-step flow with a visual numbered stepper, combining add-ons and guest info into one "Details" step, and creating a polished "Review and Pay" final step with a two-column layout.
+Move Steps 1-3 (Dates, Guests, Details) into a modal dialog triggered by "Book Now" / "Instant Book" buttons. Step 4 (Review and Pay) stays on the full `/checkout` page. The confirmation page gets a visual redesign.
 
-## New Step Structure
+## Flow Summary
 
-| Step | Label | Content |
-|------|-------|---------|
-| 1 | Dates | Calendar + guest count selector (unchanged) |
-| 2 | Guests | Guest count breakdown (adults/children) -- merged into step 1 already, so this becomes optional or kept as-is |
-| 3 | Details | Add-ons selection + Guest Information form combined on one screen |
-| 4 | Payment | Two-column layout: Left = property card + booking summary + price breakdown + cancellation policy. Right = Preferences and Terms + "Confirm and Pay" button (Stripe redirect) |
+```text
+User clicks "Book Now" on property page
+  --> Dialog opens (Steps 1-3)
+    Step 1: "Select Your Dates" - property card, calendar, check-in/check-out/duration bar
+    Step 2: "Number of Guests" - property card with dates, guest counter, estimated total
+    Step 3: "Enhance Your Stay" - add-ons + guest info form
+  --> "Continue to Payment" navigates to /checkout page
+    Step 4: "Review & Pay" - full page, two-column layout (existing)
+  --> Stripe redirect
+  --> Redesigned "Booking Confirmed!" page
+```
 
-Looking at the screenshots more carefully, steps 1 and 2 are already completed (checkmarks), so the flow is:
-- **Step 1: Dates** (calendar + guest count)
-- **Step 2: Guests** (keep current adult/children breakdown from GuestForm, or merge into step 1)
-- **Step 3: Details** ("Enhance Your Stay" -- add-ons + guest info form combined)
-- **Step 4: Payment** ("Review and Pay" -- summary sidebar left, payment action right)
+## New Component: `BookingFlowDialog`
 
-## Changes
+**File:** `src/components/booking/BookingFlowDialog.tsx`
 
-### 1. `src/pages/Checkout.tsx` -- Major restructure
+A new Dialog component that encapsulates Steps 1-3 of the booking flow. It will:
 
-**Stepper redesign:**
-- Replace the text-based step pills with numbered circles connected by lines
-- Completed steps show a checkmark icon inside the circle
-- Current step is highlighted (filled navy circle with number)
-- Future steps are outlined circles with number
+- Accept `property` and `specialOffer` as props, plus optional initial dates/guests
+- Contain the same numbered stepper (circles with lines, checkmarks for completed steps) -- but without labels (just numbers, matching the screenshots)
+- Show a **property card** at the top of each step (image thumbnail + name + location, and on step 2+ also dates/nights)
+- **Step 1 "Select Your Dates"**: Full 2-month `AvailabilityCalendar`, a summary bar showing CHECK-IN / CHECK-OUT / DURATION, Cancel + "Next: Guests" buttons
+- **Step 2 "Number of Guests"**: Centered "How many guests?" with max display, +/- counter, estimated total (rate x nights), Back + "Continue to Book" buttons
+- **Step 3 "Enhance Your Stay"**: `AddonsSelection` + `GuestForm` (with `hidePreferences`), Back + "Continue to Payment" buttons
+- On completing Step 3, navigate to `/checkout?property=...&checkIn=...&checkOut=...&guests=...&adults=...&children=...` with addon and guest info stored in sessionStorage (to avoid huge URL params)
 
-**Step 3 "Details" (combined):**
-- Show "Enhance Your Stay" heading with subtitle "Customize your experience and let us know a bit about you."
-- Render `AddonsSelection` component
-- Below it, render the guest information fields from `GuestForm` (name, email, phone, country)
-- Move special requests into this step
-- "Continue to Payment" button at the bottom
+This dialog is rendered as a `Dialog` on desktop and a full-screen `Drawer` on mobile.
 
-**Step 4 "Payment" (two-column Review and Pay):**
-- Left column (sidebar): Property card with image, location, star rating. Below: dates, nights, guests, extras summary. Below: itemized price breakdown (accommodation x nights, cleaning fee, service fee, discounts, add-on totals). Below: total in EUR. Below: cancellation policy card.
-- Right column (main): "Review and Pay" heading. Preferences and Terms section (marketing consent checkbox, terms acceptance checkbox). "Confirm and Pay [total]" button with lock icon that redirects to Stripe Checkout. Security note below.
-- Note: We keep the Stripe Checkout redirect approach (not inline card fields) since that is our established payment architecture for PCI compliance.
+## Changes to Existing Files
 
-### 2. `src/components/booking/GuestForm.tsx` -- Minor adjustment
+### 1. `src/components/booking/BookingWidget.tsx`
+- Update `handleInstantBook` to open `BookingFlowDialog` instead of navigating directly to `/checkout`
+- Import and render `BookingFlowDialog`, passing current dates/guests as initial values
 
-- Extract guest info fields so they can be used standalone (the form already works with `id="guest-form"`)
-- Move "Preferences and Terms" (marketing consent + terms checkboxes) out of GuestForm and into the Payment step, since the reference shows them on the payment screen
-- Add a prop like `hidePreferences` to optionally hide the Preferences and Terms section when rendered in the Details step
+### 2. `src/components/booking/MobileBookingCTA.tsx`
+- Update `handleQuickBook` to open `BookingFlowDialog` instead of navigating to `/checkout`
+- Import and render `BookingFlowDialog`
 
-### 3. `src/components/booking/PaymentStep.tsx` -- Redesign
+### 3. `src/pages/Checkout.tsx`
+- Remove Steps 1-3 UI (dates, guests, details)
+- The page now only shows Step 4 (Review and Pay)
+- Read guest info and addons from sessionStorage (set by the dialog)
+- Read dates, guests, adults, children from URL params (as before)
+- Stepper still shows all 4 steps but steps 1-3 are pre-completed (checkmarks)
+- Clicking completed steps 1-3 in stepper navigates back to property page (or opens dialog -- we'll navigate back for simplicity)
 
-- Remove the standalone payment method cards (credit card, Apple Pay, etc.) display since Stripe handles that
-- Show "Confirm and Pay [total]" as the primary CTA with a lock icon
-- Add security note: "Your payment information is encrypted and secure."
-- Accept the preferences/terms state from parent (marketing consent, terms accepted)
+### 4. `src/pages/PaymentSuccess.tsx`
+- Redesign to match the "Booking Confirmed!" screenshot:
+  - Large checkmark icon in a circle (orange/primary accent)
+  - "Booking Confirmed!" heading
+  - Subtitle: "Your stay at Haven Hub is locked in! We've sent a confirmation email to your inbox."
+  - Property card with image, name, confirmation number (orange badge), location
+  - Grid: CHECK-IN date, CHECK-OUT date, GUESTS count, ROOM TYPE
+  - Total Price Paid bar
+  - "View My Bookings" button (primary, full-width)
+  - "Receipt" and "Share" buttons side by side
+  - "Need help with your booking? Contact Support" link at bottom
 
-## Technical Notes
+## Data Flow Between Dialog and Checkout Page
 
-- No database changes required
-- No new edge functions needed
-- The Stripe Checkout redirect flow remains unchanged
-- `GuestForm` continues to handle Zod validation for guest fields
-- The combined Details step will use the same `guest-form` form ID for submission
-- Price breakdown calculation logic stays the same
-- Real-time availability subscription stays the same
+The dialog stores transient booking state in **sessionStorage** before navigating:
 
-## Files Modified
+```text
+sessionStorage key: "haven-hub-checkout-state"
+Value: JSON.stringify({
+  guestInfo: { firstName, lastName, email, phone, country, specialRequests },
+  selectedAddons: [...],
+  adults: number,
+  children: number,
+})
+```
+
+The Checkout page reads this on mount, then clears it. URL params carry: `property`, `checkIn`, `checkOut`, `guests`.
+
+## Technical Details
+
+### BookingFlowDialog stepper
+- No labels, just numbered circles connected by lines (matching screenshots)
+- Completed steps show checkmark, current step is filled navy, future steps are outlined
+
+### Dialog sizing
+- Desktop: `max-w-2xl` Dialog with scroll
+- Mobile: Full-screen Drawer (using vaul)
+
+### State management
+- Dialog manages its own local state for dates, guests, addons, guest info
+- No changes to BookingContext needed
+- Checkout hold creation moves into the dialog (Step 1, after date selection)
+
+### Estimated total (Step 2)
+- Shows `base_price x nights` as a simple estimate
+- Full price breakdown with fees/taxes only appears on Checkout page
+
+## Files Summary
 
 | File | Change |
 |------|--------|
-| `src/pages/Checkout.tsx` | Redesign stepper, combine steps 3 (Details), restructure step 4 (Review and Pay) two-column layout |
-| `src/components/booking/GuestForm.tsx` | Add `hidePreferences` prop to hide terms/marketing when used in Details step |
-| `src/components/booking/PaymentStep.tsx` | Simplify to show "Confirm and Pay" CTA with terms/preferences inline |
+| `src/components/booking/BookingFlowDialog.tsx` | **New** -- 3-step dialog for dates, guests, details |
+| `src/components/booking/BookingWidget.tsx` | Open dialog instead of navigating to /checkout |
+| `src/components/booking/MobileBookingCTA.tsx` | Open dialog instead of navigating to /checkout |
+| `src/pages/Checkout.tsx` | Remove steps 1-3, only show step 4 (Review and Pay), read state from sessionStorage |
+| `src/pages/PaymentSuccess.tsx` | Redesign to match "Booking Confirmed!" reference |
