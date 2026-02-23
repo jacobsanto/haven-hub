@@ -32,6 +32,7 @@ const CATEGORIES = [
   'Family',
   'Accessibility',
   'Luxury',
+  'Safety',
 ];
 
 interface AmenityDialogProps {
