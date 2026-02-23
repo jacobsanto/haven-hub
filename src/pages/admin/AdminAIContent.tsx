@@ -58,6 +58,7 @@ export default function AdminAIContent() {
         country: p.country,
         bedrooms: p.bedrooms,
         bathrooms: p.bathrooms,
+        short_description: p.short_description,
         description: p.description,
         amenities: p.amenities,
       },
@@ -124,6 +125,7 @@ export default function AdminAIContent() {
     const { error } = await supabase
       .from('properties')
       .update({
+        short_description: propContent.short_description,
         description: propContent.description,
         highlights: propContent.highlights,
         neighborhood_description: propContent.neighborhood_description,
