@@ -1,67 +1,41 @@
 
 
-# Enriched Property Description and Neighborhood Section
+# Add `short_description` to AI Content Generator
 
-## Problem
+## What Changes
 
-Currently, both the property description and neighborhood description are rendered as plain, single-paragraph text blocks. There is no structure, no visual hierarchy, and no way to manage a short intro vs. a longer detailed description from the admin dashboard.
+The recently added `short_description` field for properties needs to be wired into the AI content generation pipeline so that when you generate property content, it also produces a compelling short intro paragraph.
 
-## Solution
+## Changes Required
 
-### 1. Database: Add a `short_description` Column
+### 1. Edge Function (`supabase/functions/generate-content/index.ts`)
 
-Add a new `short_description` text column to the `properties` table. This serves as the "hook" paragraph -- always visible, editorial-quality intro text. The existing `description` field becomes the full/extended description that appears behind a "Read more" collapsible.
+- Add `short_description` to the property tool definition schema with description: *"A compelling 1-2 sentence editorial hook that is always visible to guests"*
+- Add `short_description` to the property fields list so the AI is required to generate it
+- Update the property system prompt to instruct the AI to produce a short editorial intro separately from the full description
 
-### 2. Admin Dashboard Changes (`AdminPropertyForm.tsx`)
+### 2. TypeScript Types (`src/hooks/useAIContent.ts`)
 
-**Description section** gets restructured into two fields:
+- Add `short_description: string` to the `PropertyContent` interface
 
-- **Short Description** (new) -- a smaller textarea with placeholder guidance: *"A compelling 1-2 sentence intro that is always visible to guests"*
-- **Full Description** (existing `description` field) -- renamed label to "Full Description", with guidance: *"Detailed property description. Use blank lines to separate paragraphs."*
+### 3. AI Content Generator UI (`src/components/admin/AIContentGenerator.tsx`)
 
-**Location and Neighborhood section** -- add a dedicated collapsible card in the admin form with:
-- **Neighborhood Description** textarea (currently exists in data but has no form field)
-- Helper text: *"Describe the area, vibe, and what makes the location special"*
+- Add `short_description` to the property field labels map so it displays as "Short Description (Intro)" in the generated content preview
 
-### 3. Frontend: Property Detail Page
+### 4. Apply Handler (`src/pages/admin/AdminAIContent.tsx`)
 
-**Overview Section** redesign:
-- The `short_description` renders as a styled lead paragraph (larger text, serif font, slightly darker) -- always visible
-- The `description` renders below it, split by double-newlines into proper `<p>` tags with relaxed leading
-- If the full description exceeds ~3 paragraphs, it collapses with a smooth "Read more / Read less" toggle using Radix Collapsible
-- A decorative drop-cap on the first letter of the short description for editorial flair
+- Include `short_description` in the `handleApplyProperty` database update so it saves to the properties table
 
-**Location and Neighborhood** redesign in `NeighborhoodInfo.tsx`:
-- The neighborhood description gets the same paragraph-splitting treatment
-- If longer than 2 paragraphs, it collapses with "Read more about this area"
-- Add a subtle quote-style accent border on the left side of the description block
+### 5. Property Items Data (`src/pages/admin/AdminAIContent.tsx`)
 
-### 4. Files Changed
+- Include existing `short_description` in the `propertyItems` existingData so the AI can reference it when regenerating
+
+## Files Changed
 
 | File | Change |
 |------|--------|
-| Database migration | Add `short_description TEXT` column to `properties` |
-| `src/pages/admin/AdminPropertyForm.tsx` | Split description into Short + Full fields; add Neighborhood Description textarea |
-| `src/pages/PropertyDetail.tsx` | Render short_description as lead paragraph, collapsible full description |
-| `src/components/properties/NeighborhoodInfo.tsx` | Paragraph splitting, collapsible long text, accent styling |
-
-### 5. Technical Details
-
-**Paragraph splitting utility:**
-```text
-function splitParagraphs(text: string): string[]
-  - Split on double newlines (\n\n)
-  - Filter empty strings
-  - Trim each paragraph
-```
-
-**Collapsible threshold:**
-- Property description: collapse after showing first 2 paragraphs (if total > 3)
-- Neighborhood description: collapse after showing first paragraph (if total > 2)
-
-**No markdown rendering** -- these are plain text fields, not blog content. Paragraphs only.
-
-**Admin form state additions:**
-- `short_description: null as string | null` added to formData
-- Neighborhood description textarea wired to existing `neighborhood_description` field
+| `supabase/functions/generate-content/index.ts` | Add `short_description` to property schema, fields list, and prompt |
+| `src/hooks/useAIContent.ts` | Add `short_description` to `PropertyContent` interface |
+| `src/components/admin/AIContentGenerator.tsx` | Add field label for `short_description` |
+| `src/pages/admin/AdminAIContent.tsx` | Include in apply handler and existingData |
 
