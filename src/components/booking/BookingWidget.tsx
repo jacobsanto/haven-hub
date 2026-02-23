@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
-import { Calendar, Users, Zap, Clock } from 'lucide-react';
+import { Calendar, Users, Zap, Clock, Star, Shield, CreditCard, Percent, Bed, Bath } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { BookingFlowDialog } from '@/components/booking/BookingFlowDialog';
 import { useCreateBooking } from '@/hooks/useBookings';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
@@ -34,8 +34,6 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
   const [checkIn, setCheckIn] = useState<Date | undefined>(initialCheckIn);
   const [checkOut, setCheckOut] = useState<Date | undefined>(initialCheckOut);
   const [guests, setGuests] = useState(initialGuests || 1);
-  const [checkInOpen, setCheckInOpen] = useState(false);
-  const [checkOutOpen, setCheckOutOpen] = useState(false);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
 
   // Request-based flow state (only used when instant_booking is false)
@@ -55,19 +53,9 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
   const discountFormatted = formatPrice(discountAmount);
   const totalFormatted = formatPrice(totalPrice);
 
-  // Handle date selection from AvailabilityCalendar
-  const handleDateSelect = (date: Date, type: 'checkIn' | 'checkOut') => {
-    if (type === 'checkIn') {
-      setCheckIn(date);
-      setCheckOut(undefined);
-      setCheckInOpen(false);
-      // Auto-open checkout picker after selecting check-in
-      setTimeout(() => setCheckOutOpen(true), 100);
-    } else {
-      setCheckOut(date);
-      setCheckOutOpen(false);
-    }
-  };
+  const discountedNightly = specialOffer
+    ? formatPrice(property.base_price * (1 - specialOffer.discount_percent / 100))
+    : null;
 
   // Instant booking - open dialog flow
   const handleInstantBook = () => {
@@ -139,270 +127,230 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
     }
   };
 
-  // Shared date/guest picker component with real availability
-  const DateGuestPicker = () => { return null; };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  // Price breakdown shared between flows
+  const PriceBreakdownBlock = () => {
+    if (nights <= 0) return null;
+    return (
+      <div className="space-y-3 pt-4 border-t border-border">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">
+            {basePriceFormatted.display} × {nights} night{nights > 1 ? 's' : ''}
+          </span>
+          <span className="font-medium">{baseTotalFormatted.display}</span>
+        </div>
+        {specialOffer && discountAmount > 0 && (
+          <div className="flex justify-between text-sm text-accent-foreground">
+            <span className="flex items-center gap-1">
+              <Percent className="h-3 w-3" />
+              {specialOffer.title} (-{specialOffer.discount_percent}%)
+            </span>
+            <span className="font-medium">-{discountFormatted.display}</span>
+          </div>
+        )}
+        <Separator />
+        <div className="flex justify-between items-baseline">
+          <span className="font-semibold text-foreground">Total</span>
+          <span className="text-xl font-bold font-serif text-foreground">{totalFormatted.display}</span>
+        </div>
+        {totalFormatted.isConverted && (
+          <div className="text-xs text-muted-foreground text-right">
+            {totalFormatted.original} · You pay in EUR
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Trust indicators for below CTA
+  const TrustIndicators = () => (
+    <div className="space-y-2 pt-2">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Shield className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+        <span>Best price guarantee</span>
+      </div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <CreditCard className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+        <span>Secure payment · No hidden fees</span>
+      </div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Clock className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+        <span>Free cancellation up to 48h before</span>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="border border-border/50 rounded-xl p-6 space-y-6 shadow-sm lg:sticky lg:top-24">
-      {/* Price Header */}
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold font-serif text-foreground">
-          {basePriceFormatted.display}
-        </span>
-        <span className="text-sm text-muted-foreground">/night</span>
-      </div>
+    <div className="border border-border/50 rounded-xl overflow-hidden shadow-sm lg:sticky lg:top-24">
+      {/* Special Offer Banner */}
+      {specialOffer && (
+        <div className="bg-accent/15 border-b border-accent/20 px-6 py-3 flex items-center gap-2">
+          <Percent className="h-4 w-4 text-accent-foreground" />
+          <span className="text-sm font-medium text-accent-foreground">
+            {specialOffer.title} — Save {specialOffer.discount_percent}%
+          </span>
+        </div>
+      )}
 
-
-
-
-
-      {/* INSTANT BOOKING FLOW */}
-      {property.instant_booking ?
-      <>
-          <DateGuestPicker />
-          
-          {/* Price Breakdown */}
-          {nights > 0 &&
-        <div className="space-y-3 pt-4 border-t border-border">
-              <div className="flex justify-between text-sm">
-                <span>
-                  {basePriceFormatted.display} × {nights} nights
+      <div className="p-6 space-y-5">
+        {/* Price Header */}
+        <div>
+          <div className="flex items-baseline gap-2">
+            {specialOffer && discountedNightly ? (
+              <>
+                <span className="text-2xl font-bold font-serif text-foreground">
+                  {discountedNightly.display}
                 </span>
-                <span>{baseTotalFormatted.display}</span>
-              </div>
-              {specialOffer && discountAmount > 0 &&
-          <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
-                  <span>
-                    {specialOffer.title} (-{specialOffer.discount_percent}%)
-                  </span>
-                  <span>-{discountFormatted.display}</span>
-                </div>
-          }
-              <div className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>{totalFormatted.display}</span>
-              </div>
-              {totalFormatted.isConverted &&
-          <div className="text-xs text-muted-foreground text-right">
-                  {totalFormatted.original} · You pay in EUR
-                </div>
-          }
-            </div>
-        }
-
-          {/* Instant Book Button */}
-          <Button onClick={handleInstantBook} className="w-full btn-organic">
-            <Zap className="h-4 w-4" />
-            Book & Pay Now
-          </Button>
-
-          <p className="text-xs text-center text-muted-foreground">
-            Secure payment processing
-          </p>
-        </> : (
-
-      /* REQUEST-BASED BOOKING FLOW */
-      <>
-          {step === 'dates' && <DateGuestPicker />}
-
-          {step === 'details' &&
-        <div className="space-y-4">
-              <Input
-            placeholder="Full Name *"
-            value={guestName}
-            onChange={(e) => setGuestName(e.target.value)}
-            className="input-organic" />
-
-              <Input
-            type="email"
-            placeholder="Email Address *"
-            value={guestEmail}
-            onChange={(e) => setGuestEmail(e.target.value)}
-            className="input-organic" />
-
-              <Input
-            type="tel"
-            placeholder="Phone Number (optional)"
-            value={guestPhone}
-            onChange={(e) => setGuestPhone(e.target.value)}
-            className="input-organic" />
-
-              <Button
-            variant="ghost"
-            onClick={() => setStep('dates')}
-            className="w-full">
-
-                ← Back to dates
-              </Button>
-            </div>
-        }
-
-          {step === 'confirm' &&
-        <div className="space-y-4">
-              <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Check-in</span>
-                  <span className="font-medium">{checkIn && format(checkIn, 'MMM d, yyyy')}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Check-out</span>
-                  <span className="font-medium">{checkOut && format(checkOut, 'MMM d, yyyy')}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Guests</span>
-                  <span className="font-medium">{guests}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Guest Name</span>
-                  <span className="font-medium">{guestName}</span>
-                </div>
-              </div>
-              <Button
-            variant="ghost"
-            onClick={() => setStep('details')}
-            className="w-full">
-
-                ← Edit details
-              </Button>
-            </div>
-        }
-
-          {/* Price Breakdown */}
-          {nights > 0 &&
-        <div className="space-y-3 pt-4 border-t border-border">
-              <div className="flex justify-between text-sm">
-                <span>
-                  {basePriceFormatted.display} × {nights} nights
+                <span className="text-base text-muted-foreground line-through">
+                  {basePriceFormatted.display}
                 </span>
-                <span>{baseTotalFormatted.display}</span>
-              </div>
-              {specialOffer && discountAmount > 0 &&
-          <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
-                  <span>
-                    {specialOffer.title} (-{specialOffer.discount_percent}%)
-                  </span>
-                  <span>-{discountFormatted.display}</span>
-                </div>
-          }
-              <div className="flex justify-between font-semibold">
-                <span>Total</span>
-                <span>{totalFormatted.display}</span>
-              </div>
-              {totalFormatted.isConverted &&
-          <div className="text-xs text-muted-foreground text-right">
-                  {totalFormatted.original} · You pay in EUR
-                </div>
-          }
-            </div>
-        }
+              </>
+            ) : (
+              <span className="text-2xl font-bold font-serif text-foreground">
+                {basePriceFormatted.display}
+              </span>
+            )}
+            <span className="text-sm text-muted-foreground">/night</span>
+          </div>
+          {basePriceFormatted.isConverted && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {basePriceFormatted.original} · Prices shown in {selectedCurrency}
+            </p>
+          )}
+        </div>
 
-          {/* Action Button */}
-          {step === 'confirm' ?
-        <Button
-          onClick={handleRequestBooking}
-          disabled={createBooking.isPending}
-          className="w-full btn-organic">
+        {/* Property Quick Stats */}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Bed className="h-3.5 w-3.5" />
+            <span>{property.bedrooms} bed{property.bedrooms > 1 ? 's' : ''}</span>
+          </div>
+          <span className="text-border">·</span>
+          <div className="flex items-center gap-1">
+            <Bath className="h-3.5 w-3.5" />
+            <span>{property.bathrooms} bath{property.bathrooms > 1 ? 's' : ''}</span>
+          </div>
+          <span className="text-border">·</span>
+          <div className="flex items-center gap-1">
+            <Users className="h-3.5 w-3.5" />
+            <span>Up to {property.max_guests}</span>
+          </div>
+        </div>
 
-              <Clock className="h-4 w-4" />
-              {createBooking.isPending ? 'Submitting...' : 'Request Booking'}
-            </Button> :
+        <Separator />
 
-        <Button onClick={handleContinue} className="w-full btn-organic">
-              Continue
+        {/* INSTANT BOOKING FLOW */}
+        {property.instant_booking ? (
+          <>
+            <PriceBreakdownBlock />
+
+            {/* Instant Book Button */}
+            <Button onClick={handleInstantBook} size="lg" className="w-full btn-organic text-base gap-2">
+              <Zap className="h-4 w-4 fill-current" />
+              Book & Pay Now
             </Button>
-        }
 
-          <p className="text-xs text-center text-muted-foreground">
-            We'll confirm availability first
-          </p>
-        </>)
-      }
+            {property.instant_booking && (
+              <div className="flex items-center justify-center gap-1.5 text-xs text-primary">
+                <Zap className="h-3 w-3 fill-current" />
+                <span className="font-medium">Instant confirmation</span>
+              </div>
+            )}
+
+            <TrustIndicators />
+          </>
+        ) : (
+          /* REQUEST-BASED BOOKING FLOW */
+          <>
+            {step === 'details' && (
+              <div className="space-y-4">
+                <Input
+                  placeholder="Full Name *"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  className="input-organic"
+                />
+                <Input
+                  type="email"
+                  placeholder="Email Address *"
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
+                  className="input-organic"
+                />
+                <Input
+                  type="tel"
+                  placeholder="Phone Number (optional)"
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(e.target.value)}
+                  className="input-organic"
+                />
+                <Button
+                  variant="ghost"
+                  onClick={() => setStep('dates')}
+                  className="w-full text-sm"
+                >
+                  ← Back to dates
+                </Button>
+              </div>
+            )}
+
+            {step === 'confirm' && (
+              <div className="space-y-4">
+                <div className="bg-secondary/50 rounded-lg p-4 space-y-2.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Check-in</span>
+                    <span className="font-medium">{checkIn && format(checkIn, 'MMM d, yyyy')}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Check-out</span>
+                    <span className="font-medium">{checkOut && format(checkOut, 'MMM d, yyyy')}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Guests</span>
+                    <span className="font-medium">{guests}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Name</span>
+                    <span className="font-medium">{guestName}</span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => setStep('details')}
+                  className="w-full text-sm"
+                >
+                  ← Edit details
+                </Button>
+              </div>
+            )}
+
+            <PriceBreakdownBlock />
+
+            {/* Action Button */}
+            {step === 'confirm' ? (
+              <Button
+                onClick={handleRequestBooking}
+                disabled={createBooking.isPending}
+                size="lg"
+                className="w-full btn-organic text-base gap-2"
+              >
+                <Clock className="h-4 w-4" />
+                {createBooking.isPending ? 'Submitting...' : 'Request Booking'}
+              </Button>
+            ) : (
+              <Button onClick={handleContinue} size="lg" className="w-full btn-organic text-base">
+                Continue
+              </Button>
+            )}
+
+            <p className="text-xs text-center text-muted-foreground">
+              We'll confirm availability within 24 hours
+            </p>
+
+            <TrustIndicators />
+          </>
+        )}
+      </div>
 
       {/* Booking Flow Dialog for instant booking */}
       <BookingFlowDialog
@@ -412,8 +360,8 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
         onOpenChange={setBookingDialogOpen}
         initialCheckIn={checkIn}
         initialCheckOut={checkOut}
-        initialGuests={guests} />
-
-    </div>);
-
+        initialGuests={guests}
+      />
+    </div>
+  );
 }
