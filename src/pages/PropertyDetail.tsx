@@ -267,6 +267,8 @@ export default function PropertyDetail() {
                 city={property.city}
                 region={property.region}
                 country={property.country}
+                latitude={property.latitude}
+                longitude={property.longitude}
               />
             </section>
 

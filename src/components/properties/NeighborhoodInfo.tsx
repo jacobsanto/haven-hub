@@ -7,9 +7,13 @@ import {
   Bus,
   TreePine,
   MapPin,
+  ExternalLink,
 } from 'lucide-react';
 import { NearbyAttraction } from '@/types/database';
 import { cn } from '@/lib/utils';
+
+const CUSTOM_MAP_URL = 'https://www.google.com/maps/d/u/0/embed?mid=1S5lSiOv53CgAoE_ATDkpmI_h4tdoBgo&ehbc=2E312F';
+const CUSTOM_MAP_LINK = 'https://www.google.com/maps/d/u/0/viewer?mid=1S5lSiOv53CgAoE_ATDkpmI_h4tdoBgo';
 
 interface NeighborhoodInfoProps {
   description?: string | null;
@@ -17,6 +21,8 @@ interface NeighborhoodInfoProps {
   city: string;
   region?: string | null;
   country: string;
+  latitude?: number | null;
+  longitude?: number | null;
   className?: string;
 }
 
@@ -46,6 +52,8 @@ export function NeighborhoodInfo({
   city,
   region,
   country,
+  latitude,
+  longitude,
   className,
 }: NeighborhoodInfoProps) {
   const groupedAttractions = attractions.reduce((acc, attraction) => {
@@ -112,14 +120,41 @@ export function NeighborhoodInfo({
         </div>
       )}
 
-      {/* Map Placeholder */}
-      <div className="border border-border/50 rounded-xl p-4">
-        <div className="aspect-video rounded-lg bg-muted flex items-center justify-center">
-          <div className="text-center text-muted-foreground">
-            <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Map view coming soon</p>
-          </div>
+      {/* Map */}
+      <div className="border border-border/50 rounded-xl p-4 space-y-3">
+        <div className="aspect-video rounded-lg overflow-hidden">
+          {latitude && longitude ? (
+            <iframe
+              src={`https://maps.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title={`Map of ${city}`}
+            />
+          ) : (
+            <iframe
+              src={CUSTOM_MAP_URL}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              title="Properties map"
+            />
+          )}
         </div>
+        <a
+          href={CUSTOM_MAP_LINK}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          View full area map
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
       </div>
     </div>
   );
