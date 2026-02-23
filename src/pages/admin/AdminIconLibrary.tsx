@@ -17,56 +17,82 @@ const ICON_CATEGORIES: Record<string, string[]> = {
   Essentials: [
     'Wifi', 'Wind', 'Flame', 'Car', 'ChefHat', 'WashingMachine', 'Plug', 'Key',
     'KeyRound', 'DoorOpen', 'DoorClosed', 'Power', 'PlugZap', 'Lightbulb',
+    'Bed', 'BedDouble', 'BedSingle', 'Sofa', 'Armchair', 'Lamp', 'LampDesk',
+    'Pipette', 'Timer', 'Clock',
   ],
   Wellness: [
     'Waves', 'Sparkles', 'Bath', 'Thermometer', 'Dumbbell', 'Heart', 'Leaf',
     'Hand', 'Cloud', 'Droplets', 'Flower', 'Stethoscope', 'Activity',
+    'HeartPulse', 'Apple', 'Salad', 'Brain', 'Smile', 'Meditation',
+    'ShowerHead', 'Ear',
   ],
   Views: [
     'Ship', 'Mountain', 'Umbrella', 'Flower2', 'Sunrise', 'Sun', 'Moon',
     'Trees', 'Cloudy', 'Rainbow', 'MountainSnow', 'Sunset',
+    'Telescope', 'Binoculars', 'Eye', 'Horizon', 'CloudSun', 'CloudMoon',
+    'Star',
   ],
   Outdoors: [
     'TreeDeciduous', 'Home', 'Building', 'TreePine', 'Flag', 'Palmtree',
     'Fence', 'Tent', 'Landmark', 'Map', 'Compass',
+    'Flame', 'Campfire', 'Shrub', 'Sprout', 'Shovel', 'Flower2',
+    'Mountain', 'Footprints',
   ],
   Services: [
     'Bell', 'Crown', 'UtensilsCrossed', 'Plane', 'Phone', 'Headphones',
     'Users', 'ConciergeBell', 'Truck', 'MapPin', 'Mail', 'Calendar',
+    'Clipboard', 'ClipboardCheck', 'Handshake', 'MessageSquare', 'BadgeCheck',
+    'Receipt', 'Wallet',
   ],
   'Food & Drink': [
     'Wine', 'Coffee', 'CupSoda', 'Croissant', 'Salad', 'IceCreamCone',
     'Martini', 'Grape', 'Beef', 'Pizza', 'Soup', 'Cherry',
+    'Candy', 'Egg', 'Ham', 'Wheat', 'Cookie', 'Milk',
+    'Beer', 'Citrus',
   ],
   Entertainment: [
     'Clapperboard', 'Gamepad2', 'Music', 'BookOpen', 'Tv', 'Radio',
     'Bike', 'Sailboat', 'Volleyball', 'Fish', 'Palette', 'Dice1',
+    'Drama', 'Piano', 'Guitar', 'Mic', 'Headset', 'Popcorn',
+    'Theater', 'PartyPopper',
   ],
   Technology: [
     'Smartphone', 'Zap', 'Monitor', 'Laptop', 'Router', 'Camera',
     'Printer', 'BatteryCharging', 'Cable', 'Bluetooth', 'Cast', 'Cpu',
+    'Tablet', 'Watch', 'Speaker', 'Usb', 'HardDrive', 'Nfc',
+    'Signal', 'WifiOff',
   ],
   Safety: [
     'Shield', 'ShieldCheck', 'ShieldAlert', 'Lock', 'LockKeyhole', 'ScanFace',
     'Siren', 'FlameKindling', 'BriefcaseMedical', 'Eye', 'Fingerprint',
     'Cctv', 'AlertTriangle', 'BadgeAlert', 'ShieldOff', 'KeySquare',
     'CircleAlert', 'Ban', 'Alarm', 'ScanLine',
+    'ShieldPlus', 'LockOpen', 'Scan', 'FileWarning', 'HeartPulse',
+    'Syringe', 'Cross',
   ],
   'Family & Accessibility': [
     'PawPrint', 'Baby', 'Accessibility', 'HeartHandshake', 'PersonStanding',
     'Footprints', 'Users', 'UserPlus',
+    'Cat', 'Dog', 'Rabbit', 'Bird', 'Turtle',
+    'Stroller', 'GraduationCap',
   ],
   Luxury: [
     'Gem', 'Star', 'Award', 'Diamond', 'Coins', 'Sparkle', 'BadgeCheck',
     'Trophy', 'Crown', 'Ribbon',
+    'Champagne', 'Castle', 'Vault', 'CircleDollarSign', 'HandCoins',
+    'CreditCard', 'Banknote',
   ],
   Storage: [
     'Archive', 'Box', 'Vault', 'Refrigerator', 'AirVent', 'Fan', 'Heater',
     'Shirt', 'Scissors', 'Iron', 'Package', 'FolderLock',
+    'Wardrobe', 'Luggage', 'Briefcase', 'Drawer', 'Safe',
+    'PackageOpen', 'Container',
   ],
   Transport: [
     'CarFront', 'Bus', 'TrainFront', 'PlaneTakeoff', 'Anchor', 'Bike',
     'Ship', 'Fuel', 'ParkingSquare',
+    'Taxi', 'CarTaxiFront', 'Ambulance', 'Rocket', 'Cable',
+    'Navigation', 'Route', 'Milestone',
   ],
 };
 
