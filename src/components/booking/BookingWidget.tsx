@@ -27,7 +27,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
   const { toast } = useToast();
   const createBooking = useCreateBooking();
   const { formatPrice, selectedCurrency } = useCurrency();
-  
+
   // Real-time availability subscription
   useRealtimeAvailability(property.id);
 
@@ -37,7 +37,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [checkOutOpen, setCheckOutOpen] = useState(false);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-  
+
   // Request-based flow state (only used when instant_booking is false)
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
@@ -46,7 +46,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
 
   const nights = checkIn && checkOut ? differenceInDays(checkOut, checkIn) : 0;
   const baseTotal = nights * property.base_price;
-  const discountAmount = specialOffer ? (baseTotal * specialOffer.discount_percent) / 100 : 0;
+  const discountAmount = specialOffer ? baseTotal * specialOffer.discount_percent / 100 : 0;
   const totalPrice = baseTotal - discountAmount;
 
   // Format prices using currency context
@@ -81,7 +81,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
         toast({
           title: 'Please select dates',
           description: 'Choose your check-in and check-out dates.',
-          variant: 'destructive',
+          variant: 'destructive'
         });
         return;
       }
@@ -91,7 +91,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
         toast({
           title: 'Please fill in your details',
           description: 'Name and email are required.',
-          variant: 'destructive',
+          variant: 'destructive'
         });
         return;
       }
@@ -112,12 +112,12 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
         checkIn,
         checkOut,
         guests,
-        basePrice: property.base_price,
+        basePrice: property.base_price
       });
 
       toast({
         title: 'Booking Request Submitted!',
-        description: 'We will confirm your reservation shortly.',
+        description: 'We will confirm your reservation shortly.'
       });
 
       navigate('/booking/confirm', {
@@ -127,106 +127,106 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
           checkOut: format(checkOut, 'MMM d, yyyy'),
           nights,
           totalPrice,
-          isRequest: true,
-        },
+          isRequest: true
+        }
       });
     } catch (error) {
       toast({
         title: 'Booking Failed',
         description: 'Something went wrong. Please try again.',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
 
   // Shared date/guest picker component with real availability
-  const DateGuestPicker = () => (
-    <div className="space-y-4">
-      {/* Date Selection */}
-      <div className="grid grid-cols-2 gap-2">
-        <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'justify-start text-left font-normal',
-                !checkIn && 'text-muted-foreground'
-              )}
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              {checkIn ? format(checkIn, 'MMM d') : 'Check in'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-card" align="start" sideOffset={4}>
-            <AvailabilityCalendar
-              propertyId={property.id}
-              variant="compact"
-              showPrices={false}
-              selectedCheckIn={checkIn}
-              selectedCheckOut={checkOut}
-              onDateSelect={handleDateSelect}
-              minStay={2}
-            />
-          </PopoverContent>
-        </Popover>
+  const DateGuestPicker = () => {};
 
-        <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'justify-start text-left font-normal',
-                !checkOut && 'text-muted-foreground'
-              )}
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              {checkOut ? format(checkOut, 'MMM d') : 'Check out'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-card" align="start" sideOffset={4}>
-            <AvailabilityCalendar
-              propertyId={property.id}
-              variant="compact"
-              showPrices={false}
-              selectedCheckIn={checkIn}
-              selectedCheckOut={checkOut}
-              onDateSelect={handleDateSelect}
-              minStay={2}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
 
-      {/* Guests */}
-      <div className="flex items-center justify-between p-3 border border-border rounded-lg">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">Guests</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-            onClick={() => setGuests(Math.max(1, guests - 1))}
-            aria-label="Decrease guests"
-          >
-            -
-          </Button>
-          <span className="w-8 text-center">{guests}</span>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-            onClick={() => setGuests(Math.min(property.max_guests, guests + 1))}
-            aria-label="Increase guests"
-          >
-            +
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   return (
     <div className="border border-border/50 rounded-xl p-6 space-y-6 shadow-sm lg:sticky lg:top-24">
@@ -239,38 +239,38 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
       </div>
 
       {/* INSTANT BOOKING FLOW */}
-      {property.instant_booking ? (
-        <>
+      {property.instant_booking ?
+      <>
           <DateGuestPicker />
           
           {/* Price Breakdown */}
-          {nights > 0 && (
-            <div className="space-y-3 pt-4 border-t border-border">
+          {nights > 0 &&
+        <div className="space-y-3 pt-4 border-t border-border">
               <div className="flex justify-between text-sm">
                 <span>
                   {basePriceFormatted.display} × {nights} nights
                 </span>
                 <span>{baseTotalFormatted.display}</span>
               </div>
-              {specialOffer && discountAmount > 0 && (
-                <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
+              {specialOffer && discountAmount > 0 &&
+          <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
                   <span>
                     {specialOffer.title} (-{specialOffer.discount_percent}%)
                   </span>
                   <span>-{discountFormatted.display}</span>
                 </div>
-              )}
+          }
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
                 <span>{totalFormatted.display}</span>
               </div>
-              {totalFormatted.isConverted && (
-                <div className="text-xs text-muted-foreground text-right">
+              {totalFormatted.isConverted &&
+          <div className="text-xs text-muted-foreground text-right">
                   {totalFormatted.original} · You pay in EUR
                 </div>
-              )}
+          }
             </div>
-          )}
+        }
 
           {/* Instant Book Button */}
           <Button onClick={handleInstantBook} className="w-full btn-organic">
@@ -281,46 +281,46 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
           <p className="text-xs text-center text-muted-foreground">
             Secure payment processing
           </p>
-        </>
-      ) : (
-        /* REQUEST-BASED BOOKING FLOW */
-        <>
+        </> : (
+
+      /* REQUEST-BASED BOOKING FLOW */
+      <>
           {step === 'dates' && <DateGuestPicker />}
 
-          {step === 'details' && (
-            <div className="space-y-4">
+          {step === 'details' &&
+        <div className="space-y-4">
               <Input
-                placeholder="Full Name *"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                className="input-organic"
-              />
+            placeholder="Full Name *"
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+            className="input-organic" />
+
               <Input
-                type="email"
-                placeholder="Email Address *"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
-                className="input-organic"
-              />
+            type="email"
+            placeholder="Email Address *"
+            value={guestEmail}
+            onChange={(e) => setGuestEmail(e.target.value)}
+            className="input-organic" />
+
               <Input
-                type="tel"
-                placeholder="Phone Number (optional)"
-                value={guestPhone}
-                onChange={(e) => setGuestPhone(e.target.value)}
-                className="input-organic"
-              />
+            type="tel"
+            placeholder="Phone Number (optional)"
+            value={guestPhone}
+            onChange={(e) => setGuestPhone(e.target.value)}
+            className="input-organic" />
+
               <Button
-                variant="ghost"
-                onClick={() => setStep('dates')}
-                className="w-full"
-              >
+            variant="ghost"
+            onClick={() => setStep('dates')}
+            className="w-full">
+
                 ← Back to dates
               </Button>
             </div>
-          )}
+        }
 
-          {step === 'confirm' && (
-            <div className="space-y-4">
+          {step === 'confirm' &&
+        <div className="space-y-4">
               <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Check-in</span>
@@ -340,65 +340,65 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
                 </div>
               </div>
               <Button
-                variant="ghost"
-                onClick={() => setStep('details')}
-                className="w-full"
-              >
+            variant="ghost"
+            onClick={() => setStep('details')}
+            className="w-full">
+
                 ← Edit details
               </Button>
             </div>
-          )}
+        }
 
           {/* Price Breakdown */}
-          {nights > 0 && (
-            <div className="space-y-3 pt-4 border-t border-border">
+          {nights > 0 &&
+        <div className="space-y-3 pt-4 border-t border-border">
               <div className="flex justify-between text-sm">
                 <span>
                   {basePriceFormatted.display} × {nights} nights
                 </span>
                 <span>{baseTotalFormatted.display}</span>
               </div>
-              {specialOffer && discountAmount > 0 && (
-                <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
+              {specialOffer && discountAmount > 0 &&
+          <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
                   <span>
                     {specialOffer.title} (-{specialOffer.discount_percent}%)
                   </span>
                   <span>-{discountFormatted.display}</span>
                 </div>
-              )}
+          }
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
                 <span>{totalFormatted.display}</span>
               </div>
-              {totalFormatted.isConverted && (
-                <div className="text-xs text-muted-foreground text-right">
+              {totalFormatted.isConverted &&
+          <div className="text-xs text-muted-foreground text-right">
                   {totalFormatted.original} · You pay in EUR
                 </div>
-              )}
+          }
             </div>
-          )}
+        }
 
           {/* Action Button */}
-          {step === 'confirm' ? (
-            <Button
-              onClick={handleRequestBooking}
-              disabled={createBooking.isPending}
-              className="w-full btn-organic"
-            >
+          {step === 'confirm' ?
+        <Button
+          onClick={handleRequestBooking}
+          disabled={createBooking.isPending}
+          className="w-full btn-organic">
+
               <Clock className="h-4 w-4" />
               {createBooking.isPending ? 'Submitting...' : 'Request Booking'}
-            </Button>
-          ) : (
-            <Button onClick={handleContinue} className="w-full btn-organic">
+            </Button> :
+
+        <Button onClick={handleContinue} className="w-full btn-organic">
               Continue
             </Button>
-          )}
+        }
 
           <p className="text-xs text-center text-muted-foreground">
             We'll confirm availability first
           </p>
-        </>
-      )}
+        </>)
+      }
 
       {/* Booking Flow Dialog for instant booking */}
       <BookingFlowDialog
@@ -408,8 +408,8 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
         onOpenChange={setBookingDialogOpen}
         initialCheckIn={checkIn}
         initialCheckOut={checkOut}
-        initialGuests={guests}
-      />
-    </div>
-  );
+        initialGuests={guests} />
+
+    </div>);
+
 }
