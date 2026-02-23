@@ -186,7 +186,15 @@ export function BlogAuthorFormDialog({ open, onOpenChange, author }: BlogAuthorF
                       label="Upload Avatar"
                       aspectClass="aspect-square max-w-[200px]"
                       compact
-                      generatePrompt={`Professional portrait photograph of a travel writer named ${form.watch('name') || 'an author'}. Headshot style, warm lighting, editorial quality, friendly expression.`}
+                      generatePrompt={[
+                        `Professional portrait photograph of a travel writer named ${form.watch('name') || 'an author'}.`,
+                        form.watch('bio') ? `Their background: ${form.watch('bio').slice(0, 150)}.` : '',
+                        'Headshot style, warm natural lighting, editorial quality, approachable expression.',
+                      ].filter(Boolean).join(' ')}
+                      generateContext={{
+                        name: form.watch('name') || undefined,
+                        bio: form.watch('bio') || undefined,
+                      }}
                       promptLabel="Generate avatar"
                     />
                   </FormControl>

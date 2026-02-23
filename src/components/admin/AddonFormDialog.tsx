@@ -351,7 +351,16 @@ export function AddonFormDialog({ open, onOpenChange, addon }: AddonFormDialogPr
                       storagePath="addons"
                       preset={{ maxWidth: 800, maxHeight: 600, quality: 0.82, format: 'webp' }}
                       label="Upload Add-on Image"
-                      generatePrompt={`High quality product photo of a luxury ${form.watch('category') || 'service'} add-on: ${form.watch('name') || 'travel add-on'}. Clean background, professional lighting, hospitality style.`}
+                      generatePrompt={[
+                        `High quality photo of a luxury ${form.watch('category') || 'service'} add-on: ${form.watch('name') || 'travel add-on'}.`,
+                        form.watch('description') ? `Details: ${form.watch('description')}.` : '',
+                        'Professional hospitality photography, inviting and aspirational.',
+                      ].filter(Boolean).join(' ')}
+                      generateContext={{
+                        name: form.watch('name') || undefined,
+                        category: form.watch('category') || undefined,
+                        description: form.watch('description') || undefined,
+                      }}
                       promptLabel="Generate add-on image"
                     />
                   </FormControl>
