@@ -7,6 +7,52 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const SYSTEM_MESSAGE = `You are a professional travel and hospitality photographer. Generate a realistic, high-resolution photograph based on the description provided. Follow these rules strictly:
+- The image must look like a real photograph taken by a professional photographer, NOT an illustration, painting, or stock photo
+- Depict the SPECIFIC location, landmark, architecture, vegetation, and atmosphere described — do not produce generic scenery
+- Include distinctive local details: regional building styles, native plants, characteristic colors and lighting conditions
+- No text overlays, watermarks, borders, or frames
+- No people unless specifically requested
+- Use natural lighting appropriate to the location and climate described`;
+
+function buildEnrichedPrompt(prompt: string, context?: Record<string, string | undefined>): string {
+  if (!context) return prompt;
+
+  const parts: string[] = [prompt];
+
+  if (context.name && context.country) {
+    parts.push(`\nThis is specifically ${context.name}, ${context.country} — show landmarks, architecture, and scenery unique to this exact place.`);
+  } else if (context.name) {
+    parts.push(`\nThis is specifically ${context.name} — capture what makes this place visually distinctive.`);
+  }
+
+  if (context.description) {
+    parts.push(`Scene details: ${context.description}`);
+  }
+
+  if (context.climate) {
+    parts.push(`The climate is ${context.climate} — reflect this in vegetation, sky, and lighting.`);
+  }
+
+  if (context.best_time_to_visit) {
+    parts.push(`Best season: ${context.best_time_to_visit} — show the landscape during this period.`);
+  }
+
+  if (context.category) {
+    parts.push(`Category: ${context.category} — the image should clearly convey this type of experience.`);
+  }
+
+  if (context.duration) {
+    parts.push(`This is a ${context.duration} experience.`);
+  }
+
+  if (context.bio) {
+    parts.push(`This person's background: ${context.bio.slice(0, 200)}`);
+  }
+
+  return parts.join('\n');
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -18,13 +64,18 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const { prompt } = await req.json();
-    if (!prompt || typeof prompt !== "string" || prompt.length > 1000) {
+    const body = await req.json();
+    const { prompt, context } = body;
+
+    if (!prompt || typeof prompt !== "string" || prompt.length > 2000) {
       return new Response(
-        JSON.stringify({ error: "Invalid prompt (must be 1-1000 chars)" }),
+        JSON.stringify({ error: "Invalid prompt (must be 1-2000 chars)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const enrichedPrompt = buildEnrichedPrompt(prompt, context);
+    console.log("Enriched prompt:", enrichedPrompt);
 
     // Call Lovable AI Gateway for image generation
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -35,7 +86,10 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-image",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          { role: "system", content: SYSTEM_MESSAGE },
+          { role: "user", content: enrichedPrompt },
+        ],
         modalities: ["image", "text"],
       }),
     });

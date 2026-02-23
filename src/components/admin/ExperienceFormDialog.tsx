@@ -274,7 +274,18 @@ export function ExperienceFormDialog({
               onRemove={() => setValue('hero_image_url', '')}
               storagePath="experiences"
               label="Upload Hero Image"
-              generatePrompt={`Stunning high-resolution photo of a ${watch('category') || 'luxury'} experience: ${watch('name') || 'travel experience'}. Ultra high resolution, vibrant, editorial travel photography.`}
+              generatePrompt={[
+                `A stunning photograph of a ${watch('category') || 'luxury'} experience: ${watch('name') || 'travel experience'}.`,
+                watch('description') ? `Details: ${watch('description')}.` : '',
+                watch('duration') ? `Duration: ${watch('duration')}.` : '',
+                'Show the activity in action within its authentic setting.',
+              ].filter(Boolean).join(' ')}
+              generateContext={{
+                name: watch('name') || undefined,
+                category: watch('category') || undefined,
+                description: watch('description') || undefined,
+                duration: watch('duration') || undefined,
+              }}
               promptLabel="Generate experience hero"
             />
           </div>

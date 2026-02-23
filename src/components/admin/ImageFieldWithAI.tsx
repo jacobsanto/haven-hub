@@ -18,6 +18,8 @@ interface ImageFieldWithAIProps {
   compact?: boolean;
   /** Prompt sent to the AI image generator */
   generatePrompt: string;
+  /** Structured context passed to backend for prompt enrichment */
+  generateContext?: Record<string, string | undefined>;
   /** Short label describing what will be generated */
   promptLabel?: string;
 }
@@ -33,6 +35,7 @@ export function ImageFieldWithAI({
   aspectClass,
   compact,
   generatePrompt,
+  generateContext,
   promptLabel,
 }: ImageFieldWithAIProps) {
   const { toast } = useToast();
@@ -47,7 +50,7 @@ export function ImageFieldWithAI({
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: { prompt: generatePrompt },
+        body: { prompt: generatePrompt, context: generateContext },
       });
 
       if (error) throw error;

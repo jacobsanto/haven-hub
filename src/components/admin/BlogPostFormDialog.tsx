@@ -289,7 +289,16 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
                       onRemove={() => form.setValue('featured_image_url', '')}
                       storagePath="blog"
                       label="Upload Featured Image"
-                      generatePrompt={`Beautiful editorial blog featured image for article titled "${form.watch('title') || 'travel blog post'}". Ultra high resolution, magazine quality, travel photography.`}
+                      generatePrompt={[
+                        `Editorial featured image for a travel article titled "${form.watch('title') || 'travel blog post'}".`,
+                        form.watch('excerpt') ? `Article summary: ${form.watch('excerpt')}.` : '',
+                        'Magazine quality, evocative travel photography that draws readers in.',
+                      ].filter(Boolean).join(' ')}
+                      generateContext={{
+                        name: form.watch('title') || undefined,
+                        category: categories.find(c => c.id === form.watch('category_id'))?.name,
+                        description: form.watch('excerpt') || undefined,
+                      }}
                       promptLabel="Generate featured image"
                     />
                   </FormControl>

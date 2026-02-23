@@ -246,7 +246,18 @@ export function DestinationFormDialog({
               onRemove={() => setValue('hero_image_url', '')}
               storagePath="destinations"
               label="Upload Hero Image"
-              generatePrompt={`Beautiful high-resolution travel hero photograph of ${name || 'a destination'}, ${watch('country') || 'scenic landscape'}. Ultra high resolution, cinematic lighting, editorial travel photography style.`}
+              generatePrompt={[
+                `A breathtaking photograph of ${name || 'a destination'}${watch('country') ? `, ${watch('country')}` : ''}.`,
+                watch('description') ? `The scene shows: ${watch('description')}.` : '',
+                'Capture the distinctive architecture, natural landscape, and atmosphere unique to this specific location.',
+              ].filter(Boolean).join(' ')}
+              generateContext={{
+                name: name || undefined,
+                country: watch('country') || undefined,
+                description: watch('description') || undefined,
+                climate: watch('climate') || undefined,
+                best_time_to_visit: watch('best_time_to_visit') || undefined,
+              }}
               promptLabel="Generate destination hero"
             />
           </div>

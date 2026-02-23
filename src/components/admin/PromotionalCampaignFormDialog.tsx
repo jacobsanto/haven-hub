@@ -242,7 +242,16 @@ export function PromotionalCampaignFormDialog({
                           onRemove={() => form.setValue('image_url', '')}
                           storagePath="campaigns"
                           label="Upload Banner Image"
-                          generatePrompt={`Promotional campaign banner for "${form.watch('title') || 'luxury travel promotion'}". ${form.watch('description') || 'Elegant, aspirational travel imagery'}. Ultra high resolution, wide format, marketing quality.`}
+                          generatePrompt={[
+                            `Promotional banner for "${form.watch('title') || 'luxury travel promotion'}".`,
+                            form.watch('description') ? `Campaign story: ${form.watch('description')}.` : '',
+                            form.watch('subtitle') ? `Tagline: ${form.watch('subtitle')}.` : '',
+                            'Wide format, aspirational luxury travel imagery, marketing quality.',
+                          ].filter(Boolean).join(' ')}
+                          generateContext={{
+                            name: form.watch('title') || undefined,
+                            description: form.watch('description') || undefined,
+                          }}
                           promptLabel="Generate banner image"
                         />
                       </FormControl>
