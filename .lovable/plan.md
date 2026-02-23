@@ -1,41 +1,82 @@
 
 
-# Add `short_description` to AI Content Generator
+# Property Page Enhancements: Square Meters, Room Details, and Full Amenities
 
-## What Changes
+## Three Changes Requested
 
-The recently added `short_description` field for properties needs to be wired into the AI content generation pipeline so that when you generate property content, it also produces a compelling short intro paragraph.
+### 1. Add Square Meters to Quick Stats Bar
 
-## Changes Required
+**Database**: Add a `area_sqm` (integer, nullable) column to the `properties` table.
 
-### 1. Edge Function (`supabase/functions/generate-content/index.ts`)
+**Admin Form**: Add a "Size (m2)" number input field alongside bedrooms/bathrooms in the property form.
 
-- Add `short_description` to the property tool definition schema with description: *"A compelling 1-2 sentence editorial hook that is always visible to guests"*
-- Add `short_description` to the property fields list so the AI is required to generate it
-- Update the property system prompt to instruct the AI to produce a short editorial intro separately from the full description
+**Quick Stats Bar** (`PropertyQuickStats.tsx`): Add a 5th stat showing the property size in square meters (only if the value exists). The grid changes from `grid-cols-4` to `grid-cols-5` on desktop.
 
-### 2. TypeScript Types (`src/hooks/useAIContent.ts`)
+**AI Generator**: Add `area_sqm` is not AI-generated content, so no changes needed to the edge function -- it's a factual number entered manually.
 
-- Add `short_description: string` to the `PropertyContent` interface
+### 2. Enhance Rooms and Spaces Section
 
-### 3. AI Content Generator UI (`src/components/admin/AIContentGenerator.tsx`)
+The `RoomBreakdown` component already supports room types like `living`, `kitchen`, `dining`, `office` -- but additional types are needed.
 
-- Add `short_description` to the property field labels map so it displays as "Short Description (Intro)" in the generated content preview
+**Database type update**: Expand the `RoomConfig` type to include `terrace`, `balcony`, `laundry`, `garage`, `storage`, and `outdoor` room types.
 
-### 4. Apply Handler (`src/pages/admin/AdminAIContent.tsx`)
+**RoomBreakdown.tsx updates**:
+- Add icons for new room types: terrace (TreePalm), balcony (Fence), laundry (WashingMachine), garage (Car), outdoor (Sun)
+- Ensure all rooms (not just bedrooms) show their features list
+- Rename "Other Spaces" to "Living Spaces and Outdoor Areas" for clarity
 
-- Include `short_description` in the `handleApplyProperty` database update so it saves to the properties table
+**Admin Form**: The room management section already supports adding rooms with types -- just add the new type options to the dropdown so admins can add terrace, balcony, etc.
 
-### 5. Property Items Data (`src/pages/admin/AdminAIContent.tsx`)
+### 3. Amenities: Highlighted + Full Collapsible List
 
-- Include existing `short_description` in the `propertyItems` existingData so the AI can reference it when regenerating
+Currently, the `AmenityList` component shows all amenities in a flat grid. The change:
+
+**PropertyDetail.tsx** (amenities section):
+- Show the property's `highlights` as featured amenity badges at the top (already rendered separately -- keep as-is)
+- Show all amenities in a grouped grid but limit the initial view to the first 8 items
+- Add a collapsible "Show all X amenities" toggle that reveals the complete categorized list
+
+**AmenityList.tsx**:
+- Add a new prop `collapsible?: boolean` and `initialVisible?: number`
+- When collapsible is true, show only the first N amenities, with a "Show all X amenities" button that expands using Radix Collapsible
+- The expanded view shows the full categorized grid with descriptions
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `supabase/functions/generate-content/index.ts` | Add `short_description` to property schema, fields list, and prompt |
-| `src/hooks/useAIContent.ts` | Add `short_description` to `PropertyContent` interface |
-| `src/components/admin/AIContentGenerator.tsx` | Add field label for `short_description` |
-| `src/pages/admin/AdminAIContent.tsx` | Include in apply handler and existingData |
+| Database migration | Add `area_sqm INTEGER` column to `properties` |
+| `src/types/database.ts` | Add `area_sqm: number | null` to Property, expand RoomConfig types |
+| `src/components/properties/PropertyQuickStats.tsx` | Add square meters stat with Maximize icon |
+| `src/components/properties/RoomBreakdown.tsx` | Add terrace/balcony/outdoor icons and room types |
+| `src/components/properties/AmenityList.tsx` | Add collapsible mode with initial visible count |
+| `src/pages/PropertyDetail.tsx` | Pass `collapsible` and `initialVisible` to AmenityList |
+| `src/pages/admin/AdminPropertyForm.tsx` | Add area_sqm input, add new room type options |
+| `src/pages/admin/AdminQuickOnboard.tsx` | Initialize `area_sqm: null` |
 
+## Technical Details
+
+**New database column:**
+```text
+ALTER TABLE properties ADD COLUMN area_sqm integer;
+```
+
+**RoomConfig type expansion:**
+```text
+type: 'bedroom' | 'bathroom' | 'living' | 'kitchen' | 'dining' | 'office'
+       | 'terrace' | 'balcony' | 'laundry' | 'garage' | 'outdoor'
+```
+
+**AmenityList collapsible logic:**
+```text
+- Show first 8 amenities in a 2-col grid
+- "Show all X amenities" button with ChevronDown
+- Expands to full categorized view with descriptions
+- Uses Radix Collapsible for smooth animation
+```
+
+**Quick Stats grid:**
+```text
+grid-cols-2 md:grid-cols-5 (when area_sqm exists)
+grid-cols-2 md:grid-cols-4 (fallback when no area_sqm)
+```
