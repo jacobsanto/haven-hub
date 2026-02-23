@@ -14,25 +14,33 @@ import { Button } from '@/components/ui/button';
 // Curated list of icons relevant to property amenities
 const AMENITY_ICONS = [
   // Essentials
-  'Wifi', 'Wind', 'Flame', 'Car', 'ChefHat', 'WashingMachine', 'Plug', 'Key',
-  // Wellness
-  'Waves', 'Sparkles', 'Bath', 'Thermometer', 'Dumbbell', 'Heart', 'Leaf', 'Hand', 'Cloud',
-  // Views
-  'Ship', 'Mountain', 'Umbrella', 'Flower2', 'Sunrise', 'Sun', 'Moon', 'Trees',
-  // Outdoors
-  'TreeDeciduous', 'Home', 'Building', 'TreePine', 'Flag', 'Circle', 'Palmtree',
-  // Services
-  'Bell', 'Crown', 'UtensilsCrossed', 'Plane', 'Phone', 'Headphones', 'Users',
-  // Entertainment
-  'Clapperboard', 'Gamepad2', 'Music', 'BookOpen', 'Wine', 'Tv', 'Radio',
-  // Technology
-  'Smartphone', 'Zap', 'Monitor', 'Laptop', 'Router', 'Camera',
+  'Wifi', 'Wind', 'Flame', 'Car', 'ChefHat', 'WashingMachine', 'Plug', 'Key', 'KeyRound', 'DoorOpen', 'DoorClosed',
+  // Wellness & Spa
+  'Waves', 'Sparkles', 'Bath', 'Thermometer', 'Dumbbell', 'Heart', 'Leaf', 'Hand', 'Cloud', 'Droplets', 'Flower',
+  // Views & Nature
+  'Ship', 'Mountain', 'Umbrella', 'Flower2', 'Sunrise', 'Sun', 'Moon', 'Trees', 'Cloudy', 'Rainbow',
+  // Outdoors & Property
+  'TreeDeciduous', 'Home', 'Building', 'TreePine', 'Flag', 'Circle', 'Palmtree', 'Fence', 'Tent', 'Landmark',
+  // Services & Hospitality
+  'Bell', 'Crown', 'UtensilsCrossed', 'Plane', 'Phone', 'Headphones', 'Users', 'ConciergeBell', 'Truck', 'MapPin',
+  // Food & Drink
+  'Wine', 'Coffee', 'CupSoda', 'Croissant', 'Salad', 'IceCreamCone', 'Martini', 'Grape', 'Beef',
+  // Entertainment & Leisure
+  'Clapperboard', 'Gamepad2', 'Music', 'BookOpen', 'Tv', 'Radio', 'Bike', 'Sailboat', 'Volleyball', 'Fish',
+  // Technology & Connectivity
+  'Smartphone', 'Zap', 'Monitor', 'Laptop', 'Router', 'Camera', 'Printer', 'BatteryCharging', 'Cable',
+  // Safety & Security
+  'Shield', 'ShieldCheck', 'Lock', 'LockKeyhole', 'ScanFace', 'Siren', 'FlameKindling', 'BriefcaseMedical', 'Stethoscope', 'Eye', 'Fingerprint', 'Cctv',
   // Family & Accessibility
-  'PawPrint', 'Baby', 'Accessibility', 'HeartHandshake',
-  // Luxury
-  'Gem', 'Star', 'Award', 'Diamond', 'Coins',
+  'PawPrint', 'Baby', 'Accessibility', 'HeartHandshake', 'PersonStanding', 'Footprints',
+  // Luxury & Premium
+  'Gem', 'Star', 'Award', 'Diamond', 'Coins', 'Sparkle', 'BadgeCheck', 'Trophy',
+  // Storage & Amenities
+  'Archive', 'Box', 'Vault', 'Refrigerator', 'AirVent', 'Fan', 'Heater', 'Shirt', 'Scissors', 'Iron',
+  // Transport
+  'CarFront', 'Bus', 'TrainFront', 'PlaneTakeoff', 'Anchor',
   // General
-  'Check', 'Plus', 'Settings', 'Gift', 'Package', 'Shield', 'Lock',
+  'Check', 'Plus', 'Settings', 'Gift', 'Package', 'Info', 'CircleCheck', 'MapPinned',
 ] as const;
 
 interface IconPickerProps {
