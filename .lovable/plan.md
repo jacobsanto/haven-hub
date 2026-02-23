@@ -1,61 +1,67 @@
 
-# Google Maps Integration for Property Locations
 
-## What We'll Do
+# Enriched Property Description and Neighborhood Section
 
-Replace the "Map view coming soon" placeholder on each property page with your custom Google Maps embed. Each property will show a zoomed-in view of its specific location using the latitude/longitude already stored in the database, plus a link to your full custom map.
+## Problem
 
-## Implementation
+Currently, both the property description and neighborhood description are rendered as plain, single-paragraph text blocks. There is no structure, no visual hierarchy, and no way to manage a short intro vs. a longer detailed description from the admin dashboard.
 
-### 1. Update `NeighborhoodInfo` Component
+## Solution
 
-- Add `latitude` and `longitude` as optional props
-- Replace the placeholder `div` (lines 115-123) with:
-  - **If the property has coordinates**: A Google Maps `iframe` embed centered on the property's lat/lng at a high zoom level (zoom ~15), using the standard Google Maps embed API (`maps.google.com/maps?q=lat,lng&z=15&output=embed`)
-  - **Below it (always)**: A smaller link/button to "View full area map" that opens your custom Google My Maps (`https://www.google.com/maps/d/u/0/embed?mid=1S5lSiOv53CgAoE_ATDkpmI_h4tdoBgo`) in a new tab
-  - **If no coordinates**: Fall back to your full custom map embed as the default view
+### 1. Database: Add a `short_description` Column
 
-### 2. Update `PropertyDetail.tsx`
+Add a new `short_description` text column to the `properties` table. This serves as the "hook" paragraph -- always visible, editorial-quality intro text. The existing `description` field becomes the full/extended description that appears behind a "Read more" collapsible.
 
-- Pass `latitude` and `longitude` from the property object to `NeighborhoodInfo`:
-  ```
-  <NeighborhoodInfo
-    ...existing props
-    latitude={property.latitude}
-    longitude={property.longitude}
-  />
-  ```
+### 2. Admin Dashboard Changes (`AdminPropertyForm.tsx`)
 
-## Technical Details
+**Description section** gets restructured into two fields:
 
-### NeighborhoodInfo Props Change
+- **Short Description** (new) -- a smaller textarea with placeholder guidance: *"A compelling 1-2 sentence intro that is always visible to guests"*
+- **Full Description** (existing `description` field) -- renamed label to "Full Description", with guidance: *"Detailed property description. Use blank lines to separate paragraphs."*
 
-```text
-interface NeighborhoodInfoProps {
-  ...existing props
-  latitude?: number | null;
-  longitude?: number | null;
-}
-```
+**Location and Neighborhood section** -- add a dedicated collapsible card in the admin form with:
+- **Neighborhood Description** textarea (currently exists in data but has no form field)
+- Helper text: *"Describe the area, vibe, and what makes the location special"*
 
-### Map Rendering Logic
+### 3. Frontend: Property Detail Page
 
-```text
-if (latitude && longitude exist)
-  --> Show Google Maps iframe: ?q={lat},{lng}&z=15&output=embed
-  --> Show "View full area map" link to your custom My Maps
-else
-  --> Show your custom My Maps iframe as fallback
-```
+**Overview Section** redesign:
+- The `short_description` renders as a styled lead paragraph (larger text, serif font, slightly darker) -- always visible
+- The `description` renders below it, split by double-newlines into proper `<p>` tags with relaxed leading
+- If the full description exceeds ~3 paragraphs, it collapses with a smooth "Read more / Read less" toggle using Radix Collapsible
+- A decorative drop-cap on the first letter of the short description for editorial flair
 
-### Styling
-- The iframe replaces the placeholder inside the existing `border border-border/50 rounded-xl p-4` container
-- `aspect-video` ratio maintained, `rounded-lg overflow-hidden`
-- The "View full area map" link styled as a subtle text link with an external-link icon
+**Location and Neighborhood** redesign in `NeighborhoodInfo.tsx`:
+- The neighborhood description gets the same paragraph-splitting treatment
+- If longer than 2 paragraphs, it collapses with "Read more about this area"
+- Add a subtle quote-style accent border on the left side of the description block
 
-## Files Changed
+### 4. Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/properties/NeighborhoodInfo.tsx` | Add lat/lng props, replace placeholder with Google Maps iframe |
-| `src/pages/PropertyDetail.tsx` | Pass `latitude` and `longitude` to `NeighborhoodInfo` |
+| Database migration | Add `short_description TEXT` column to `properties` |
+| `src/pages/admin/AdminPropertyForm.tsx` | Split description into Short + Full fields; add Neighborhood Description textarea |
+| `src/pages/PropertyDetail.tsx` | Render short_description as lead paragraph, collapsible full description |
+| `src/components/properties/NeighborhoodInfo.tsx` | Paragraph splitting, collapsible long text, accent styling |
+
+### 5. Technical Details
+
+**Paragraph splitting utility:**
+```text
+function splitParagraphs(text: string): string[]
+  - Split on double newlines (\n\n)
+  - Filter empty strings
+  - Trim each paragraph
+```
+
+**Collapsible threshold:**
+- Property description: collapse after showing first 2 paragraphs (if total > 3)
+- Neighborhood description: collapse after showing first paragraph (if total > 2)
+
+**No markdown rendering** -- these are plain text fields, not blog content. Paragraphs only.
+
+**Admin form state additions:**
+- `short_description: null as string | null` added to formData
+- Neighborhood description textarea wired to existing `neighborhood_description` field
+
