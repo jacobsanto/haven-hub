@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { ImageFieldWithAI } from '@/components/admin/ImageFieldWithAI';
 import {
   Select,
   SelectContent,
@@ -334,24 +335,30 @@ export function AddonFormDialog({ open, onOpenChange, addon }: AddonFormDialogPr
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="image_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Image URL (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://..."
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
+
+            <FormField
+              control={form.control}
+              name="image_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image</FormLabel>
+                  <FormControl>
+                    <ImageFieldWithAI
+                      value={field.value || undefined}
+                      onUpload={(url) => form.setValue('image_url', url)}
+                      onRemove={() => form.setValue('image_url', null)}
+                      storagePath="addons"
+                      preset={{ maxWidth: 800, maxHeight: 600, quality: 0.82, format: 'webp' }}
+                      label="Upload Add-on Image"
+                      generatePrompt={`High quality product photo of a luxury ${form.watch('category') || 'service'} add-on: ${form.watch('name') || 'travel add-on'}. Clean background, professional lighting, hospitality style.`}
+                      promptLabel="Generate add-on image"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

@@ -27,6 +27,7 @@ import {
   useUpdateExperience,
 } from '@/hooks/useExperiences';
 import { useActiveDestinations } from '@/hooks/useDestinations';
+import { ImageFieldWithAI } from '@/components/admin/ImageFieldWithAI';
 import { toast } from 'sonner';
 
 const categories = ['Culinary', 'Adventure', 'Cultural', 'Wellness'];
@@ -266,11 +267,15 @@ export function ExperienceFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hero_image_url">Hero Image URL</Label>
-            <Input
-              id="hero_image_url"
-              placeholder="https://..."
-              {...register('hero_image_url')}
+            <Label>Hero Image</Label>
+            <ImageFieldWithAI
+              value={watch('hero_image_url') || undefined}
+              onUpload={(url) => setValue('hero_image_url', url)}
+              onRemove={() => setValue('hero_image_url', '')}
+              storagePath="experiences"
+              label="Upload Hero Image"
+              generatePrompt={`Stunning high-resolution photo of a ${watch('category') || 'luxury'} experience: ${watch('name') || 'travel experience'}. Ultra high resolution, vibrant, editorial travel photography.`}
+              promptLabel="Generate experience hero"
             />
           </div>
 

@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { ImageFieldWithAI } from '@/components/admin/ImageFieldWithAI';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -174,9 +175,20 @@ export function BlogAuthorFormDialog({ open, onOpenChange, author }: BlogAuthorF
               name="avatar_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Avatar URL</FormLabel>
+                  <FormLabel>Avatar</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="https://example.com/avatar.jpg" />
+                    <ImageFieldWithAI
+                      value={field.value || undefined}
+                      onUpload={(url) => form.setValue('avatar_url', url)}
+                      onRemove={() => form.setValue('avatar_url', '')}
+                      storagePath="authors"
+                      preset={{ maxWidth: 512, maxHeight: 512, quality: 0.85, format: 'webp' }}
+                      label="Upload Avatar"
+                      aspectClass="aspect-square max-w-[200px]"
+                      compact
+                      generatePrompt={`Professional portrait photograph of a travel writer named ${form.watch('name') || 'an author'}. Headshot style, warm lighting, editorial quality, friendly expression.`}
+                      promptLabel="Generate avatar"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
