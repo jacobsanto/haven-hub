@@ -1495,6 +1495,7 @@ export type Database = {
         Row: {
           address: string | null
           amenities: string[] | null
+          area_sqm: number | null
           base_price: number
           bathrooms: number
           bedrooms: number
@@ -1536,6 +1537,7 @@ export type Database = {
         Insert: {
           address?: string | null
           amenities?: string[] | null
+          area_sqm?: number | null
           base_price?: number
           bathrooms?: number
           bedrooms?: number
@@ -1577,6 +1579,7 @@ export type Database = {
         Update: {
           address?: string | null
           amenities?: string[] | null
+          area_sqm?: number | null
           base_price?: number
           bathrooms?: number
           bedrooms?: number
