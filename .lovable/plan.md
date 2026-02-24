@@ -1,41 +1,43 @@
 
+# Fix: Import Properties Shows Wrong Provider's Properties
 
-# Delete Imported Properties When Removing a PMS Connection
-
-## Problem
-When you remove a PMS connection, only the connection is deactivated and syncs are disabled. The properties that were imported through that connection remain in the system, cluttering the property list and potentially causing confusion.
+## Root Cause
+The "Import Properties" dialog (`PMSPropertyImportDialog.tsx`) always calls `useFetchTokeetProperties()` from `useAdvanceCMSync.ts`, which is hardcoded to the AdvanceCM adapter. It completely ignores which connection you clicked "Import" on. So even when importing for Guesty, it fetches AdvanceCM properties.
 
 ## Solution
-Update the deactivation logic so that when a PMS connection is removed, all properties that were imported via that connection are also deleted (along with their mappings and related availability data). The confirmation dialog will be updated to clearly warn that imported properties will be removed.
+Make the import dialog provider-aware by replacing the hardcoded AdvanceCM fetch with a dynamic call that routes to the correct edge function based on the connection's provider.
 
 ## Changes
 
-### 1. Update `useDeactivatePMSConnection` mutation
+### 1. Add a generic `useFetchPMSProperties` hook
 **File: `src/hooks/useAdminPMSHealth.ts`**
 
-Before deactivating the connection:
-- Fetch all `pms_property_map` entries for the connection to get the list of `property_id` values
-- Delete all `availability` records for those properties
-- Delete the `pms_property_map` entries (hard delete, not just disable)
-- Delete the `properties` rows themselves
-- Then deactivate the connection as before
-- Invalidate property-related query caches as well
+Add a new mutation that:
+- Takes a `connectionId`
+- Resolves the correct edge function (e.g. `guesty-sync` or `advancecm-sync`)
+- Calls it with `action: 'fetch-properties'`
+- Returns the property list in a normalized format
 
-### 2. Update confirmation dialog text
-**File: `src/components/admin/PMSConnectionHealthCard.tsx`**
+### 2. Update `PMSPropertyImportDialog` to use the generic hook
+**File: `src/components/admin/PMSPropertyImportDialog.tsx`**
 
-Update the `AlertDialogDescription` to warn the user that imported properties will also be deleted, not just syncs disabled.
+- Replace `useFetchTokeetProperties` with the new `useFetchPMSProperties`
+- Pass `connectionId` when fetching so it routes to the correct provider
+- Update the dialog title/description to show the actual provider name instead of hardcoded "AdvanceCM" / "Tokeet"
+- Replace `useBatchImportProperties` with a generic version that calls the correct edge function's `import-property` action
+
+### 3. Add generic batch import hook
+**File: `src/hooks/useAdminPMSHealth.ts`**
+
+Add a `useBatchImportPMSProperties` mutation that:
+- Takes properties + connectionId
+- Resolves the edge function for the connection
+- Calls `import-property` for each selected property via the correct edge function
+- Creates `pms_property_map` entries and `properties` records
 
 ## Technical Details
 
-Deletion order matters due to foreign key relationships:
-1. Get property IDs from `pms_property_map` for this connection
-2. Delete `availability` rows for those property IDs
-3. Delete `booking_addons`, `seasonal_rates`, `special_offers`, `rate_plans` for those property IDs (any tables with `property_id` FK)
-4. Delete `pms_property_map` rows for this connection
-5. Delete `properties` rows
-6. Set `is_active = false` on the connection
-
-The confirmation dialog will clearly state: "This will permanently delete all properties imported through this connection, their availability data, and disable all syncs."
-
-Cache invalidation will include `['properties']` and `['availability-calendar']` queries in addition to the existing PMS queries.
+- The `guesty-sync` edge function already supports `fetch-properties` and `import-property` actions
+- The `advancecm-sync` edge function already supports `fetch-properties`
+- Property data will be normalized to a common shape (`externalId`, `name`, `city`, `country`, `bedrooms`, `maxGuests`) regardless of provider
+- The dialog title will dynamically show "Import Properties from Guesty" or "Import Properties from AdvanceCM" based on the connection
