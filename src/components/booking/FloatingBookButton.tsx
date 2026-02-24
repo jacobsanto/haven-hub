@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Compass, Search } from 'lucide-react';
+import { Compass, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/contexts/BookingContext';
 import { useProperties } from '@/hooks/useProperties';
@@ -80,20 +80,14 @@ export function FloatingBookButton() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 200 }}
-            className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 lg:hidden"
+            className="fixed bottom-5 right-4 z-50 lg:hidden"
           >
             <Button
-              size="lg"
-              className="h-12 rounded-full shadow-lg px-5 active:scale-95 transition-transform gap-2"
+              size="icon"
+              className="h-12 w-12 rounded-full shadow-lg active:scale-95 transition-transform"
               onClick={handleClick}
             >
-              <Search className="h-4 w-4" />
-              <span className="text-sm font-medium">Search</span>
-              {propertyCount > 0 && (
-                <span className="text-primary-foreground/60 text-xs">
-                  · {propertyCount}
-                </span>
-              )}
+              <Calendar className="h-5 w-5" />
             </Button>
           </motion.div>
         )}
