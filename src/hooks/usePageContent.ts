@@ -147,7 +147,7 @@ export function useBulkUpsertPageContent() {
 export interface ContentField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'richtext' | 'image';
+  type: 'text' | 'textarea' | 'richtext' | 'image' | 'icon';
   defaultValue: string;
 }
 
@@ -190,10 +190,13 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
         sectionKey: 'trust_badges',
         title: 'Trust Badges',
         fields: [
+          { key: 'badge_1_icon', label: 'Badge 1 Icon', type: 'icon', defaultValue: 'Star' },
           { key: 'badge_1_title', label: 'Badge 1 Title', type: 'text', defaultValue: 'Handpicked Excellence' },
           { key: 'badge_1_description', label: 'Badge 1 Description', type: 'text', defaultValue: 'Every property personally vetted for quality' },
+          { key: 'badge_2_icon', label: 'Badge 2 Icon', type: 'icon', defaultValue: 'Eye' },
           { key: 'badge_2_title', label: 'Badge 2 Title', type: 'text', defaultValue: 'Unmatched Views' },
           { key: 'badge_2_description', label: 'Badge 2 Description', type: 'text', defaultValue: 'Stunning locations in prime destinations' },
+          { key: 'badge_3_icon', label: 'Badge 3 Icon', type: 'icon', defaultValue: 'Headphones' },
           { key: 'badge_3_title', label: 'Badge 3 Title', type: 'text', defaultValue: 'Concierge Service' },
           { key: 'badge_3_description', label: 'Badge 3 Description', type: 'text', defaultValue: 'Dedicated support from booking to checkout' },
         ],
@@ -221,12 +224,16 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
         fields: [
           { key: 'heading', label: 'Heading', type: 'text', defaultValue: 'Why Book Direct with {brandName}' },
           { key: 'subtitle', label: 'Subtitle', type: 'text', defaultValue: 'Get the best rates and exclusive benefits when you book directly' },
+          { key: 'feature_1_icon', label: 'Feature 1 Icon', type: 'icon', defaultValue: 'Shield' },
           { key: 'feature_1_title', label: 'Feature 1 Title', type: 'text', defaultValue: 'Best Price Guarantee' },
           { key: 'feature_1_description', label: 'Feature 1 Description', type: 'text', defaultValue: "Our direct rates are always the lowest. Find it cheaper elsewhere? We'll match it." },
+          { key: 'feature_2_icon', label: 'Feature 2 Icon', type: 'icon', defaultValue: 'Clock' },
           { key: 'feature_2_title', label: 'Feature 2 Title', type: 'text', defaultValue: 'Free Cancellation' },
           { key: 'feature_2_description', label: 'Feature 2 Description', type: 'text', defaultValue: 'Flexible booking with free cancellation up to 48 hours before check-in.' },
+          { key: 'feature_3_icon', label: 'Feature 3 Icon', type: 'icon', defaultValue: 'CheckCircle' },
           { key: 'feature_3_title', label: 'Feature 3 Title', type: 'text', defaultValue: 'Instant Confirmation' },
           { key: 'feature_3_description', label: 'Feature 3 Description', type: 'text', defaultValue: 'Book and receive your confirmation immediately. No waiting.' },
+          { key: 'feature_4_icon', label: 'Feature 4 Icon', type: 'icon', defaultValue: 'Calendar' },
           { key: 'feature_4_title', label: 'Feature 4 Title', type: 'text', defaultValue: '24/7 Support' },
           { key: 'feature_4_description', label: 'Feature 4 Description', type: 'text', defaultValue: 'Our concierge team is available around the clock for your needs.' },
         ],
@@ -287,12 +294,16 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
         fields: [
           { key: 'heading', label: 'Section Heading', type: 'text', defaultValue: 'Our Values' },
           { key: 'subtitle', label: 'Section Subtitle', type: 'text', defaultValue: 'The principles that guide everything we do' },
+          { key: 'value_1_icon', label: 'Value 1 Icon', type: 'icon', defaultValue: 'Heart' },
           { key: 'value_1_title', label: 'Value 1 Title', type: 'text', defaultValue: 'Passion for Excellence' },
           { key: 'value_1_description', label: 'Value 1 Description', type: 'text', defaultValue: 'Every property in our collection is chosen with care, ensuring exceptional quality and unforgettable experiences.' },
+          { key: 'value_2_icon', label: 'Value 2 Icon', type: 'icon', defaultValue: 'Shield' },
           { key: 'value_2_title', label: 'Value 2 Title', type: 'text', defaultValue: 'Trust & Transparency' },
           { key: 'value_2_description', label: 'Value 2 Description', type: 'text', defaultValue: 'We believe in honest communication and straightforward booking, with no hidden fees or surprises.' },
+          { key: 'value_3_icon', label: 'Value 3 Icon', type: 'icon', defaultValue: 'Sparkles' },
           { key: 'value_3_title', label: 'Value 3 Title', type: 'text', defaultValue: 'Curated Luxury' },
           { key: 'value_3_description', label: 'Value 3 Description', type: 'text', defaultValue: 'Our team personally vets each villa to guarantee it meets our exacting standards for comfort and style.' },
+          { key: 'value_4_icon', label: 'Value 4 Icon', type: 'icon', defaultValue: 'Users' },
           { key: 'value_4_title', label: 'Value 4 Title', type: 'text', defaultValue: 'Personal Service' },
           { key: 'value_4_description', label: 'Value 4 Description', type: 'text', defaultValue: 'From your first inquiry to checkout, our dedicated concierge team is here to make your stay seamless.' },
         ],

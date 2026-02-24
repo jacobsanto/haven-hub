@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 // Curated list of icons relevant to property amenities
-const AMENITY_ICONS = [
+export const AMENITY_ICONS = [
   // Essentials
   'Wifi', 'Wind', 'Flame', 'Car', 'ChefHat', 'WashingMachine', 'Plug', 'Key', 'KeyRound', 'DoorOpen', 'DoorClosed',
   // Wellness & Spa
