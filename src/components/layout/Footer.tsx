@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Mail, Phone, Send, CheckCircle, Loader2, Search, ArrowRight, Shield, Clock, Instagram, Facebook, Twitter, ArrowUp } from 'lucide-react';
+import { MapPin, Mail, Phone, Send, CheckCircle, Loader2, Search, ArrowRight, Shield, Clock, Instagram, Facebook, Twitter, ArrowUp, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useBrand } from '@/contexts/BrandContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ export function Footer() {
   } = useBrand();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -326,6 +328,17 @@ export function Footer() {
                 <Twitter className="h-5 w-5" />
               </a>
               
+              {/* Dark Mode Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                aria-label="Toggle dark mode"
+                className="rounded-full border border-background/20 hover:bg-background/10 ml-2 h-10 w-10"
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+
               {/* Back to Top Button */}
               <Button
                 variant="ghost"

@@ -1,7 +1,8 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, User, Search, Heart } from 'lucide-react';
+import { Menu, X, User, Search, Heart, Moon, Sun } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -29,6 +30,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
   const { brandName, logoUrl } = useBrand();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -118,6 +120,18 @@ export function Header() {
         {/* Right Section */}
         <div className="hidden md:flex items-center gap-2 flex-shrink-0">
           <CurrencySwitcher variant="icon" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "rounded-full",
+              isTransparent && "text-white/80 hover:text-white hover:bg-white/10"
+            )}
+            aria-label="Toggle dark mode"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
           <Button
             variant="ghost"
             size="icon"
