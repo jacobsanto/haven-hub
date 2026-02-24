@@ -29,7 +29,10 @@ import {
   Megaphone,
   Shield,
   PenLine,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -145,6 +148,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { signOut, user } = useAuth();
   const { brandName, logoUrl } = useBrand();
   const { toggleSection, isSectionOpen } = useCollapsedSections();
+  const { theme, setTheme } = useTheme();
 
   const nameParts = brandName.split(' ');
   const primaryPart = nameParts[0] || brandName;
@@ -276,7 +280,18 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           Back to Website
         </Link>
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground truncate max-w-[140px]">{user?.email}</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="h-8 w-8"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <span className="text-xs text-muted-foreground truncate max-w-[110px]">{user?.email}</span>
+          </div>
           <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-10 w-10" aria-label="Sign out">
             <LogOut className="h-4 w-4" />
           </Button>
@@ -290,6 +305,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { brandName, logoUrl } = useBrand();
+  const { theme, setTheme } = useTheme();
 
   const nameParts = brandName.split(' ');
   const primaryPart = nameParts[0] || brandName;
@@ -321,7 +337,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               )}
             </Link>
           </div>
-          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Admin</span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="h-8 w-8"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Admin</span>
+          </div>
         </header>
 
         <main className="flex-1 overflow-auto">
