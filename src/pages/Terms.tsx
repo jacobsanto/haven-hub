@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { PageLayout } from '@/components/layout/PageLayout';
+import { PageSEO } from '@/components/seo/PageSEO';
 import { useBrand } from '@/contexts/BrandContext';
 
 const Terms = () => {
@@ -8,6 +9,7 @@ const Terms = () => {
 
   return (
     <PageLayout>
+      <PageSEO pageSlug="terms" defaults={{ meta_title: 'Terms of Service | Haven Hub', meta_description: 'Review the terms and conditions for using Haven Hub services and booking luxury vacation properties.', og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
       {/* Hero Section */}
       <section className="relative py-20 md:py-28 hero-gradient texture-overlay">
         <div className="container mx-auto px-4 relative z-10">

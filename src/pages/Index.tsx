@@ -15,6 +15,7 @@ import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { useBrand } from '@/contexts/BrandContext';
 import { usePageContent } from '@/hooks/usePageContent';
+import { PageSEO } from '@/components/seo/PageSEO';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -95,7 +96,7 @@ const Index = () => {
 
   return (
     <PageLayout>
-      {/* Hero Section - Full Bleed */}
+      <PageSEO pageSlug="home" defaults={{ meta_title: 'Luxury Vacation Homes | Haven Hub', meta_description: 'Discover and book extraordinary luxury vacation homes around the world. Best rates guaranteed when you book direct.', og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden pb-20">
         {heroImageUrl ? (
           <>

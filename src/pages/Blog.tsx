@@ -11,6 +11,7 @@ import { CategoryFilter } from '@/components/blog/CategoryFilter';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { PageSEO } from '@/components/seo/PageSEO';
 
 export default function Blog() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -120,6 +121,7 @@ export default function Blog() {
 
   return (
     <PageLayout>
+      <PageSEO pageSlug="blog" defaults={{ meta_title: 'Travel Stories & Inspiration | Haven Hub', meta_description: 'Discover travel insights, destination guides, and luxury living inspiration on the Haven Hub blog.', og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
       {/* Immersive Featured Article Hero - Only on first page with posts */}
       {!isLoading && heroPost && !searchQuery && currentPage === 1 && (
         <section className="relative">

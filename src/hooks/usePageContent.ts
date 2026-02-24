@@ -169,6 +169,15 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
     pageTitle: 'Homepage',
     sections: [
       {
+        sectionKey: 'seo',
+        title: 'SEO Metadata',
+        fields: [
+          { key: 'meta_title', label: 'Meta Title', type: 'text', defaultValue: 'Luxury Vacation Homes | Haven Hub' },
+          { key: 'meta_description', label: 'Meta Description', type: 'textarea', defaultValue: 'Discover and book extraordinary luxury vacation homes around the world. Best rates guaranteed when you book direct.' },
+          { key: 'og_image', label: 'OG Image URL', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' },
+        ],
+      },
+      {
         sectionKey: 'hero',
         title: 'Hero Section',
         fields: [
@@ -245,6 +254,15 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
     pageTitle: 'About',
     sections: [
       {
+        sectionKey: 'seo',
+        title: 'SEO Metadata',
+        fields: [
+          { key: 'meta_title', label: 'Meta Title', type: 'text', defaultValue: 'About Us | Haven Hub' },
+          { key: 'meta_description', label: 'Meta Description', type: 'textarea', defaultValue: "Learn about Haven Hub's story, values, and commitment to extraordinary luxury vacation experiences." },
+          { key: 'og_image', label: 'OG Image URL', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' },
+        ],
+      },
+      {
         sectionKey: 'hero',
         title: 'Hero Section',
         fields: [
@@ -308,6 +326,15 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
     pageTitle: 'Properties',
     sections: [
       {
+        sectionKey: 'seo',
+        title: 'SEO Metadata',
+        fields: [
+          { key: 'meta_title', label: 'Meta Title', type: 'text', defaultValue: 'Luxury Properties | Haven Hub' },
+          { key: 'meta_description', label: 'Meta Description', type: 'textarea', defaultValue: 'Browse our curated collection of luxury vacation homes. Best rates guaranteed with instant booking available.' },
+          { key: 'og_image', label: 'OG Image URL', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' },
+        ],
+      },
+      {
         sectionKey: 'header',
         title: 'Page Header',
         fields: [
@@ -321,6 +348,15 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
     pageSlug: 'destinations',
     pageTitle: 'Destinations',
     sections: [
+      {
+        sectionKey: 'seo',
+        title: 'SEO Metadata',
+        fields: [
+          { key: 'meta_title', label: 'Meta Title', type: 'text', defaultValue: 'Destinations | Haven Hub' },
+          { key: 'meta_description', label: 'Meta Description', type: 'textarea', defaultValue: 'Explore extraordinary luxury destinations around the world. Find your perfect getaway.' },
+          { key: 'og_image', label: 'OG Image URL', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1200&q=80' },
+        ],
+      },
       {
         sectionKey: 'hero',
         title: 'Hero Section',
@@ -345,6 +381,15 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
     pageTitle: 'Experiences',
     sections: [
       {
+        sectionKey: 'seo',
+        title: 'SEO Metadata',
+        fields: [
+          { key: 'meta_title', label: 'Meta Title', type: 'text', defaultValue: 'Curated Experiences | Haven Hub' },
+          { key: 'meta_description', label: 'Meta Description', type: 'textarea', defaultValue: 'Enhance your luxury stay with curated experiences — culinary adventures, cultural immersions, and more.' },
+          { key: 'og_image', label: 'OG Image URL', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' },
+        ],
+      },
+      {
         sectionKey: 'hero',
         title: 'Hero Section',
         fields: [
@@ -366,6 +411,15 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
     pageSlug: 'contact',
     pageTitle: 'Contact',
     sections: [
+      {
+        sectionKey: 'seo',
+        title: 'SEO Metadata',
+        fields: [
+          { key: 'meta_title', label: 'Meta Title', type: 'text', defaultValue: 'Contact Us | Haven Hub' },
+          { key: 'meta_description', label: 'Meta Description', type: 'textarea', defaultValue: 'Get in touch with Haven Hub. We are here to help you plan your perfect luxury vacation.' },
+          { key: 'og_image', label: 'OG Image URL', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&q=80' },
+        ],
+      },
       {
         sectionKey: 'hero',
         title: 'Hero Section',
@@ -419,6 +473,51 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
         fields: [
           { key: 'heading', label: 'Heading', type: 'text', defaultValue: 'Exclusive Offers' },
           { key: 'subtitle', label: 'Subtitle', type: 'text', defaultValue: 'Get early access to deals & new properties.' },
+        ],
+      },
+    ],
+  },
+  {
+    pageSlug: 'privacy',
+    pageTitle: 'Privacy Policy',
+    sections: [
+      {
+        sectionKey: 'seo',
+        title: 'SEO Metadata',
+        fields: [
+          { key: 'meta_title', label: 'Meta Title', type: 'text', defaultValue: 'Privacy Policy | Haven Hub' },
+          { key: 'meta_description', label: 'Meta Description', type: 'textarea', defaultValue: 'Read our privacy policy to understand how Haven Hub collects, uses, and protects your personal data.' },
+          { key: 'og_image', label: 'OG Image URL', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' },
+        ],
+      },
+    ],
+  },
+  {
+    pageSlug: 'terms',
+    pageTitle: 'Terms of Service',
+    sections: [
+      {
+        sectionKey: 'seo',
+        title: 'SEO Metadata',
+        fields: [
+          { key: 'meta_title', label: 'Meta Title', type: 'text', defaultValue: 'Terms of Service | Haven Hub' },
+          { key: 'meta_description', label: 'Meta Description', type: 'textarea', defaultValue: 'Review the terms and conditions for using Haven Hub services and booking luxury vacation properties.' },
+          { key: 'og_image', label: 'OG Image URL', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' },
+        ],
+      },
+    ],
+  },
+  {
+    pageSlug: 'blog',
+    pageTitle: 'Blog',
+    sections: [
+      {
+        sectionKey: 'seo',
+        title: 'SEO Metadata',
+        fields: [
+          { key: 'meta_title', label: 'Meta Title', type: 'text', defaultValue: 'Travel Stories & Inspiration | Haven Hub' },
+          { key: 'meta_description', label: 'Meta Description', type: 'textarea', defaultValue: 'Discover travel insights, destination guides, and luxury living inspiration on the Haven Hub blog.' },
+          { key: 'og_image', label: 'OG Image URL', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' },
         ],
       },
     ],
