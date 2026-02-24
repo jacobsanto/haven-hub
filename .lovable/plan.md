@@ -1,87 +1,79 @@
 
 
-# Add SEO Metadata Fields Per Page with Dynamic Meta Tags
+# Add Admin Theme Toggle and Live Content Preview
 
-## Overview
+## Problem
 
-Add editable SEO metadata (meta title, meta description, OG image) for every page, manageable from the existing Admin Page Content editor, and rendered dynamically in the frontend via a reusable `<PageSEO>` component.
+1. **No dark/light toggle in admin** -- The admin panel has no way to switch between light and dark mode. The public site has toggles in the Header and Footer, but `AdminLayout` doesn't include one.
+2. **No live preview** -- When editing page content or SEO fields in `/admin/content`, admins must save and navigate to the public page to see the result. There's no inline preview.
 
-## What Changes
+## Solution
 
-### 1. Add SEO Section to Every Page Schema
+### Part 1: Admin Theme Toggle
 
-In `src/hooks/usePageContent.ts`, add a new `seo` section to each page in `PAGE_CONTENT_SCHEMAS` with three fields:
+Add a Sun/Moon toggle button to the admin sidebar (bottom area, next to the "Back to Website" link). This uses the existing `next-themes` `useTheme()` hook -- no new dependencies needed.
 
-| Field | Type | Default |
-|-------|------|---------|
-| `meta_title` | text | Page-specific title (e.g. "Luxury Vacation Homes \| {brandName}") |
-| `meta_description` | text | Page-specific description |
-| `og_image` | image | Current hardcoded OG image or page hero image |
+**File: `src/components/admin/AdminLayout.tsx`**
 
-This means all SEO fields will automatically appear in the existing `/admin/content` editor -- no new admin UI needed.
+- Import `useTheme` from `next-themes` and `Moon`/`Sun` icons
+- Add a toggle button in the sidebar footer area (between "Back to Website" and the user email/sign-out row)
+- Also add the toggle to the mobile header bar
+- The toggle calls `setTheme(theme === 'dark' ? 'light' : 'dark')`, same pattern as Header/Footer
 
-### 2. Create `PageSEO` Component
+### Part 2: Live Content Preview Panel
 
-New file: `src/components/seo/PageSEO.tsx`
+Add an expandable preview panel to the `/admin/content` page editor that shows a rendered preview of the current section being edited, updating in real-time as the admin types.
 
-A small component that:
-- Accepts `pageSlug` as a prop
-- Calls `usePageContent(pageSlug, 'seo', defaults)` to fetch SEO data
-- Uses `document.title` and DOM manipulation to set `<meta>` tags dynamically
-- Sets: `<title>`, `<meta name="description">`, `<meta property="og:title">`, `<meta property="og:description">`, `<meta property="og:image">`, `<meta name="twitter:image">`
-- Falls back to sensible defaults from the schema if no DB values exist
+**File: `src/pages/admin/AdminPageContent.tsx`**
+
+- Add a "Preview" toggle button at the top of the page editor
+- When enabled, show a preview panel below or beside the form
+- The preview renders a simplified representation of the section content using the current `formValues` (not yet saved to DB)
+- For SEO sections: show a Google-style search result snippet (title truncated to ~60 chars, description to ~160 chars, with the URL)
+- For text sections: show the heading/subheading/paragraph in a styled card that approximates the public page layout
+- For image fields: show a thumbnail preview of the URL
+- Preview updates live as the admin types (no save required)
+
+**New file: `src/components/admin/ContentPreview.tsx`**
+
+A reusable preview component that accepts:
+- `sectionKey` -- to determine the preview layout
+- `fields` -- the field definitions from the schema
+- `values` -- the current form values (live from state)
+
+It renders:
+- **SEO Preview**: A Google SERP-style card showing title (blue link), URL, and description (grey text), with character count indicators
+- **Hero Preview**: Large heading + subtitle on a muted background
+- **General Text Preview**: Heading + paragraph in a card
+
+## Technical Details
+
+### Theme Toggle (AdminLayout)
 
 ```text
-function PageSEO({ pageSlug, defaults }) {
-  const seo = usePageContent(pageSlug, 'seo', defaults);
-
-  useEffect(() => {
-    document.title = seo.meta_title;
-    setMetaTag('description', seo.meta_description);
-    setMetaTag('og:title', seo.meta_title, 'property');
-    setMetaTag('og:description', seo.meta_description, 'property');
-    setMetaTag('og:image', seo.og_image, 'property');
-    setMetaTag('twitter:image', seo.og_image);
-  }, [seo]);
-
-  return null; // renders nothing visible
-}
+Location: sidebar footer, between "Back to Website" and user email
+Component: Button with Moon/Sun icon
+Logic: useTheme() from next-themes, same as Header.tsx
+Mobile: Also added to the mobile sticky header bar
 ```
 
-### 3. Add `<PageSEO>` to Each Public Page
+### Content Preview (AdminPageContent)
 
-Drop `<PageSEO pageSlug="home" />` (etc.) into each page component, right inside the return:
-
-- `Index.tsx` -- pageSlug `"home"`
-- `About.tsx` -- pageSlug `"about"`
-- `Properties.tsx` -- pageSlug `"properties"`
-- `Destinations.tsx` -- pageSlug `"destinations"`
-- `Experiences.tsx` -- pageSlug `"experiences"`
-- `Contact.tsx` -- pageSlug `"contact"`
-- `Privacy.tsx` -- pageSlug `"privacy"` (new schema entry)
-- `Terms.tsx` -- pageSlug `"terms"` (new schema entry)
-- `Blog.tsx` -- pageSlug `"blog"` (new schema entry)
-
-### 4. Add Missing Page Schemas
-
-Add `PAGE_CONTENT_SCHEMAS` entries for pages that don't have one yet: `privacy`, `terms`, and `blog`. Each will have at minimum the `seo` section. This also means these pages will appear in the admin content editor.
+```text
+State: showPreview boolean toggle
+Rendering: Maps over current section fields using live formValues
+SEO: Google SERP mockup with char limits (60 title / 160 description)
+Text: Styled card with heading hierarchy
+Image: img tag with the URL value, fallback placeholder
+```
 
 ## Files to Create
-- `src/components/seo/PageSEO.tsx`
+- `src/components/admin/ContentPreview.tsx` -- Preview renderer component
 
 ## Files to Modify
-- `src/hooks/usePageContent.ts` -- add `seo` section to all existing page schemas; add `privacy`, `terms`, `blog` schemas
-- `src/pages/Index.tsx` -- add `<PageSEO>`
-- `src/pages/About.tsx` -- add `<PageSEO>`
-- `src/pages/Properties.tsx` -- add `<PageSEO>`
-- `src/pages/Destinations.tsx` -- add `<PageSEO>`
-- `src/pages/Experiences.tsx` -- add `<PageSEO>`
-- `src/pages/Contact.tsx` -- add `<PageSEO>`
-- `src/pages/Privacy.tsx` -- add `<PageSEO>`
-- `src/pages/Terms.tsx` -- add `<PageSEO>`
-- `src/pages/Blog.tsx` -- add `<PageSEO>`
+- `src/components/admin/AdminLayout.tsx` -- Add theme toggle to sidebar and mobile header
+- `src/pages/admin/AdminPageContent.tsx` -- Add preview toggle and render ContentPreview
 
 ## No Database Changes Required
 
-The existing `page_content` table already supports this -- SEO entries will be stored as `page_slug + section_key='seo' + content_key` rows, just like all other content. No migration needed.
-
+All preview rendering uses live form state. No new tables or migrations.
