@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   CheckCircle,
@@ -10,11 +11,22 @@ import {
   Settings,
   Download,
   Link as LinkIcon,
+  Trash2,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PMSProviderConfig, getProviderById } from "@/lib/pms-providers";
 import type { PMSConnection } from "@/hooks/useAdminPMSHealth";
 
@@ -46,8 +58,10 @@ interface PMSConnectionHealthCardProps {
   onTestConnection: () => void;
   onSyncNow: () => void;
   onImportProperties: () => void;
+  onDelete?: () => void;
   isTestingConnection: boolean;
   isSyncing: boolean;
+  isDeleting?: boolean;
   propertyMappingsCount?: number;
 }
 
@@ -58,10 +72,13 @@ export function PMSConnectionHealthCard({
   onTestConnection,
   onSyncNow,
   onImportProperties,
+  onDelete,
   isTestingConnection,
   isSyncing,
+  isDeleting = false,
   propertyMappingsCount = 0,
 }: PMSConnectionHealthCardProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const getStatusIcon = (status: string | null) => {
     switch (status) {
       case 'success':
@@ -129,6 +146,17 @@ export function PMSConnectionHealthCard({
               )}
               Sync Now
             </Button>
+            {connection && onDelete && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Remove
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -204,6 +232,30 @@ export function PMSConnectionHealthCard({
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove PMS Connection</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will deactivate the connection and disable all property syncs linked to it.
+              Sync history will be preserved. You can reconfigure a new connection afterwards.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                onDelete?.();
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Remove Connection
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

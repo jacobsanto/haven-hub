@@ -402,6 +402,35 @@ export function useSyncAllPropertyAvailability() {
   });
 }
 
+// Deactivate (soft-delete) a PMS connection
+export function useDeactivatePMSConnection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (connectionId: string) => {
+      // Disable all property mappings for this connection
+      const { error: mapError } = await supabase
+        .from('pms_property_map')
+        .update({ sync_enabled: false })
+        .eq('pms_connection_id', connectionId);
+
+      if (mapError) throw mapError;
+
+      // Soft-delete the connection
+      const { error } = await supabase
+        .from('pms_connections')
+        .update({ is_active: false })
+        .eq('id', connectionId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
+    },
+  });
+}
+
 // Update auto-sync settings
 export function useUpdateAutoSyncSettings() {
   const queryClient = useQueryClient();
