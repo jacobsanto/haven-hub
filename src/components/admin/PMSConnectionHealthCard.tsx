@@ -238,8 +238,9 @@ export function PMSConnectionHealthCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Remove PMS Connection</AlertDialogTitle>
             <AlertDialogDescription>
-              This will deactivate the connection and disable all property syncs linked to it.
-              Sync history will be preserved. You can reconfigure a new connection afterwards.
+              This will <strong>permanently delete all properties</strong> imported through this
+              connection, their availability data, seasonal rates, and related records. Sync
+              history will be preserved. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

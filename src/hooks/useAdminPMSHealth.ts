@@ -402,21 +402,66 @@ export function useSyncAllPropertyAvailability() {
   });
 }
 
-// Deactivate (soft-delete) a PMS connection
+// Deactivate a PMS connection and delete all imported properties
 export function useDeactivatePMSConnection() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (connectionId: string) => {
-      // Disable all property mappings for this connection
-      const { error: mapError } = await supabase
+      // 1. Get all property IDs imported through this connection
+      const { data: mappings, error: fetchError } = await supabase
         .from('pms_property_map')
-        .update({ sync_enabled: false })
+        .select('property_id')
         .eq('pms_connection_id', connectionId);
 
-      if (mapError) throw mapError;
+      if (fetchError) throw fetchError;
 
-      // Soft-delete the connection
+      const propertyIds = (mappings || []).map((m) => m.property_id);
+
+      if (propertyIds.length > 0) {
+        // 2. Delete dependent records (FK order matters)
+        const dependentTables = [
+          'availability',
+          'seasonal_rates',
+          'special_offers',
+          'rate_plans',
+          'addons_catalog',
+          'fees_taxes',
+          'checkout_holds',
+        ] as const;
+
+        for (const table of dependentTables) {
+          const { error } = await supabase
+            .from(table)
+            .delete()
+            .in('property_id', propertyIds);
+          if (error) {
+            console.warn(`Failed to clean ${table}:`, error.message);
+          }
+        }
+
+        // 3. Hard-delete property mappings
+        const { error: mapError } = await supabase
+          .from('pms_property_map')
+          .delete()
+          .eq('pms_connection_id', connectionId);
+        if (mapError) throw mapError;
+
+        // 4. Delete the properties themselves
+        const { error: propError } = await supabase
+          .from('properties')
+          .delete()
+          .in('id', propertyIds);
+        if (propError) throw propError;
+      } else {
+        // No properties, just clean up mappings
+        await supabase
+          .from('pms_property_map')
+          .delete()
+          .eq('pms_connection_id', connectionId);
+      }
+
+      // 5. Soft-delete the connection
       const { error } = await supabase
         .from('pms_connections')
         .update({ is_active: false })
@@ -427,6 +472,8 @@ export function useDeactivatePMSConnection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
       queryClient.invalidateQueries({ queryKey: ['availability'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
     },
   });
 }
