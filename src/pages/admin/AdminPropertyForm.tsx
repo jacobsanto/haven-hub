@@ -1,6 +1,7 @@
 import { useState, useEffect, KeyboardEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2, Sparkles, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { GalleryEditor } from '@/components/admin/GalleryEditor';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -781,38 +782,21 @@ export default function AdminPropertyForm() {
               {/* Gallery */}
               <div className="space-y-2">
                 <Label>Gallery Images</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {formData.gallery.map((url, index) => (
-                    <div
-                      key={index}
-                      className="relative aspect-square rounded-lg overflow-hidden"
-                    >
-                      <img
-                        src={url}
-                        alt={`Gallery ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-1 right-1 h-6 w-6"
-                        onClick={() => removeGalleryImage(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                  <div className="aspect-square">
-                    <ImageUploadWithOptimizer
-                      onUpload={(url) => setFormData((prev) => ({ ...prev, gallery: [...prev.gallery, url] }))}
-                      preset={IMAGE_PRESETS.gallery}
-                      storagePath="gallery"
-                      label="Add Image"
-                      aspectClass="aspect-square"
-                      compact
-                    />
-                  </div>
+                <GalleryEditor
+                  gallery={formData.gallery}
+                  onReorder={(newGallery) => setFormData((prev) => ({ ...prev, gallery: newGallery }))}
+                  onRemove={removeGalleryImage}
+                  onSetAsHero={(url) => setFormData((prev) => ({ ...prev, hero_image_url: url }))}
+                />
+                <div className="aspect-square max-w-[200px]">
+                  <ImageUploadWithOptimizer
+                    onUpload={(url) => setFormData((prev) => ({ ...prev, gallery: [...prev.gallery, url] }))}
+                    preset={IMAGE_PRESETS.gallery}
+                    storagePath="gallery"
+                    label="Add Image"
+                    aspectClass="aspect-square"
+                    compact
+                  />
                 </div>
               </div>
             </div>
