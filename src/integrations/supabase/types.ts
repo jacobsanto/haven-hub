@@ -603,6 +603,10 @@ export type Database = {
           primary_color: string | null
           ring_color: string | null
           secondary_color: string | null
+          social_facebook: string | null
+          social_instagram: string | null
+          social_twitter: string | null
+          social_youtube: string | null
           updated_at: string | null
         }
         Insert: {
@@ -627,6 +631,10 @@ export type Database = {
           primary_color?: string | null
           ring_color?: string | null
           secondary_color?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -651,6 +659,10 @@ export type Database = {
           primary_color?: string | null
           ring_color?: string | null
           secondary_color?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1158,6 +1170,36 @@ export type Database = {
           is_active?: boolean
           source?: string | null
           subscribed_at?: string
+        }
+        Relationships: []
+      }
+      page_content: {
+        Row: {
+          content_key: string
+          content_type: string
+          id: string
+          page_slug: string
+          section_key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          content_key: string
+          content_type?: string
+          id?: string
+          page_slug: string
+          section_key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          content_key?: string
+          content_type?: string
+          id?: string
+          page_slug?: string
+          section_key?: string
+          updated_at?: string
+          value?: string
         }
         Relationships: []
       }

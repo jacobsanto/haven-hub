@@ -61,6 +61,7 @@ const AdminContentCalendar = React.lazy(() => import("./pages/admin/AdminContent
 const AdminPromotionalCampaigns = React.lazy(() => import("./pages/admin/AdminPromotionalCampaigns"));
 const AdminExitIntent = React.lazy(() => import("./pages/admin/AdminExitIntent"));
 const AdminUserRoles = React.lazy(() => import("./pages/admin/AdminUserRoles"));
+const AdminPageContent = React.lazy(() => import("./pages/admin/AdminPageContent"));
 
 const queryClient = new QueryClient();
 
@@ -131,6 +132,7 @@ const App = () => (
                 <Route path="/admin/campaigns" element={<AdminPromotionalCampaigns />} />
                 <Route path="/admin/exit-intent" element={<AdminExitIntent />} />
                 <Route path="/admin/user-roles" element={<AdminUserRoles />} />
+                <Route path="/admin/content" element={<AdminPageContent />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

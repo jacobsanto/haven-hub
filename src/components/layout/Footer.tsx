@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Mail, Phone, Send, CheckCircle, Loader2, Search, ArrowRight, Shield, Clock, Instagram, Facebook, Twitter, ArrowUp, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useBrand } from '@/contexts/BrandContext';
+import { usePageContent } from '@/hooks/usePageContent';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,8 +16,19 @@ export function Footer() {
     logoUrl,
     contactEmail,
     contactPhone,
-    contactAddress
+    contactAddress,
+    socialInstagram,
+    socialFacebook,
+    socialTwitter,
   } = useBrand();
+  const ctaContent = usePageContent('footer', 'cta', {
+    heading: 'Ready to Book Your Dream Escape?',
+    subtitle: 'Browse our curated collection of luxury properties',
+  });
+  const newsletterContent = usePageContent('footer', 'newsletter', {
+    heading: 'Exclusive Offers',
+    subtitle: 'Get early access to deals & new properties.',
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
@@ -83,10 +95,10 @@ export function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <h3 className="text-2xl font-serif font-medium text-primary-foreground mb-2">
-                Ready to Book Your Dream Escape?
+                {ctaContent.heading}
               </h3>
               <p className="text-primary-foreground/80 text-sm">
-                Browse our curated collection of luxury properties
+                {ctaContent.subtitle}
               </p>
             </div>
             <Button 
@@ -147,7 +159,7 @@ export function Footer() {
               {/* Newsletter */}
               <div className="space-y-3">
                 <h4 className="font-medium text-sm uppercase tracking-wider opacity-60">
-                  Exclusive Offers
+                  {newsletterContent.heading}
                 </h4>
                 {isSubscribed ? (
                   <div className="flex items-center gap-2 text-sm opacity-80">
@@ -157,7 +169,7 @@ export function Footer() {
                 ) : (
                   <form onSubmit={handleSubscribe} className="space-y-3">
                     <p className="text-sm opacity-70">
-                      Get early access to deals & new properties.
+                      {newsletterContent.subtitle}
                     </p>
                     <div className="flex gap-2">
                       <Input 
@@ -307,21 +319,27 @@ export function Footer() {
             {/* Social Icons */}
             <div className="flex items-center gap-4 order-1 sm:order-2">
               <a 
-                href="#" 
+                href={socialInstagram || '#'} 
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Follow us on Instagram"
                 className="opacity-60 hover:opacity-100 hover:text-gold-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Instagram className="h-5 w-5" />
               </a>
               <a 
-                href="#" 
+                href={socialFacebook || '#'} 
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Follow us on Facebook"
                 className="opacity-60 hover:opacity-100 hover:text-gold-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Facebook className="h-5 w-5" />
               </a>
               <a 
-                href="#" 
+                href={socialTwitter || '#'} 
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Follow us on X (Twitter)"
                 className="opacity-60 hover:opacity-100 hover:text-gold-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
               >

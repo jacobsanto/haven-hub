@@ -25,6 +25,10 @@ export interface BrandSettings {
   body_font: string;
   base_currency: SupportedCurrency;
   dark_palette: Record<string, string> | null;
+  social_instagram: string | null;
+  social_facebook: string | null;
+  social_twitter: string | null;
+  social_youtube: string | null;
   updated_at: string;
 }
 
@@ -49,6 +53,10 @@ export const defaultBrandSettings: Omit<BrandSettings, 'id' | 'updated_at'> = {
   body_font: 'Lato',
   base_currency: 'EUR',
   dark_palette: null,
+  social_instagram: null,
+  social_facebook: null,
+  social_twitter: null,
+  social_youtube: null,
 };
 
 export function useBrandSettings() {

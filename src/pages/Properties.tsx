@@ -11,6 +11,7 @@ import { TrustBadges } from '@/components/booking/TrustBadges';
 import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidget';
 import { useProperties } from '@/hooks/useProperties';
 import { useAvailableProperties } from '@/hooks/useAvailableProperties';
+import { usePageContent } from '@/hooks/usePageContent';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -43,6 +44,11 @@ export default function Properties() {
   const guests = searchParams.get('guests') ? parseInt(searchParams.get('guests')!) : undefined;
   const checkIn = searchParams.get('checkIn') || undefined;
   const checkOut = searchParams.get('checkOut') || undefined;
+
+  const headerContent = usePageContent('properties', 'header', {
+    heading: 'Find & Book Your Perfect Stay',
+    subtitle: 'Best rates guaranteed when you book direct. Instant confirmation available.',
+  });
 
   const hasDateSearch = !!checkIn && !!checkOut;
   const nights = hasDateSearch ? differenceInDays(parseISO(checkOut!), parseISO(checkIn!)) : undefined;
@@ -240,8 +246,8 @@ export default function Properties() {
                 {hasDateSearch && location
                   ? `Stays in ${location}`
                   : location
-                  ? `Book Your Stay in ${location}`
-                  : 'Find & Book Your Perfect Stay'}
+                   ? `Book Your Stay in ${location}`
+                   : headerContent.heading}
               </h1>
               {hasDateSearch && (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground flex-wrap">
@@ -256,8 +262,8 @@ export default function Properties() {
                 </div>
               )}
               {!hasDateSearch && (
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Best rates guaranteed when you book direct. Instant confirmation available.
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                  {headerContent.subtitle}
                 </p>
               )}
             </motion.div>
