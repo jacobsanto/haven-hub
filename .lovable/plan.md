@@ -1,43 +1,29 @@
 
-# Fix: Import Properties Shows Wrong Provider's Properties
 
-## Root Cause
-The "Import Properties" dialog (`PMSPropertyImportDialog.tsx`) always calls `useFetchTokeetProperties()` from `useAdvanceCMSync.ts`, which is hardcoded to the AdvanceCM adapter. It completely ignores which connection you clicked "Import" on. So even when importing for Guesty, it fetches AdvanceCM properties.
+# Fix Guesty Authentication - Add Correct OAuth Scope
 
-## Solution
-Make the import dialog provider-aware by replacing the hardcoded AdvanceCM fetch with a dynamic call that routes to the correct edge function based on the connection's provider.
+## Problem
+The Guesty Booking Engine API requires the scope `booking_engine:api` in the OAuth2 token request. The code currently sends no scope at all, which causes a 401 authentication failure.
 
-## Changes
+## Evidence
+From the official Guesty Booking Engine API docs (https://booking-api-docs.guesty.com/docs/authentication-1), the token request must include:
+```
+--data-urlencode 'scope=booking_engine:api'
+```
 
-### 1. Add a generic `useFetchPMSProperties` hook
-**File: `src/hooks/useAdminPMSHealth.ts`**
+## Fix
 
-Add a new mutation that:
-- Takes a `connectionId`
-- Resolves the correct edge function (e.g. `guesty-sync` or `advancecm-sync`)
-- Calls it with `action: 'fetch-properties'`
-- Returns the property list in a normalized format
+### File: `supabase/functions/guesty-sync/index.ts`
 
-### 2. Update `PMSPropertyImportDialog` to use the generic hook
-**File: `src/components/admin/PMSPropertyImportDialog.tsx`**
+Add the `scope: "booking_engine:api"` parameter to the OAuth token request body (line 184-188):
 
-- Replace `useFetchTokeetProperties` with the new `useFetchPMSProperties`
-- Pass `connectionId` when fetching so it routes to the correct provider
-- Update the dialog title/description to show the actual provider name instead of hardcoded "AdvanceCM" / "Tokeet"
-- Replace `useBatchImportProperties` with a generic version that calls the correct edge function's `import-property` action
+```typescript
+body: new URLSearchParams({
+  grant_type: "client_credentials",
+  scope: "booking_engine:api",
+  client_id: clientId,
+  client_secret: clientSecret,
+}),
+```
 
-### 3. Add generic batch import hook
-**File: `src/hooks/useAdminPMSHealth.ts`**
-
-Add a `useBatchImportPMSProperties` mutation that:
-- Takes properties + connectionId
-- Resolves the edge function for the connection
-- Calls `import-property` for each selected property via the correct edge function
-- Creates `pms_property_map` entries and `properties` records
-
-## Technical Details
-
-- The `guesty-sync` edge function already supports `fetch-properties` and `import-property` actions
-- The `advancecm-sync` edge function already supports `fetch-properties`
-- Property data will be normalized to a common shape (`externalId`, `name`, `city`, `country`, `bedrooms`, `maxGuests`) regardless of provider
-- The dialog title will dynamically show "Import Properties from Guesty" or "Import Properties from AdvanceCM" based on the connection
+This is a one-line addition. No other files need to change.
