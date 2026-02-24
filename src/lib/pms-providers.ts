@@ -16,6 +16,7 @@ export interface PMSProviderConfig {
   description: string;
   logo?: string;
   docsUrl: string;
+  edgeFunctionName: string;
   authFields: AuthFieldConfig[];
   capabilities: {
     pullProperties: boolean;
@@ -56,6 +57,7 @@ export const PMS_PROVIDERS: PMSProviderConfig[] = [
     name: 'AdvanceCM (Tokeet)',
     description: 'Vacation rental property management and channel manager',
     docsUrl: 'https://capi.tokeet.com/docs',
+    edgeFunctionName: 'advancecm-sync',
     authFields: [
       {
         key: 'api_key',
@@ -90,6 +92,7 @@ export const PMS_PROVIDERS: PMSProviderConfig[] = [
     name: 'Hostaway',
     description: 'Property management platform with channel distribution',
     docsUrl: 'https://api.hostaway.com/documentation',
+    edgeFunctionName: 'hostaway-sync',
     authFields: [
       {
         key: 'client_id',
@@ -123,6 +126,7 @@ export const PMS_PROVIDERS: PMSProviderConfig[] = [
     name: 'Guesty',
     description: 'End-to-end property management solution',
     docsUrl: 'https://docs.guesty.com/',
+    edgeFunctionName: 'guesty-sync',
     authFields: [
       {
         key: 'api_token',
@@ -162,6 +166,15 @@ export function getProviderByName(name: string): PMSProviderConfig | undefined {
     p.name.toLowerCase().includes(name.toLowerCase()) ||
     p.id.toLowerCase() === name.toLowerCase()
   );
+}
+
+/**
+ * Get the edge function name for a given PMS provider.
+ * Falls back to 'advancecm-sync' if provider not found.
+ */
+export function getEdgeFunctionForProvider(providerId: string): string {
+  const provider = getProviderById(providerId);
+  return provider?.edgeFunctionName || 'advancecm-sync';
 }
 
 export function getDefaultSyncSettings() {
