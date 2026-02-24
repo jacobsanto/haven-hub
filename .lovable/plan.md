@@ -1,97 +1,125 @@
 
 
-# Homepage Hero Section Redesign
+# Property Detail Page Redesign
 
-## Reference Layout
+## Overview
 
-The reference image shows a hero with this structure:
-- Full-bleed background image (destination photo)
-- Top-center: Large heading "Experience [Destination]" + subtitle
-- Middle-bottom area: Search bar (glass panel) on the LEFT side + a Featured Villa card on the RIGHT side, side by side
-- Bottom center: 4 circular navigation icons (page shortcuts)
+Restructure the property detail page to match the reference layout: a clean, card-based design with the gallery and booking summary side-by-side in the hero area, highlight pills below, inline quick stats, and an experiences strip at the bottom.
 
-## Changes Required
+## Layout Structure
 
-### File: `src/pages/Index.tsx` (Hero Section Only)
+```text
+|  [< Back]      Property Name          [Save] [Heart]  |
+|          Location · Feature · Verified Exclusive       |
+|                                                        |
+|  [=== Gallery Slider ===]  [ Booking Summary  ]       |
+|  [  thumbs  thumbs  >  ]  [ Check-In  Check-Out ]     |
+|                            [ Guests              ]     |
+|                            [ Price / night       ]     |
+|                            [ Reserve Villa >     ]     |
+|                            [ Free Cancel · Pay Later ] |
+|                                                        |
+|  [Infinity Pool] [Sunset View] [Private Terrace]       |
+|                                                        |
+|  120 m²  ·  2 Bedrooms  ·  2 Bathrooms                |
+|                                                        |
+|  Experiences:  Sunset Cruise €180  ·  Wine Tasting €95 |
+|                                    [Talk to Concierge] |
+```
 
-Restructure the hero section (lines 41-72) to match the reference layout:
+## Changes
 
-1. **Hero heading** -- Add dynamic text at top-center of hero: "Experience [Destination Name]" using the first featured property's destination data, with a subtitle like "Book a luxury villa in [location]". White text, large serif font.
+### 1. `src/pages/PropertyDetail.tsx` -- Major restructure
 
-2. **Search + Villa Card row** -- Replace the current centered search bar with a horizontal flex layout:
-   - **Left side**: The existing `SearchBar` (glass panel, already styled)
-   - **Right side**: A new "Featured Villa" card -- a compact glass-panel card showing:
-     - Property hero image (thumbnail)
-     - Property name
-     - Star rating (gold stars + "4.9")
-     - Location (city, country)
-     - Price ("From [base_price] / per night")
-     - "View Details" button linking to `/properties/[slug]`
-   - On mobile: stack vertically (search on top, villa card below)
+**Top bar**: Replace breadcrumbs with a simpler navigation bar:
+- Left: "Back" button (glass-panel pill, arrow + "Back") using `useNavigate(-1)`
+- Center: Property name (serif, large) + subtitle line (location, first highlight, "Verified Exclusive" if instant_booking)
+- Right: "Save" text button + Heart icon (inline, not floating)
 
-3. **Bottom navigation icons** -- Replace the "Scroll to Discover" indicator with a row of 4 circular icon buttons linking to key pages:
-   - Destinations (MapPin icon)
-   - Properties (Home icon)
-   - Experiences (Sparkles icon)
-   - Blog/Stories (BookOpen icon)
-   - Glass-panel style circles, white/translucent with subtle icons
+**Hero section**: Replace the current full-width gallery + separate sidebar layout with a side-by-side row:
+- Left (~60-65%): Use `PropertyHeroSlider` (Embla carousel with thumbnails) instead of `PropertyGallery` (bento grid)
+- Right (~35-40%): Compact booking summary card (glass-panel) showing:
+  - "Booking summary" header
+  - Check-In / Check-Out date display boxes
+  - Guests selector
+  - Price per night (large)
+  - Gold "Reserve Villa" button
+  - "Free Cancellation · Pay Later" trust line
+  - This replaces the existing `BookingWidget` in the sidebar
 
-### File: `src/components/search/SearchBar.tsx`
+**Below hero**: 
+- Highlight pills row (reuse `PropertyHighlights` with `variant="compact"`)
+- Quick stats inline row (simplified from `PropertyQuickStats`)
 
-No structural changes needed -- the hero variant already has the right glass-panel pill style. Minor tweak: remove the Destination field from the hero variant since the hero already contextualizes the destination. (Optional -- can keep as-is if simpler.)
+**Experiences strip**: Compact horizontal row of related experiences with name + price, plus "Talk to Concierge" button on the right
 
----
+**Remove from this page view**:
+- `PropertyStickyNav` (remove)
+- `PropertyShareSave` floating sidebar (replace with inline top-bar buttons)
+- Breadcrumbs (replace with Back button)
+- `PropertyQuickStats` overlapping card (replace with inline stats)
+- The old 3-column grid layout
+
+**Keep below the fold** (scrollable content unchanged):
+- Overview/Description section
+- Highlights detail section
+- Rooms & Spaces
+- Amenities
+- Location & Neighborhood
+- House Rules & Policies
+- Similar Properties
+- Mobile Booking CTA
+
+### 2. `src/components/booking/BookingWidget.tsx` -- No changes
+
+The existing BookingWidget stays as-is for the below-fold sticky sidebar. The hero area will have a NEW compact "BookingSummaryCard" component rendered inline in PropertyDetail.tsx (not a separate file -- just JSX in the page, keeping it simple). This compact card will trigger the same `BookingFlowDialog` on "Reserve Villa" click.
+
+### 3. Files NOT modified
+
+- All hooks, services, contexts untouched
+- BookingWidget.tsx stays for potential reuse
+- PropertyHeroSlider.tsx used as-is (already has Embla carousel + thumbnails)
+- MobileBookingCTA stays for mobile users
 
 ## Technical Details
 
-### New elements in `Index.tsx` hero section:
+### PropertyDetail.tsx changes:
 
-**Hero Heading Block** (above search row):
-```text
-"Experience {heroProperty destination name}"
-"Book a luxury villa in {city}, {country}"
-```
-Uses existing `heroProperty` data (already fetched). Falls back to brand name if no property.
+**New imports:**
+- `PropertyHeroSlider` (replacing `PropertyGallery`)
+- `useNavigate` from react-router-dom
+- `BookingFlowDialog` for the compact card's reserve button
+- `Heart, ArrowLeft, MessageCircle, Shield` from lucide-react
 
-**Featured Villa Card** (new inline component):
-- Uses `heroProperty` (the first featured property, already available)
-- Shows: `hero_image_url`, `name`, `city`, `country`, `base_price`
-- Links to `/properties/${heroProperty.slug}`
-- Glass-panel background with rounded corners
-- Compact: ~280px wide on desktop
+**Remove imports:**
+- `PropertyGallery`
+- `PropertyStickyNav`
+- `PropertyShareSave`
+- `PropertyQuickStats`
+- Breadcrumb components
 
-**Bottom Nav Icons**:
-- 4 `Link` components with circular glass-panel buttons
-- Replaces the current "Scroll to Discover" `motion.div`
+**Hero compact booking card** (inline JSX):
+- Glass-panel styled card
+- Check-in/Check-out displayed as styled date boxes (using pre-filled dates or placeholder)
+- Guests dropdown display
+- Price: large serif font with "/per night"
+- Gold "Reserve Villa" button that opens `BookingFlowDialog`
+- Trust line: clock icon + "Free Cancellation · Pay Later"
 
-### Layout structure (desktop):
-```text
-|------------------------------------------|
-|        Experience Santorini              |
-|   Book a luxury villa overlooking...     |
-|                                          |
-|  [Search Bar (glass)]  [Villa Card]      |
-|                                          |
-|         [o] [o] [o] [o]                 |
-|------------------------------------------|
-```
+**Experiences strip** (inline JSX):
+- Fetch related experiences (already available via `RelatedExperiences` query pattern)
+- Display as horizontal compact cards: experience name + price + "/person"
+- "Talk to Concierge" button on the right (links to /contact)
 
-### Layout structure (mobile):
-```text
-|----------------------|
-|  Experience          |
-|  Santorini           |
-|  subtitle...         |
-|                      |
-|  [Search Bar]        |
-|  [Villa Card]        |
-|                      |
-|    [o][o][o][o]      |
-|----------------------|
-```
+**Quick stats row**: Simple flex row with icons -- area_sqm, bedrooms, bathrooms -- separated by dots. No card wrapper.
 
-### Files modified:
-- `src/pages/Index.tsx` -- Hero section restructure (lines 41-72)
+### Responsive behavior:
+- Desktop (lg+): Gallery + Booking card side by side
+- Mobile: Gallery full width, booking card below, then highlights + stats
+- MobileBookingCTA remains for sticky bottom bar on mobile
 
-### No new files, no new hooks, no business logic changes. Pure layout/UI work using existing data.
+### No new files created -- all changes within `PropertyDetail.tsx`
 
+## Files Modified
+
+1. `src/pages/PropertyDetail.tsx` -- Complete hero section restructure with new layout
