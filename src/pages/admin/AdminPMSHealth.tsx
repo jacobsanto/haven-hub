@@ -115,7 +115,7 @@ export default function AdminPMSHealth() {
 
   const handleTestConnection = async () => {
     try {
-      const result = await testConnection.mutateAsync();
+      const result = await testConnection.mutateAsync(connection?.id);
       toast({
         title: result.success ? 'Connection Successful' : 'Connection Failed',
         description: result.success 

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { pmsAdapter } from '@/integrations/pms';
+// pmsAdapter import removed — all PMS calls now route dynamically per-connection
 import { getEdgeFunctionForProvider } from '@/lib/pms-providers';
 
 /**
@@ -106,15 +106,24 @@ export function useAllPMSConnections() {
 
 export function useTestPMSConnection() {
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (connectionId?: string) => {
       // Check for auth session first
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Please log in as an admin to test the PMS connection');
       }
-      
-      const isConnected = await pmsAdapter.testConnection();
-      return { success: isConnected };
+
+      // If a connectionId is provided, resolve its edge function; otherwise test default
+      let edgeFunction = 'advancecm-sync';
+      if (connectionId) {
+        edgeFunction = await resolveEdgeFunctionForConnection(connectionId);
+      }
+
+      const response = await supabase.functions.invoke(edgeFunction, {
+        body: { action: 'test' },
+      });
+
+      return { success: response.data?.success ?? false };
     },
   });
 }
@@ -185,58 +194,24 @@ export function useTriggerManualSync() {
 
   return useMutation({
     mutationFn: async (connectionId: string) => {
-      // Create sync run record
-      const { data: syncRun, error: createError } = await supabase
-        .from('pms_sync_runs')
-        .insert({
-          pms_connection_id: connectionId,
-          sync_type: 'full',
-          status: 'running',
-        })
-        .select()
-        .single();
+      // Trigger the pms-sync-cron edge function with manual trigger for this connection
+      const response = await supabase.functions.invoke('pms-sync-cron', {
+        body: {
+          action: 'sync-all-availability',
+          triggerType: 'manual',
+        },
+      });
 
-      if (createError) throw createError;
-
-      try {
-        // Trigger sync via adapter
-        const result = await pmsAdapter.syncAll();
-
-        // Update sync run with results
-        await supabase
-          .from('pms_sync_runs')
-          .update({
-            status: result.success ? 'success' : 'failed',
-            completed_at: new Date().toISOString(),
-            records_processed: result.recordsProcessed,
-            records_failed: result.recordsFailed,
-            error_summary: result.errors?.join('; ') || null,
-          })
-          .eq('id', syncRun.id);
-
-        // Update connection last sync
-        await supabase
-          .from('pms_connections')
-          .update({
-            last_sync_at: new Date().toISOString(),
-            sync_status: result.success ? 'success' : 'error',
-          })
-          .eq('id', connectionId);
-
-        return result;
-      } catch (error) {
-        // Update sync run as failed
-        await supabase
-          .from('pms_sync_runs')
-          .update({
-            status: 'failed',
-            completed_at: new Date().toISOString(),
-            error_summary: error instanceof Error ? error.message : 'Unknown error',
-          })
-          .eq('id', syncRun.id);
-
-        throw error;
+      if (response.error) {
+        throw new Error(response.error.message || 'Sync failed');
       }
+
+      return {
+        success: response.data?.success ?? false,
+        recordsProcessed: response.data?.synced ?? 0,
+        recordsFailed: response.data?.failed ?? 0,
+        errors: response.data?.errors ?? [],
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
@@ -479,43 +454,70 @@ export function usePushBookingToPMS() {
 
       if (fetchError) throw fetchError;
 
-      // Get property mapping
+      // Get property mapping with connection info
       const { data: mapping } = await supabase
         .from('pms_property_map')
-        .select('external_property_id')
+        .select('external_property_id, pms_connection_id')
         .eq('property_id', booking.property_id)
+        .eq('sync_enabled', true)
         .maybeSingle();
 
       if (!mapping) {
         throw new Error('Property not mapped to PMS');
       }
 
-      // Push to PMS
-      const result = await pmsAdapter.createBooking({
-        propertyId: booking.property_id,
-        externalPropertyId: mapping.external_property_id,
-        checkIn: booking.check_in,
-        checkOut: booking.check_out,
-        guests: booking.guests,
-        guestInfo: {
-          firstName: booking.guest_name.split(' ')[0],
-          lastName: booking.guest_name.split(' ').slice(1).join(' ') || '',
-          email: booking.guest_email,
-          phone: booking.guest_phone || undefined,
+      // Resolve the correct edge function for this property's PMS
+      const edgeFunction = await resolveEdgeFunctionForConnection(mapping.pms_connection_id);
+
+      const nameParts = booking.guest_name.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Push to PMS via the correct edge function
+      const response = await supabase.functions.invoke(edgeFunction, {
+        body: {
+          action: 'create-booking',
+          externalPropertyId: mapping.external_property_id,
+          bookingReference: booking.booking_reference,
+          checkIn: booking.check_in,
+          checkOut: booking.check_out,
+          guests: booking.guests,
+          adults: booking.adults || booking.guests,
+          children: booking.children || 0,
+          guestInfo: {
+            firstName,
+            lastName,
+            email: booking.guest_email,
+            phone: booking.guest_phone,
+            country: booking.guest_country,
+          },
+          totalPrice: booking.total_price,
+          currency: 'EUR',
+          priceBreakdownNotes: 'Pushed from admin dashboard',
         },
-        totalAmount: Number(booking.total_price),
-        currency: 'EUR',
       });
 
-      // Log to audit
-      await supabase.from('audit_log').insert([{
-        entity_type: 'booking',
-        entity_id: bookingId,
-        action: 'pms_push',
-        new_values: JSON.parse(JSON.stringify(result)),
-      }]);
+      if (response.data?.success) {
+        await supabase
+          .from('bookings')
+          .update({
+            pms_sync_status: 'synced',
+            pms_synced_at: new Date().toISOString(),
+            external_booking_id: response.data.externalBookingId,
+          })
+          .eq('id', bookingId);
+      } else {
+        await supabase
+          .from('bookings')
+          .update({
+            pms_sync_status: 'failed',
+            pms_last_error: response.data?.error || 'Unknown error',
+          })
+          .eq('id', bookingId);
+        throw new Error(response.data?.error || 'PMS push failed');
+      }
 
-      return result;
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
