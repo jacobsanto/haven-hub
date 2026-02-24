@@ -71,58 +71,62 @@ const Index = () => {
           </p>
         </motion.div>
 
-        {/* Search Bar + Featured Villa Card Row */}
+        {/* Search Bar - Centered */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="relative z-10 w-full max-w-6xl mx-auto px-4 flex flex-col lg:flex-row items-stretch gap-5"
+          className="relative z-10 w-full max-w-3xl mx-auto px-4"
         >
-          {/* Search Bar - Left */}
-          <div className="flex-1 min-w-0">
-            <SearchBar variant="hero" />
-          </div>
+          <SearchBar variant="hero" />
+        </motion.div>
 
-          {/* Featured Villa Card - Right */}
-          {heroProperty && (
+        {/* Featured Villa Card - Below Search */}
+        {heroProperty && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="relative z-10 mt-6 px-4"
+          >
             <Link
               to={`/properties/${heroProperty.slug}`}
-              className="glass-panel rounded-2xl overflow-hidden flex flex-row lg:flex-col w-full lg:w-[300px] shrink-0 group hover:shadow-xl transition-shadow duration-300"
+              className="glass-panel rounded-2xl overflow-hidden flex flex-row items-center w-full max-w-md mx-auto group hover:shadow-2xl hover:scale-[1.02] transition-all duration-500"
             >
-              <div className="relative w-1/3 lg:w-full h-auto lg:h-36 overflow-hidden">
+              <div className="relative w-28 h-28 shrink-0 overflow-hidden rounded-l-2xl">
                 <img
                   src={heroProperty.hero_image_url || '/placeholder.svg'}
                   alt={heroProperty.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
-                <div className="absolute top-2 left-2 bg-gold-accent/90 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                <div className="absolute top-1.5 left-1.5 bg-gold-accent/90 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                   Featured
                 </div>
               </div>
-              <div className="flex-1 p-3 flex flex-col justify-center gap-1">
-                <h3 className="text-sm font-serif font-semibold text-foreground truncate">
+              <div className="flex-1 p-3 flex flex-col justify-center gap-0.5">
+                <h3 className="text-sm font-serif font-semibold text-white truncate">
                   {heroProperty.display_name || heroProperty.name}
                 </h3>
-                <div className="flex items-center gap-1 text-xs text-gold-accent">
+                <div className="flex items-center gap-0.5 text-gold-accent">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-3 w-3 fill-current" />
+                    <Star key={i} className="h-2.5 w-2.5 fill-current" />
                   ))}
-                  <span className="text-muted-foreground ml-1">4.9</span>
+                  <span className="text-white/60 text-[10px] ml-1">4.9</span>
                 </div>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
+                <p className="text-[11px] text-white/70 flex items-center gap-1">
+                  <MapPin className="h-2.5 w-2.5" />
                   {heroProperty.city}, {heroProperty.country}
                 </p>
-                <p className="text-sm font-semibold text-foreground mt-1">
-                  From {format(heroProperty.base_price)} <span className="text-xs font-normal text-muted-foreground">/ per night</span>
+                <p className="text-sm font-semibold text-white mt-0.5">
+                  From {format(heroProperty.base_price)} <span className="text-[10px] font-normal text-white/60">/ night</span>
                 </p>
-                <span className="text-xs font-medium text-primary group-hover:underline mt-1 inline-flex items-center gap-1">
-                  View Details <ArrowRight className="h-3 w-3" />
+                <span className="text-[11px] font-medium text-gold-accent group-hover:underline mt-0.5 inline-flex items-center gap-1">
+                  View Details <ArrowRight className="h-2.5 w-2.5" />
                 </span>
               </div>
             </Link>
-          )}
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* Bottom Navigation Icons */}
         <motion.div
@@ -142,10 +146,10 @@ const Index = () => {
               to={nav.to}
               className="flex flex-col items-center gap-1.5 group"
             >
-              <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group-hover:bg-white/30 transition-colors duration-200">
-                <nav.icon className="h-5 w-5 text-white" />
+              <div className="w-12 h-12 rounded-full glass-panel border border-gold-accent/30 flex items-center justify-center group-hover:bg-gold-accent/20 transition-colors duration-200">
+                <nav.icon className="h-5 w-5 text-gold-accent" />
               </div>
-              <span className="text-[11px] text-white/80 font-medium">{nav.label}</span>
+              <span className="text-[11px] text-gold-accent/90 font-medium">{nav.label}</span>
             </Link>
           ))}
         </motion.div>
