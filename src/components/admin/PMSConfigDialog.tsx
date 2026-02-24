@@ -14,10 +14,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import {
-  useTestAdvanceCMConnection,
-  useEnsureAdvanceCMConnection,
-} from "@/hooks/useAdvanceCMSync";
-import { PMS_PROVIDERS, PMSProviderConfig, getProviderById } from "@/lib/pms-providers";
+  useTestPMSConnection,
+  useEnsurePMSConnection,
+} from "@/hooks/useAdminPMSHealth";
+import { PMS_PROVIDERS, getProviderById } from "@/lib/pms-providers";
 import { PMSProviderSelector } from "./PMSProviderSelector";
 import { PMSCredentialsForm } from "./PMSCredentialsForm";
 
@@ -41,9 +41,10 @@ export function PMSConfigDialog({
   const [testResult, setTestResult] = useState<"success" | "failed" | null>(null);
   const [webhookCopied, setWebhookCopied] = useState(false);
   const [credentialValues, setCredentialValues] = useState<Record<string, string>>({});
+  const [activatedConnectionId, setActivatedConnectionId] = useState<string | null>(null);
 
-  const testConnection = useTestAdvanceCMConnection();
-  const ensureConnection = useEnsureAdvanceCMConnection();
+  const testConnection = useTestPMSConnection();
+  const ensureConnection = useEnsurePMSConnection();
 
   const selectedProvider = selectedProviderId 
     ? getProviderById(selectedProviderId) 
@@ -56,26 +57,23 @@ export function PMSConfigDialog({
   useEffect(() => {
     setTestResult(null);
     setCredentialValues({});
+    setActivatedConnectionId(null);
   }, [selectedProviderId]);
 
   const handleTestConnection = async () => {
     setTestResult(null);
     try {
-      const result = await testConnection.mutateAsync();
+      // If we have an activated connection, test it; otherwise test without connectionId
+      const result = await testConnection.mutateAsync(activatedConnectionId || undefined);
       setTestResult(result.success ? "success" : "failed");
 
-      if (result.success) {
-        toast({
-          title: "Connection Successful",
-          description: `Successfully connected to ${selectedProvider?.name || 'PMS'}.`,
-        });
-      } else {
-        toast({
-          title: "Connection Failed",
-          description: "Unable to connect. Please check your API credentials.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: result.success ? "Connection Successful" : "Connection Failed",
+        description: result.success
+          ? `Successfully connected to ${selectedProvider?.name || 'PMS'}.`
+          : "Unable to connect. Please check your API credentials.",
+        variant: result.success ? "default" : "destructive",
+      });
     } catch (error) {
       setTestResult("failed");
       toast({
@@ -87,11 +85,16 @@ export function PMSConfigDialog({
   };
 
   const handleActivate = async () => {
+    if (!selectedProvider) return;
     try {
-      const connection = await ensureConnection.mutateAsync();
+      const connection = await ensureConnection.mutateAsync({
+        providerId: selectedProvider.id,
+        providerName: selectedProvider.name,
+      });
+      setActivatedConnectionId(connection.id);
       toast({
         title: "PMS Connection Activated",
-        description: `${selectedProvider?.name || 'PMS'} integration is now active.`,
+        description: `${selectedProvider.name} integration is now active.`,
       });
       onConnectionEstablished?.(connection.id);
       onOpenChange(false);
@@ -115,7 +118,6 @@ export function PMSConfigDialog({
   };
 
   const isLoading = testConnection.isPending || ensureConnection.isPending;
-  const isAdvanceCM = selectedProviderId === 'advancecm';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -144,32 +146,13 @@ export function PMSConfigDialog({
           {/* Provider-specific configuration */}
           {selectedProvider && (
             <>
-              {/* Credentials info for AdvanceCM */}
-              {isAdvanceCM ? (
-                <div className="rounded-lg border p-4 bg-muted/50">
-                  <h4 className="font-medium mb-2">API Credentials</h4>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Your Tokeet API credentials have been configured as secure secrets.
-                    You can update them in your project settings if needed.
-                  </p>
-                  <a
-                    href={selectedProvider.docsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline flex items-center gap-1"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    View API Documentation
-                  </a>
-                </div>
-              ) : (
-                <PMSCredentialsForm
-                  provider={selectedProvider}
-                  values={credentialValues}
-                  onChange={handleCredentialChange}
-                  disabled={isLoading}
-                />
-              )}
+              {/* Credentials form */}
+              <PMSCredentialsForm
+                provider={selectedProvider}
+                values={credentialValues}
+                onChange={handleCredentialChange}
+                disabled={isLoading}
+              />
 
               {/* Webhook URL */}
               <div className="space-y-2">
@@ -205,7 +188,7 @@ export function PMSConfigDialog({
                   <Button
                     variant="outline"
                     onClick={handleTestConnection}
-                    disabled={isLoading || !isAdvanceCM}
+                    disabled={isLoading}
                   >
                     {testConnection.isPending ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -221,11 +204,6 @@ export function PMSConfigDialog({
                   )}
                   {testResult === "failed" && (
                     <span className="text-sm text-red-600">Connection failed</span>
-                  )}
-                  {!isAdvanceCM && (
-                    <span className="text-sm text-muted-foreground">
-                      Coming soon - save credentials first
-                    </span>
                   )}
                 </div>
               </div>
@@ -275,7 +253,7 @@ export function PMSConfigDialog({
           </Button>
           <Button
             onClick={handleActivate}
-            disabled={isLoading || (isAdvanceCM && testResult !== "success")}
+            disabled={isLoading || !selectedProvider}
           >
             {ensureConnection.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

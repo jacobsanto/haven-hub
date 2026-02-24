@@ -12,6 +12,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronRight,
+  Plus,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +42,7 @@ import {
 } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import {
-  usePMSConnectionStatus,
+  useAllPMSConnections,
   useTestPMSConnection,
   usePMSSyncHistory,
   usePMSPropertyMappings,
@@ -51,13 +52,13 @@ import {
   useSyncPropertyNow,
   useSyncAllPropertyAvailability,
   useUpdateAutoSyncSettings,
+  type PMSConnection,
 } from '@/hooks/useAdminPMSHealth';
 import { PMSConfigDialog } from '@/components/admin/PMSConfigDialog';
 import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDialog';
 import { PMSConnectionHealthCard } from '@/components/admin/PMSConnectionHealthCard';
 import { PMSSyncStatusPanel } from '@/components/admin/PMSSyncStatusPanel';
 import { AutoSyncSettingsCard } from '@/components/admin/AutoSyncSettingsCard';
-
 import { PropertyICalManager } from '@/components/admin/PropertyICalManager';
 import { getProviderById } from '@/lib/pms-providers';
 
@@ -82,13 +83,15 @@ export default function AdminPMSHealth() {
   const queryClient = useQueryClient();
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importConnectionId, setImportConnectionId] = useState<string | null>(null);
+  const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [syncingPropertyId, setSyncingPropertyId] = useState<string | null>(null);
   const [expandedMappings, setExpandedMappings] = useState<Set<string>>(new Set());
 
-  // Data hooks
-  const { data: connection, isLoading: connectionLoading } = usePMSConnectionStatus();
-  const { data: syncHistory, isLoading: historyLoading } = usePMSSyncHistory(connection?.id, 20);
-  const { data: propertyMappings, isLoading: mappingsLoading } = usePMSPropertyMappings(connection?.id);
+  // Data hooks - fetch ALL connections
+  const { data: connections, isLoading: connectionsLoading } = useAllPMSConnections();
+  const { data: syncHistory, isLoading: historyLoading } = usePMSSyncHistory(selectedConnectionId || connections?.[0]?.id, 20);
+  const { data: propertyMappings, isLoading: mappingsLoading } = usePMSPropertyMappings(selectedConnectionId || connections?.[0]?.id);
   const { data: rawEvents, isLoading: eventsLoading } = usePMSRawEvents(50);
 
   // Mutations
@@ -98,24 +101,17 @@ export default function AdminPMSHealth() {
   const syncPropertyNow = useSyncPropertyNow();
   const syncAllAvailability = useSyncAllPropertyAvailability();
   const updateAutoSyncSettings = useUpdateAutoSyncSettings();
-  
 
-  // Get provider config from connection
-  const connectionConfig = connection?.config as { provider?: string } | null;
-  const currentProviderId = connectionConfig?.provider || 'advancecm';
-  const currentProvider = getProviderById(currentProviderId);
-
-  const handleUpdateSyncSettings = async (settings: { autoSyncEnabled?: boolean; syncIntervalMinutes?: number }) => {
-    if (!connection) return;
+  const handleUpdateSyncSettings = async (connectionId: string, settings: { autoSyncEnabled?: boolean; syncIntervalMinutes?: number }) => {
     await updateAutoSyncSettings.mutateAsync({
-      connectionId: connection.id,
+      connectionId,
       ...settings,
     });
   };
 
-  const handleTestConnection = async () => {
+  const handleTestConnection = async (connectionId: string) => {
     try {
-      const result = await testConnection.mutateAsync(connection?.id);
+      const result = await testConnection.mutateAsync(connectionId);
       toast({
         title: result.success ? 'Connection Successful' : 'Connection Failed',
         description: result.success 
@@ -132,10 +128,9 @@ export default function AdminPMSHealth() {
     }
   };
 
-  const handleManualSync = async () => {
-    if (!connection) return;
+  const handleManualSync = async (connectionId: string) => {
     try {
-      const result = await triggerSync.mutateAsync(connection.id);
+      const result = await triggerSync.mutateAsync(connectionId);
       toast({
         title: result.success ? 'Sync Complete' : 'Sync Failed',
         description: result.success 
@@ -168,12 +163,11 @@ export default function AdminPMSHealth() {
     }
   };
 
-  const handleSyncPropertyNow = async (externalPropertyId: string) => {
-    if (!connection) return;
+  const handleSyncPropertyNow = async (connectionId: string, externalPropertyId: string) => {
     setSyncingPropertyId(externalPropertyId);
     try {
       const result = await syncPropertyNow.mutateAsync({ 
-        connectionId: connection.id, 
+        connectionId, 
         externalPropertyId 
       });
       toast({
@@ -194,10 +188,9 @@ export default function AdminPMSHealth() {
     }
   };
 
-  const handleSyncAllAvailability = async () => {
-    if (!connection) return;
+  const handleSyncAllAvailability = async (connectionId: string) => {
     try {
-      const result = await syncAllAvailability.mutateAsync(connection.id);
+      const result = await syncAllAvailability.mutateAsync(connectionId);
       toast({
         title: result.failed === 0 ? 'Availability Synced' : 'Partial Sync',
         description: `Synced ${result.synced} of ${result.total} properties.${result.failed > 0 ? ` ${result.failed} failed.` : ''}`,
@@ -212,6 +205,10 @@ export default function AdminPMSHealth() {
     }
   };
 
+  const handleImportProperties = (connectionId: string) => {
+    setImportConnectionId(connectionId);
+    setShowImportDialog(true);
+  };
 
   return (
     <AdminLayout>
@@ -220,384 +217,415 @@ export default function AdminPMSHealth() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between"
         >
-          <h1 className="text-3xl font-bold tracking-tight">PMS Health</h1>
-          <p className="text-muted-foreground">
-            Monitor and configure property management system integration
-          </p>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">PMS Health</h1>
+            <p className="text-muted-foreground">
+              Monitor and configure property management system integrations
+            </p>
+          </div>
+          <Button onClick={() => setShowConfigDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Connection
+          </Button>
         </motion.div>
 
-        {/* Connection Health Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <PMSConnectionHealthCard
-            connection={connection || null}
-            isLoading={connectionLoading}
-            onConfigure={() => setShowConfigDialog(true)}
-            onTestConnection={handleTestConnection}
-            onSyncNow={handleManualSync}
-            onImportProperties={() => setShowImportDialog(true)}
-            isTestingConnection={testConnection.isPending}
-            isSyncing={triggerSync.isPending}
-            propertyMappingsCount={propertyMappings?.length}
-          />
-        </motion.div>
+        {/* Connection Health Cards - one per connection */}
+        {connectionsLoading ? (
+          <div className="space-y-4">
+            {[1, 2].map((i) => (
+              <Skeleton key={i} className="h-40 w-full" />
+            ))}
+          </div>
+        ) : connections && connections.length > 0 ? (
+          connections.map((conn) => {
+            const connConfig = conn.config as { provider?: string } | null;
+            const providerId = connConfig?.provider || 'advancecm';
+            const provider = getProviderById(providerId);
 
-        {/* Sync Status Panel */}
-        {currentProvider && (
+            return (
+              <motion.div
+                key={conn.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <PMSConnectionHealthCard
+                  connection={conn}
+                  isLoading={false}
+                  onConfigure={() => setShowConfigDialog(true)}
+                  onTestConnection={() => handleTestConnection(conn.id)}
+                  onSyncNow={() => handleManualSync(conn.id)}
+                  onImportProperties={() => handleImportProperties(conn.id)}
+                  isTestingConnection={testConnection.isPending}
+                  isSyncing={triggerSync.isPending}
+                />
+
+                {/* Auto-Sync Settings per connection */}
+                <div className="mt-4">
+                  <AutoSyncSettingsCard
+                    connectionId={conn.id}
+                    autoSyncEnabled={conn.auto_sync_enabled ?? true}
+                    syncIntervalMinutes={conn.sync_interval_minutes ?? 5}
+                    lastScheduledSync={conn.last_sync_at}
+                    onUpdateSettings={(settings) => handleUpdateSyncSettings(conn.id, settings)}
+                    isUpdating={updateAutoSyncSettings.isPending}
+                    projectId="xavjbiuhcmupsoocrmhf"
+                  />
+                </div>
+              </motion.div>
+            );
+          })
+        ) : (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
+            transition={{ delay: 0.1 }}
           >
-            <PMSSyncStatusPanel
-              provider={currentProvider}
-              isConnected={!!connection?.is_active}
-              lastSyncAt={connection?.last_sync_at}
-              propertyCount={propertyMappings?.length}
+            <PMSConnectionHealthCard
+              connection={null}
+              isLoading={false}
+              onConfigure={() => setShowConfigDialog(true)}
+              onTestConnection={() => {}}
+              onSyncNow={() => {}}
+              onImportProperties={() => {}}
+              isTestingConnection={false}
+              isSyncing={false}
             />
           </motion.div>
         )}
-
-        {/* Auto-Sync Settings Card */}
-        {connection && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.18 }}
-          >
-            <AutoSyncSettingsCard
-              connectionId={connection.id}
-              autoSyncEnabled={connection.auto_sync_enabled ?? true}
-              syncIntervalMinutes={connection.sync_interval_minutes ?? 5}
-              lastScheduledSync={connection.last_sync_at}
-              onUpdateSettings={handleUpdateSyncSettings}
-              isUpdating={updateAutoSyncSettings.isPending}
-              projectId="xavjbiuhcmupsoocrmhf"
-            />
-          </motion.div>
-        )}
-
 
         {/* Tabs for different views */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Tabs defaultValue="mappings" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="mappings">Property Mappings</TabsTrigger>
-              <TabsTrigger value="history">Sync History</TabsTrigger>
-              <TabsTrigger value="events">Webhook Events</TabsTrigger>
-            </TabsList>
+        {connections && connections.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            {/* Connection filter for tabs */}
+            {connections.length > 1 && (
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-sm text-muted-foreground">Filter by:</span>
+                <div className="flex gap-2">
+                  {connections.map((conn) => {
+                    const connConfig = conn.config as { provider?: string } | null;
+                    const provider = getProviderById(connConfig?.provider || 'advancecm');
+                    const isSelected = selectedConnectionId === conn.id;
+                    return (
+                      <Button
+                        key={conn.id}
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedConnectionId(isSelected ? null : conn.id)}
+                      >
+                        {provider?.name || conn.pms_name}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-            {/* Property Mappings Tab */}
-            <TabsContent value="mappings">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Property Mappings</CardTitle>
-                    <CardDescription>
-                      Map local properties to external PMS listings
-                    </CardDescription>
-                  </div>
-                  {propertyMappings && propertyMappings.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSyncAllAvailability}
-                      disabled={syncAllAvailability.isPending}
-                    >
-                      <RefreshCw className={`h-4 w-4 mr-2 ${syncAllAvailability.isPending ? 'animate-spin' : ''}`} />
-                      Sync All Availability
-                    </Button>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {mappingsLoading ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-16 w-full" />
-                      ))}
+            <Tabs defaultValue="mappings" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="mappings">Property Mappings</TabsTrigger>
+                <TabsTrigger value="history">Sync History</TabsTrigger>
+                <TabsTrigger value="events">Webhook Events</TabsTrigger>
+              </TabsList>
+
+              {/* Property Mappings Tab */}
+              <TabsContent value="mappings">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Property Mappings</CardTitle>
+                      <CardDescription>
+                        Map local properties to external PMS listings
+                      </CardDescription>
                     </div>
-                  ) : propertyMappings && propertyMappings.length > 0 ? (
-                    <div className="space-y-2">
-                      {propertyMappings.map((mapping) => {
-                        const isExpanded = expandedMappings.has(mapping.id);
-                        const toggleExpand = () => {
-                          setExpandedMappings(prev => {
-                            const next = new Set(prev);
-                            if (next.has(mapping.id)) {
-                              next.delete(mapping.id);
-                            } else {
-                              next.add(mapping.id);
-                            }
-                            return next;
-                          });
-                        };
-                        
-                        return (
-                          <Collapsible key={mapping.id} open={isExpanded} onOpenChange={toggleExpand}>
-                            <div className="border rounded-lg">
-                              <CollapsibleTrigger asChild>
-                                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                                  <div className="flex items-center gap-4">
-                                    {isExpanded ? (
-                                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                    ) : (
-                                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                    )}
-                                    <div>
-                                      <p className="font-medium">{mapping.property?.name || 'Unknown'}</p>
-                                      <code className="text-xs text-muted-foreground">
-                                        {mapping.external_property_id}
-                                      </code>
+                    {propertyMappings && propertyMappings.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSyncAllAvailability(selectedConnectionId || connections[0].id)}
+                        disabled={syncAllAvailability.isPending}
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${syncAllAvailability.isPending ? 'animate-spin' : ''}`} />
+                        Sync All Availability
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    {mappingsLoading ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="h-16 w-full" />
+                        ))}
+                      </div>
+                    ) : propertyMappings && propertyMappings.length > 0 ? (
+                      <div className="space-y-2">
+                        {propertyMappings.map((mapping) => {
+                          const isExpanded = expandedMappings.has(mapping.id);
+                          const toggleExpand = () => {
+                            setExpandedMappings(prev => {
+                              const next = new Set(prev);
+                              if (next.has(mapping.id)) {
+                                next.delete(mapping.id);
+                              } else {
+                                next.add(mapping.id);
+                              }
+                              return next;
+                            });
+                          };
+                          
+                          return (
+                            <Collapsible key={mapping.id} open={isExpanded} onOpenChange={toggleExpand}>
+                              <div className="border rounded-lg">
+                                <CollapsibleTrigger asChild>
+                                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                      {isExpanded ? (
+                                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                      ) : (
+                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                      )}
+                                      <div>
+                                        <p className="font-medium">{mapping.property?.name || 'Unknown'}</p>
+                                        <code className="text-xs text-muted-foreground">
+                                          {mapping.external_property_id}
+                                        </code>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                      {mapping.ical_url ? (
+                                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                          <Calendar className="h-3 w-3 mr-1" />
+                                          iCal
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="secondary">
+                                          <XCircle className="h-3 w-3 mr-1" />
+                                          No iCal
+                                        </Badge>
+                                      )}
+                                      <span className="text-sm text-muted-foreground hidden md:inline">
+                                        {mapping.last_ical_sync_at
+                                          ? `Synced ${format(new Date(mapping.last_ical_sync_at), 'MMM d, HH:mm')}`
+                                          : mapping.last_availability_sync_at
+                                          ? `Synced ${format(new Date(mapping.last_availability_sync_at), 'MMM d, HH:mm')}`
+                                          : 'Never synced'}
+                                      </span>
+                                      <Switch
+                                        checked={mapping.sync_enabled}
+                                        onCheckedChange={(checked) => handleTogglePropertySync(mapping.id, checked)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        disabled={togglePropertySync.isPending}
+                                      />
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-4">
-                                    {/* iCal Status Badge */}
-                                    {mapping.ical_url ? (
-                                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                        <Calendar className="h-3 w-3 mr-1" />
-                                        iCal
-                                      </Badge>
-                                    ) : (
-                                      <Badge variant="secondary">
-                                        <XCircle className="h-3 w-3 mr-1" />
-                                        No iCal
-                                      </Badge>
-                                    )}
-                                    
-                                    {/* Last Sync */}
-                                    <span className="text-sm text-muted-foreground hidden md:inline">
-                                      {mapping.last_ical_sync_at
-                                        ? `Synced ${format(new Date(mapping.last_ical_sync_at), 'MMM d, HH:mm')}`
-                                        : mapping.last_availability_sync_at
-                                        ? `Synced ${format(new Date(mapping.last_availability_sync_at), 'MMM d, HH:mm')}`
-                                        : 'Never synced'}
-                                    </span>
-                                    
-                                    {/* Sync Toggle */}
-                                    <Switch
-                                      checked={mapping.sync_enabled}
-                                      onCheckedChange={(checked) => {
-                                        // Prevent event from triggering collapsible
-                                        handleTogglePropertySync(mapping.id, checked);
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <div className="border-t p-4 bg-muted/30">
+                                    <PropertyICalManager 
+                                      mapping={mapping} 
+                                      onUpdate={() => {
+                                        queryClient.invalidateQueries({ queryKey: ['admin', 'pms', 'property-mappings'] });
                                       }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      disabled={togglePropertySync.isPending}
                                     />
                                   </div>
-                                </div>
-                              </CollapsibleTrigger>
-                              
-                              <CollapsibleContent>
-                                <div className="border-t p-4 bg-muted/30">
-                                  <PropertyICalManager 
-                                    mapping={mapping} 
-                                    onUpdate={() => {
-                                      // Refetch mappings
-                                      queryClient.invalidateQueries({ queryKey: ['admin', 'pms', 'property-mappings'] });
-                                    }}
-                                  />
-                                </div>
-                              </CollapsibleContent>
-                            </div>
-                          </Collapsible>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <LinkIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No property mappings configured.</p>
-                      <p className="text-sm">Import properties from your PMS to create mappings.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Sync History Tab */}
-            <TabsContent value="history">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sync History</CardTitle>
-                  <CardDescription>
-                    Recent synchronization runs and their results
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {historyLoading ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Skeleton key={i} className="h-12 w-full" />
-                      ))}
-                    </div>
-                  ) : syncHistory && syncHistory.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Started</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Duration</TableHead>
-                          <TableHead>Processed</TableHead>
-                          <TableHead>Failed</TableHead>
-                          <TableHead>Error</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {syncHistory.map((run) => {
-                          const duration = run.completed_at && run.started_at
-                            ? Math.round((new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()) / 1000)
-                            : null;
-                          return (
-                            <TableRow key={run.id}>
-                              <TableCell>
-                                {format(new Date(run.started_at), 'MMM d, HH:mm:ss')}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="capitalize">
-                                  {run.sync_type}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>{getStatusBadge(run.status)}</TableCell>
-                              <TableCell>
-                                {duration !== null ? `${duration}s` : '-'}
-                              </TableCell>
-                              <TableCell>{run.records_processed ?? '-'}</TableCell>
-                              <TableCell>
-                                {run.records_failed !== null && run.records_failed > 0 ? (
-                                  <span className="text-destructive">{run.records_failed}</span>
-                                ) : (
-                                  run.records_failed ?? '-'
-                                )}
-                              </TableCell>
-                              <TableCell className="max-w-[200px] truncate">
-                                {run.error_summary || '-'}
-                              </TableCell>
-                            </TableRow>
+                                </CollapsibleContent>
+                              </div>
+                            </Collapsible>
                           );
                         })}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No sync history available.</p>
-                      <p className="text-sm">Run a sync to see results here.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <LinkIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No property mappings configured.</p>
+                        <p className="text-sm">Import properties from your PMS to create mappings.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            {/* Webhook Events Tab */}
-            <TabsContent value="events">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Webhook Events</CardTitle>
-                  <CardDescription>
-                    Raw events received from the PMS
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {eventsLoading ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Skeleton key={i} className="h-12 w-full" />
-                      ))}
-                    </div>
-                  ) : rawEvents && rawEvents.length > 0 ? (
-                    <Accordion type="single" collapsible className="w-full">
-                      {rawEvents.map((event) => (
-                        <AccordionItem key={event.id} value={event.id}>
-                          <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center gap-4 text-left w-full pr-4">
-                              <div className="flex-shrink-0">
-                                {event.processed ? (
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                ) : event.error_message ? (
-                                  <XCircle className="h-4 w-4 text-destructive" />
-                                ) : (
-                                  <Clock className="h-4 w-4 text-yellow-600" />
+              {/* Sync History Tab */}
+              <TabsContent value="history">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Sync History</CardTitle>
+                    <CardDescription>
+                      Recent synchronization runs and their results
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {historyLoading ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <Skeleton key={i} className="h-12 w-full" />
+                        ))}
+                      </div>
+                    ) : syncHistory && syncHistory.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Started</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Duration</TableHead>
+                            <TableHead>Processed</TableHead>
+                            <TableHead>Failed</TableHead>
+                            <TableHead>Error</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {syncHistory.map((run) => {
+                            const duration = run.completed_at && run.started_at
+                              ? Math.round((new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()) / 1000)
+                              : null;
+                            return (
+                              <TableRow key={run.id}>
+                                <TableCell>
+                                  {format(new Date(run.started_at), 'MMM d, HH:mm:ss')}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="capitalize">
+                                    {run.sync_type}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>{getStatusBadge(run.status)}</TableCell>
+                                <TableCell>
+                                  {duration !== null ? `${duration}s` : '-'}
+                                </TableCell>
+                                <TableCell>{run.records_processed ?? '-'}</TableCell>
+                                <TableCell>
+                                  {run.records_failed !== null && run.records_failed > 0 ? (
+                                    <span className="text-destructive">{run.records_failed}</span>
+                                  ) : (
+                                    run.records_failed ?? '-'
+                                  )}
+                                </TableCell>
+                                <TableCell className="max-w-[200px] truncate">
+                                  {run.error_summary || '-'}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No sync history available.</p>
+                        <p className="text-sm">Run a sync to see results here.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Webhook Events Tab */}
+              <TabsContent value="events">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Webhook Events</CardTitle>
+                    <CardDescription>
+                      Raw events received from the PMS
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {eventsLoading ? (
+                      <div className="space-y-2">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <Skeleton key={i} className="h-12 w-full" />
+                        ))}
+                      </div>
+                    ) : rawEvents && rawEvents.length > 0 ? (
+                      <Accordion type="single" collapsible className="w-full">
+                        {rawEvents.map((event) => (
+                          <AccordionItem key={event.id} value={event.id}>
+                            <AccordionTrigger className="hover:no-underline">
+                              <div className="flex items-center gap-4 text-left w-full pr-4">
+                                <div className="flex-shrink-0">
+                                  {event.processed ? (
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  ) : event.error_message ? (
+                                    <XCircle className="h-4 w-4 text-destructive" />
+                                  ) : (
+                                    <Clock className="h-4 w-4 text-yellow-600" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {event.event_type}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      from {event.source}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className="text-xs text-muted-foreground flex-shrink-0">
+                                  {format(new Date(event.created_at), 'MMM d, HH:mm:ss')}
+                                </span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-4 pt-2">
+                                {event.error_message && (
+                                  <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                                    <p className="text-sm text-destructive">
+                                      <strong>Error:</strong> {event.error_message}
+                                    </p>
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="text-sm font-medium mb-2">Payload:</p>
+                                  <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto max-h-[300px]">
+                                    {JSON.stringify(event.payload, null, 2)}
+                                  </pre>
+                                </div>
+                                {event.processed_at && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Processed: {format(new Date(event.processed_at), 'MMM d, yyyy HH:mm:ss')}
+                                  </p>
                                 )}
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {event.event_type}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground">
-                                    from {event.source}
-                                  </span>
-                                </div>
-                              </div>
-                              <span className="text-xs text-muted-foreground flex-shrink-0">
-                                {format(new Date(event.created_at), 'MMM d, HH:mm:ss')}
-                              </span>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <div className="space-y-4 pt-2">
-                              {event.error_message && (
-                                <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-                                  <p className="text-sm text-destructive">
-                                    <strong>Error:</strong> {event.error_message}
-                                  </p>
-                                </div>
-                              )}
-                              <div>
-                                <p className="text-sm font-medium mb-2">Payload:</p>
-                                <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto max-h-[300px]">
-                                  {JSON.stringify(event.payload, null, 2)}
-                                </pre>
-                              </div>
-                              {event.processed_at && (
-                                <p className="text-xs text-muted-foreground">
-                                  Processed: {format(new Date(event.processed_at), 'MMM d, yyyy HH:mm:ss')}
-                                </p>
-                              )}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No webhook events recorded.</p>
-                      <p className="text-sm">Events will appear here when received from the PMS.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No webhook events recorded.</p>
+                        <p className="text-sm">Events will appear here when received from the PMS.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        )}
       </div>
 
       {/* Dialogs */}
       <PMSConfigDialog
         open={showConfigDialog}
         onOpenChange={setShowConfigDialog}
-        currentProvider={currentProviderId}
         onConnectionEstablished={() => {
-          // Refetch connection data
-          window.location.reload();
+          queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
         }}
       />
 
-      {connection && (
+      {importConnectionId && (
         <PMSPropertyImportDialog
           open={showImportDialog}
           onOpenChange={setShowImportDialog}
-          connectionId={connection.id}
+          connectionId={importConnectionId}
         />
       )}
     </AdminLayout>
