@@ -62,7 +62,7 @@ import { PMSSyncStatusPanel } from '@/components/admin/PMSSyncStatusPanel';
 import { AutoSyncSettingsCard } from '@/components/admin/AutoSyncSettingsCard';
 import { PropertyICalManager } from '@/components/admin/PropertyICalManager';
 import { getProviderById } from '@/lib/pms-providers';
-
+import { GuestyQuotaMonitor } from '@/components/admin/GuestyQuotaMonitor';
 const getStatusBadge = (status: string | null) => {
   switch (status) {
     case 'success':
@@ -281,6 +281,13 @@ export default function AdminPMSHealth() {
                   isSyncing={triggerSync.isPending}
                   isDeleting={deactivateConnection.isPending}
                 />
+
+                {/* Guesty Quota Monitor */}
+                {providerId === 'guesty' && (
+                  <div className="mt-4">
+                    <GuestyQuotaMonitor />
+                  </div>
+                )}
 
                 {/* Auto-Sync Settings per connection */}
                 <div className="mt-4">
