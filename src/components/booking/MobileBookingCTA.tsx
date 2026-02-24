@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, Zap, Percent, Users, Minus, Plus, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -7,8 +6,6 @@ import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar'
 import { BookingWidget } from './BookingWidget';
 import { BookingFlowDialog } from '@/components/booking/BookingFlowDialog';
 import { Property, SpecialOffer } from '@/types/database';
-import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
-import { useCurrency } from '@/hooks/useCurrency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays } from 'date-fns';
@@ -35,7 +32,6 @@ interface MobileBookingCTAProps {
 }
 
 export function MobileBookingCTA({ property, priceDisplay, specialOffer, initialCheckIn, initialCheckOut, initialGuests }: MobileBookingCTAProps) {
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [guests, setGuests] = useState(initialGuests || 2);
   const [showGuestSelector, setShowGuestSelector] = useState(false);
@@ -43,14 +39,6 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
   const [checkIn, setCheckIn] = useState<Date | undefined>(initialCheckIn);
   const [checkOut, setCheckOut] = useState<Date | undefined>(initialCheckOut);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-  const { formatPrice } = useCurrency();
-
-  // Real-time availability subscription
-  useRealtimeAvailability(property.id);
-
-  const discountedPrice = specialOffer ?
-  property.base_price * (1 - specialOffer.discount_percent / 100) :
-  null;
 
   const nights = checkIn && checkOut ?
   differenceInDays(checkOut, checkIn) :
@@ -206,32 +194,6 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
 
           {/* Main CTA Row */}
           <div className="px-4 pt-3 pb-2 flex items-center justify-center gap-3">
-            {/* Price Section */}
-            <div className="flex-1 min-w-0">
-              
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-              {/* Instant booking indicator */}
-              {property.instant_booking && !specialOffer &&
-              <div className="flex items-center gap-1 text-[11px] text-primary mt-0.5">
-                  
-                  
-                </div>
-              }
-            </div>
 
             {/* Quick Actions Row */}
             <div className="flex items-center gap-2">
