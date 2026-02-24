@@ -19,7 +19,7 @@ const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
     const patterns = {
       light: [10],
       medium: [20],
-      success: [10, 50, 20],
+      success: [10, 50, 20]
     };
     navigator.vibrate(patterns[pattern]);
   }
@@ -48,13 +48,13 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
   // Real-time availability subscription
   useRealtimeAvailability(property.id);
 
-  const discountedPrice = specialOffer 
-    ? property.base_price * (1 - specialOffer.discount_percent / 100)
-    : null;
+  const discountedPrice = specialOffer ?
+  property.base_price * (1 - specialOffer.discount_percent / 100) :
+  null;
 
-  const nights = checkIn && checkOut 
-    ? differenceInDays(checkOut, checkIn) 
-    : 0;
+  const nights = checkIn && checkOut ?
+  differenceInDays(checkOut, checkIn) :
+  0;
 
   const handleOpenSheet = useCallback(() => {
     triggerHaptic('light');
@@ -75,18 +75,18 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
 
   const handleGuestChange = useCallback((delta: number) => {
     triggerHaptic('light');
-    setGuests(prev => Math.max(1, Math.min(property.max_guests, prev + delta)));
+    setGuests((prev) => Math.max(1, Math.min(property.max_guests, prev + delta)));
   }, [property.max_guests]);
 
   const toggleGuestSelector = useCallback(() => {
     triggerHaptic('light');
-    setShowGuestSelector(prev => !prev);
+    setShowGuestSelector((prev) => !prev);
     if (!showGuestSelector) setShowDatePicker(false);
   }, [showGuestSelector]);
 
   const toggleDatePicker = useCallback(() => {
     triggerHaptic('light');
-    setShowDatePicker(prev => !prev);
+    setShowDatePicker((prev) => !prev);
     if (!showDatePicker) setShowGuestSelector(false);
   }, [showDatePicker]);
 
@@ -103,24 +103,24 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
   return (
     <>
       {/* Floating CTA Bar */}
-      <motion.div 
+      <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 25 }}
         className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-inset-bottom"
         style={{
-          boxShadow: '0 -4px 20px -4px hsl(var(--navy-blue) / 0.12)',
-        }}
-      >
+          boxShadow: '0 -4px 20px -4px hsl(var(--navy-blue) / 0.12)'
+        }}>
+
         {/* Special Offer Strip */}
         <AnimatePresence>
-          {specialOffer && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-accent/15 border-b border-accent/20 overflow-hidden"
-            >
+          {specialOffer &&
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-accent/15 border-b border-accent/20 overflow-hidden">
+
               <div className="px-4 py-1.5 flex items-center justify-center gap-1.5">
                 <Percent className="h-3 w-3 text-accent-foreground" />
                 <span className="text-xs font-medium text-accent-foreground">
@@ -128,20 +128,20 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
                 </span>
               </div>
             </motion.div>
-          )}
+          }
         </AnimatePresence>
 
         <div className="bg-background/95 backdrop-blur-lg border-t border-border">
           {/* Guest Selector Panel */}
           <AnimatePresence>
-            {showGuestSelector && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="border-b border-border overflow-hidden"
-              >
+            {showGuestSelector &&
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="border-b border-border overflow-hidden">
+
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
@@ -150,58 +150,58 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
                   </div>
                   <div className="flex items-center gap-3">
                     <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      onClick={() => handleGuestChange(-1)}
-                      disabled={guests <= 1}
-                    >
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => handleGuestChange(-1)}
+                    disabled={guests <= 1}>
+
                       <Minus className="h-4 w-4" />
                     </Button>
                     <span className="text-lg font-semibold w-6 text-center">{guests}</span>
                     <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      onClick={() => handleGuestChange(1)}
-                      disabled={guests >= property.max_guests}
-                    >
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => handleGuestChange(1)}
+                    disabled={guests >= property.max_guests}>
+
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </motion.div>
-            )}
+            }
           </AnimatePresence>
 
           {/* Date Picker Panel */}
           <AnimatePresence>
-            {showDatePicker && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="border-b border-border overflow-hidden"
-              >
+            {showDatePicker &&
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="border-b border-border overflow-hidden">
+
                 <div className="p-3 flex flex-col items-center">
                   <AvailabilityCalendar
-                    propertyId={property.id}
-                    variant="compact"
-                    showPrices={false}
-                    selectedCheckIn={checkIn}
-                    selectedCheckOut={checkOut}
-                    onDateSelect={handleDateSelect}
-                    minStay={2}
-                  />
-                  {nights > 0 && (
-                    <div className="text-sm text-muted-foreground mt-2">
+                  propertyId={property.id}
+                  variant="compact"
+                  showPrices={false}
+                  selectedCheckIn={checkIn}
+                  selectedCheckOut={checkOut}
+                  onDateSelect={handleDateSelect}
+                  minStay={2} />
+
+                  {nights > 0 &&
+                <div className="text-sm text-muted-foreground mt-2">
                       {nights} night{nights > 1 ? 's' : ''} selected
                     </div>
-                  )}
+                }
                 </div>
               </motion.div>
-            )}
+            }
           </AnimatePresence>
 
           {/* Main CTA Row */}
@@ -209,28 +209,28 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
             {/* Price Section */}
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-1.5">
-                {specialOffer && discountedPrice ? (
-                  <>
+                {specialOffer && discountedPrice ?
+                <>
                     <span className="text-lg font-bold font-serif text-foreground">
                       {formatPrice(discountedPrice).display}
                     </span>
                     <span className="text-xs text-muted-foreground line-through">
                       {priceDisplay}
                     </span>
-                  </>
-                ) : (
-                  <span className="text-lg font-bold font-serif text-foreground">{priceDisplay}</span>
-                )}
-                <span className="text-xs text-muted-foreground">/night</span>
+                  </> :
+
+                <span className="text-lg font-bold font-serif text-foreground">{priceDisplay}</span>
+                }
+                
               </div>
 
               {/* Instant booking indicator */}
-              {property.instant_booking && !specialOffer && (
-                <div className="flex items-center gap-1 text-[11px] text-primary mt-0.5">
+              {property.instant_booking && !specialOffer &&
+              <div className="flex items-center gap-1 text-[11px] text-primary mt-0.5">
                   <Zap className="h-3 w-3 fill-current" />
                   <span className="font-medium">Instant confirmation</span>
                 </div>
-              )}
+              }
             </div>
 
             {/* Quick Actions Row */}
@@ -243,13 +243,13 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
                 className={cn(
                   "h-9 px-2.5 rounded-lg gap-1 shrink-0 text-xs",
                   showDatePicker && "ring-2 ring-primary border-primary"
-                )}
-              >
+                )}>
+
                 <CalendarIcon className="h-3.5 w-3.5" />
                 <span>
-                  {checkIn && checkOut 
-                    ? `${format(checkIn, 'MMM d')} - ${format(checkOut, 'MMM d')}`
-                    : 'Dates'
+                  {checkIn && checkOut ?
+                  `${format(checkIn, 'MMM d')} - ${format(checkOut, 'MMM d')}` :
+                  'Dates'
                   }
                 </span>
               </Button>
@@ -262,38 +262,38 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
                 className={cn(
                   "h-9 px-2.5 rounded-lg gap-1 shrink-0 text-xs",
                   showGuestSelector && "ring-2 ring-primary border-primary"
-                )}
-              >
+                )}>
+
                 <Users className="h-3.5 w-3.5" />
                 <span>{guests}</span>
               </Button>
 
               {/* Action Button */}
-              {property.instant_booking ? (
-                <Button
-                  size="lg"
-                  onClick={handleQuickBook}
-                  className="min-h-[44px] px-5 rounded-xl gap-1.5 active:scale-[0.98] transition-transform btn-organic"
-                >
+              {property.instant_booking ?
+              <Button
+                size="lg"
+                onClick={handleQuickBook}
+                className="min-h-[44px] px-5 rounded-xl gap-1.5 active:scale-[0.98] transition-transform btn-organic">
+
                   <Zap className="h-4 w-4 fill-current" />
                   Book Now
-                </Button>
-              ) : (
-                <Sheet open={open} onOpenChange={handleSheetChange}>
+                </Button> :
+
+              <Sheet open={open} onOpenChange={handleSheetChange}>
                   <SheetTrigger asChild>
-                    <Button 
-                      size="lg" 
-                      onClick={handleOpenSheet}
-                      className="min-h-[44px] px-5 rounded-xl gap-1.5 active:scale-[0.98] transition-transform btn-organic"
-                    >
+                    <Button
+                    size="lg"
+                    onClick={handleOpenSheet}
+                    className="min-h-[44px] px-5 rounded-xl gap-1.5 active:scale-[0.98] transition-transform btn-organic">
+
                       <CalendarIcon className="h-4 w-4" />
                       Check Dates
                     </Button>
                   </SheetTrigger>
-                  <SheetContent 
-                    side="bottom" 
-                    className="h-[90vh] rounded-t-3xl p-0 overflow-auto focus:outline-none"
-                  >
+                  <SheetContent
+                  side="bottom"
+                  className="h-[90vh] rounded-t-3xl p-0 overflow-auto focus:outline-none">
+
                     {/* Swipe handle */}
                     <div className="sticky top-0 bg-background pt-3 pb-2 z-10">
                       <div className="mx-auto h-1.5 w-12 rounded-full bg-muted-foreground/30" />
@@ -308,7 +308,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
                     </div>
                   </SheetContent>
                 </Sheet>
-              )}
+              }
             </div>
           </div>
 
@@ -337,8 +337,8 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
         onOpenChange={setBookingDialogOpen}
         initialCheckIn={checkIn}
         initialCheckOut={checkOut}
-        initialGuests={guests}
-      />
-    </>
-  );
+        initialGuests={guests} />
+
+    </>);
+
 }
