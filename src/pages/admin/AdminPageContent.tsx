@@ -19,8 +19,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { ContentPreview } from '@/components/admin/ContentPreview';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
+import { IconPicker, AMENITY_ICONS } from '@/components/admin/IconPicker';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
-import { Save, RotateCcw, ChevronDown, FileText, Image, Eye, EyeOff } from 'lucide-react';
+import { useIconSuggestion } from '@/hooks/useIconSuggestion';
+import { Save, RotateCcw, ChevronDown, FileText, Image, Eye, EyeOff, Sparkles, Palette } from 'lucide-react';
 
 export default function AdminPageContent() {
   const [activePage, setActivePage] = useState(PAGE_CONTENT_SCHEMAS[0].pageSlug);
@@ -62,6 +64,7 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
   const { data: existingContent, isLoading } = useAllPageContent(schema.pageSlug);
   const bulkUpsert = useBulkUpsertPageContent();
   const { toast } = useToast();
+  const { suggestIcon, isLoading: isSuggesting } = useIconSuggestion();
 
   // Local form state: { [sectionKey__contentKey]: value }
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -100,7 +103,7 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
     const entries = fields.map((f) => ({
       content_key: f.key,
       value: formValues[`${sectionKey}__${f.key}`] ?? f.defaultValue,
-      content_type: f.type === 'textarea' || f.type === 'richtext' ? 'richtext' : f.type === 'image' ? 'image' : 'text',
+      content_type: f.type === 'textarea' || f.type === 'richtext' ? 'richtext' : f.type === 'image' ? 'image' : f.type === 'icon' ? 'icon' : 'text',
     }));
 
     try {
@@ -211,6 +214,7 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
                             {field.label}
                           </Label>
                           {field.type === 'image' && <Image className="h-3 w-3 text-muted-foreground" />}
+                          {field.type === 'icon' && <Palette className="h-3 w-3 text-muted-foreground" />}
                           {field.type === 'textarea' && <FileText className="h-3 w-3 text-muted-foreground" />}
                           {isDirty && <span className="w-1.5 h-1.5 rounded-full bg-destructive" />}
                         </div>
@@ -233,6 +237,40 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
                             aspectClass={field.key.includes('og') ? 'aspect-[1200/630]' : 'aspect-video'}
                             compact={field.key.includes('og')}
                           />
+                        ) : field.type === 'icon' ? (
+                          <div className="flex items-center gap-2">
+                            <IconPicker
+                              value={currentValue}
+                              onChange={(icon) => handleChange(section.sectionKey, field.key, icon)}
+                              className="flex-1"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1 shrink-0"
+                              disabled={isSuggesting}
+                              onClick={async () => {
+                                // Find sibling title & description fields for this item
+                                const prefix = field.key.replace(/_icon$/, '');
+                                const titleKey = `${section.sectionKey}__${prefix}_title`;
+                                const descKey = `${section.sectionKey}__${prefix}_description`;
+                                const title = formValues[titleKey] || '';
+                                const desc = formValues[descKey] || '';
+                                if (!title) {
+                                  toast({ title: 'Missing title', description: 'Enter a title first so the AI can suggest an icon.', variant: 'destructive' });
+                                  return;
+                                }
+                                const suggested = await suggestIcon(title, desc, AMENITY_ICONS);
+                                if (suggested) {
+                                  handleChange(section.sectionKey, field.key, suggested);
+                                  toast({ title: 'Icon suggested', description: `AI suggested "${suggested}" — review and save.` });
+                                }
+                              }}
+                            >
+                              <Sparkles className="h-4 w-4" />
+                              {isSuggesting ? 'Thinking…' : 'Suggest'}
+                            </Button>
+                          </div>
                         ) : (
                           <Input
                             id={compositeKey}

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle, Star, Eye, Headphones, Home, BookOpen } from 'lucide-react';
+import { resolveIcon } from '@/utils/icon-resolver';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -35,10 +36,13 @@ const Index = () => {
     subtitle_default: 'Discover extraordinary vacation homes around the world',
   });
   const trustBadges = usePageContent('home', 'trust_badges', {
+    badge_1_icon: 'Star',
     badge_1_title: 'Handpicked Excellence',
     badge_1_description: 'Every property personally vetted for quality',
+    badge_2_icon: 'Eye',
     badge_2_title: 'Unmatched Views',
     badge_2_description: 'Stunning locations in prime destinations',
+    badge_3_icon: 'Headphones',
     badge_3_title: 'Concierge Service',
     badge_3_description: 'Dedicated support from booking to checkout',
   });
@@ -54,12 +58,16 @@ const Index = () => {
   const whyBookDirect = usePageContent('home', 'why_book_direct', {
     heading: 'Why Book Direct with {brandName}',
     subtitle: 'Get the best rates and exclusive benefits when you book directly',
+    feature_1_icon: 'Shield',
     feature_1_title: 'Best Price Guarantee',
     feature_1_description: "Our direct rates are always the lowest. Find it cheaper elsewhere? We'll match it.",
+    feature_2_icon: 'Clock',
     feature_2_title: 'Free Cancellation',
     feature_2_description: 'Flexible booking with free cancellation up to 48 hours before check-in.',
+    feature_3_icon: 'CheckCircle',
     feature_3_title: 'Instant Confirmation',
     feature_3_description: 'Book and receive your confirmation immediately. No waiting.',
+    feature_4_icon: 'Calendar',
     feature_4_title: '24/7 Support',
     feature_4_description: 'Our concierge team is available around the clock for your needs.',
   });
@@ -82,16 +90,16 @@ const Index = () => {
   const replaceBrand = (text: string) => text.replace('{brandName}', brandName);
 
   const badges = [
-    { icon: Star, title: trustBadges.badge_1_title, description: trustBadges.badge_1_description },
-    { icon: Eye, title: trustBadges.badge_2_title, description: trustBadges.badge_2_description },
-    { icon: Headphones, title: trustBadges.badge_3_title, description: trustBadges.badge_3_description },
+    { icon: resolveIcon(trustBadges.badge_1_icon, Star), title: trustBadges.badge_1_title, description: trustBadges.badge_1_description },
+    { icon: resolveIcon(trustBadges.badge_2_icon, Eye), title: trustBadges.badge_2_title, description: trustBadges.badge_2_description },
+    { icon: resolveIcon(trustBadges.badge_3_icon, Headphones), title: trustBadges.badge_3_title, description: trustBadges.badge_3_description },
   ];
 
   const features = [
-    { icon: Shield, title: whyBookDirect.feature_1_title, description: whyBookDirect.feature_1_description },
-    { icon: Clock, title: whyBookDirect.feature_2_title, description: whyBookDirect.feature_2_description },
-    { icon: CheckCircle, title: whyBookDirect.feature_3_title, description: whyBookDirect.feature_3_description },
-    { icon: Calendar, title: whyBookDirect.feature_4_title, description: whyBookDirect.feature_4_description },
+    { icon: resolveIcon(whyBookDirect.feature_1_icon, Shield), title: whyBookDirect.feature_1_title, description: whyBookDirect.feature_1_description },
+    { icon: resolveIcon(whyBookDirect.feature_2_icon, Clock), title: whyBookDirect.feature_2_title, description: whyBookDirect.feature_2_description },
+    { icon: resolveIcon(whyBookDirect.feature_3_icon, CheckCircle), title: whyBookDirect.feature_3_title, description: whyBookDirect.feature_3_description },
+    { icon: resolveIcon(whyBookDirect.feature_4_icon, Calendar), title: whyBookDirect.feature_4_title, description: whyBookDirect.feature_4_description },
   ];
 
   return (

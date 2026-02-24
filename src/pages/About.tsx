@@ -7,8 +7,9 @@ import { usePageContent } from '@/hooks/usePageContent';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Button } from '@/components/ui/button';
 import { TrustBadges } from '@/components/booking/TrustBadges';
+import { resolveIcon } from '@/utils/icon-resolver';
 
-const valueIcons = [Heart, Shield, Sparkles, Users];
+const defaultValueIcons = [Heart, Shield, Sparkles, Users];
 
 const About = () => {
   const { brandName, brandTagline } = useBrand();
@@ -27,12 +28,16 @@ const About = () => {
   const valuesContent = usePageContent('about', 'values', {
     heading: 'Our Values',
     subtitle: 'The principles that guide everything we do',
+    value_1_icon: 'Heart',
     value_1_title: 'Passion for Excellence',
     value_1_description: 'Every property in our collection is chosen with care, ensuring exceptional quality and unforgettable experiences.',
+    value_2_icon: 'Shield',
     value_2_title: 'Trust & Transparency',
     value_2_description: 'We believe in honest communication and straightforward booking, with no hidden fees or surprises.',
+    value_3_icon: 'Sparkles',
     value_3_title: 'Curated Luxury',
     value_3_description: 'Our team personally vets each villa to guarantee it meets our exacting standards for comfort and style.',
+    value_4_icon: 'Users',
     value_4_title: 'Personal Service',
     value_4_description: 'From your first inquiry to checkout, our dedicated concierge team is here to make your stay seamless.',
   });
@@ -50,7 +55,10 @@ const About = () => {
   const r = (text: string) => text.replace(/{brandName}/g, brandName);
 
   const values = [1, 2, 3, 4].map((i) => ({
-    icon: valueIcons[i - 1],
+    icon: resolveIcon(
+      valuesContent[`value_${i}_icon` as keyof typeof valuesContent] as string,
+      defaultValueIcons[i - 1]
+    ),
     title: valuesContent[`value_${i}_title` as keyof typeof valuesContent] as string,
     description: valuesContent[`value_${i}_description` as keyof typeof valuesContent] as string,
   }));
