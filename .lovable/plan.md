@@ -1,40 +1,24 @@
-# FloatingBookButton Design Improvements
 
-## Summary
+# Fix Property List Scrolling in "Choose Your Property" Step
 
-Update the floating booking button to better match its actual function (search/discovery, not date picking) and improve mobile UX with scroll-aware visibility and better positioning.
+## Problem
+The `ScrollArea` wrapping the property list in the "Choose Your Property" step (line 342 of `UnifiedBookingDialog.tsx`) uses `max-h-[50vh]` / `max-h-[40vh]`, but the Radix ScrollArea viewport is set to `h-full w-full`. With only a `max-height` constraint and no fixed height, the viewport expands to fit all content instead of constraining and enabling scroll.
 
-## Changes (1 file)
+## Fix
 
-### `src/components/booking/FloatingBookButton.tsx`
+### File: `src/components/booking/UnifiedBookingDialog.tsx`
 
-**Icon and Label Fix**
+Change the `ScrollArea` class from `max-h-` to a fixed `h-` value so the Radix viewport has a definite height to constrain against. The content inside will scroll when it exceeds this height.
 
-- Replace `Calendar` icon with `Compass` (desktop) and `Search` (mobile) to match the search/discovery intent
-- Change hover text from "Book Now" to "Find a Stay"
+**Line 342** -- change:
+```
+<ScrollArea className={isMobile ? "max-h-[50vh]" : "max-h-[40vh]"}>
+```
+to:
+```
+<ScrollArea className={isMobile ? "h-[50vh]" : "h-[40vh]"}>
+```
 
-**Scroll-Aware Visibility**
+This gives the ScrollArea a definite height, allowing the internal Radix viewport (`h-full`) to properly constrain and enable scrolling when property cards overflow.
 
-- Add a `useEffect` scroll listener that only shows the button after the user scrolls past ~70% of viewport height (past the hero CTA)
-- Wrap both desktop and mobile buttons in `AnimatePresence` so they fade in/out smoothly
-
-**Mobile: Bottom-Center Pill**
-
-- Move mobile button from `fixed bottom-4 right-4` to `fixed bottom-5 left-1/2 -translate-x-1/2` (centered)
-- Change from icon-only circle to a pill shape with `Search` icon + "Search" text label
-- Slightly smaller height (`h-12` instead of `h-14`) for a sleeker look
-
-**Desktop: Always Show Label**
-
-- Show "Find a Stay" label always (not just on hover) since the button only appears after scrolling
-- On hover, show a dynamic property count badge (e.g., "- 12 stays") using data from `useProperties`
-
-**Social Proof Badge**
-
-- Import `useProperties` to get the count of available properties
-- Show count on both mobile (always) and desktop (on hover) as a subtle secondary text
-
-### Dependencies
-
-- Uses existing `useProperties` hook (no new data fetching)
-- No new components or files needed   CREATE ONE FIELD OF AREAS WITH A DROPDOWN SHOWING DESTINATIONS INSTEAD OF HAVING THEM ALL THERE CAVERING ESTATE
+### Single file change, single line edit.
