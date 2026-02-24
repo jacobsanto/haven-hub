@@ -1,36 +1,41 @@
 
 
-# Add Delete/Deactivate PMS Connection Capability
+# Delete Imported Properties When Removing a PMS Connection
 
 ## Problem
-The PMS Health page currently has no way to delete or deactivate a PMS connection. You have a Guesty connection that is misconfigured, and there is no UI to remove it and start fresh.
+When you remove a PMS connection, only the connection is deactivated and syncs are disabled. The properties that were imported through that connection remain in the system, cluttering the property list and potentially causing confusion.
 
 ## Solution
-Add a "Delete Connection" capability to the PMS health page so you can remove the wrong Guesty entry, then reconfigure it properly.
+Update the deactivation logic so that when a PMS connection is removed, all properties that were imported via that connection are also deleted (along with their mappings and related availability data). The confirmation dialog will be updated to clearly warn that imported properties will be removed.
 
 ## Changes
 
-### 1. Add `useDeletePMSConnection` hook
+### 1. Update `useDeactivatePMSConnection` mutation
 **File: `src/hooks/useAdminPMSHealth.ts`**
 
-Add a new mutation that:
-- Sets `is_active = false` on the connection (soft delete -- safer than hard delete, preserves audit trail)
-- Disables all property mappings linked to that connection
-- Invalidates relevant query caches
+Before deactivating the connection:
+- Fetch all `pms_property_map` entries for the connection to get the list of `property_id` values
+- Delete all `availability` records for those properties
+- Delete the `pms_property_map` entries (hard delete, not just disable)
+- Delete the `properties` rows themselves
+- Then deactivate the connection as before
+- Invalidate property-related query caches as well
 
-### 2. Add Delete button to each connection card
-**File: `src/pages/admin/AdminPMSHealth.tsx`**
-
-Add a delete/remove button to each connection's card area (next to Configure, Import, Test, Sync Now). Includes a confirmation dialog to prevent accidental deletion.
-
-### 3. Update connection health card to accept onDelete
+### 2. Update confirmation dialog text
 **File: `src/components/admin/PMSConnectionHealthCard.tsx`**
 
-Add an `onDelete` prop and a "Remove" button with a confirmation alert dialog to the card's action buttons.
+Update the `AlertDialogDescription` to warn the user that imported properties will also be deleted, not just syncs disabled.
 
 ## Technical Details
 
-- **Soft delete approach**: Sets `is_active = false` rather than deleting the row, preserving sync history and audit data
-- **Cascading disable**: All `pms_property_map` entries for the connection get `sync_enabled = false` so no orphaned syncs occur
-- **Confirmation dialog**: Uses the existing `AlertDialog` component to require explicit confirmation before removing
-- **Cache invalidation**: Refreshes all PMS-related queries after deletion
+Deletion order matters due to foreign key relationships:
+1. Get property IDs from `pms_property_map` for this connection
+2. Delete `availability` rows for those property IDs
+3. Delete `booking_addons`, `seasonal_rates`, `special_offers`, `rate_plans` for those property IDs (any tables with `property_id` FK)
+4. Delete `pms_property_map` rows for this connection
+5. Delete `properties` rows
+6. Set `is_active = false` on the connection
+
+The confirmation dialog will clearly state: "This will permanently delete all properties imported through this connection, their availability data, and disable all syncs."
+
+Cache invalidation will include `['properties']` and `['availability-calendar']` queries in addition to the existing PMS queries.
