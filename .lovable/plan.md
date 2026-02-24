@@ -1,125 +1,116 @@
 
 
-# Property Detail Page Redesign
+# Color Palette Settings Upgrade
 
 ## Overview
 
-Restructure the property detail page to match the reference layout: a clean, card-based design with the gallery and booking summary side-by-side in the hero area, highlight pills below, inline quick stats, and an experiences strip at the bottom.
+Upgrade the Color Palette tab in Admin Settings with a visual color picker, additional color fields, updated defaults, and bug fixes for a more intuitive theming experience.
 
-## Layout Structure
+## Current Issues
 
-```text
-|  [< Back]      Property Name          [Save] [Heart]  |
-|          Location · Feature · Verified Exclusive       |
-|                                                        |
-|  [=== Gallery Slider ===]  [ Booking Summary  ]       |
-|  [  thumbs  thumbs  >  ]  [ Check-In  Check-Out ]     |
-|                            [ Guests              ]     |
-|                            [ Price / night       ]     |
-|                            [ Reserve Villa >     ]     |
-|                            [ Free Cancel · Pay Later ] |
-|                                                        |
-|  [Infinity Pool] [Sunset View] [Private Terrace]       |
-|                                                        |
-|  120 m²  ·  2 Bedrooms  ·  2 Bathrooms                |
-|                                                        |
-|  Experiences:  Sunset Cruise €180  ·  Wine Tasting €95 |
-|                                    [Talk to Concierge] |
-```
+- Colors are entered as raw HSL text strings -- not user-friendly
+- Only 5 color fields exist (primary, secondary, accent, background, foreground), but the CSS system uses more (muted, card, border, destructive, ring)
+- No visual color picker -- admins have to know HSL format
+- The BrandContext only applies 5 CSS variables, leaving muted/card/border/ring unaffected by brand changes
 
 ## Changes
 
-### 1. `src/pages/PropertyDetail.tsx` -- Major restructure
+### 1. Database Migration -- Add new color columns
 
-**Top bar**: Replace breadcrumbs with a simpler navigation bar:
-- Left: "Back" button (glass-panel pill, arrow + "Back") using `useNavigate(-1)`
-- Center: Property name (serif, large) + subtitle line (location, first highlight, "Verified Exclusive" if instant_booking)
-- Right: "Save" text button + Heart icon (inline, not floating)
+Add 5 new nullable columns to `brand_settings`:
+- `muted_color` (text) -- muted backgrounds
+- `card_color` (text) -- card surfaces
+- `border_color` (text) -- borders and dividers
+- `destructive_color` (text) -- error/danger states
+- `ring_color` (text) -- focus rings
 
-**Hero section**: Replace the current full-width gallery + separate sidebar layout with a side-by-side row:
-- Left (~60-65%): Use `PropertyHeroSlider` (Embla carousel with thumbnails) instead of `PropertyGallery` (bento grid)
-- Right (~35-40%): Compact booking summary card (glass-panel) showing:
-  - "Booking summary" header
-  - Check-In / Check-Out date display boxes
-  - Guests selector
-  - Price per night (large)
-  - Gold "Reserve Villa" button
-  - "Free Cancellation · Pay Later" trust line
-  - This replaces the existing `BookingWidget` in the sidebar
+### 2. `src/hooks/useBrandSettings.ts` -- Extend interface and defaults
 
-**Below hero**: 
-- Highlight pills row (reuse `PropertyHighlights` with `variant="compact"`)
-- Quick stats inline row (simplified from `PropertyQuickStats`)
+- Add the 5 new color fields to the `BrandSettings` interface and `defaultBrandSettings`
+- Default values derived from current `index.css` values:
+  - muted: `243 29% 86%`
+  - card: `0 0% 100%`
+  - border: `243 29% 86%`
+  - destructive: `0 55% 55%`
+  - ring: `32 48% 66%`
 
-**Experiences strip**: Compact horizontal row of related experiences with name + price, plus "Talk to Concierge" button on the right
+### 3. `src/contexts/BrandContext.tsx` -- Apply new CSS variables
 
-**Remove from this page view**:
-- `PropertyStickyNav` (remove)
-- `PropertyShareSave` floating sidebar (replace with inline top-bar buttons)
-- Breadcrumbs (replace with Back button)
-- `PropertyQuickStats` overlapping card (replace with inline stats)
-- The old 3-column grid layout
+Update `applyTheme()` to also set `--muted`, `--card`, `--border`, `--destructive`, and `--ring` CSS variables when the new columns have values.
 
-**Keep below the fold** (scrollable content unchanged):
-- Overview/Description section
-- Highlights detail section
-- Rooms & Spaces
-- Amenities
-- Location & Neighborhood
-- House Rules & Policies
-- Similar Properties
-- Mobile Booking CTA
+### 4. `src/pages/admin/AdminSettings.tsx` -- Major Color Tab upgrade
 
-### 2. `src/components/booking/BookingWidget.tsx` -- No changes
+**Visual Color Picker:**
+- Add an `<input type="color">` next to each color field
+- Convert between HSL (stored format) and hex (picker format) using helper functions
+- The text input remains for precise HSL entry; the picker provides a visual alternative
 
-The existing BookingWidget stays as-is for the below-fold sticky sidebar. The hero area will have a NEW compact "BookingSummaryCard" component rendered inline in PropertyDetail.tsx (not a separate file -- just JSX in the page, keeping it simple). This compact card will trigger the same `BookingFlowDialog` on "Reserve Villa" click.
+**More Color Fields:**
+- Add the 5 new colors (muted, card, border, destructive, ring) to the form state and the color grid
+- Organized into two groups: "Brand Colors" (primary, secondary, accent) and "System Colors" (background, foreground, muted, card, border, destructive, ring)
 
-### 3. Files NOT modified
+**Updated Defaults:**
+- Keep existing defaults but ensure all 10 fields have sensible values
 
-- All hooks, services, contexts untouched
-- BookingWidget.tsx stays for potential reuse
-- PropertyHeroSlider.tsx used as-is (already has Embla carousel + thumbnails)
-- MobileBookingCTA stays for mobile users
+**Improved Preview:**
+- Expand the preview section to show muted backgrounds, card surfaces, borders, and destructive button alongside existing previews
+
+### 5. Helper functions for color conversion
+
+Add to the AdminSettings file (or a small utility):
+- `hslStringToHex(hsl)` -- converts `"245 51% 19%"` to `"#1a1847"` for the color picker input
+- `hexToHslString(hex)` -- converts `"#1a1847"` to `"245 51% 19%"` for storage
 
 ## Technical Details
 
-### PropertyDetail.tsx changes:
+### Color Picker Implementation
 
-**New imports:**
-- `PropertyHeroSlider` (replacing `PropertyGallery`)
-- `useNavigate` from react-router-dom
-- `BookingFlowDialog` for the compact card's reserve button
-- `Heart, ArrowLeft, MessageCircle, Shield` from lucide-react
+Each color row will look like:
 
-**Remove imports:**
-- `PropertyGallery`
-- `PropertyStickyNav`
-- `PropertyShareSave`
-- `PropertyQuickStats`
-- Breadcrumb components
+```text
+[ Color Picker ] [ HSL Text Input          ] [ Preview Swatch ]
+  (type=color)    "245 51% 19%"               (live preview)
+```
 
-**Hero compact booking card** (inline JSX):
-- Glass-panel styled card
-- Check-in/Check-out displayed as styled date boxes (using pre-filled dates or placeholder)
-- Guests dropdown display
-- Price: large serif font with "/per night"
-- Gold "Reserve Villa" button that opens `BookingFlowDialog`
-- Trust line: clock icon + "Free Cancellation · Pay Later"
+- Editing the picker updates the HSL text input
+- Editing the text input updates the picker
+- Both reflect in the preview swatch
 
-**Experiences strip** (inline JSX):
-- Fetch related experiences (already available via `RelatedExperiences` query pattern)
-- Display as horizontal compact cards: experience name + price + "/person"
-- "Talk to Concierge" button on the right (links to /contact)
+### Form State Changes
 
-**Quick stats row**: Simple flex row with icons -- area_sqm, bedrooms, bathrooms -- separated by dots. No card wrapper.
+```typescript
+interface FormState {
+  // ... existing fields ...
+  muted_color: string;
+  card_color: string;
+  border_color: string;
+  destructive_color: string;
+  ring_color: string;
+}
+```
 
-### Responsive behavior:
-- Desktop (lg+): Gallery + Booking card side by side
-- Mobile: Gallery full width, booking card below, then highlights + stats
-- MobileBookingCTA remains for sticky bottom bar on mobile
+### Color Groups in UI
 
-### No new files created -- all changes within `PropertyDetail.tsx`
+```text
+Brand Colors
+  Primary     [picker] [input]  -- Main brand color
+  Secondary   [picker] [input]  -- Supporting color
+  Accent      [picker] [input]  -- Special highlights
+
+System Colors
+  Background  [picker] [input]  -- Page background
+  Foreground  [picker] [input]  -- Main text color
+  Muted       [picker] [input]  -- Muted backgrounds
+  Card        [picker] [input]  -- Card surfaces
+  Border      [picker] [input]  -- Borders & dividers
+  Destructive [picker] [input]  -- Error/danger states
+  Ring        [picker] [input]  -- Focus rings
+```
 
 ## Files Modified
 
-1. `src/pages/PropertyDetail.tsx` -- Complete hero section restructure with new layout
+1. **Database migration** -- Add 5 new columns to `brand_settings`
+2. `src/hooks/useBrandSettings.ts` -- Extend interface + defaults
+3. `src/contexts/BrandContext.tsx` -- Apply new CSS variables in `applyTheme()`
+4. `src/pages/admin/AdminSettings.tsx` -- Color picker, new fields, improved preview
+
