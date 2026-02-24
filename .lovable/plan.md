@@ -1,116 +1,147 @@
 
 
-# Color Palette Settings Upgrade
+# Theme Export/Import and Dark Mode Toggle
 
 ## Overview
 
-Upgrade the Color Palette tab in Admin Settings with a visual color picker, additional color fields, updated defaults, and bug fixes for a more intuitive theming experience.
+Add two features to the Color Palette settings tab:
 
-## Current Issues
-
-- Colors are entered as raw HSL text strings -- not user-friendly
-- Only 5 color fields exist (primary, secondary, accent, background, foreground), but the CSS system uses more (muted, card, border, destructive, ring)
-- No visual color picker -- admins have to know HSL format
-- The BrandContext only applies 5 CSS variables, leaving muted/card/border/ring unaffected by brand changes
+1. **Theme Export/Import** -- Export the current color scheme as a JSON file and import one back, enabling sharing themes across environments.
+2. **Dark Mode Toggle with Contrast Checks** -- A light/dark mode toggle that auto-generates dark mode colors from the current palette, with WCAG contrast ratio warnings.
 
 ## Changes
 
-### 1. Database Migration -- Add new color columns
+### 1. `src/pages/admin/AdminSettings.tsx` -- Theme Export/Import + Dark Mode
 
-Add 5 new nullable columns to `brand_settings`:
-- `muted_color` (text) -- muted backgrounds
-- `card_color` (text) -- card surfaces
-- `border_color` (text) -- borders and dividers
-- `destructive_color` (text) -- error/danger states
-- `ring_color` (text) -- focus rings
+**Export Feature:**
+- "Export Theme" button in the Colors tab header
+- Exports all 10 color fields + fonts as a JSON file (`.havenhub-theme.json`)
+- File download triggered via `Blob` + `URL.createObjectURL`
+- JSON schema includes a `version` key for future compatibility
 
-### 2. `src/hooks/useBrandSettings.ts` -- Extend interface and defaults
+**Import Feature:**
+- "Import Theme" button next to Export
+- Hidden `<input type="file" accept=".json">` triggered by button click
+- Validates the imported JSON structure before applying
+- Shows toast on success/failure
+- Updates `formState` (does NOT auto-save -- user must click "Save Changes" to persist)
 
-- Add the 5 new color fields to the `BrandSettings` interface and `defaultBrandSettings`
-- Default values derived from current `index.css` values:
-  - muted: `243 29% 86%`
-  - card: `0 0% 100%`
-  - border: `243 29% 86%`
-  - destructive: `0 55% 55%`
-  - ring: `32 48% 66%`
+**Dark Mode Section:**
+- New "Mode" subsection at the top of the Colors tab
+- Two-button toggle: "Light" / "Dark" (not a system-level dark mode -- this controls which palette set is being edited)
+- When toggling to "Dark", auto-generate inverted colors from current light palette:
+  - Background becomes dark (swap background/foreground lightness)
+  - Card becomes slightly lighter than background
+  - Muted darkens
+  - Border darkens
+  - Primary/accent may shift lightness for visibility
+- User can manually adjust after auto-generation
+- Save stores a new `dark_` prefixed set of color columns (or a `dark_palette` JSONB column)
 
-### 3. `src/contexts/BrandContext.tsx` -- Apply new CSS variables
+**Contrast Checks:**
+- For each color pair (e.g., primary on background, foreground on background, destructive on background), compute WCAG contrast ratio
+- Display a small badge next to each color: green checkmark (>= 4.5:1), amber warning (3:1-4.5:1), red fail (< 3:1)
+- Uses relative luminance formula: `L = 0.2126*R + 0.7152*G + 0.0722*B`
+- Contrast ratio: `(L1 + 0.05) / (L2 + 0.05)`
+- Computed client-side, no backend needed
 
-Update `applyTheme()` to also set `--muted`, `--card`, `--border`, `--destructive`, and `--ring` CSS variables when the new columns have values.
+### 2. Database Migration -- Add `dark_palette` column
 
-### 4. `src/pages/admin/AdminSettings.tsx` -- Major Color Tab upgrade
+Add a single JSONB column to `brand_settings`:
+- `dark_palette` (jsonb, nullable, default null) -- stores the dark mode color overrides as `{ primary_color, secondary_color, ... }`
 
-**Visual Color Picker:**
-- Add an `<input type="color">` next to each color field
-- Convert between HSL (stored format) and hex (picker format) using helper functions
-- The text input remains for precise HSL entry; the picker provides a visual alternative
+This avoids adding 10+ new columns. When null, the system uses the CSS-defined dark mode defaults from `index.css`.
 
-**More Color Fields:**
-- Add the 5 new colors (muted, card, border, destructive, ring) to the form state and the color grid
-- Organized into two groups: "Brand Colors" (primary, secondary, accent) and "System Colors" (background, foreground, muted, card, border, destructive, ring)
+### 3. `src/hooks/useBrandSettings.ts` -- Extend interface
 
-**Updated Defaults:**
-- Keep existing defaults but ensure all 10 fields have sensible values
+- Add `dark_palette` to `BrandSettings` interface as `Record<string, string> | null`
+- Add to `defaultBrandSettings` as `null`
 
-**Improved Preview:**
-- Expand the preview section to show muted backgrounds, card surfaces, borders, and destructive button alongside existing previews
+### 4. `src/contexts/BrandContext.tsx` -- Apply dark palette
 
-### 5. Helper functions for color conversion
+- In `applyTheme()`, if `settings.dark_palette` exists, inject it as CSS variables scoped under `.dark` class
+- Create a `<style>` tag with `.dark { --primary: ...; --background: ...; }` overrides
+- This integrates with the existing `next-themes` dark mode toggle already in the app
 
-Add to the AdminSettings file (or a small utility):
-- `hslStringToHex(hsl)` -- converts `"245 51% 19%"` to `"#1a1847"` for the color picker input
-- `hexToHslString(hex)` -- converts `"#1a1847"` to `"245 51% 19%"` for storage
-
-## Technical Details
-
-### Color Picker Implementation
-
-Each color row will look like:
+### 5. Theme JSON Schema
 
 ```text
-[ Color Picker ] [ HSL Text Input          ] [ Preview Swatch ]
-  (type=color)    "245 51% 19%"               (live preview)
-```
-
-- Editing the picker updates the HSL text input
-- Editing the text input updates the picker
-- Both reflect in the preview swatch
-
-### Form State Changes
-
-```typescript
-interface FormState {
-  // ... existing fields ...
-  muted_color: string;
-  card_color: string;
-  border_color: string;
-  destructive_color: string;
-  ring_color: string;
+{
+  "version": 1,
+  "name": "My Custom Theme",
+  "light": {
+    "primary_color": "245 51% 19%",
+    "secondary_color": "243 29% 86%",
+    "accent_color": "32 48% 66%",
+    "background_color": "0 0% 100%",
+    "foreground_color": "244 42% 28%",
+    "muted_color": "243 29% 86%",
+    "card_color": "0 0% 100%",
+    "border_color": "243 29% 86%",
+    "destructive_color": "0 55% 55%",
+    "ring_color": "32 48% 66%"
+  },
+  "dark": { ... } | null,
+  "fonts": {
+    "heading_font": "Playfair Display",
+    "body_font": "Lato"
+  }
 }
 ```
 
-### Color Groups in UI
+## Technical Details
 
-```text
-Brand Colors
-  Primary     [picker] [input]  -- Main brand color
-  Secondary   [picker] [input]  -- Supporting color
-  Accent      [picker] [input]  -- Special highlights
+### Contrast ratio computation (inline in AdminSettings.tsx):
 
-System Colors
-  Background  [picker] [input]  -- Page background
-  Foreground  [picker] [input]  -- Main text color
-  Muted       [picker] [input]  -- Muted backgrounds
-  Card        [picker] [input]  -- Card surfaces
-  Border      [picker] [input]  -- Borders & dividers
-  Destructive [picker] [input]  -- Error/danger states
-  Ring        [picker] [input]  -- Focus rings
+```typescript
+function getRelativeLuminance(hslStr: string): number {
+  // Parse HSL -> convert to RGB -> compute luminance
+  const hex = hslStringToHex(hslStr);
+  const r = parseInt(hex.slice(1,3), 16) / 255;
+  const g = parseInt(hex.slice(3,5), 16) / 255;
+  const b = parseInt(hex.slice(5,7), 16) / 255;
+  const toLinear = (c: number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
+function getContrastRatio(hsl1: string, hsl2: string): number {
+  const l1 = getRelativeLuminance(hsl1);
+  const l2 = getRelativeLuminance(hsl2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+```
+
+### Dark palette auto-generation logic:
+
+- Take current light palette
+- Invert lightness values: `newL = 100 - oldL` (clamped)
+- Adjust saturation slightly (reduce by ~10% for dark backgrounds)
+- Keep hue unchanged
+- User can override any value after generation
+
+### BrandContext dark palette injection:
+
+```typescript
+function applyDarkPalette(palette: Record<string, string>) {
+  let styleEl = document.getElementById('brand-dark-overrides');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'brand-dark-overrides';
+    document.head.appendChild(styleEl);
+  }
+  const vars = Object.entries(palette)
+    .map(([key, val]) => `--${key.replace(/_color$/, '').replace(/_/g, '-')}: ${val};`)
+    .join('\n  ');
+  styleEl.textContent = `.dark {\n  ${vars}\n}`;
+}
 ```
 
 ## Files Modified
 
-1. **Database migration** -- Add 5 new columns to `brand_settings`
-2. `src/hooks/useBrandSettings.ts` -- Extend interface + defaults
-3. `src/contexts/BrandContext.tsx` -- Apply new CSS variables in `applyTheme()`
-4. `src/pages/admin/AdminSettings.tsx` -- Color picker, new fields, improved preview
+1. **Database migration** -- Add `dark_palette` JSONB column to `brand_settings`
+2. `src/hooks/useBrandSettings.ts` -- Add `dark_palette` to interface and defaults
+3. `src/contexts/BrandContext.tsx` -- Apply dark palette overrides via injected `<style>` tag
+4. `src/pages/admin/AdminSettings.tsx` -- Export/Import buttons, dark mode editing section, contrast ratio badges
 
