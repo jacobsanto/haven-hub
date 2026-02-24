@@ -658,3 +658,150 @@ export function useEnsurePMSConnection() {
     },
   });
 }
+
+// ─── Generic PMS Property Fetch & Import ────────────────────────────
+
+export interface NormalizedPMSProperty {
+  externalId: string;
+  name: string;
+  description?: string;
+  bedrooms: number;
+  bathrooms: number;
+  maxGuests: number;
+  city: string;
+  region?: string;
+  country: string;
+  propertyType: string;
+  highlights: string[];
+  images: string[];
+  coordinates?: { lat: number; lng: number };
+}
+
+/**
+ * Fetch properties from any PMS provider, routing to the correct edge function.
+ */
+export function useFetchPMSProperties() {
+  return useMutation({
+    mutationFn: async (connectionId: string): Promise<NormalizedPMSProperty[]> => {
+      const { data: connection, error } = await supabase
+        .from('pms_connections')
+        .select('config, pms_name')
+        .eq('id', connectionId)
+        .single();
+
+      if (error || !connection) throw new Error('Connection not found');
+
+      const config = connection.config as { provider?: string } | null;
+      const edgeFunction = getEdgeFunctionForProvider(config?.provider || 'advancecm');
+
+      const response = await supabase.functions.invoke(edgeFunction, {
+        body: { action: 'fetch-properties' },
+      });
+
+      if (response.error) throw new Error(response.error.message || 'Failed to fetch properties');
+
+      const rawProperties = response.data?.properties || response.data || [];
+
+      // Normalize to common shape
+      return rawProperties.map((p: Record<string, unknown>) => ({
+        externalId: p.externalId || p.id || p.pkey || '',
+        name: p.name || p.title || 'Unnamed Property',
+        description: p.description || '',
+        bedrooms: Number(p.bedrooms) || 0,
+        bathrooms: Number(p.bathrooms) || 0,
+        maxGuests: Number(p.maxGuests) || Number(p.accommodates) || 0,
+        city: p.city || (p.location as Record<string, unknown>)?.city || '',
+        region: p.region || (p.location as Record<string, unknown>)?.region || '',
+        country: p.country || (p.location as Record<string, unknown>)?.country || '',
+        propertyType: p.propertyType || p.property_type || 'villa',
+        highlights: (p.highlights || p.amenities || []) as string[],
+        images: (p.images || p.pictures || []) as string[],
+        coordinates: p.coordinates || (p.location as Record<string, unknown>)?.coordinates || undefined,
+      })) as NormalizedPMSProperty[];
+    },
+  });
+}
+
+/**
+ * Batch import properties from any PMS provider.
+ */
+export function useBatchImportPMSProperties() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      properties,
+      connectionId,
+    }: {
+      properties: NormalizedPMSProperty[];
+      connectionId: string;
+    }) => {
+      const results: Array<{ externalId: string; success: boolean; error?: string }> = [];
+
+      for (const property of properties) {
+        try {
+          // Create the property record
+          const slug = property.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          const { data: newProp, error: propError } = await supabase
+            .from('properties')
+            .insert({
+              name: property.name,
+              slug,
+              description: property.description || null,
+              city: property.city || 'Unknown',
+              country: property.country || 'Unknown',
+              region: property.region || null,
+              bedrooms: property.bedrooms,
+              bathrooms: property.bathrooms,
+              max_guests: property.maxGuests,
+              base_price: 0,
+              status: 'draft' as const,
+              property_type: property.propertyType || 'villa',
+              highlights: property.highlights || [],
+              hero_image_url: property.images?.[0] || null,
+              gallery: property.images || [],
+              latitude: property.coordinates?.lat || null,
+              longitude: property.coordinates?.lng || null,
+            })
+            .select('id')
+            .single();
+
+          if (propError) throw propError;
+
+          // Create the mapping
+          const { error: mapError } = await supabase
+            .from('pms_property_map')
+            .insert({
+              property_id: newProp.id,
+              pms_connection_id: connectionId,
+              external_property_id: property.externalId,
+              external_property_name: property.name,
+              sync_enabled: true,
+            });
+
+          if (mapError) throw mapError;
+
+          results.push({ externalId: property.externalId, success: true });
+        } catch (err) {
+          results.push({
+            externalId: property.externalId,
+            success: false,
+            error: err instanceof Error ? err.message : 'Import failed',
+          });
+        }
+      }
+
+      return {
+        results,
+        successCount: results.filter((r) => r.success).length,
+        failedCount: results.filter((r) => !r.success).length,
+        totalCount: properties.length,
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pms-mapped-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+    },
+  });
+}

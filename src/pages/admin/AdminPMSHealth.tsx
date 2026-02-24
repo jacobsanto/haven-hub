@@ -641,13 +641,19 @@ export default function AdminPMSHealth() {
         }}
       />
 
-      {importConnectionId && (
-        <PMSPropertyImportDialog
-          open={showImportDialog}
-          onOpenChange={setShowImportDialog}
-          connectionId={importConnectionId}
-        />
-      )}
+      {importConnectionId && (() => {
+        const conn = connections?.find(c => c.id === importConnectionId);
+        const config = conn?.config as { provider?: string } | null;
+        return (
+          <PMSPropertyImportDialog
+            open={showImportDialog}
+            onOpenChange={setShowImportDialog}
+            connectionId={importConnectionId}
+            providerName={conn?.pms_name}
+            providerId={config?.provider}
+          />
+        );
+      })()}
     </AdminLayout>
   );
 }

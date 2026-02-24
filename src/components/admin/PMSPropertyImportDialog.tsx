@@ -14,57 +14,48 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import {
-  useFetchTokeetProperties,
-  useMappedPropertyIds,
-  useBatchImportProperties,
-} from "@/hooks/useAdvanceCMSync";
-import type { TokeetProperty } from "@/integrations/pms/advancecm-adapter";
+  useFetchPMSProperties,
+  useBatchImportPMSProperties,
+  type NormalizedPMSProperty,
+} from "@/hooks/useAdminPMSHealth";
+import { useMappedPropertyIds } from "@/hooks/useAdvanceCMSync";
+import { getProviderById } from "@/lib/pms-providers";
 
 interface PMSPropertyImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   connectionId: string;
+  providerName?: string;
+  providerId?: string;
 }
 
 export function PMSPropertyImportDialog({
   open,
   onOpenChange,
   connectionId,
+  providerName,
+  providerId,
 }: PMSPropertyImportDialogProps) {
   const { toast } = useToast();
-  const [properties, setProperties] = useState<TokeetProperty[]>([]);
+  const [properties, setProperties] = useState<NormalizedPMSProperty[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [importResults, setImportResults] = useState<
     Record<string, { success: boolean; error?: string }>
   >({});
 
-  const fetchProperties = useFetchTokeetProperties();
+  const fetchProperties = useFetchPMSProperties();
   const { data: mappedIds = [] } = useMappedPropertyIds(connectionId);
-  const batchImport = useBatchImportProperties();
+  const batchImport = useBatchImportPMSProperties();
+
+  // Resolve display name
+  const displayName = providerName || (providerId ? getProviderById(providerId)?.name : null) || "PMS";
 
   // Fetch properties when dialog opens
   useEffect(() => {
     if (open && properties.length === 0 && !fetchProperties.isPending) {
-      fetchProperties.mutate(undefined, {
+      fetchProperties.mutate(connectionId, {
         onSuccess: (data) => {
-          // Convert PMSProperty to TokeetProperty format
-          setProperties(
-            data.map((p) => ({
-              externalId: p.externalId,
-              name: p.name,
-              description: p.description,
-              bedrooms: p.bedrooms,
-              bathrooms: p.bathrooms,
-              maxGuests: p.maxGuests,
-              city: p.location.city,
-              region: p.location.region,
-              country: p.location.country,
-              propertyType: "villa",
-              highlights: p.amenities,
-              images: p.images,
-              coordinates: p.location.coordinates,
-            }))
-          );
+          setProperties(data);
         },
         onError: (error) => {
           toast({
@@ -75,13 +66,14 @@ export function PMSPropertyImportDialog({
         },
       });
     }
-  }, [open, properties.length, fetchProperties, toast]);
+  }, [open, properties.length, fetchProperties, connectionId, toast]);
 
   // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
       setSelectedIds(new Set());
       setImportResults({});
+      setProperties([]);
     }
   }, [open]);
 
@@ -95,27 +87,17 @@ export function PMSPropertyImportDialog({
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
 
-  const selectAll = () => {
-    setSelectedIds(new Set(unmappedProperties.map((p) => p.externalId)));
-  };
-
-  const deselectAll = () => {
-    setSelectedIds(new Set());
-  };
+  const selectAll = () => setSelectedIds(new Set(unmappedProperties.map((p) => p.externalId)));
+  const deselectAll = () => setSelectedIds(new Set());
 
   const handleImport = async () => {
-    const selectedProperties = properties.filter((p) =>
-      selectedIds.has(p.externalId)
-    );
+    const selectedProperties = properties.filter((p) => selectedIds.has(p.externalId));
 
     batchImport.mutate(
       { properties: selectedProperties, connectionId },
@@ -130,11 +112,7 @@ export function PMSPropertyImportDialog({
           toast({
             title: "Import Complete",
             description: `Successfully imported ${data.successCount} of ${data.totalCount} properties.`,
-            variant: data.failedCount > 0 ? "default" : "default",
           });
-
-          // Refresh properties list
-          fetchProperties.mutate();
         },
         onError: (error) => {
           toast({
@@ -156,46 +134,39 @@ export function PMSPropertyImportDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Import Properties from AdvanceCM
+            Import Properties from {displayName}
           </DialogTitle>
           <DialogDescription>
-            Select properties from your Tokeet account to import into your booking
-            engine.
+            Select properties from your {displayName} account to import into your booking engine.
           </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Fetching properties from Tokeet...</p>
+            <p className="text-muted-foreground">Fetching properties from {displayName}...</p>
           </div>
         ) : properties.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No properties found in your Tokeet account.</p>
+            <p className="text-muted-foreground">No properties found in your {displayName} account.</p>
           </div>
         ) : (
           <>
-            {/* Selection controls */}
             {unmappedProperties.length > 0 && (
               <div className="flex items-center justify-between border-b pb-3">
                 <span className="text-sm text-muted-foreground">
                   {selectedIds.size} of {unmappedProperties.length} selected
                 </span>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={selectAll}>
-                    Select All
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={deselectAll}>
-                    Deselect All
-                  </Button>
+                  <Button variant="ghost" size="sm" onClick={selectAll}>Select All</Button>
+                  <Button variant="ghost" size="sm" onClick={deselectAll}>Deselect All</Button>
                 </div>
               </div>
             )}
 
             <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
               <div className="space-y-3">
-                {/* Unmapped properties (available for import) */}
                 {unmappedProperties.map((property) => {
                   const result = importResults[property.externalId];
                   const isSelected = selectedIds.has(property.externalId);
@@ -224,34 +195,25 @@ export function PMSPropertyImportDialog({
                           <span className="font-medium truncate">{property.name}</span>
                           {result?.success && (
                             <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                              <Check className="h-3 w-3 mr-1" />
-                              Imported
+                              <Check className="h-3 w-3 mr-1" />Imported
                             </Badge>
                           )}
                           {result?.error && (
-                            <Badge variant="destructive">
-                              <X className="h-3 w-3 mr-1" />
-                              Failed
-                            </Badge>
+                            <Badge variant="destructive"><X className="h-3 w-3 mr-1" />Failed</Badge>
                           )}
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {property.city}, {property.country}
+                            <MapPin className="h-3 w-3" />{property.city}, {property.country}
                           </span>
                           <span className="flex items-center gap-1">
-                            <BedDouble className="h-3 w-3" />
-                            {property.bedrooms} bed
+                            <BedDouble className="h-3 w-3" />{property.bedrooms} bed
                           </span>
                           <span className="flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            {property.maxGuests} guests
+                            <Users className="h-3 w-3" />{property.maxGuests} guests
                           </span>
                         </div>
-                        {result?.error && (
-                          <p className="text-sm text-red-600 mt-1">{result.error}</p>
-                        )}
+                        {result?.error && <p className="text-sm text-red-600 mt-1">{result.error}</p>}
                         <p className="text-xs text-muted-foreground mt-1">
                           → Will create as: <code className="bg-muted px-1 rounded">{property.name.toLowerCase().replace(/\s+/g, "-")}</code> (draft)
                         </p>
@@ -260,7 +222,6 @@ export function PMSPropertyImportDialog({
                   );
                 })}
 
-                {/* Already mapped properties */}
                 {mappedProperties.length > 0 && (
                   <>
                     <div className="pt-4">
@@ -281,8 +242,7 @@ export function PMSPropertyImportDialog({
                           </div>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {property.city}, {property.country}
+                              <MapPin className="h-3 w-3" />{property.city}, {property.country}
                             </span>
                           </div>
                         </div>
@@ -300,20 +260,11 @@ export function PMSPropertyImportDialog({
             {Object.keys(importResults).length > 0 ? "Close" : "Cancel"}
           </Button>
           {unmappedProperties.length > 0 && selectedIds.size > 0 && (
-            <Button
-              onClick={handleImport}
-              disabled={isImporting || selectedIds.size === 0}
-            >
+            <Button onClick={handleImport} disabled={isImporting || selectedIds.size === 0}>
               {isImporting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Importing...
-                </>
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Importing...</>
               ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Import {selectedIds.size} Properties
-                </>
+                <><Download className="h-4 w-4 mr-2" />Import {selectedIds.size} Properties</>
               )}
             </Button>
           )}
