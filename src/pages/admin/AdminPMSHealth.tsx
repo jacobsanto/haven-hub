@@ -55,7 +55,7 @@ import {
   useDeactivatePMSConnection,
   type PMSConnection,
 } from '@/hooks/useAdminPMSHealth';
-import { PMSConfigDialog } from '@/components/admin/PMSConfigDialog';
+import { PMSConnectionWizard } from '@/components/admin/PMSConnectionWizard';
 import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDialog';
 import { PMSConnectionHealthCard } from '@/components/admin/PMSConnectionHealthCard';
 import { PMSSyncStatusPanel } from '@/components/admin/PMSSyncStatusPanel';
@@ -633,7 +633,7 @@ export default function AdminPMSHealth() {
       </div>
 
       {/* Dialogs */}
-      <PMSConfigDialog
+      <PMSConnectionWizard
         open={showConfigDialog}
         onOpenChange={setShowConfigDialog}
         onConnectionEstablished={() => {
