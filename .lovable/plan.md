@@ -1,62 +1,61 @@
-# Add Image Upload to CMS Page Content Editor
+
+
+# Per-Property Storage Paths for CMS Uploads
 
 ## Problem
 
-The CMS page content editor (`/admin/content`) treats all image fields (hero images, OG images) as plain text inputs where you must paste a URL. There is no way to upload an image directly from the editor. Meanwhile, the property form already has a fully functional `ImageUploadWithOptimizer` component with drag-and-drop, WebP conversion, and quality controls.
+Property image uploads currently go into shared flat folders (`hero/`, `gallery/`). This means:
 
-This creates an inconsistent admin experience: property images get a proper upload flow, but page-level hero and SEO images require manually uploading elsewhere and pasting a URL.
+- All properties' hero images are mixed together in one folder
+- All gallery images from every property share a single folder
+- There's no way to quickly identify which images belong to which property
+- Deleting a property's images requires scanning filenames, not browsing a folder
 
 ## Solution
 
-Replace the plain text `<Input>` for image-type fields in the CMS editor with the existing `ImageUploadWithOptimizer` component. This gives admins the same upload, optimize, and preview experience they already have for properties.
+Scope property uploads to per-property folders using the property slug or ID. This applies to:
 
-### What Changes
+1. **Hero images** -- currently `hero/{timestamp}.webp`, change to `properties/{slug}/hero/{timestamp}.webp`
+2. **Gallery images** -- currently `gallery/{timestamp}.webp`, change to `properties/{slug}/gallery/{timestamp}.webp`
 
-**File: `src/pages/admin/AdminPageContent.tsx**`
-
-- Import `ImageUploadWithOptimizer` and `IMAGE_PRESETS` from the existing optimizer component
-- In the field rendering loop, when `field.type === 'image'`, render `ImageUploadWithOptimizer` instead of a plain `<Input>`
-- Use `IMAGE_PRESETS.hero` for hero_image fields and `IMAGE_PRESETS.og` (or a reasonable default) for OG image fields
-- The `onUpload` callback updates the form value (same as the current `onChange` but receives the optimized URL from storage)
-- The `onRemove` callback clears the value back to empty string
-- Keep the "Reset to default" button so admins can revert to the default Unsplash URL if needed
-
-**File: `src/utils/image-optimizer.ts**` (minor addition)
-
-- Add an `og` preset to `IMAGE_PRESETS` if one doesn't already exist (1200x630px, 80% quality -- standard OG image dimensions)
-
-### How It Works
-
-```text
-Current flow (image fields):
-  Admin pastes URL into text input --> saved as string
-
-New flow (image fields):
-  Admin clicks upload --> ImageUploadWithOptimizer handles:
-    1. File selection (drag-and-drop or click)
-    2. Client-side resize + WebP conversion
-    3. Upload to storage bucket
-    4. Returns public URL
-  --> URL saved to form state, same as before
-```
-
-### Determining the Preset
-
-The component will pick the image preset based on the field key:
-
-- `hero_image` fields use `IMAGE_PRESETS.hero` (1920px wide)
-- `og_image` fields use a new `IMAGE_PRESETS.og` (1200x630px)
-- Other image fields use a general default
-
-### Storage Path
-
-Images will upload to a `page-content` folder in the existing storage bucket, organized by page slug (e.g., `page-content/about/hero_image.webp`).
+The Quick Onboard flow (used before a slug exists) will use a temporary path and still work correctly since the URL is stored in the database regardless of folder structure.
 
 ## Files to Modify
 
-- `src/pages/admin/AdminPageContent.tsx` -- Swap `<Input>` for `<ImageUploadWithOptimizer>` on image fields
-- `src/utils/image-optimizer.ts` -- Add OG image preset if missing . ALso include the image optimizer we already have in place
+### `src/pages/admin/AdminPropertyForm.tsx`
 
-## No Database Changes Required
+- Hero image `storagePath`: change from `"hero"` to `` `properties/${formData.slug || formData.id || 'new'}/hero` ``
+- Gallery image `storagePath`: change from `"gallery"` to `` `properties/${formData.slug || formData.id || 'new'}/gallery` ``
+- Uses the property slug when available (most cases), falls back to ID, then `"new"` for unsaved properties
 
-The CMS stores image values as plain strings. Whether the string comes from a pasted URL or an uploaded file's public URL makes no difference to the schema.
+### `src/pages/admin/AdminQuickOnboard.tsx`
+
+- Hero image `storagePath`: change from `"hero"` to `` `properties/${form.slug || 'onboard'}/hero` ``
+- Uses the slug entered in the onboard form, falls back to `"onboard"` before a slug is entered
+
+## No Other Changes Needed
+
+- The `ImageUploadWithOptimizer` component already accepts `storagePath` as a prop and builds the full path dynamically
+- No database changes -- the stored value is always the full public URL
+- No storage bucket changes -- all files remain in the existing `property-images` bucket
+- Existing uploaded images continue to work since their URLs are already saved in the database
+- CMS page content already uses per-page paths (`page-content/{pageSlug}/`)
+- Blog, experiences, addons, etc. are lower volume and don't need per-entity scoping at this stage
+
+## Result
+
+```text
+Before:
+  property-images/
+    hero/1234.webp
+    hero/5678.webp
+    gallery/abcd.webp
+    gallery/efgh.webp
+
+After:
+  property-images/
+    properties/villa-amalfi/hero/1234.webp
+    properties/villa-amalfi/gallery/abcd.webp
+    properties/santorini-retreat/hero/5678.webp
+    properties/santorini-retreat/gallery/efgh.webp
+```
