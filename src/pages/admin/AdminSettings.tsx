@@ -72,6 +72,50 @@ const BODY_FONTS = [
   'Figtree',
 ];
 
+// --- HSL <-> Hex conversion helpers ---
+function hslStringToHex(hsl: string): string {
+  try {
+    const parts = hsl.match(/([\d.]+)\s+([\d.]+)%?\s+([\d.]+)%?/);
+    if (!parts) return '#888888';
+    const h = parseFloat(parts[1]);
+    const s = parseFloat(parts[2]) / 100;
+    const l = parseFloat(parts[3]) / 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  } catch {
+    return '#888888';
+  }
+}
+
+function hexToHslString(hex: string): string {
+  try {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)); break;
+        case g: h = ((b - r) / d + 2); break;
+        case b: h = ((r - g) / d + 4); break;
+      }
+      h *= 60;
+    }
+    return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  } catch {
+    return '0 0% 50%';
+  }
+}
+
 interface FormState {
   brand_name: string;
   brand_tagline: string;
@@ -84,6 +128,11 @@ interface FormState {
   accent_color: string;
   background_color: string;
   foreground_color: string;
+  muted_color: string;
+  card_color: string;
+  border_color: string;
+  destructive_color: string;
+  ring_color: string;
   heading_font: string;
   body_font: string;
   base_currency: SupportedCurrency;
@@ -106,6 +155,11 @@ export default function AdminSettings() {
     accent_color: defaultBrandSettings.accent_color,
     background_color: defaultBrandSettings.background_color,
     foreground_color: defaultBrandSettings.foreground_color,
+    muted_color: defaultBrandSettings.muted_color ?? '243 29% 86%',
+    card_color: defaultBrandSettings.card_color ?? '0 0% 100%',
+    border_color: defaultBrandSettings.border_color ?? '243 29% 86%',
+    destructive_color: defaultBrandSettings.destructive_color ?? '0 55% 55%',
+    ring_color: defaultBrandSettings.ring_color ?? '32 48% 66%',
     heading_font: defaultBrandSettings.heading_font,
     body_font: defaultBrandSettings.body_font,
     base_currency: defaultBrandSettings.base_currency,
@@ -125,6 +179,11 @@ export default function AdminSettings() {
         accent_color: settings.accent_color,
         background_color: settings.background_color,
         foreground_color: settings.foreground_color,
+        muted_color: settings.muted_color ?? defaultBrandSettings.muted_color ?? '243 29% 86%',
+        card_color: settings.card_color ?? defaultBrandSettings.card_color ?? '0 0% 100%',
+        border_color: settings.border_color ?? defaultBrandSettings.border_color ?? '243 29% 86%',
+        destructive_color: settings.destructive_color ?? defaultBrandSettings.destructive_color ?? '0 55% 55%',
+        ring_color: settings.ring_color ?? defaultBrandSettings.ring_color ?? '32 48% 66%',
         heading_font: settings.heading_font,
         body_font: settings.body_font,
         base_currency: settings.base_currency,
@@ -175,6 +234,11 @@ export default function AdminSettings() {
       accent_color: defaultBrandSettings.accent_color,
       background_color: defaultBrandSettings.background_color,
       foreground_color: defaultBrandSettings.foreground_color,
+      muted_color: defaultBrandSettings.muted_color ?? '243 29% 86%',
+      card_color: defaultBrandSettings.card_color ?? '0 0% 100%',
+      border_color: defaultBrandSettings.border_color ?? '243 29% 86%',
+      destructive_color: defaultBrandSettings.destructive_color ?? '0 55% 55%',
+      ring_color: defaultBrandSettings.ring_color ?? '32 48% 66%',
       heading_font: defaultBrandSettings.heading_font,
       body_font: defaultBrandSettings.body_font,
       base_currency: defaultBrandSettings.base_currency,
@@ -335,39 +399,88 @@ export default function AdminSettings() {
                 <CardHeader>
                   <CardTitle>Color Palette</CardTitle>
                   <CardDescription>
-                    Customize the colors used throughout your website (HSL format: "hue saturation% lightness%")
+                    Customize the colors used throughout your website. Use the color picker or enter HSL values manually.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {[
-                      { key: 'primary_color', label: 'Primary Color', desc: 'Main brand color (buttons, accents)' },
-                      { key: 'secondary_color', label: 'Secondary Color', desc: 'Supporting color (backgrounds, highlights)' },
-                      { key: 'accent_color', label: 'Accent Color', desc: 'Special highlights and decorations' },
-                      { key: 'background_color', label: 'Background Color', desc: 'Main page background' },
-                      { key: 'foreground_color', label: 'Foreground Color', desc: 'Main text color' },
-                    ].map((color) => (
-                      <div key={color.key} className="space-y-2">
-                        <Label htmlFor={color.key}>{color.label}</Label>
-                        <div className="flex gap-3">
-                          <div
-                            className="w-12 h-10 rounded-lg border shadow-sm flex-shrink-0"
-                            style={{ backgroundColor: hslToColor(formState[color.key as keyof FormState]) }}
-                          />
-                          <Input
-                            id={color.key}
-                            value={formState[color.key as keyof FormState]}
-                            onChange={(e) => handleInputChange(color.key as keyof FormState, e.target.value)}
-                            placeholder="16 50% 48%"
-                          />
+                <CardContent className="space-y-8">
+                  {/* Brand Colors */}
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Brand Colors</h3>
+                    <div className="grid gap-6 md:grid-cols-3">
+                      {[
+                        { key: 'primary_color', label: 'Primary', desc: 'Main brand color' },
+                        { key: 'secondary_color', label: 'Secondary', desc: 'Supporting color' },
+                        { key: 'accent_color', label: 'Accent', desc: 'Special highlights' },
+                      ].map((color) => (
+                        <div key={color.key} className="space-y-2">
+                          <Label htmlFor={color.key}>{color.label}</Label>
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="color"
+                              className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 bg-transparent"
+                              value={hslStringToHex(formState[color.key as keyof FormState])}
+                              onChange={(e) => handleInputChange(color.key as keyof FormState, hexToHslString(e.target.value))}
+                            />
+                            <Input
+                              id={color.key}
+                              value={formState[color.key as keyof FormState]}
+                              onChange={(e) => handleInputChange(color.key as keyof FormState, e.target.value)}
+                              placeholder="245 51% 19%"
+                              className="flex-1"
+                            />
+                            <div
+                              className="w-8 h-8 rounded-md border border-border shadow-sm flex-shrink-0"
+                              style={{ backgroundColor: hslToColor(formState[color.key as keyof FormState]) }}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">{color.desc}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground">{color.desc}</p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* System Colors */}
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">System Colors</h3>
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {[
+                        { key: 'background_color', label: 'Background', desc: 'Page background' },
+                        { key: 'foreground_color', label: 'Foreground', desc: 'Main text color' },
+                        { key: 'muted_color', label: 'Muted', desc: 'Muted backgrounds' },
+                        { key: 'card_color', label: 'Card', desc: 'Card surfaces' },
+                        { key: 'border_color', label: 'Border', desc: 'Borders & dividers' },
+                        { key: 'destructive_color', label: 'Destructive', desc: 'Error/danger states' },
+                        { key: 'ring_color', label: 'Ring', desc: 'Focus rings' },
+                      ].map((color) => (
+                        <div key={color.key} className="space-y-2">
+                          <Label htmlFor={color.key}>{color.label}</Label>
+                          <div className="flex gap-2 items-center">
+                            <input
+                              type="color"
+                              className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 bg-transparent"
+                              value={hslStringToHex(formState[color.key as keyof FormState])}
+                              onChange={(e) => handleInputChange(color.key as keyof FormState, hexToHslString(e.target.value))}
+                            />
+                            <Input
+                              id={color.key}
+                              value={formState[color.key as keyof FormState]}
+                              onChange={(e) => handleInputChange(color.key as keyof FormState, e.target.value)}
+                              placeholder="0 0% 100%"
+                              className="flex-1"
+                            />
+                            <div
+                              className="w-8 h-8 rounded-md border border-border shadow-sm flex-shrink-0"
+                              style={{ backgroundColor: hslToColor(formState[color.key as keyof FormState]) }}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">{color.desc}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Color Preview */}
-                  <div className="mt-8 p-6 rounded-xl border" style={{ backgroundColor: hslToColor(formState.background_color) }}>
+                  <div className="p-6 rounded-xl border" style={{ backgroundColor: hslToColor(formState.background_color) }}>
                     <h3 
                       className="text-xl font-serif mb-2" 
                       style={{ color: hslToColor(formState.foreground_color) }}
@@ -380,12 +493,12 @@ export default function AdminSettings() {
                     >
                       This is how your color palette will look across the site.
                     </p>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3 mb-4">
                       <button
                         className="px-4 py-2 rounded-lg text-white text-sm font-medium"
                         style={{ backgroundColor: hslToColor(formState.primary_color) }}
                       >
-                        Primary Button
+                        Primary
                       </button>
                       <button
                         className="px-4 py-2 rounded-lg text-sm font-medium"
@@ -402,6 +515,43 @@ export default function AdminSettings() {
                       >
                         Accent
                       </span>
+                      <button
+                        className="px-4 py-2 rounded-lg text-white text-sm font-medium"
+                        style={{ backgroundColor: hslToColor(formState.destructive_color) }}
+                      >
+                        Destructive
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <div
+                        className="px-4 py-3 rounded-lg text-sm"
+                        style={{ 
+                          backgroundColor: hslToColor(formState.muted_color),
+                          color: hslToColor(formState.foreground_color)
+                        }}
+                      >
+                        Muted bg
+                      </div>
+                      <div
+                        className="px-4 py-3 rounded-lg text-sm"
+                        style={{ 
+                          backgroundColor: hslToColor(formState.card_color),
+                          border: `1px solid ${hslToColor(formState.border_color)}`,
+                          color: hslToColor(formState.foreground_color)
+                        }}
+                      >
+                        Card surface
+                      </div>
+                      <div
+                        className="px-4 py-3 rounded-lg text-sm"
+                        style={{ 
+                          backgroundColor: hslToColor(formState.background_color),
+                          border: `2px solid ${hslToColor(formState.ring_color)}`,
+                          color: hslToColor(formState.foreground_color)
+                        }}
+                      >
+                        Focus ring
+                      </div>
                     </div>
                   </div>
                 </CardContent>
