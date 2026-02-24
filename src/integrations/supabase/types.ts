@@ -586,16 +586,21 @@ export type Database = {
           background_color: string | null
           base_currency: string
           body_font: string | null
+          border_color: string | null
           brand_name: string
           brand_tagline: string | null
+          card_color: string | null
           contact_address: string | null
           contact_email: string | null
           contact_phone: string | null
+          destructive_color: string | null
           foreground_color: string | null
           heading_font: string | null
           id: string
           logo_url: string | null
+          muted_color: string | null
           primary_color: string | null
+          ring_color: string | null
           secondary_color: string | null
           updated_at: string | null
         }
@@ -604,16 +609,21 @@ export type Database = {
           background_color?: string | null
           base_currency?: string
           body_font?: string | null
+          border_color?: string | null
           brand_name?: string
           brand_tagline?: string | null
+          card_color?: string | null
           contact_address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          destructive_color?: string | null
           foreground_color?: string | null
           heading_font?: string | null
           id?: string
           logo_url?: string | null
+          muted_color?: string | null
           primary_color?: string | null
+          ring_color?: string | null
           secondary_color?: string | null
           updated_at?: string | null
         }
@@ -622,16 +632,21 @@ export type Database = {
           background_color?: string | null
           base_currency?: string
           body_font?: string | null
+          border_color?: string | null
           brand_name?: string
           brand_tagline?: string | null
+          card_color?: string | null
           contact_address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          destructive_color?: string | null
           foreground_color?: string | null
           heading_font?: string | null
           id?: string
           logo_url?: string | null
+          muted_color?: string | null
           primary_color?: string | null
+          ring_color?: string | null
           secondary_color?: string | null
           updated_at?: string | null
         }

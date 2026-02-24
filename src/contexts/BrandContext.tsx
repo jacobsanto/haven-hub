@@ -39,6 +39,16 @@ function applyTheme(settings: BrandSettings) {
   root.style.setProperty('--background', settings.background_color);
   root.style.setProperty('--foreground', settings.foreground_color);
   
+  // Apply extended color tokens
+  if (settings.muted_color) root.style.setProperty('--muted', settings.muted_color);
+  if (settings.card_color) root.style.setProperty('--card', settings.card_color);
+  if (settings.border_color) {
+    root.style.setProperty('--border', settings.border_color);
+    root.style.setProperty('--input', settings.border_color);
+  }
+  if (settings.destructive_color) root.style.setProperty('--destructive', settings.destructive_color);
+  if (settings.ring_color) root.style.setProperty('--ring', settings.ring_color);
+  
   // Apply fonts
   if (settings.heading_font) {
     loadGoogleFont(settings.heading_font);

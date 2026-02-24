@@ -16,6 +16,11 @@ export interface BrandSettings {
   accent_color: string;
   background_color: string;
   foreground_color: string;
+  muted_color: string | null;
+  card_color: string | null;
+  border_color: string | null;
+  destructive_color: string | null;
+  ring_color: string | null;
   heading_font: string;
   body_font: string;
   base_currency: SupportedCurrency;
@@ -34,6 +39,11 @@ export const defaultBrandSettings: Omit<BrandSettings, 'id' | 'updated_at'> = {
   accent_color: '32 48% 66%',
   background_color: '0 0% 100%',
   foreground_color: '244 42% 28%',
+  muted_color: '243 29% 86%',
+  card_color: '0 0% 100%',
+  border_color: '243 29% 86%',
+  destructive_color: '0 55% 55%',
+  ring_color: '32 48% 66%',
   heading_font: 'Playfair Display',
   body_font: 'Lato',
   base_currency: 'EUR',
