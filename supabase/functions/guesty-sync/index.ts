@@ -183,6 +183,7 @@ async function getGuestyAccessToken(): Promise<string> {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "client_credentials",
+      scope: "booking_engine:api",
       client_id: clientId,
       client_secret: clientSecret,
     }),
