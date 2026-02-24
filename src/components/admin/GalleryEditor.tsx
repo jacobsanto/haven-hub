@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { GripVertical, X, ChevronUp, ChevronDown, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface GalleryEditorProps {
   gallery: string[];
@@ -13,6 +14,14 @@ interface GalleryEditorProps {
 export function GalleryEditor({ gallery, onReorder, onRemove, onSetAsHero }: GalleryEditorProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [justMovedIndex, setJustMovedIndex] = useState<number | null>(null);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (justMovedIndex === null) return;
+    const t = setTimeout(() => setJustMovedIndex(null), 300);
+    return () => clearTimeout(t);
+  }, [justMovedIndex]);
 
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     setDragIndex(index);
@@ -52,37 +61,42 @@ export function GalleryEditor({ gallery, onReorder, onRemove, onSetAsHero }: Gal
     const newGallery = [...gallery];
     [newGallery[index], newGallery[targetIndex]] = [newGallery[targetIndex], newGallery[index]];
     onReorder(newGallery);
+    setJustMovedIndex(targetIndex);
   }, [gallery, onReorder]);
 
   if (gallery.length === 0) return null;
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">{gallery.length} image{gallery.length !== 1 ? 's' : ''} · Drag to reorder</p>
+      <p className="text-xs text-muted-foreground">
+        {gallery.length} image{gallery.length !== 1 ? 's' : ''} · {isMobile ? 'Use arrows to reorder' : 'Drag to reorder'}
+      </p>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {gallery.map((url, index) => (
           <div
             key={`${url}-${index}`}
-            draggable
+            draggable={!isMobile}
             onDragStart={(e) => handleDragStart(e, index)}
             onDragOver={(e) => handleDragOver(e, index)}
             onDrop={(e) => handleDrop(e, index)}
             onDragEnd={handleDragEnd}
             className={cn(
-              'group relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-grab active:cursor-grabbing',
+              'group relative aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200',
+              !isMobile && 'cursor-grab active:cursor-grabbing',
               dragIndex === index && 'opacity-40 scale-95',
               dragOverIndex === index && dragIndex !== index
                 ? 'border-primary ring-2 ring-primary/20'
-                : 'border-transparent hover:border-border'
+                : 'border-transparent hover:border-border',
+              justMovedIndex === index && 'scale-105 ring-2 ring-primary/30'
             )}
           >
             <img src={url} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
 
-            {/* Overlay with controls */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors" />
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-black/20 md:bg-black/0 md:group-hover:bg-black/40 transition-colors" />
 
-            {/* Grab handle */}
-            <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Grab handle – desktop only */}
+            <div className="absolute top-1 left-1 hidden md:block opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="bg-background/80 backdrop-blur-sm rounded p-0.5">
                 <GripVertical className="h-4 w-4 text-foreground" />
               </div>
@@ -95,52 +109,52 @@ export function GalleryEditor({ gallery, onReorder, onRemove, onSetAsHero }: Gal
               </span>
             </div>
 
-            {/* Action buttons */}
-            <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Action buttons – always visible on mobile, hover on desktop */}
+            <div className="absolute top-1 right-1 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
               {onSetAsHero && (
                 <Button
                   type="button"
                   variant="secondary"
                   size="icon"
-                  className="h-6 w-6"
+                  className="h-8 w-8 md:h-6 md:w-6"
                   onClick={() => onSetAsHero(url)}
                   title="Set as hero image"
                 >
-                  <Star className="h-3 w-3" />
+                  <Star className="h-4 w-4 md:h-3 md:w-3" />
                 </Button>
               )}
               <Button
                 type="button"
                 variant="destructive"
                 size="icon"
-                className="h-6 w-6"
+                className="h-8 w-8 md:h-6 md:w-6"
                 onClick={() => onRemove(index)}
               >
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4 md:h-3 md:w-3" />
               </Button>
             </div>
 
-            {/* Mobile arrow buttons */}
+            {/* Arrow buttons – always visible on mobile, hidden on desktop */}
             <div className="absolute bottom-1 right-1 flex gap-1 md:hidden">
               <Button
                 type="button"
                 variant="secondary"
                 size="icon"
-                className="h-6 w-6"
+                className="h-9 w-9"
                 onClick={() => moveItem(index, -1)}
                 disabled={index === 0}
               >
-                <ChevronUp className="h-3 w-3" />
+                <ChevronUp className="h-4 w-4" />
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 size="icon"
-                className="h-6 w-6"
+                className="h-9 w-9"
                 onClick={() => moveItem(index, 1)}
                 disabled={index === gallery.length - 1}
               >
-                <ChevronDown className="h-3 w-3" />
+                <ChevronDown className="h-4 w-4" />
               </Button>
             </div>
           </div>
