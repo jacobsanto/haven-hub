@@ -205,7 +205,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
           </AnimatePresence>
 
           {/* Main CTA Row */}
-          <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-3">
+          <div className="px-4 pt-3 pb-2 flex items-center justify-center gap-3">
             {/* Price Section */}
             <div className="flex-1 min-w-0">
               
