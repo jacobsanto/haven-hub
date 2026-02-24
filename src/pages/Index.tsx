@@ -76,7 +76,7 @@ const Index = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="relative z-10 w-full max-w-4xl mx-auto px-4 flex flex-col lg:flex-row items-stretch gap-5"
+          className="relative z-10 w-full max-w-6xl mx-auto px-4 flex flex-col lg:flex-row items-stretch gap-5"
         >
           {/* Search Bar - Left */}
           <div className="flex-1 min-w-0">
@@ -142,10 +142,10 @@ const Index = () => {
               to={nav.to}
               className="flex flex-col items-center gap-1.5 group"
             >
-              <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center border border-gold-accent/40 group-hover:bg-gold-accent/20 transition-colors duration-200">
-                <nav.icon className="h-5 w-5 text-gold-accent" />
+              <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group-hover:bg-white/30 transition-colors duration-200">
+                <nav.icon className="h-5 w-5 text-white" />
               </div>
-              <span className="text-[11px] text-gold-accent/90 font-medium">{nav.label}</span>
+              <span className="text-[11px] text-white/80 font-medium">{nav.label}</span>
             </Link>
           ))}
         </motion.div>
