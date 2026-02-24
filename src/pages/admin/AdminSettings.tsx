@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useBrandSettings, useUpdateBrandSettings, defaultBrandSettings } from '@/hooks/useBrandSettings';
@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FontSelector } from '@/components/admin/FontSelector';
 import { CurrencySettingsCard } from '@/components/admin/CurrencySettingsCard';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Type, Building2, Save, RotateCcw, Coins } from 'lucide-react';
+import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X } from 'lucide-react';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { SupportedCurrency } from '@/types/currency';
@@ -116,6 +117,83 @@ function hexToHslString(hex: string): string {
   }
 }
 
+// --- WCAG Contrast helpers ---
+function getRelativeLuminance(hslStr: string): number {
+  try {
+    const hex = hslStringToHex(hslStr);
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const toLinear = (c: number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+  } catch {
+    return 0;
+  }
+}
+
+function getContrastRatio(hsl1: string, hsl2: string): number {
+  const l1 = getRelativeLuminance(hsl1);
+  const l2 = getRelativeLuminance(hsl2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function ContrastBadge({ fg, bg }: { fg: string; bg: string }) {
+  const ratio = getContrastRatio(fg, bg);
+  if (ratio >= 4.5) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-green-700 bg-green-100 rounded px-1.5 py-0.5" title={`Contrast: ${ratio.toFixed(1)}:1 — WCAG AA pass`}>
+        <Check className="h-3 w-3" /> {ratio.toFixed(1)}
+      </span>
+    );
+  }
+  if (ratio >= 3) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-700 bg-amber-100 rounded px-1.5 py-0.5" title={`Contrast: ${ratio.toFixed(1)}:1 — Large text only`}>
+        <AlertTriangle className="h-3 w-3" /> {ratio.toFixed(1)}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-700 bg-red-100 rounded px-1.5 py-0.5" title={`Contrast: ${ratio.toFixed(1)}:1 — WCAG fail`}>
+      <X className="h-3 w-3" /> {ratio.toFixed(1)}
+    </span>
+  );
+}
+
+// --- Dark palette auto-generation ---
+function invertHslLightness(hsl: string, satReduction = 10): string {
+  const parts = hsl.match(/([\d.]+)\s+([\d.]+)%?\s+([\d.]+)%?/);
+  if (!parts) return hsl;
+  const h = parseFloat(parts[1]);
+  const s = Math.max(0, parseFloat(parts[2]) - satReduction);
+  const l = Math.max(5, Math.min(95, 100 - parseFloat(parts[3])));
+  return `${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%`;
+}
+
+function generateDarkPalette(light: Record<string, string>): Record<string, string> {
+  return {
+    primary_color: invertHslLightness(light.primary_color || '245 51% 19%', 0),
+    secondary_color: invertHslLightness(light.secondary_color || '243 29% 86%', 5),
+    accent_color: invertHslLightness(light.accent_color || '32 48% 66%', 0),
+    background_color: invertHslLightness(light.background_color || '0 0% 100%', 15),
+    foreground_color: invertHslLightness(light.foreground_color || '244 42% 28%', 5),
+    muted_color: invertHslLightness(light.muted_color || '243 29% 86%', 10),
+    card_color: invertHslLightness(light.card_color || '0 0% 100%', 12),
+    border_color: invertHslLightness(light.border_color || '243 29% 86%', 10),
+    destructive_color: invertHslLightness(light.destructive_color || '0 55% 55%', 0),
+    ring_color: invertHslLightness(light.ring_color || '32 48% 66%', 0),
+  };
+}
+
+// --- Theme JSON schema ---
+const COLOR_KEYS = [
+  'primary_color', 'secondary_color', 'accent_color', 'background_color',
+  'foreground_color', 'muted_color', 'card_color', 'border_color',
+  'destructive_color', 'ring_color',
+] as const;
+
 interface FormState {
   brand_name: string;
   brand_tagline: string;
@@ -142,6 +220,7 @@ export default function AdminSettings() {
   const { data: settings, isLoading } = useBrandSettings();
   const updateSettings = useUpdateBrandSettings();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formState, setFormState] = useState<FormState>({
     brand_name: defaultBrandSettings.brand_name,
@@ -164,6 +243,10 @@ export default function AdminSettings() {
     body_font: defaultBrandSettings.body_font,
     base_currency: defaultBrandSettings.base_currency,
   });
+
+  // Dark mode editing state
+  const [editingMode, setEditingMode] = useState<'light' | 'dark'>('light');
+  const [darkPalette, setDarkPalette] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
     if (settings) {
@@ -188,16 +271,32 @@ export default function AdminSettings() {
         body_font: settings.body_font,
         base_currency: settings.base_currency,
       });
+      setDarkPalette(settings.dark_palette ?? null);
     }
   }, [settings]);
 
   const handleInputChange = (field: keyof FormState, value: string) => {
-    setFormState((prev) => ({ ...prev, [field]: value }));
+    if (editingMode === 'dark' && COLOR_KEYS.includes(field as any)) {
+      setDarkPalette((prev) => ({ ...(prev || {}), [field]: value }));
+    } else {
+      setFormState((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleRemoveLogo = () => {
     setFormState((prev) => ({ ...prev, logo_url: '' }));
   };
+
+  // Get the current color value based on editing mode
+  const getColorValue = (key: string): string => {
+    if (editingMode === 'dark' && darkPalette) {
+      return darkPalette[key] ?? formState[key as keyof FormState] as string;
+    }
+    return formState[key as keyof FormState] as string;
+  };
+
+  // Get the background color for contrast checks based on current mode
+  const currentBg = getColorValue('background_color');
 
   const handleSave = async () => {
     if (!settings?.id) return;
@@ -207,7 +306,8 @@ export default function AdminSettings() {
         id: settings.id,
         ...formState,
         logo_url: formState.logo_url || null,
-      });
+        dark_palette: darkPalette,
+      } as any);
       toast({
         title: 'Settings Saved',
         description: 'Brand settings have been updated successfully.',
@@ -243,6 +343,86 @@ export default function AdminSettings() {
       body_font: defaultBrandSettings.body_font,
       base_currency: defaultBrandSettings.base_currency,
     });
+    setDarkPalette(null);
+    setEditingMode('light');
+  };
+
+  // --- Theme Export ---
+  const handleExportTheme = () => {
+    const lightColors: Record<string, string> = {};
+    for (const key of COLOR_KEYS) {
+      lightColors[key] = formState[key as keyof FormState] as string;
+    }
+    const theme = {
+      version: 1,
+      name: formState.brand_name + ' Theme',
+      light: lightColors,
+      dark: darkPalette,
+      fonts: {
+        heading_font: formState.heading_font,
+        body_font: formState.body_font,
+      },
+    };
+    const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${formState.brand_name.replace(/\s+/g, '-').toLowerCase()}.havenhub-theme.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Theme Exported', description: 'Theme file downloaded.' });
+  };
+
+  // --- Theme Import ---
+  const handleImportTheme = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const json = JSON.parse(ev.target?.result as string);
+        if (!json.version || !json.light) throw new Error('Invalid theme schema');
+        // Validate light palette keys
+        for (const key of COLOR_KEYS) {
+          if (typeof json.light[key] !== 'string') throw new Error(`Missing color: ${key}`);
+        }
+        // Apply light palette
+        setFormState((prev) => ({
+          ...prev,
+          ...json.light,
+          heading_font: json.fonts?.heading_font ?? prev.heading_font,
+          body_font: json.fonts?.body_font ?? prev.body_font,
+        }));
+        // Apply dark palette if present
+        setDarkPalette(json.dark ?? null);
+        setEditingMode('light');
+        toast({ title: 'Theme Imported', description: 'Review the colors and click Save Changes to persist.' });
+      } catch (err: any) {
+        toast({ title: 'Import Failed', description: err.message || 'Invalid theme file.', variant: 'destructive' });
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so re-importing same file works
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // --- Switch to dark mode editing ---
+  const handleModeSwitch = (mode: 'light' | 'dark') => {
+    if (mode === 'dark' && !darkPalette) {
+      // Auto-generate dark palette from current light
+      const lightColors: Record<string, string> = {};
+      for (const key of COLOR_KEYS) {
+        lightColors[key] = formState[key as keyof FormState] as string;
+      }
+      setDarkPalette(generateDarkPalette(lightColors));
+    }
+    setEditingMode(mode);
+  };
+
+  const handleRemoveDarkPalette = () => {
+    setDarkPalette(null);
+    setEditingMode('light');
+    toast({ title: 'Dark palette removed', description: 'The site will use CSS defaults for dark mode.' });
   };
 
   // Helper to convert HSL string to CSS color
@@ -259,6 +439,57 @@ export default function AdminSettings() {
       </AdminGuard>
     );
   }
+
+  // Color definitions for the grid
+  const brandColors = [
+    { key: 'primary_color', label: 'Primary', desc: 'Main brand color', contrastAgainst: 'background_color' },
+    { key: 'secondary_color', label: 'Secondary', desc: 'Supporting color', contrastAgainst: null },
+    { key: 'accent_color', label: 'Accent', desc: 'Special highlights', contrastAgainst: null },
+  ];
+
+  const systemColors = [
+    { key: 'background_color', label: 'Background', desc: 'Page background', contrastAgainst: null },
+    { key: 'foreground_color', label: 'Foreground', desc: 'Main text color', contrastAgainst: 'background_color' },
+    { key: 'muted_color', label: 'Muted', desc: 'Muted backgrounds', contrastAgainst: null },
+    { key: 'card_color', label: 'Card', desc: 'Card surfaces', contrastAgainst: null },
+    { key: 'border_color', label: 'Border', desc: 'Borders & dividers', contrastAgainst: null },
+    { key: 'destructive_color', label: 'Destructive', desc: 'Error/danger states', contrastAgainst: 'background_color' },
+    { key: 'ring_color', label: 'Ring', desc: 'Focus rings', contrastAgainst: null },
+  ];
+
+  const renderColorRow = (color: { key: string; label: string; desc: string; contrastAgainst: string | null }) => {
+    const value = getColorValue(color.key);
+    return (
+      <div key={color.key} className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Label htmlFor={color.key}>{color.label}</Label>
+          {color.contrastAgainst && (
+            <ContrastBadge fg={value} bg={getColorValue(color.contrastAgainst)} />
+          )}
+        </div>
+        <div className="flex gap-2 items-center">
+          <input
+            type="color"
+            className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 bg-transparent"
+            value={hslStringToHex(value)}
+            onChange={(e) => handleInputChange(color.key as keyof FormState, hexToHslString(e.target.value))}
+          />
+          <Input
+            id={color.key}
+            value={value}
+            onChange={(e) => handleInputChange(color.key as keyof FormState, e.target.value)}
+            placeholder="245 51% 19%"
+            className="flex-1"
+          />
+          <div
+            className="w-8 h-8 rounded-md border border-border shadow-sm flex-shrink-0"
+            style={{ backgroundColor: hslToColor(value) }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">{color.desc}</p>
+      </div>
+    );
+  };
 
   return (
     <AdminGuard>
@@ -397,45 +628,70 @@ export default function AdminSettings() {
             <TabsContent value="colors">
               <Card>
                 <CardHeader>
-                  <CardTitle>Color Palette</CardTitle>
-                  <CardDescription>
-                    Customize the colors used throughout your website. Use the color picker or enter HSL values manually.
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Color Palette</CardTitle>
+                      <CardDescription>
+                        Customize the colors used throughout your website. Use the color picker or enter HSL values manually.
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={handleImportTheme}
+                      />
+                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="gap-1.5">
+                        <Upload className="h-3.5 w-3.5" />
+                        Import
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleExportTheme} className="gap-1.5">
+                        <Download className="h-3.5 w-3.5" />
+                        Export
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-8">
+                  {/* Mode Toggle */}
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-medium text-muted-foreground">Editing:</span>
+                    <div className="inline-flex rounded-lg border border-border p-0.5">
+                      <button
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${editingMode === 'light' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                        onClick={() => handleModeSwitch('light')}
+                      >
+                        <Sun className="h-3.5 w-3.5" />
+                        Light
+                      </button>
+                      <button
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${editingMode === 'dark' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                        onClick={() => handleModeSwitch('dark')}
+                      >
+                        <Moon className="h-3.5 w-3.5" />
+                        Dark
+                      </button>
+                    </div>
+                    {editingMode === 'dark' && darkPalette && (
+                      <Button variant="ghost" size="sm" onClick={handleRemoveDarkPalette} className="text-destructive text-xs gap-1">
+                        <X className="h-3 w-3" /> Remove dark palette
+                      </Button>
+                    )}
+                  </div>
+
+                  {editingMode === 'dark' && (
+                    <p className="text-xs text-muted-foreground -mt-4">
+                      Editing the dark mode palette. These colors override the light palette when dark mode is active.
+                    </p>
+                  )}
+
                   {/* Brand Colors */}
                   <div>
                     <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Brand Colors</h3>
                     <div className="grid gap-6 md:grid-cols-3">
-                      {[
-                        { key: 'primary_color', label: 'Primary', desc: 'Main brand color' },
-                        { key: 'secondary_color', label: 'Secondary', desc: 'Supporting color' },
-                        { key: 'accent_color', label: 'Accent', desc: 'Special highlights' },
-                      ].map((color) => (
-                        <div key={color.key} className="space-y-2">
-                          <Label htmlFor={color.key}>{color.label}</Label>
-                          <div className="flex gap-2 items-center">
-                            <input
-                              type="color"
-                              className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 bg-transparent"
-                              value={hslStringToHex(formState[color.key as keyof FormState])}
-                              onChange={(e) => handleInputChange(color.key as keyof FormState, hexToHslString(e.target.value))}
-                            />
-                            <Input
-                              id={color.key}
-                              value={formState[color.key as keyof FormState]}
-                              onChange={(e) => handleInputChange(color.key as keyof FormState, e.target.value)}
-                              placeholder="245 51% 19%"
-                              className="flex-1"
-                            />
-                            <div
-                              className="w-8 h-8 rounded-md border border-border shadow-sm flex-shrink-0"
-                              style={{ backgroundColor: hslToColor(formState[color.key as keyof FormState]) }}
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground">{color.desc}</p>
-                        </div>
-                      ))}
+                      {brandColors.map(renderColorRow)}
                     </div>
                   </div>
 
@@ -443,81 +699,49 @@ export default function AdminSettings() {
                   <div>
                     <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">System Colors</h3>
                     <div className="grid gap-6 md:grid-cols-2">
-                      {[
-                        { key: 'background_color', label: 'Background', desc: 'Page background' },
-                        { key: 'foreground_color', label: 'Foreground', desc: 'Main text color' },
-                        { key: 'muted_color', label: 'Muted', desc: 'Muted backgrounds' },
-                        { key: 'card_color', label: 'Card', desc: 'Card surfaces' },
-                        { key: 'border_color', label: 'Border', desc: 'Borders & dividers' },
-                        { key: 'destructive_color', label: 'Destructive', desc: 'Error/danger states' },
-                        { key: 'ring_color', label: 'Ring', desc: 'Focus rings' },
-                      ].map((color) => (
-                        <div key={color.key} className="space-y-2">
-                          <Label htmlFor={color.key}>{color.label}</Label>
-                          <div className="flex gap-2 items-center">
-                            <input
-                              type="color"
-                              className="w-10 h-10 rounded-lg border border-border cursor-pointer p-0.5 bg-transparent"
-                              value={hslStringToHex(formState[color.key as keyof FormState])}
-                              onChange={(e) => handleInputChange(color.key as keyof FormState, hexToHslString(e.target.value))}
-                            />
-                            <Input
-                              id={color.key}
-                              value={formState[color.key as keyof FormState]}
-                              onChange={(e) => handleInputChange(color.key as keyof FormState, e.target.value)}
-                              placeholder="0 0% 100%"
-                              className="flex-1"
-                            />
-                            <div
-                              className="w-8 h-8 rounded-md border border-border shadow-sm flex-shrink-0"
-                              style={{ backgroundColor: hslToColor(formState[color.key as keyof FormState]) }}
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground">{color.desc}</p>
-                        </div>
-                      ))}
+                      {systemColors.map(renderColorRow)}
                     </div>
                   </div>
 
                   {/* Color Preview */}
-                  <div className="p-6 rounded-xl border" style={{ backgroundColor: hslToColor(formState.background_color) }}>
+                  <div className="p-6 rounded-xl border" style={{ backgroundColor: hslToColor(getColorValue('background_color')) }}>
                     <h3 
                       className="text-xl font-serif mb-2" 
-                      style={{ color: hslToColor(formState.foreground_color) }}
+                      style={{ color: hslToColor(getColorValue('foreground_color')) }}
                     >
-                      Color Preview
+                      Color Preview {editingMode === 'dark' && <Badge variant="secondary" className="ml-2 text-xs">Dark Mode</Badge>}
                     </h3>
                     <p 
                       className="text-sm mb-4" 
-                      style={{ color: hslToColor(formState.foreground_color), opacity: 0.7 }}
+                      style={{ color: hslToColor(getColorValue('foreground_color')), opacity: 0.7 }}
                     >
                       This is how your color palette will look across the site.
                     </p>
                     <div className="flex flex-wrap gap-3 mb-4">
                       <button
                         className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                        style={{ backgroundColor: hslToColor(formState.primary_color) }}
+                        style={{ backgroundColor: hslToColor(getColorValue('primary_color')) }}
                       >
                         Primary
                       </button>
                       <button
                         className="px-4 py-2 rounded-lg text-sm font-medium"
                         style={{ 
-                          backgroundColor: hslToColor(formState.secondary_color),
-                          color: hslToColor(formState.foreground_color)
+                          backgroundColor: hslToColor(getColorValue('secondary_color')),
+                          color: hslToColor(getColorValue('foreground_color'))
                         }}
                       >
                         Secondary
                       </button>
                       <span
                         className="px-3 py-2 rounded-lg text-sm"
-                        style={{ backgroundColor: hslToColor(formState.accent_color) }}
+                        style={{ backgroundColor: hslToColor(getColorValue('accent_color')) }}
                       >
                         Accent
                       </span>
                       <button
                         className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                        style={{ backgroundColor: hslToColor(formState.destructive_color) }}
+                        style={{ backgroundColor: hslToColor(getColorValue('destructive_color')) }}
                       >
                         Destructive
                       </button>
@@ -526,8 +750,8 @@ export default function AdminSettings() {
                       <div
                         className="px-4 py-3 rounded-lg text-sm"
                         style={{ 
-                          backgroundColor: hslToColor(formState.muted_color),
-                          color: hslToColor(formState.foreground_color)
+                          backgroundColor: hslToColor(getColorValue('muted_color')),
+                          color: hslToColor(getColorValue('foreground_color'))
                         }}
                       >
                         Muted bg
@@ -535,9 +759,9 @@ export default function AdminSettings() {
                       <div
                         className="px-4 py-3 rounded-lg text-sm"
                         style={{ 
-                          backgroundColor: hslToColor(formState.card_color),
-                          border: `1px solid ${hslToColor(formState.border_color)}`,
-                          color: hslToColor(formState.foreground_color)
+                          backgroundColor: hslToColor(getColorValue('card_color')),
+                          border: `1px solid ${hslToColor(getColorValue('border_color'))}`,
+                          color: hslToColor(getColorValue('foreground_color'))
                         }}
                       >
                         Card surface
@@ -545,9 +769,9 @@ export default function AdminSettings() {
                       <div
                         className="px-4 py-3 rounded-lg text-sm"
                         style={{ 
-                          backgroundColor: hslToColor(formState.background_color),
-                          border: `2px solid ${hslToColor(formState.ring_color)}`,
-                          color: hslToColor(formState.foreground_color)
+                          backgroundColor: hslToColor(getColorValue('background_color')),
+                          border: `2px solid ${hslToColor(getColorValue('ring_color'))}`,
+                          color: hslToColor(getColorValue('foreground_color'))
                         }}
                       >
                         Focus ring

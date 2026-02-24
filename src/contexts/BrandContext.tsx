@@ -29,6 +29,23 @@ function loadGoogleFont(fontName: string) {
   document.head.appendChild(link);
 }
 
+function applyDarkPalette(palette: Record<string, string> | null) {
+  let styleEl = document.getElementById('brand-dark-overrides');
+  if (!palette) {
+    if (styleEl) styleEl.remove();
+    return;
+  }
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'brand-dark-overrides';
+    document.head.appendChild(styleEl);
+  }
+  const vars = Object.entries(palette)
+    .map(([key, val]) => `--${key.replace(/_color$/, '').replace(/_/g, '-')}: ${val};`)
+    .join('\n  ');
+  styleEl.textContent = `.dark {\n  ${vars}\n}`;
+}
+
 function applyTheme(settings: BrandSettings) {
   const root = document.documentElement;
   
@@ -48,6 +65,9 @@ function applyTheme(settings: BrandSettings) {
   }
   if (settings.destructive_color) root.style.setProperty('--destructive', settings.destructive_color);
   if (settings.ring_color) root.style.setProperty('--ring', settings.ring_color);
+  
+  // Apply dark palette overrides
+  applyDarkPalette(settings.dark_palette);
   
   // Apply fonts
   if (settings.heading_font) {
