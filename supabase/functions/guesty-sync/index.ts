@@ -12,6 +12,7 @@ const corsHeaders = {
 const baseRequestSchema = z.object({
   action: z.enum([
     "test",
+    "check-quota",
     "fetch-properties",
     "fetch-property",
     "fetch-availability",
@@ -108,6 +109,7 @@ function validateRequest(body: unknown): { success: true; data: SyncRequest } | 
   let result;
   switch (action) {
     case "test":
+    case "check-quota":
     case "fetch-properties":
     case "sync-availability":
       result = baseRequestSchema.safeParse(body);
@@ -165,8 +167,85 @@ interface GuestyListing {
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
+const GUESTY_MAX_TOKENS_PER_24H = 3;
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Log a Guesty token request to the tracking table for quota monitoring.
+ */
+async function logTokenUsage(opts: {
+  success: boolean;
+  responseStatus?: number;
+  errorMessage?: string;
+  tokenExpiresAt?: string;
+  retryAfterSeconds?: number;
+}): Promise<void> {
+  try {
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    await adminClient.from("guesty_token_usage").insert({
+      success: opts.success,
+      response_status: opts.responseStatus ?? null,
+      error_message: opts.errorMessage ?? null,
+      token_expires_at: opts.tokenExpiresAt ?? null,
+      retry_after_seconds: opts.retryAfterSeconds ?? null,
+    });
+  } catch (e) {
+    console.warn("Failed to log token usage:", e);
+  }
+}
+
+/**
+ * Check how many successful token requests were made in the last 24 hours.
+ * Returns { used, remaining, oldestRequestAt, nextResetAt }
+ */
+async function checkTokenQuota(): Promise<{
+  used: number;
+  remaining: number;
+  oldestRequestAt: string | null;
+  nextResetAt: string | null;
+  quotaExhausted: boolean;
+}> {
+  try {
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await adminClient
+      .from("guesty_token_usage")
+      .select("requested_at")
+      .gte("requested_at", since)
+      .order("requested_at", { ascending: true });
+
+    if (error || !data) {
+      console.warn("Failed to check token quota:", error);
+      return { used: 0, remaining: GUESTY_MAX_TOKENS_PER_24H, oldestRequestAt: null, nextResetAt: null, quotaExhausted: false };
+    }
+
+    const used = data.length;
+    const remaining = Math.max(0, GUESTY_MAX_TOKENS_PER_24H - used);
+    const oldestRequestAt = data.length > 0 ? data[0].requested_at : null;
+    const nextResetAt = oldestRequestAt
+      ? new Date(new Date(oldestRequestAt).getTime() + 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
+    return {
+      used,
+      remaining,
+      oldestRequestAt,
+      nextResetAt,
+      quotaExhausted: remaining <= 0,
+    };
+  } catch (e) {
+    console.warn("Failed to check token quota:", e);
+    return { used: 0, remaining: GUESTY_MAX_TOKENS_PER_24H, oldestRequestAt: null, nextResetAt: null, quotaExhausted: false };
+  }
 }
 
 async function getGuestyAccessToken(): Promise<string> {
@@ -180,6 +259,24 @@ async function getGuestyAccessToken(): Promise<string> {
 
   if (!clientId || !clientSecret) {
     throw new Error("Guesty credentials not configured (GUESTY_CLIENT_ID / GUESTY_API_TOKEN)");
+  }
+
+  // Pre-flight quota check before burning a token request
+  const quota = await checkTokenQuota();
+  console.info(`Guesty token quota: ${quota.used}/${GUESTY_MAX_TOKENS_PER_24H} used, ${quota.remaining} remaining`);
+
+  if (quota.quotaExhausted) {
+    const nextReset = quota.nextResetAt ? new Date(quota.nextResetAt) : null;
+    const hoursUntilReset = nextReset ? Math.max(0, Math.round((nextReset.getTime() - Date.now()) / 3600000)) : '?';
+    throw new Error(
+      `Guesty token quota exhausted (${quota.used}/${GUESTY_MAX_TOKENS_PER_24H} used in last 24h). ` +
+      `Next token available in ~${hoursUntilReset}h.` +
+      (quota.nextResetAt ? ` Reset at: ${quota.nextResetAt}` : '')
+    );
+  }
+
+  if (quota.remaining === 1) {
+    console.warn(`⚠️ Guesty token quota WARNING: Only 1 token request remaining in current 24h window!`);
   }
 
   const maxRetries = 3;
@@ -197,30 +294,51 @@ async function getGuestyAccessToken(): Promise<string> {
 
     if (response.status === 429) {
       const retryAfter = parseInt(response.headers.get("Retry-After") || "0", 10);
+      await response.text();
+      // Log the rate-limited attempt
+      await logTokenUsage({
+        success: false,
+        responseStatus: 429,
+        errorMessage: `Rate limited. Retry-After: ${retryAfter}s`,
+        retryAfterSeconds: retryAfter,
+      });
+
       if (retryAfter > 30) {
-        await response.text();
         throw new Error(
           `Guesty token quota exhausted. Retry-After: ${retryAfter}s (~${Math.round(retryAfter / 3600)}h). ` +
-          `Guesty allows max 3 token requests per 24 hours per application. Please wait and try again later.`
+          `Guesty allows max ${GUESTY_MAX_TOKENS_PER_24H} token requests per 24 hours per application. Please wait and try again later.`
         );
       }
       const backoffMs = retryAfter > 0 ? retryAfter * 1000 : Math.min(2000 * Math.pow(2, attempt), 15000);
       console.warn(`Guesty OAuth rate-limited (attempt ${attempt + 1}/${maxRetries}), retrying in ${backoffMs}ms`);
-      await response.text();
       await sleep(backoffMs);
       continue;
     }
 
     if (!response.ok) {
       const errorText = await response.text();
+      await logTokenUsage({
+        success: false,
+        responseStatus: response.status,
+        errorMessage: errorText.substring(0, 500),
+      });
       throw new Error(`Guesty OAuth failed (${response.status}): ${errorText}`);
     }
 
     const data = await response.json();
+    const expiresAt = Date.now() + (data.expires_in || 3600) * 1000;
     cachedToken = {
       token: data.access_token,
-      expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+      expiresAt,
     };
+
+    // Log successful token acquisition
+    await logTokenUsage({
+      success: true,
+      responseStatus: 200,
+      tokenExpiresAt: new Date(expiresAt).toISOString(),
+    });
+
     return cachedToken.token;
   }
 
@@ -341,6 +459,15 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     switch (action) {
+      // ----- CHECK QUOTA (no token consumed) -----
+      case "check-quota": {
+        const quota = await checkTokenQuota();
+        return new Response(
+          JSON.stringify({ success: true, quota }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // ----- TEST -----
       case "test": {
         const response = await callGuestyAPI("/listings?limit=1&fields=_id");

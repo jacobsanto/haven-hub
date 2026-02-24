@@ -1119,6 +1119,36 @@ export type Database = {
           },
         ]
       }
+      guesty_token_usage: {
+        Row: {
+          error_message: string | null
+          id: string
+          requested_at: string
+          response_status: number | null
+          retry_after_seconds: number | null
+          success: boolean
+          token_expires_at: string | null
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          requested_at?: string
+          response_status?: number | null
+          retry_after_seconds?: number | null
+          success?: boolean
+          token_expires_at?: string | null
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          requested_at?: string
+          response_status?: number | null
+          retry_after_seconds?: number | null
+          success?: boolean
+          token_expires_at?: string | null
+        }
+        Relationships: []
+      }
       guesty_widget_settings: {
         Row: {
           accent_color: string | null
