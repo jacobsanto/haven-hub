@@ -29,6 +29,48 @@ function loadGoogleFont(fontName: string) {
   document.head.appendChild(link);
 }
 
+// --- Auto-foreground helpers ---
+
+function parseHsl(hslStr: string): [number, number, number] {
+  const parts = hslStr.match(/[\d.]+/g);
+  if (!parts || parts.length < 3) return [0, 0, 50];
+  return [parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2])];
+}
+
+function hslToLuminance(h: number, s: number, l: number): number {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+  };
+  const toLinear = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * toLinear(f(0)) + 0.7152 * toLinear(f(8)) + 0.0722 * toLinear(f(4));
+}
+
+function autoForeground(baseHsl: string, darkFg = '244 42% 28%'): string {
+  const [h, s, l] = parseHsl(baseHsl);
+  const luminance = hslToLuminance(h, s, l);
+  return luminance > 0.4 ? darkFg : '0 0% 100%';
+}
+
+// Map dark_palette keys like "primary_color" → CSS var name "primary"
+const COLOR_KEY_TO_CSS: Record<string, string> = {
+  primary_color: 'primary',
+  secondary_color: 'secondary',
+  accent_color: 'accent',
+  background_color: 'background',
+  foreground_color: 'foreground',
+  muted_color: 'muted',
+  card_color: 'card',
+  border_color: 'border',
+  destructive_color: 'destructive',
+  ring_color: 'ring',
+};
+
+const FOREGROUND_TOKENS = ['primary', 'secondary', 'accent', 'muted', 'card', 'destructive'] as const;
+
 function applyDarkPalette(palette: Record<string, string> | null) {
   let styleEl = document.getElementById('brand-dark-overrides');
   if (!palette) {
@@ -40,23 +82,64 @@ function applyDarkPalette(palette: Record<string, string> | null) {
     styleEl.id = 'brand-dark-overrides';
     document.head.appendChild(styleEl);
   }
-  const vars = Object.entries(palette)
-    .map(([key, val]) => `--${key.replace(/_color$/, '').replace(/_/g, '-')}: ${val};`)
-    .join('\n  ');
-  styleEl.textContent = `.dark {\n  ${vars}\n}`;
+
+  // Build base vars + auto-compute foreground companions
+  const vars: string[] = [];
+  const resolved: Record<string, string> = {};
+
+  for (const [key, val] of Object.entries(palette)) {
+    const cssName = COLOR_KEY_TO_CSS[key] || key.replace(/_color$/, '').replace(/_/g, '-');
+    vars.push(`--${cssName}: ${val};`);
+    resolved[cssName] = val;
+  }
+
+  // Determine dark-mode foreground base for auto-contrast
+  const darkFg = resolved['foreground'] || '0 0% 100%';
+
+  for (const token of FOREGROUND_TOKENS) {
+    if (resolved[token]) {
+      vars.push(`--${token}-foreground: ${autoForeground(resolved[token], darkFg)};`);
+    }
+  }
+
+  // Sync popover
+  if (resolved['card'] || resolved['background']) {
+    const popoverBg = resolved['card'] || resolved['background'];
+    vars.push(`--popover: ${popoverBg};`);
+    vars.push(`--popover-foreground: ${autoForeground(popoverBg, darkFg)};`);
+  }
+
+  // Sync sidebar
+  if (resolved['background']) vars.push(`--sidebar-background: ${resolved['background']};`);
+  if (resolved['foreground']) vars.push(`--sidebar-foreground: ${resolved['foreground']};`);
+  if (resolved['primary']) {
+    vars.push(`--sidebar-primary: ${resolved['primary']};`);
+    vars.push(`--sidebar-primary-foreground: ${autoForeground(resolved['primary'], darkFg)};`);
+  }
+  if (resolved['accent']) {
+    vars.push(`--sidebar-accent: ${resolved['accent']};`);
+    vars.push(`--sidebar-accent-foreground: ${autoForeground(resolved['accent'], darkFg)};`);
+  }
+  if (resolved['border']) {
+    vars.push(`--sidebar-border: ${resolved['border']};`);
+    vars.push(`--input: ${resolved['border']};`);
+  }
+  if (resolved['ring']) vars.push(`--sidebar-ring: ${resolved['ring']};`);
+
+  styleEl.textContent = `.dark {\n  ${vars.join('\n  ')}\n}`;
 }
 
 function applyTheme(settings: BrandSettings) {
   const root = document.documentElement;
-  
-  // Apply colors
+  const fg = settings.foreground_color;
+
+  // Base color tokens
   root.style.setProperty('--primary', settings.primary_color);
   root.style.setProperty('--secondary', settings.secondary_color);
   root.style.setProperty('--accent', settings.accent_color);
   root.style.setProperty('--background', settings.background_color);
-  root.style.setProperty('--foreground', settings.foreground_color);
-  
-  // Apply extended color tokens
+  root.style.setProperty('--foreground', fg);
+
   if (settings.muted_color) root.style.setProperty('--muted', settings.muted_color);
   if (settings.card_color) root.style.setProperty('--card', settings.card_color);
   if (settings.border_color) {
@@ -65,16 +148,38 @@ function applyTheme(settings: BrandSettings) {
   }
   if (settings.destructive_color) root.style.setProperty('--destructive', settings.destructive_color);
   if (settings.ring_color) root.style.setProperty('--ring', settings.ring_color);
-  
-  // Apply dark palette overrides
+
+  // Auto-computed foreground companions
+  root.style.setProperty('--primary-foreground', autoForeground(settings.primary_color, fg));
+  root.style.setProperty('--secondary-foreground', autoForeground(settings.secondary_color, fg));
+  root.style.setProperty('--accent-foreground', autoForeground(settings.accent_color, fg));
+  if (settings.muted_color) root.style.setProperty('--muted-foreground', autoForeground(settings.muted_color, fg));
+  if (settings.card_color) root.style.setProperty('--card-foreground', autoForeground(settings.card_color, fg));
+  if (settings.destructive_color) root.style.setProperty('--destructive-foreground', autoForeground(settings.destructive_color, fg));
+
+  // Popover sync (follows card or background)
+  const popoverBg = settings.card_color || settings.background_color;
+  root.style.setProperty('--popover', popoverBg);
+  root.style.setProperty('--popover-foreground', autoForeground(popoverBg, fg));
+
+  // Sidebar sync
+  root.style.setProperty('--sidebar-background', settings.background_color);
+  root.style.setProperty('--sidebar-foreground', fg);
+  root.style.setProperty('--sidebar-primary', settings.primary_color);
+  root.style.setProperty('--sidebar-primary-foreground', autoForeground(settings.primary_color, fg));
+  root.style.setProperty('--sidebar-accent', settings.accent_color);
+  root.style.setProperty('--sidebar-accent-foreground', autoForeground(settings.accent_color, fg));
+  if (settings.border_color) root.style.setProperty('--sidebar-border', settings.border_color);
+  if (settings.ring_color) root.style.setProperty('--sidebar-ring', settings.ring_color);
+
+  // Dark palette overrides
   applyDarkPalette(settings.dark_palette);
-  
-  // Apply fonts
+
+  // Fonts
   if (settings.heading_font) {
     loadGoogleFont(settings.heading_font);
     root.style.setProperty('--font-serif', `"${settings.heading_font}", serif`);
   }
-  
   if (settings.body_font) {
     loadGoogleFont(settings.body_font);
     root.style.setProperty('--font-sans', `"${settings.body_font}", sans-serif`);
