@@ -68,6 +68,7 @@ export default {
         "sand-brown": "hsl(var(--sand-brown))",
         "light-blue": "hsl(var(--light-blue))",
         "pale-blue": "hsl(var(--pale-blue))",
+        "warm-cream": "hsl(var(--warm-cream))",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -149,6 +150,7 @@ export default {
         organic: "0 4px 6px -1px hsl(244 42% 28% / 0.05), 0 10px 15px -3px hsl(244 42% 28% / 0.08)",
         "organic-lg": "0 20px 25px -5px hsl(244 42% 28% / 0.08), 0 8px 10px -6px hsl(244 42% 28% / 0.05)",
         "organic-xl": "0 25px 50px -12px hsl(244 42% 28% / 0.15)",
+        glass: "0 8px 32px -4px hsl(244 42% 28% / 0.1), 0 4px 16px -2px hsl(32 48% 66% / 0.08)",
       },
     },
   },

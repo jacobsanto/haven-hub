@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle } from 'lucide-react';
+import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle, ChevronDown, Star, Eye, Headphones } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -7,9 +7,6 @@ import { QuickBookCard } from '@/components/booking/QuickBookCard';
 import { DestinationCard } from '@/components/destinations/DestinationCard';
 import { ExperienceCard } from '@/components/experiences/ExperienceCard';
 import { BlogPostCard } from '@/components/blog/BlogPostCard';
-import { TrustBadges } from '@/components/booking/TrustBadges';
-import { UrgencyBanner } from '@/components/booking/UrgencyBanner';
-import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useFeaturedDestinations } from '@/hooks/useDestinations';
 import { useProperties } from '@/hooks/useProperties';
@@ -34,115 +31,77 @@ const Index = () => {
   const heroProperty = properties?.[0];
   const heroImageUrl = heroProperty?.hero_image_url;
 
-  // Get featured items (limit to 3-4 for homepage)
+  // Get featured items
   const featuredDestinations = destinations?.slice(0, 3);
   const featuredExperiences = experiences?.filter(e => e.is_featured).slice(0, 4) || experiences?.slice(0, 4);
   const latestBlogPosts = blogPosts?.slice(0, 3);
 
   return (
     <PageLayout>
-      {/* Urgency Banner */}
-      <UrgencyBanner variant="rotating" />
-
-      {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-        {/* Dynamic hero background from first available property */}
+      {/* Hero Section - Full Bleed */}
+      <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
+        {/* Full-bleed hero background */}
         {heroImageUrl ? (
           <>
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: `url(${heroImageUrl})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/50 to-background/90" />
+            {/* Minimal gradient - just enough for search bar readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/30" />
           </>
         ) : (
           <div className="absolute inset-0 hero-gradient texture-overlay" />
         )}
 
-        {/* Decorative Elements */}
-        <FloatingBlob position="top-left" variant="primary" size="md" animationVariant={1} />
-        <FloatingBlob position="bottom-right" variant="accent" size="lg" animationVariant={2} />
-        
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="max-w-4xl mx-auto text-center mb-12"
-          >
-            <h1 className="text-5xl md:text-7xl font-serif font-medium text-foreground mb-6 leading-tight">
-              Book Your Perfect
-              <span className="block text-primary">Escape</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-4">
-              Discover extraordinary vacation homes in the world's most desirable destinations. 
-              Direct booking. Best rates. Instant confirmation.
-            </p>
-            
-            {propertiesAvailable > 0 && (
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-sm text-primary font-medium flex items-center justify-center gap-2"
-              >
-                <Calendar className="h-4 w-4" />
-                {propertiesAvailable} properties available for booking
-              </motion.p>
-            )}
+        {/* Search Bar - positioned at bottom-center of hero */}
+        <div className="relative z-10 w-full max-w-4xl mx-auto px-4 mb-8">
+          <SearchBar variant="hero" />
+        </div>
 
-            {heroProperty && heroImageUrl && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-                className="text-xs text-muted-foreground/70 flex items-center justify-center gap-1.5 mt-2"
-              >
-                <MapPin className="h-3 w-3" />
-                {heroProperty.display_name || heroProperty.name} — {heroProperty.city}, {heroProperty.country}
-              </motion.p>
-            )}
-          </motion.div>
+        {/* Scroll to Discover */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          className="relative z-10 scroll-indicator text-white/80 mb-10"
+        >
+          <span>Scroll to Discover</span>
+          <ChevronDown className="h-5 w-5" />
+        </motion.div>
+      </section>
 
-          {/* Search Bar - Primary Entry Point */}
-          <div className="max-w-4xl mx-auto">
-            <SearchBar variant="hero" />
+      {/* Trust Badges - Gold line-art style */}
+      <section className="py-16 bg-warm-cream">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
+            {[
+              { icon: Star, title: 'Handpicked Excellence', description: 'Every property personally vetted for quality' },
+              { icon: Eye, title: 'Unmatched Views', description: 'Stunning locations in prime destinations' },
+              { icon: Headphones, title: 'Concierge Service', description: 'Dedicated support from booking to checkout' },
+            ].map((badge, index) => (
+              <motion.div
+                key={badge.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.15 }}
+                className="flex flex-col items-center gap-3"
+              >
+                <div className="w-14 h-14 rounded-full border-2 border-gold-accent flex items-center justify-center">
+                  <badge.icon className="h-6 w-6 text-gold-accent" />
+                </div>
+                <h3 className="text-base font-serif font-medium text-foreground">{badge.title}</h3>
+                <p className="text-sm text-muted-foreground">{badge.description}</p>
+              </motion.div>
+            ))}
           </div>
-
-          {/* Secondary Action */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-center mt-6"
-          >
-            <Link to="/properties">
-              <Button variant="outline" className="rounded-full gap-2">
-                View All Properties
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </motion.div>
-
-          {/* Trust Badges below search */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-10"
-          >
-            <TrustBadges 
-              variant="compact" 
-              badges={['price', 'cancellation', 'instant']}
-              className="justify-center"
-            />
-          </motion.div>
         </div>
       </section>
 
       {/* Featured Destinations */}
       {(destinationsLoading || (featuredDestinations && featuredDestinations.length > 0)) && (
-        <section className="py-24 bg-background">
+         <section className="py-24 bg-warm-cream">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -186,7 +145,7 @@ const Index = () => {
       )}
 
       {/* Featured Properties - Booking Focused */}
-      <section className="py-24 bg-secondary/30">
+      <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -237,7 +196,7 @@ const Index = () => {
               className="text-center mt-12"
             >
               <Link to="/properties">
-                <Button size="lg" className="rounded-full gap-2">
+                <Button variant="gold" size="lg" className="rounded-full gap-2">
                   View All Properties & Book
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -297,7 +256,7 @@ const Index = () => {
       )}
 
       {/* Why Book Direct Section */}
-      <section className="py-24 bg-secondary/30">
+      <section className="py-24 bg-warm-cream">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -344,8 +303,8 @@ const Index = () => {
                 transition={{ delay: index * 0.1 }}
                 className="text-center p-6 card-organic"
               >
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                  <feature.icon className="h-6 w-6 text-primary" />
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gold-accent/10 flex items-center justify-center">
+                  <feature.icon className="h-6 w-6 text-gold-accent" />
                 </div>
                 <h3 className="text-lg font-serif font-medium mb-2">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
@@ -361,7 +320,7 @@ const Index = () => {
             className="text-center mt-12"
           >
             <Link to="/properties">
-              <Button size="lg" className="rounded-full gap-2 px-8">
+              <Button variant="gold" size="lg" className="rounded-full gap-2 px-8">
                 Start Booking Now
                 <ArrowRight className="h-4 w-4" />
               </Button>

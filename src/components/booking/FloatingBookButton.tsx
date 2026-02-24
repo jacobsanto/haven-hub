@@ -47,6 +47,7 @@ export function FloatingBookButton() {
             className="fixed bottom-6 right-6 z-50 hidden lg:block"
           >
             <Button
+              variant="gold"
               size="lg"
               onClick={handleClick}
               onMouseEnter={() => setIsHovered(true)}
@@ -83,6 +84,7 @@ export function FloatingBookButton() {
             className="fixed bottom-5 right-4 z-50 lg:hidden"
           >
             <Button
+              variant="gold"
               size="icon"
               className="h-12 w-12 rounded-full shadow-lg active:scale-95 transition-transform"
               onClick={handleClick}
