@@ -165,6 +165,10 @@ interface GuestyListing {
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function getGuestyAccessToken(): Promise<string> {
   // Return cached token if still valid (with 60s margin)
   if (cachedToken && Date.now() < cachedToken.expiresAt - 60_000) {
@@ -178,45 +182,72 @@ async function getGuestyAccessToken(): Promise<string> {
     throw new Error("Guesty credentials not configured (GUESTY_CLIENT_ID / GUESTY_API_TOKEN)");
   }
 
-  const response = await fetch("https://booking.guesty.com/oauth2/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      scope: "booking_engine:api",
-      client_id: clientId,
-      client_secret: clientSecret,
-    }),
-  });
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const response = await fetch("https://booking.guesty.com/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "client_credentials",
+        scope: "booking_engine:api",
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Guesty OAuth failed (${response.status}): ${errorText}`);
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get("Retry-After") || "0", 10);
+      const backoffMs = retryAfter > 0 ? retryAfter * 1000 : Math.min(2000 * Math.pow(2, attempt), 15000);
+      console.warn(`Guesty OAuth rate-limited (attempt ${attempt + 1}/${maxRetries}), retrying in ${backoffMs}ms`);
+      await response.text(); // consume body
+      await sleep(backoffMs);
+      continue;
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Guesty OAuth failed (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+    cachedToken = {
+      token: data.access_token,
+      expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+    };
+    return cachedToken.token;
   }
 
-  const data = await response.json();
-  cachedToken = {
-    token: data.access_token,
-    expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
-  };
-  return cachedToken.token;
+  throw new Error("Guesty OAuth failed: rate limit exceeded after retries");
 }
 
 async function callGuestyAPI(path: string, method = "GET", body?: unknown): Promise<Response> {
-  const token = await getGuestyAccessToken();
-  const url = `https://booking.guesty.com/api/v1${path}`;
-  const options: RequestInit = {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-  };
-  if (body && method !== "GET") {
-    options.body = JSON.stringify(body);
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const token = await getGuestyAccessToken();
+    const url = `https://booking.guesty.com/api/v1${path}`;
+    const options: RequestInit = {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    };
+    if (body && method !== "GET") {
+      options.body = JSON.stringify(body);
+    }
+    const response = await fetch(url, options);
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get("Retry-After") || "0", 10);
+      const backoffMs = retryAfter > 0 ? retryAfter * 1000 : Math.min(2000 * Math.pow(2, attempt), 15000);
+      console.warn(`Guesty API rate-limited on ${path} (attempt ${attempt + 1}/${maxRetries}), retrying in ${backoffMs}ms`);
+      await response.text();
+      await sleep(backoffMs);
+      continue;
+    }
+    return response;
   }
-  return await fetch(url, options);
+  throw new Error(`Guesty API rate limit exceeded after ${maxRetries} retries on ${path}`);
 }
 
 // ---------- Helpers ----------
@@ -333,6 +364,7 @@ Deno.serve(async (req) => {
           allListings.push(...results);
           hasMore = results.length === limit;
           skip += limit;
+          if (hasMore) await sleep(1000); // Rate-limit protection
         }
 
         const properties = allListings.map((listing) => ({
