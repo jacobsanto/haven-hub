@@ -19,7 +19,7 @@ export function DestinationCard({ destination, propertyCount = 0, index = 0 }: D
     >
       <Link 
         to={`/destinations/${destination.slug}`}
-        className="group block card-organic overflow-hidden"
+        className="group block card-organic overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
       >
         {/* Image */}
         <div className="aspect-[4/3] relative overflow-hidden">
@@ -40,7 +40,7 @@ export function DestinationCard({ destination, propertyCount = 0, index = 0 }: D
           
           {/* Featured badge */}
           {destination.is_featured && (
-            <div className="absolute top-4 right-4 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full">
+            <div className="absolute top-4 right-4 bg-gold-accent text-white text-xs font-medium px-3 py-1 rounded-full">
               Featured
             </div>
           )}
