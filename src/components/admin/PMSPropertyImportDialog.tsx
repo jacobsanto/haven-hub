@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Check, X, Loader2, Download, MapPin, Users, BedDouble } from "lucide-react";
 import {
   Dialog,
@@ -51,8 +51,10 @@ export function PMSPropertyImportDialog({
   const displayName = providerName || (providerId ? getProviderById(providerId)?.name : null) || "PMS";
 
   // Fetch properties when dialog opens
+  const hasFetchedRef = useRef(false);
   useEffect(() => {
-    if (open && properties.length === 0 && !fetchProperties.isPending) {
+    if (open && !hasFetchedRef.current && !fetchProperties.isPending) {
+      hasFetchedRef.current = true;
       fetchProperties.mutate(connectionId, {
         onSuccess: (data) => {
           setProperties(data);
@@ -66,7 +68,10 @@ export function PMSPropertyImportDialog({
         },
       });
     }
-  }, [open, properties.length, fetchProperties, connectionId, toast]);
+    if (!open) {
+      hasFetchedRef.current = false;
+    }
+  }, [open, connectionId]);
 
   // Reset state when dialog closes
   useEffect(() => {
