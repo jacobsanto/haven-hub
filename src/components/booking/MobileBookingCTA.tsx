@@ -227,7 +227,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
               {/* Instant booking indicator */}
               {property.instant_booking && !specialOffer &&
               <div className="flex items-center gap-1 text-[11px] text-primary mt-0.5">
-                  <Zap className="h-3 w-3 fill-current" />
+                  
                   
                 </div>
               }
