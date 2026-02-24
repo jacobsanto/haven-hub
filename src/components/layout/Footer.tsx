@@ -4,6 +4,7 @@ import { MapPin, Mail, Phone, Send, CheckCircle, Loader2, Search, ArrowRight, Sh
 import { useTheme } from 'next-themes';
 import { useBrand } from '@/contexts/BrandContext';
 import { usePageContent } from '@/hooks/usePageContent';
+import { useNavigationItems } from '@/hooks/useNavigationItems';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,8 @@ export function Footer() {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { data: exploreLinks = [] } = useNavigationItems('footer_explore');
+  const { data: companyLinks = [] } = useNavigationItems('footer_company');
   const { theme, setTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -202,38 +205,16 @@ export function Footer() {
                 Explore
               </h4>
               <ul className="space-y-3">
-                <li>
-                  <Link 
-                    to="/properties" 
-                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                  >
-                    All Properties
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/destinations" 
-                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                  >
-                    Destinations
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/experiences" 
-                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                  >
-                    Experiences
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/blog" 
-                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                  >
-                    Blog
-                  </Link>
-                </li>
+                {exploreLinks.map((link) => (
+                  <li key={link.path + link.label}>
+                    <Link 
+                      to={link.path} 
+                      className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -243,38 +224,16 @@ export function Footer() {
                 Company
               </h4>
               <ul className="space-y-3">
-                <li>
-                  <Link 
-                    to="/about" 
-                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                  >
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/contact" 
-                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                  >
-                    Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/privacy" 
-                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                  >
-                    Privacy Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    to="/terms" 
-                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                  >
-                    Terms of Service
-                  </Link>
-                </li>
+                {companyLinks.map((link) => (
+                  <li key={link.path + link.label}>
+                    <Link 
+                      to={link.path} 
+                      className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
 

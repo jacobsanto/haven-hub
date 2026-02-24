@@ -9,6 +9,7 @@ import { useBrand } from '@/contexts/BrandContext';
 import { HeaderSearchBar } from '@/components/search/HeaderSearchBar';
 import { CurrencySwitcher } from '@/components/ui/CurrencySwitcher';
 import { cn } from '@/lib/utils';
+import { useNavigationItems } from '@/hooks/useNavigationItems';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,14 +17,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const navItems = [
-  { label: 'Properties', path: '/properties', priority: true },
-  { label: 'Destinations', path: '/destinations', priority: false },
-  { label: 'Experiences', path: '/experiences', priority: true },
-  { label: 'Blog', path: '/blog', priority: false },
-  { label: 'About', path: '/about', priority: true },
-];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -44,6 +37,8 @@ export function Header() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const { data: navItems = [] } = useNavigationItems('header');
 
   const nameParts = brandName.split(' ');
   const primaryPart = nameParts[0] || brandName;
@@ -87,7 +82,7 @@ export function Header() {
             </motion.div>
           </Link>
           {navItems.map((item, index) => (
-            <div key={item.path} className={cn("flex items-center", !item.priority && "hidden xl:flex")}>
+            <div key={item.path + item.label} className={cn("flex items-center", !item.priority && "hidden xl:flex")}>
               {index > 0 && (
                 <span className={cn(
                   "mx-2 text-xs select-none",
@@ -227,9 +222,9 @@ export function Header() {
 
             <div className="border-t border-border my-2" />
 
-            {navItems.map((item) => (
+            {navItems.filter(item => item.show_on_mobile).map((item) => (
               <Link
-                key={item.path}
+                key={item.path + item.label}
                 to={item.path}
                 aria-current={isActive(item.path) ? 'page' : undefined}
                 className={cn(
