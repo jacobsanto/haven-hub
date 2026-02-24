@@ -1,37 +1,36 @@
 
 
-# Fix Scrolling in Import Properties Dialog
+# Add Delete/Deactivate PMS Connection Capability
 
 ## Problem
+The PMS Health page currently has no way to delete or deactivate a PMS connection. You have a Guesty connection that is misconfigured, and there is no UI to remove it and start fresh.
 
-The "Import Properties" dialog uses a `ScrollArea` component with `flex-1` to fill available space, but the flex container layout is not properly constraining its height. Without a concrete height constraint, the `ScrollArea` expands to fit all content instead of becoming scrollable.
+## Solution
+Add a "Delete Connection" capability to the PMS health page so you can remove the wrong Guesty entry, then reconfigure it properly.
 
-## Root Cause
+## Changes
 
-The `DialogContent` has `max-h-[80vh] flex flex-col`, but the intermediate content area between the header and footer lacks `min-h-0` (a common flexbox gotcha). In CSS flexbox, children default to `min-height: auto`, which prevents them from shrinking below their content size -- so the `ScrollArea` never activates its scrollbar.
+### 1. Add `useDeletePMSConnection` hook
+**File: `src/hooks/useAdminPMSHealth.ts`**
 
-## Fix
+Add a new mutation that:
+- Sets `is_active = false` on the connection (soft delete -- safer than hard delete, preserves audit trail)
+- Disables all property mappings linked to that connection
+- Invalidates relevant query caches
 
-**File: `src/components/admin/PMSPropertyImportDialog.tsx`**
+### 2. Add Delete button to each connection card
+**File: `src/pages/admin/AdminPMSHealth.tsx`**
 
-Two small changes:
+Add a delete/remove button to each connection's card area (next to Configure, Import, Test, Sync Now). Includes a confirmation dialog to prevent accidental deletion.
 
-1. Add `overflow-hidden` to the `DialogContent` to ensure the flex column respects the max-height boundary
-2. Add `min-h-0` to the `ScrollArea` so it can shrink below its content height and activate the scrollbar
+### 3. Update connection health card to accept onDelete
+**File: `src/components/admin/PMSConnectionHealthCard.tsx`**
 
-```text
-Before (line 155):
-  <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+Add an `onDelete` prop and a "Remove" button with a confirmation alert dialog to the card's action buttons.
 
-After:
-  <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+## Technical Details
 
-Before (line 196):
-  <ScrollArea className="flex-1 -mx-6 px-6">
-
-After:
-  <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
-```
-
-No other files need changes. This is a CSS layout fix only.
-
+- **Soft delete approach**: Sets `is_active = false` rather than deleting the row, preserving sync history and audit data
+- **Cascading disable**: All `pms_property_map` entries for the connection get `sync_enabled = false` so no orphaned syncs occur
+- **Confirmation dialog**: Uses the existing `AlertDialog` component to require explicit confirmation before removing
+- **Cache invalidation**: Refreshes all PMS-related queries after deletion
