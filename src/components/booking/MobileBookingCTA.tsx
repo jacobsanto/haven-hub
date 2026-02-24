@@ -208,7 +208,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
           <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-3">
             {/* Price Section */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-1.5">
+              <div className="gap-1.5 flex items-start justify-start">
                 {specialOffer && discountedPrice ?
                 <>
                     <span className="text-lg font-bold font-serif text-foreground">
