@@ -593,6 +593,7 @@ export type Database = {
           contact_address: string | null
           contact_email: string | null
           contact_phone: string | null
+          dark_palette: Json | null
           destructive_color: string | null
           foreground_color: string | null
           heading_font: string | null
@@ -616,6 +617,7 @@ export type Database = {
           contact_address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          dark_palette?: Json | null
           destructive_color?: string | null
           foreground_color?: string | null
           heading_font?: string | null
@@ -639,6 +641,7 @@ export type Database = {
           contact_address?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          dark_palette?: Json | null
           destructive_color?: string | null
           foreground_color?: string | null
           heading_font?: string | null

@@ -24,6 +24,7 @@ export interface BrandSettings {
   heading_font: string;
   body_font: string;
   base_currency: SupportedCurrency;
+  dark_palette: Record<string, string> | null;
   updated_at: string;
 }
 
@@ -47,6 +48,7 @@ export const defaultBrandSettings: Omit<BrandSettings, 'id' | 'updated_at'> = {
   heading_font: 'Playfair Display',
   body_font: 'Lato',
   base_currency: 'EUR',
+  dark_palette: null,
 };
 
 export function useBrandSettings() {

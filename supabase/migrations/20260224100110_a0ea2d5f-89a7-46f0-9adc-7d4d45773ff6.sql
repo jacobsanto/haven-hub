@@ -1,0 +1,1 @@
+ALTER TABLE public.brand_settings ADD COLUMN IF NOT EXISTS dark_palette jsonb DEFAULT NULL;
