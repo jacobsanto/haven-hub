@@ -339,7 +339,7 @@ export function UnifiedBookingDialog() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
           >
-            <ScrollArea className={isMobile ? "max-h-[50vh]" : "max-h-[40vh]"}>
+            <ScrollArea className={isMobile ? "h-[50vh]" : "h-[40vh]"}>
               <div className="space-y-3 pr-2">
                 {filteredProperties.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
