@@ -197,9 +197,16 @@ async function getGuestyAccessToken(): Promise<string> {
 
     if (response.status === 429) {
       const retryAfter = parseInt(response.headers.get("Retry-After") || "0", 10);
+      if (retryAfter > 30) {
+        await response.text();
+        throw new Error(
+          `Guesty token quota exhausted. Retry-After: ${retryAfter}s (~${Math.round(retryAfter / 3600)}h). ` +
+          `Guesty allows max 3 token requests per 24 hours per application. Please wait and try again later.`
+        );
+      }
       const backoffMs = retryAfter > 0 ? retryAfter * 1000 : Math.min(2000 * Math.pow(2, attempt), 15000);
       console.warn(`Guesty OAuth rate-limited (attempt ${attempt + 1}/${maxRetries}), retrying in ${backoffMs}ms`);
-      await response.text(); // consume body
+      await response.text();
       await sleep(backoffMs);
       continue;
     }
@@ -239,6 +246,13 @@ async function callGuestyAPI(path: string, method = "GET", body?: unknown): Prom
     const response = await fetch(url, options);
     if (response.status === 429) {
       const retryAfter = parseInt(response.headers.get("Retry-After") || "0", 10);
+      if (retryAfter > 30) {
+        await response.text();
+        throw new Error(
+          `Guesty API quota exhausted. Retry-After: ${retryAfter}s (~${Math.round(retryAfter / 3600)}h). ` +
+          `Guesty allows max 3 token requests per 24 hours per application. Please wait and try again later.`
+        );
+      }
       const backoffMs = retryAfter > 0 ? retryAfter * 1000 : Math.min(2000 * Math.pow(2, attempt), 15000);
       console.warn(`Guesty API rate-limited on ${path} (attempt ${attempt + 1}/${maxRetries}), retrying in ${backoffMs}ms`);
       await response.text();
