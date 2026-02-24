@@ -31,6 +31,7 @@ import {
   PenLine,
   Sun,
   Moon,
+  Navigation,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
@@ -97,6 +98,7 @@ const navSections: NavSection[] = [
     title: 'Content',
     items: [
       { href: '/admin/content', icon: PenLine, label: 'Page Content' },
+      { href: '/admin/navigation', icon: Navigation, label: 'Navigation' },
       { href: '/admin/ai-content', icon: Sparkles, label: 'AI Generator' },
       { href: '/admin/content-calendar', icon: CalendarDays, label: 'Content Calendar' },
       { href: '/admin/blog', icon: FileText, label: 'Blog Posts' },

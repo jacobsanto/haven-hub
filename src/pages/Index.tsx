@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle, Star, Eye, Headphones, Home, BookOpen } from 'lucide-react';
+import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle, Star, Eye, Headphones, Home, BookOpen, LucideIcon } from 'lucide-react';
 import { resolveIcon } from '@/utils/icon-resolver';
+import { useNavigationItems } from '@/hooks/useNavigationItems';
+import { useHeroSettings } from '@/hooks/useHeroSettings';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -28,6 +30,8 @@ const Index = () => {
   const { data: blogPosts, isLoading: blogLoading } = useBlogPosts({ status: 'published' });
   const { brandName } = useBrand();
   const { format } = useFormatCurrency();
+  const { data: quickNavItems = [] } = useNavigationItems('hero_quicknav');
+  const { showSearchBar, showFeaturedVilla, showQuickNav, featuredPropertyId } = useHeroSettings();
 
   // CMS content
   const hero = usePageContent('home', 'hero', {
@@ -81,7 +85,9 @@ const Index = () => {
   });
 
   const propertiesAvailable = properties?.length || 0;
-  const heroProperty = properties?.[0];
+  const heroProperty = featuredPropertyId === 'auto'
+    ? properties?.[0]
+    : properties?.find(p => p.id === featuredPropertyId) || properties?.[0];
   const heroImageUrl = heroProperty?.hero_image_url;
   const featuredDestinations = destinations?.slice(0, 3);
   const featuredExperiences = experiences?.filter(e => e.is_featured).slice(0, 4) || experiences?.slice(0, 4);
@@ -136,16 +142,18 @@ const Index = () => {
           </p>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="relative z-10 w-full max-w-3xl mx-auto px-4"
-        >
-          <SearchBar variant="hero" />
-        </motion.div>
+        {showSearchBar && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="relative z-10 w-full max-w-3xl mx-auto px-4"
+          >
+            <SearchBar variant="hero" />
+          </motion.div>
+        )}
 
-        {heroProperty && (
+        {showFeaturedVilla && heroProperty && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -191,26 +199,26 @@ const Index = () => {
           </motion.div>
         )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="absolute bottom-6 z-10 flex items-center gap-6"
-        >
-          {[
-            { icon: MapPin, label: 'Destinations', to: '/destinations' },
-            { icon: Home, label: 'Properties', to: '/properties' },
-            { icon: Sparkles, label: 'Experiences', to: '/experiences' },
-            { icon: BookOpen, label: 'Stories', to: '/blog' },
-          ].map((nav) => (
-            <Link key={nav.label} to={nav.to} className="flex flex-col items-center gap-1.5 group">
-              <div className="w-12 h-12 rounded-full glass-panel border border-gold-accent/30 flex items-center justify-center group-hover:bg-gold-accent/20 transition-colors duration-200">
-                <nav.icon className="h-5 w-5 text-gold-accent" />
-              </div>
-              <span className="text-[11px] text-gold-accent/90 font-medium">{nav.label}</span>
-            </Link>
-          ))}
-        </motion.div>
+        {showQuickNav && quickNavItems.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="absolute bottom-6 z-10 flex items-center gap-6"
+          >
+            {quickNavItems.map((nav) => {
+              const IconComponent = resolveIcon(nav.icon || 'Sparkles', Sparkles);
+              return (
+                <Link key={nav.path + nav.label} to={nav.path} className="flex flex-col items-center gap-1.5 group">
+                  <div className="w-12 h-12 rounded-full glass-panel border border-gold-accent/30 flex items-center justify-center group-hover:bg-gold-accent/20 transition-colors duration-200">
+                    <IconComponent className="h-5 w-5 text-gold-accent" />
+                  </div>
+                  <span className="text-[11px] text-gold-accent/90 font-medium">{nav.label}</span>
+                </Link>
+              );
+            })}
+          </motion.div>
+        )}
       </section>
 
       {/* Trust Badges */}
