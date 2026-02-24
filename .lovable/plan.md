@@ -1,133 +1,116 @@
 
+# Multi-PMS Support: Properties from Multiple Providers Simultaneously
 
-# Auto-Matching Icons for CMS Page Content Fields
+## Current Limitation
 
-## Problem
+The database schema already supports multi-PMS (each property maps to a specific `pms_connection_id`), but the code assumes a single active connection:
 
-Several front-end sections display icons alongside CMS-managed text (trust badges, "Why Book Direct" features, About page values). But the icons are **hardcoded** in the React components -- admins can change titles and descriptions in the CMS, but the icons never update to match. For example, if you change "Best Price Guarantee" to "Eco-Friendly Stays", the Shield icon stays even though a Leaf would be more appropriate.
-
-Affected sections:
-- **Homepage**: Trust Badges (3 icons), Why Book Direct features (4 icons)
-- **About page**: Values section (4 icons)
+1. **Sync cron** queries `pms_connections` with `.maybeSingle()` -- only picks one connection
+2. **Booking completion** hardcodes `advancecm-sync` edge function name
+3. **Booking confirmation/retry** also hardcodes `advancecm-sync`
+4. **PMS connection admin UI** may only allow one active connection
 
 ## Solution
 
-### 1. Add `icon` fields to the CMS content schema
+Route all PMS operations per-property by looking up which connection (and therefore which provider) each property belongs to, then calling the correct edge function.
 
-Add a new field type `icon` to the content schema for each item that displays an icon. Admins will see an icon picker in the CMS editor for these fields.
-
-Example new fields in `PAGE_CONTENT_SCHEMAS`:
-- `badge_1_icon`, `badge_2_icon`, `badge_3_icon` (trust badges)
-- `feature_1_icon` through `feature_4_icon` (why book direct)
-- `value_1_icon` through `value_4_icon` (about page values)
-
-Default values will match the current hardcoded icons (e.g., `"Star"`, `"Shield"`, `"Heart"`).
-
-### 2. Add `icon` field type to the CMS editor
-
-Update `AdminPageContent.tsx` to render an `IconPicker` when `field.type === 'icon'`. The existing `IconPicker` component already handles icon selection with search -- it just needs to be wired into the CMS field rendering loop.
-
-### 3. Add AI auto-suggest button for icon fields
-
-Next to each icon picker, add a "Suggest" button (sparkles icon). When clicked, it sends the sibling title and description fields for that item to a backend function that returns the best-matching Lucide icon name from the allowed list.
-
-This uses the same pattern as the AI Content Generator -- advisory only, admin always confirms.
-
-**Backend function**: `supabase/functions/suggest-icon/index.ts`
-- Input: `{ title, description, availableIcons[] }`
-- Uses `google/gemini-2.5-flash-lite` (fast, cheap, sufficient for single-word matching)
-- Returns: `{ icon: "Leaf" }`
-- Constrained to only return icons from the `AMENITY_ICONS` list
-
-**New hook**: `src/hooks/useIconSuggestion.ts`
-- Wraps the edge function call with loading/error state
-
-### 4. Wire icons into front-end pages
-
-Update `Index.tsx` and `About.tsx` to read icon values from the CMS instead of hardcoded imports:
-- Look up the icon name string from page content (e.g., `"Shield"`)
-- Resolve it to the actual Lucide component using a dynamic lookup from `lucide-react`
-- Fall back to the current hardcoded icon if no CMS value exists
-
-## Technical Details
-
-### Content field type addition
-
-```typescript
-// In usePageContent.ts - ContentField type update
-export interface ContentField {
-  key: string;
-  label: string;
-  type: 'text' | 'textarea' | 'richtext' | 'image' | 'icon';  // add 'icon'
-  defaultValue: string;
-}
+```text
+Property A (Villa Amalfi)     --> pms_property_map --> Connection #1 (Guesty)     --> guesty-sync
+Property B (Santorini Retreat) --> pms_property_map --> Connection #2 (AdvanceCM)  --> advancecm-sync
+Property C (Tuscan Estate)     --> pms_property_map --> Connection #1 (Guesty)     --> guesty-sync
+Property D (No PMS)            --> no mapping        --> local only
 ```
 
-### CMS editor rendering (AdminPageContent.tsx)
-
-```typescript
-) : field.type === 'icon' ? (
-  <div className="flex items-center gap-2">
-    <IconPicker
-      value={currentValue}
-      onChange={(icon) => handleChange(section.sectionKey, field.key, icon)}
-    />
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => handleSuggestIcon(section, field)}
-      disabled={isSuggesting}
-    >
-      <Sparkles className="h-4 w-4" />
-      Suggest
-    </Button>
-  </div>
-) : ...
-```
-
-### Dynamic icon resolution on front-end pages
-
-```typescript
-// Utility function in src/utils/icon-resolver.ts
-import * as LucideIcons from 'lucide-react';
-import { LucideIcon } from 'lucide-react';
-
-export function resolveIcon(name: string, fallback: LucideIcon): LucideIcon {
-  const icon = (LucideIcons as Record<string, unknown>)[name];
-  return (typeof icon === 'function' ? icon : fallback) as LucideIcon;
-}
-```
-
-### Schema additions (example for homepage trust badges)
-
-```typescript
-{
-  sectionKey: 'trust_badges',
-  title: 'Trust Badges',
-  fields: [
-    { key: 'badge_1_icon', label: 'Badge 1 Icon', type: 'icon', defaultValue: 'Star' },
-    { key: 'badge_1_title', label: 'Badge 1 Title', type: 'text', defaultValue: 'Handpicked Excellence' },
-    { key: 'badge_1_description', label: 'Badge 1 Description', type: 'text', defaultValue: '...' },
-    // ... same pattern for badges 2, 3
-  ],
-}
-```
-
-## Files to Create
-
-- `supabase/functions/suggest-icon/index.ts` -- AI icon suggestion endpoint
-- `src/hooks/useIconSuggestion.ts` -- Hook wrapping the edge function
-- `src/utils/icon-resolver.ts` -- Dynamic Lucide icon lookup utility
+All properties appear together on the website. Guests have no idea which PMS backs which property.
 
 ## Files to Modify
 
-- `src/hooks/usePageContent.ts` -- Add `'icon'` to ContentField type, add icon fields to schemas
-- `src/pages/admin/AdminPageContent.tsx` -- Render IconPicker + Suggest button for icon fields
-- `src/components/admin/IconPicker.tsx` -- Export `AMENITY_ICONS` array
-- `src/pages/Index.tsx` -- Read icon values from CMS, use `resolveIcon()` for badges and features
-- `src/pages/About.tsx` -- Read icon values from CMS, use `resolveIcon()` for values section
+### 1. `supabase/functions/pms-sync-cron/index.ts` -- Sync ALL active connections
 
-## No Database Changes
+**Current**: Fetches one active connection, syncs only its properties.
 
-Icon values are stored as plain strings (e.g., `"Shield"`) in the existing `page_content` table, same as any other text content.
+**Change**: Fetch ALL active connections, loop through each, sync their mapped properties. Each connection's properties are synced independently.
 
+```text
+Before:
+  Get single active connection --> sync its properties
+
+After:
+  Get ALL active connections
+  For each connection:
+    Get its mapped properties
+    Sync each property via iCal (iCal is provider-agnostic)
+    Record sync run per connection
+```
+
+Since iCal feeds are provider-agnostic (both Guesty and AdvanceCM export standard iCal), the existing iCal sync logic works for all providers without changes.
+
+### 2. `src/hooks/useCompleteBooking.ts` -- Route bookings to correct PMS
+
+**Current**: Hardcodes `advancecm-sync` for all PMS booking pushes.
+
+**Change**: When pushing a booking to PMS, look up the property's `pms_connection_id`, then look up the connection's `pms_name` to determine which edge function to call.
+
+Three functions need updating:
+- `useCompleteBooking` (instant booking push)
+- `useConfirmBookingWithPMS` (admin confirmation push)
+- `useRetryPMSSync` (retry failed sync)
+
+Each will:
+1. Join `pms_property_map` with `pms_connections` to get the provider name
+2. Map provider name to edge function: `advancecm` uses `advancecm-sync`, `guesty` uses `guesty-sync`
+3. Call the correct edge function
+
+### 3. `src/integrations/pms/index.ts` -- Provider-aware adapter factory
+
+**Current**: Returns only `AdvanceCMAdapter` or `MockPMSAdapter`.
+
+**Change**: Accept a provider ID parameter and return the correct adapter. Add a helper to map provider names to edge function names.
+
+```text
+getEdgeFunctionForProvider('advancecm') --> 'advancecm-sync'
+getEdgeFunctionForProvider('guesty')    --> 'guesty-sync'
+getEdgeFunctionForProvider('hostaway')  --> 'hostaway-sync'
+```
+
+### 4. `src/lib/pms-providers.ts` -- Add edge function name to provider config
+
+Add an `edgeFunctionName` field to each provider config so the mapping is centralized:
+
+```text
+advancecm  --> edgeFunctionName: 'advancecm-sync'
+guesty     --> edgeFunctionName: 'guesty-sync'
+hostaway   --> edgeFunctionName: 'hostaway-sync'
+```
+
+### 5. `src/hooks/useAdminPMSHealth.ts` -- Support multiple connections
+
+Review and update to display health for ALL active connections, not just one.
+
+### 6. Admin PMS UI components (if needed)
+
+- `PMSConfigDialog.tsx` -- Allow creating additional connections without deactivating existing ones
+- `PMSSyncStatusPanel.tsx` -- Show sync status grouped by connection/provider
+- `PMSConnectionHealthCard.tsx` -- Show health per connection
+
+## What Does NOT Change
+
+- Guest-facing UI -- all properties appear together regardless of PMS source
+- Database schema -- `pms_property_map` already has the `pms_connection_id` foreign key
+- iCal sync logic -- iCal is a universal standard, works with any PMS
+- Stripe payment flow -- completely independent of PMS
+- Property admin forms -- properties are managed locally, PMS mapping is separate
+
+## Implementation Order
+
+1. Add `edgeFunctionName` to provider registry (foundation)
+2. Update sync cron to loop through all active connections
+3. Update booking hooks to dynamically route to correct edge function
+4. Update PMS adapter factory
+5. Update admin UI to support viewing/managing multiple connections
+
+## Important Notes
+
+- The Guesty edge function (`guesty-sync`) from the previous plan must be created first before Guesty properties can push bookings. The iCal sync will work immediately since it's provider-agnostic.
+- Each PMS connection can be independently enabled/disabled without affecting others.
+- Properties without any PMS mapping continue to work as local-only properties.
