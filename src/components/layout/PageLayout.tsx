@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Header } from './Header';
 import { Footer } from './Footer';
@@ -21,25 +22,24 @@ const pageVariants = {
 
 function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
   const { activePromotion, triggerPromotion, hasBeenDismissed } = usePromotion();
+  const location = useLocation();
+  const isHomepage = location.pathname === '/';
   
   // Track page views for analytics
   usePageTracking();
   
   // Exit intent with settings from database
   const { showExitIntent, dismiss: dismissExitIntent, settings: exitIntentSettings, isEnabled: exitIntentEnabled } = useExitIntent();
-  // Check if we should show exit intent OR promotional popup for exit trigger
   const shouldShowExitPromo = activePromotion && 
     (activePromotion.trigger_type === 'exit' || activePromotion.trigger_type === 'both') &&
     !hasBeenDismissed;
 
-  // Handle exit intent - prefer promotional campaign if configured for exit
   const handleExitIntent = () => {
     if (shouldShowExitPromo) {
       triggerPromotion();
     }
   };
 
-  // Use exit intent but redirect to promo if applicable
   if (showExitIntent && shouldShowExitPromo) {
     handleExitIntent();
     dismissExitIntent();
@@ -54,7 +54,7 @@ function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
         exit="exit"
         variants={pageVariants}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="flex-1 pt-[72px]"
+        className={isHomepage ? "flex-1" : "flex-1 pt-[72px]"}
       >
         {children}
       </motion.main>

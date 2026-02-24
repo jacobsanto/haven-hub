@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, User, Search } from 'lucide-react';
+import { Menu, X, User, Search, Heart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,23 +32,21 @@ export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Track scroll position for header style changes
+  const isHomepage = location.pathname === '/';
+  const isTransparent = isHomepage && !isScrolled && !mobileMenuOpen;
+
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100);
+      setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Search bar is always visible in the header
-
-  // Split brand name for styling (e.g., "Arivia Villas" -> "Arivia" + "Villas")
   const nameParts = brandName.split(' ');
   const primaryPart = nameParts[0] || brandName;
   const secondaryPart = nameParts.slice(1).join(' ');
 
-  // Check if a path is currently active
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname === path || location.pathname.startsWith(path + '/');
@@ -60,52 +58,101 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+    <header
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+        isTransparent
+          ? "bg-transparent border-b border-transparent"
+          : "bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm"
+      )}
+    >
       <nav role="navigation" aria-label="Main navigation" className="container mx-auto px-4 h-[72px] flex items-center justify-between gap-4">
         {/* Logo + Nav Links */}
-        <div className="hidden md:flex items-center gap-5 flex-shrink-0">
-          <Link to="/" className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-1 flex-shrink-0">
+          <Link to="/" className="flex items-center gap-2 mr-4">
             <motion.div whileHover={{ scale: 1.05 }} className="flex items-center">
               {logoUrl ? (
                 <img src={logoUrl} alt={brandName} className="h-10 w-auto max-w-[140px] object-contain" />
               ) : (
-                <span className="text-xl font-serif font-semibold text-foreground">
-                  <span className="text-primary">{primaryPart}</span>
-                  {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
+                <span className={cn(
+                  "text-xl font-serif font-semibold transition-colors duration-300",
+                  isTransparent ? "text-white" : "text-foreground"
+                )}>
+                  <span className={isTransparent ? "text-white" : "text-primary"}>{primaryPart}</span>
+                  {secondaryPart && <span className={isTransparent ? "text-white/80" : "text-muted-foreground"}> {secondaryPart}</span>}
                 </span>
               )}
             </motion.div>
           </Link>
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              aria-current={isActive(item.path) ? 'page' : undefined}
-              className={cn(
-                "text-sm font-medium transition-colors whitespace-nowrap",
-                !item.priority && "hidden xl:inline",
-                isActive(item.path) ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+          {navItems.map((item, index) => (
+            <div key={item.path} className={cn("flex items-center", !item.priority && "hidden xl:flex")}>
+              {index > 0 && (
+                <span className={cn(
+                  "mx-2 text-xs select-none",
+                  isTransparent ? "text-white/30" : "text-border"
+                )}>|</span>
               )}
-            >
-              {item.label}
-            </Link>
+              <Link
+                to={item.path}
+                aria-current={isActive(item.path) ? 'page' : undefined}
+                className={cn(
+                  "text-sm font-medium transition-colors whitespace-nowrap tracking-wide",
+                  isTransparent
+                    ? isActive(item.path) ? "text-white" : "text-white/80 hover:text-white"
+                    : isActive(item.path) ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {item.label}
+              </Link>
+            </div>
           ))}
         </div>
 
         {/* Search Bar - Center (hidden on homepage) */}
-        {location.pathname !== '/' && (
+        {!isHomepage && (
           <div className="hidden lg:flex flex-1 justify-center min-w-0">
             <HeaderSearchBar />
           </div>
         )}
 
-        {/* Currency & Auth */}
+        {/* Right Section */}
         <div className="hidden md:flex items-center gap-2 flex-shrink-0">
           <CurrencySwitcher variant="icon" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "rounded-full",
+              isTransparent && "text-white/80 hover:text-white hover:bg-white/10"
+            )}
+            aria-label="Search"
+            onClick={() => navigate('/properties')}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "rounded-full",
+              isTransparent && "text-white/80 hover:text-white hover:bg-white/10"
+            )}
+            aria-label="Wishlist"
+          >
+            <Heart className="h-5 w-5" />
+          </Button>
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full" aria-label="User menu">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "rounded-full",
+                    isTransparent && "text-white/80 hover:text-white hover:bg-white/10"
+                  )}
+                  aria-label="User menu"
+                >
                   <User className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -126,24 +173,30 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <Button
-              variant="outline"
+              variant={isTransparent ? "outline" : "gold"}
               onClick={() => navigate('/login')}
-              className="rounded-full"
+              className={cn(
+                "rounded-full",
+                isTransparent && "border-white/40 text-white hover:bg-white/10 hover:text-white"
+              )}
             >
-              Sign In
+              Book Now
             </Button>
           )}
         </div>
 
-        {/* Mobile Logo (visible only on mobile) */}
+        {/* Mobile Logo */}
         <Link to="/" className="flex items-center gap-2 md:hidden">
           <motion.div whileHover={{ scale: 1.05 }} className="flex items-center">
             {logoUrl ? (
               <img src={logoUrl} alt={brandName} className="h-10 w-auto max-w-[140px] object-contain" />
             ) : (
-              <span className="text-xl font-serif font-semibold text-foreground">
-                <span className="text-primary">{primaryPart}</span>
-                {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
+              <span className={cn(
+                "text-xl font-serif font-semibold transition-colors duration-300",
+                isTransparent ? "text-white" : "text-foreground"
+              )}>
+                <span className={isTransparent ? "text-white" : "text-primary"}>{primaryPart}</span>
+                {secondaryPart && <span className={isTransparent ? "text-white/80" : "text-muted-foreground"}> {secondaryPart}</span>}
               </span>
             )}
           </motion.div>
@@ -151,7 +204,7 @@ export function Header() {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden p-2"
+          className={cn("md:hidden p-2", isTransparent && "text-white")}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileMenuOpen}
@@ -169,8 +222,8 @@ export function Header() {
           className="md:hidden bg-background border-b border-border"
         >
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
-            {/* Mobile Search CTA */}
             <Button
+              variant="gold"
               onClick={() => {
                 navigate('/properties');
                 setMobileMenuOpen(false);
