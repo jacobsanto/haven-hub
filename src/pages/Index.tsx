@@ -14,6 +14,7 @@ import { useActiveExperiences } from '@/hooks/useExperiences';
 import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { useBrand } from '@/contexts/BrandContext';
+import { usePageContent } from '@/hooks/usePageContent';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -25,23 +26,77 @@ const Index = () => {
   const { data: blogPosts, isLoading: blogLoading } = useBlogPosts({ status: 'published' });
   const { brandName } = useBrand();
   const { format } = useFormatCurrency();
-  // Properties count for social proof
-  const propertiesAvailable = properties?.length || 0;
 
-  // Location-aware hero: use the first featured property's hero image
+  // CMS content
+  const hero = usePageContent('home', 'hero', {
+    heading_prefix: 'Experience',
+    subtitle_with_property: 'Book a luxury villa in {city}, {country}',
+    subtitle_default: 'Discover extraordinary vacation homes around the world',
+  });
+  const trustBadges = usePageContent('home', 'trust_badges', {
+    badge_1_title: 'Handpicked Excellence',
+    badge_1_description: 'Every property personally vetted for quality',
+    badge_2_title: 'Unmatched Views',
+    badge_2_description: 'Stunning locations in prime destinations',
+    badge_3_title: 'Concierge Service',
+    badge_3_description: 'Dedicated support from booking to checkout',
+  });
+  const propertiesContent = usePageContent('home', 'properties', {
+    heading: 'Book Your Stay',
+    subtitle: 'Handpicked luxury homes ready for instant booking. Best rates guaranteed when you book direct.',
+  });
+  const experiencesContent = usePageContent('home', 'experiences', {
+    label: 'Curated',
+    heading: 'Unforgettable Experiences',
+    subtitle: 'Elevate your stay with our hand-selected experiences, from culinary adventures to cultural immersions.',
+  });
+  const whyBookDirect = usePageContent('home', 'why_book_direct', {
+    heading: 'Why Book Direct with {brandName}',
+    subtitle: 'Get the best rates and exclusive benefits when you book directly',
+    feature_1_title: 'Best Price Guarantee',
+    feature_1_description: "Our direct rates are always the lowest. Find it cheaper elsewhere? We'll match it.",
+    feature_2_title: 'Free Cancellation',
+    feature_2_description: 'Flexible booking with free cancellation up to 48 hours before check-in.',
+    feature_3_title: 'Instant Confirmation',
+    feature_3_description: 'Book and receive your confirmation immediately. No waiting.',
+    feature_4_title: '24/7 Support',
+    feature_4_description: 'Our concierge team is available around the clock for your needs.',
+  });
+  const blogContent = usePageContent('home', 'blog', {
+    heading: 'Stories & Inspiration',
+    subtitle: 'Travel insights, destination guides, and luxury living inspiration.',
+  });
+  const ctaContent = usePageContent('home', 'cta', {
+    heading: 'Ready to Book Your Escape?',
+    subtitle: 'Start exploring our collection of extraordinary vacation homes. Best rates guaranteed when you book direct.',
+  });
+
+  const propertiesAvailable = properties?.length || 0;
   const heroProperty = properties?.[0];
   const heroImageUrl = heroProperty?.hero_image_url;
-
-  // Get featured items
   const featuredDestinations = destinations?.slice(0, 3);
   const featuredExperiences = experiences?.filter(e => e.is_featured).slice(0, 4) || experiences?.slice(0, 4);
   const latestBlogPosts = blogPosts?.slice(0, 3);
+
+  const replaceBrand = (text: string) => text.replace('{brandName}', brandName);
+
+  const badges = [
+    { icon: Star, title: trustBadges.badge_1_title, description: trustBadges.badge_1_description },
+    { icon: Eye, title: trustBadges.badge_2_title, description: trustBadges.badge_2_description },
+    { icon: Headphones, title: trustBadges.badge_3_title, description: trustBadges.badge_3_description },
+  ];
+
+  const features = [
+    { icon: Shield, title: whyBookDirect.feature_1_title, description: whyBookDirect.feature_1_description },
+    { icon: Clock, title: whyBookDirect.feature_2_title, description: whyBookDirect.feature_2_description },
+    { icon: CheckCircle, title: whyBookDirect.feature_3_title, description: whyBookDirect.feature_3_description },
+    { icon: Calendar, title: whyBookDirect.feature_4_title, description: whyBookDirect.feature_4_description },
+  ];
 
   return (
     <PageLayout>
       {/* Hero Section - Full Bleed */}
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden pb-20">
-        {/* Full-bleed hero background */}
         {heroImageUrl ? (
           <>
             <div
@@ -54,7 +109,6 @@ const Index = () => {
           <div className="absolute inset-0 hero-gradient texture-overlay" />
         )}
 
-        {/* Hero Heading */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -62,16 +116,17 @@ const Index = () => {
           className="relative z-10 text-center mb-10 px-4"
         >
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-medium text-white mb-3">
-            Experience {heroProperty?.city || brandName}
+            {hero.heading_prefix} {heroProperty?.city || brandName}
           </h1>
           <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
             {heroProperty
-              ? `Book a luxury villa in ${heroProperty.city}, ${heroProperty.country}`
-              : 'Discover extraordinary vacation homes around the world'}
+              ? hero.subtitle_with_property
+                  .replace('{city}', heroProperty.city)
+                  .replace('{country}', heroProperty.country)
+              : hero.subtitle_default}
           </p>
         </motion.div>
 
-        {/* Search Bar - Centered */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -81,7 +136,6 @@ const Index = () => {
           <SearchBar variant="hero" />
         </motion.div>
 
-        {/* Featured Villa Card - Below Search */}
         {heroProperty && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -128,7 +182,6 @@ const Index = () => {
           </motion.div>
         )}
 
-        {/* Bottom Navigation Icons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -141,11 +194,7 @@ const Index = () => {
             { icon: Sparkles, label: 'Experiences', to: '/experiences' },
             { icon: BookOpen, label: 'Stories', to: '/blog' },
           ].map((nav) => (
-            <Link
-              key={nav.label}
-              to={nav.to}
-              className="flex flex-col items-center gap-1.5 group"
-            >
+            <Link key={nav.label} to={nav.to} className="flex flex-col items-center gap-1.5 group">
               <div className="w-12 h-12 rounded-full glass-panel border border-gold-accent/30 flex items-center justify-center group-hover:bg-gold-accent/20 transition-colors duration-200">
                 <nav.icon className="h-5 w-5 text-gold-accent" />
               </div>
@@ -155,15 +204,11 @@ const Index = () => {
         </motion.div>
       </section>
 
-      {/* Trust Badges - Gold line-art style */}
+      {/* Trust Badges */}
       <section className="py-16 bg-warm-cream">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
-            {[
-              { icon: Star, title: 'Handpicked Excellence', description: 'Every property personally vetted for quality' },
-              { icon: Eye, title: 'Unmatched Views', description: 'Stunning locations in prime destinations' },
-              { icon: Headphones, title: 'Concierge Service', description: 'Dedicated support from booking to checkout' },
-            ].map((badge, index) => (
+            {badges.map((badge, index) => (
               <motion.div
                 key={badge.title}
                 initial={{ opacity: 0, y: 20 }}
@@ -185,7 +230,7 @@ const Index = () => {
 
       {/* Featured Destinations */}
       {(destinationsLoading || (featuredDestinations && featuredDestinations.length > 0)) && (
-         <section className="py-24 bg-warm-cream">
+        <section className="py-24 bg-warm-cream">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -228,7 +273,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* Featured Properties - Booking Focused */}
+      {/* Featured Properties */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <motion.div
@@ -238,11 +283,10 @@ const Index = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-4">
-              Book Your Stay
+              {propertiesContent.heading}
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Handpicked luxury homes ready for instant booking. 
-              Best rates guaranteed when you book direct.
+              {propertiesContent.subtitle}
             </p>
           </motion.div>
 
@@ -303,13 +347,13 @@ const Index = () => {
               <div>
                 <div className="flex items-center gap-2 text-primary mb-2">
                   <Sparkles className="h-5 w-5" />
-                  <span className="text-sm font-medium uppercase tracking-wider">Curated</span>
+                  <span className="text-sm font-medium uppercase tracking-wider">{experiencesContent.label}</span>
                 </div>
                 <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground">
-                  Unforgettable Experiences
+                  {experiencesContent.heading}
                 </h2>
                 <p className="text-muted-foreground mt-2 max-w-xl">
-                  Elevate your stay with our hand-selected experiences, from culinary adventures to cultural immersions.
+                  {experiencesContent.subtitle}
                 </p>
               </div>
               <Link to="/experiences" className="inline-flex items-center gap-2 text-primary hover:underline">
@@ -339,7 +383,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* Why Book Direct Section */}
+      {/* Why Book Direct */}
       <section className="py-24 bg-warm-cream">
         <div className="container mx-auto px-4">
           <motion.div
@@ -349,36 +393,15 @@ const Index = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-serif font-medium text-foreground mb-4">
-              Why Book Direct with {brandName}
+              {replaceBrand(whyBookDirect.heading)}
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Get the best rates and exclusive benefits when you book directly
+              {whyBookDirect.subtitle}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            {[
-              {
-                icon: Shield,
-                title: 'Best Price Guarantee',
-                description: 'Our direct rates are always the lowest. Find it cheaper elsewhere? We\'ll match it.',
-              },
-              {
-                icon: Clock,
-                title: 'Free Cancellation',
-                description: 'Flexible booking with free cancellation up to 48 hours before check-in.',
-              },
-              {
-                icon: CheckCircle,
-                title: 'Instant Confirmation',
-                description: 'Book and receive your confirmation immediately. No waiting.',
-              },
-              {
-                icon: Calendar,
-                title: '24/7 Support',
-                description: 'Our concierge team is available around the clock for your needs.',
-              },
-            ].map((feature, index) => (
+            {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
                 initial={{ opacity: 0, y: 30 }}
@@ -396,7 +419,6 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Central booking CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -425,10 +447,10 @@ const Index = () => {
             >
               <div>
                 <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground">
-                  Stories & Inspiration
+                  {blogContent.heading}
                 </h2>
                 <p className="text-muted-foreground mt-2">
-                  Travel insights, destination guides, and luxury living inspiration.
+                  {blogContent.subtitle}
                 </p>
               </div>
               <Link to="/blog" className="inline-flex items-center gap-2 text-primary hover:underline">
@@ -458,7 +480,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* CTA Section - Booking Focused */}
+      {/* CTA Section */}
       <section className="py-24 bg-foreground text-background">
         <div className="container mx-auto px-4 text-center">
           <motion.div
@@ -468,11 +490,10 @@ const Index = () => {
             className="max-w-3xl mx-auto"
           >
             <h2 className="text-4xl md:text-5xl font-serif font-medium mb-6">
-              Ready to Book Your Escape?
+              {ctaContent.heading}
             </h2>
             <p className="text-lg opacity-80 mb-8">
-              Start exploring our collection of extraordinary vacation homes.
-              Best rates guaranteed when you book direct.
+              {ctaContent.subtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/properties">

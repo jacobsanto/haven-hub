@@ -12,6 +12,10 @@ interface BrandContextValue {
   contactPhone: string;
   contactAddress: string;
   baseCurrency: SupportedCurrency;
+  socialInstagram: string | null;
+  socialFacebook: string | null;
+  socialTwitter: string | null;
+  socialYoutube: string | null;
 }
 
 const BrandContext = createContext<BrandContextValue | undefined>(undefined);
@@ -205,6 +209,10 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     contactPhone: settings?.contact_phone ?? defaultBrandSettings.contact_phone ?? '',
     contactAddress: settings?.contact_address ?? defaultBrandSettings.contact_address ?? '',
     baseCurrency: settings?.base_currency ?? defaultBrandSettings.base_currency,
+    socialInstagram: settings?.social_instagram ?? null,
+    socialFacebook: settings?.social_facebook ?? null,
+    socialTwitter: settings?.social_twitter ?? null,
+    socialYoutube: settings?.social_youtube ?? null,
   };
 
   return (
@@ -232,6 +240,10 @@ export function useBrand() {
       contactPhone: defaultBrandSettings.contact_phone ?? '',
       contactAddress: defaultBrandSettings.contact_address ?? '',
       baseCurrency: defaultBrandSettings.base_currency,
+      socialInstagram: null,
+      socialFacebook: null,
+      socialTwitter: null,
+      socialYoutube: null,
     };
   }
   return context;

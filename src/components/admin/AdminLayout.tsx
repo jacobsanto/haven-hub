@@ -28,6 +28,7 @@ import {
   Upload,
   Megaphone,
   Shield,
+  PenLine,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
@@ -92,6 +93,7 @@ const navSections: NavSection[] = [
   {
     title: 'Content',
     items: [
+      { href: '/admin/content', icon: PenLine, label: 'Page Content' },
       { href: '/admin/ai-content', icon: Sparkles, label: 'AI Generator' },
       { href: '/admin/content-calendar', icon: CalendarDays, label: 'Content Calendar' },
       { href: '/admin/blog', icon: FileText, label: 'Blog Posts' },
