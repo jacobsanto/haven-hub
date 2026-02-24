@@ -13,7 +13,8 @@ import {
   Search,
   Minus,
   Plus,
-  X
+  X,
+  ChevronDown
 } from 'lucide-react';
 import {
   Dialog,
@@ -26,6 +27,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
 import { useProperties } from '@/hooks/useProperties';
 import { useActiveDestinations } from '@/hooks/useDestinations';
@@ -214,57 +217,62 @@ export function UnifiedBookingDialog() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
-            {/* Destination Selection Grid */}
+            {/* Destination Dropdown */}
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Select a destination</p>
-              {destinationsLoading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton key={i} className="h-16 rounded-xl" />
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {/* All Destinations Option */}
+              <p className="text-sm font-medium text-muted-foreground">Where are you going?</p>
+              <Popover>
+                <PopoverTrigger asChild>
                   <button
                     type="button"
-                    onClick={() => handleSelectDestination('')}
-                    className={cn(
-                      'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left',
-                      !selectedDestinationName
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
-                    )}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-border hover:border-primary/50 transition-all text-left bg-card"
                   >
                     <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-                    <div>
-                      <p className="font-medium text-sm">All</p>
-                      <p className="text-xs text-muted-foreground">Destinations</p>
-                    </div>
+                    <span className={cn(
+                      "text-sm flex-1",
+                      selectedDestinationName ? "font-medium text-foreground" : "text-muted-foreground"
+                    )}>
+                      {selectedDestinationName || 'All Destinations'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </button>
-                  
-                  {/* Destination Options */}
-                  {destinations?.map((destination) => (
-                    <button
-                      key={destination.id}
-                      type="button"
-                      onClick={() => handleSelectDestination(destination.name)}
-                      className={cn(
-                        'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left',
-                        selectedDestinationName === destination.name
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50'
-                      )}
-                    >
-                      <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="font-medium text-sm truncate">{destination.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{destination.country}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-card border border-border z-[60]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search destinations..." />
+                    <CommandList>
+                      <CommandEmpty>No destinations found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all-destinations"
+                          onSelect={() => handleSelectDestination('')}
+                        >
+                          <MapPin className="mr-2 h-4 w-4" />
+                          All Destinations
+                          {!selectedDestinationName && <Check className="ml-auto h-4 w-4 text-primary" />}
+                        </CommandItem>
+                        {destinationsLoading ? (
+                          <div className="p-2 space-y-2">
+                            <Skeleton className="h-8 w-full" />
+                            <Skeleton className="h-8 w-full" />
+                          </div>
+                        ) : (
+                          destinations?.map((d) => (
+                            <CommandItem
+                              key={d.id}
+                              value={d.name}
+                              onSelect={() => handleSelectDestination(d.name)}
+                            >
+                              <MapPin className="mr-2 h-4 w-4" />
+                              {d.name}, {d.country}
+                              {selectedDestinationName === d.name && <Check className="ml-auto h-4 w-4 text-primary" />}
+                            </CommandItem>
+                          ))
+                        )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex justify-center">
