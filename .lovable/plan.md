@@ -1,69 +1,37 @@
 
 
-# Fix Multi-PMS Admin Page: Show All Connections
+# Fix Scrolling in Import Properties Dialog
 
 ## Problem
 
-The PMS admin page has several issues that prevent you from seeing your Guesty connection:
+The "Import Properties" dialog uses a `ScrollArea` component with `flex-1` to fill available space, but the flex container layout is not properly constraining its height. Without a concrete height constraint, the `ScrollArea` expands to fit all content instead of becoming scrollable.
 
-1. **Single-connection display**: `usePMSConnectionStatus()` calls `.maybeSingle()` -- it only returns ONE active connection. If AdvanceCM was created first, Guesty is invisible.
+## Root Cause
 
-2. **Hardcoded AdvanceCM activation**: The Configure dialog uses `useEnsureAdvanceCMConnection()` which always creates/activates an "AdvanceCM" record regardless of which provider you selected. Selecting Guesty and clicking "Activate" still saves an AdvanceCM connection.
+The `DialogContent` has `max-h-[80vh] flex flex-col`, but the intermediate content area between the header and footer lacks `min-h-0` (a common flexbox gotcha). In CSS flexbox, children default to `min-height: auto`, which prevents them from shrinking below their content size -- so the `ScrollArea` never activates its scrollbar.
 
-3. **Test button only works for AdvanceCM**: The dialog disables the Test button for non-AdvanceCM providers (`disabled={!isAdvanceCM}`), and the test function calls the hardcoded AdvanceCM adapter.
+## Fix
 
-## Solution
+**File: `src/components/admin/PMSPropertyImportDialog.tsx`**
 
-### 1. Update the admin page to show ALL active connections
+Two small changes:
 
-Replace the single-connection view with a list of all connections. Each connection gets its own health card showing provider name, status, last sync, and action buttons.
+1. Add `overflow-hidden` to the `DialogContent` to ensure the flex column respects the max-height boundary
+2. Add `min-h-0` to the `ScrollArea` so it can shrink below its content height and activate the scrollbar
 
-**File: `src/pages/admin/AdminPMSHealth.tsx`**
-- Use `useAllPMSConnections()` (already exists) instead of `usePMSConnectionStatus()`
-- Render a health card per connection
-- Show property mappings, sync history, etc. filtered by the selected/expanded connection
-- Add an "Add Connection" button for adding additional PMS providers
+```text
+Before (line 155):
+  <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
 
-### 2. Make the Config Dialog provider-aware
+After:
+  <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
 
-**File: `src/components/admin/PMSConfigDialog.tsx`**
-- Replace `useEnsureAdvanceCMConnection()` with a new generic `useEnsurePMSConnection(providerId)` mutation
-- The new mutation creates a `pms_connections` row with the correct `pms_name` and `config.provider` matching the selected provider (e.g., `pms_name: "Guesty"`, `config: { provider: "guesty" }`)
-- Enable the Test button for all providers that have edge functions deployed (route via `resolveEdgeFunctionForConnection`)
-- Replace `useTestAdvanceCMConnection()` with the existing `useTestPMSConnection(connectionId)` from the health hooks
+Before (line 196):
+  <ScrollArea className="flex-1 -mx-6 px-6">
 
-### 3. Add a generic "ensure connection" hook
-
-**File: `src/hooks/useAdminPMSHealth.ts`** (add new hook)
-
-```
-useEnsurePMSConnection() mutation:
-  Input: { providerId, providerName }
-  Logic:
-    1. Check if a connection with config->>provider = providerId already exists
-    2. If yes, activate it and return it
-    3. If no, INSERT new row with pms_name = providerName, config = { provider: providerId }
-    4. Invalidate queries
+After:
+  <ScrollArea className="flex-1 min-h-0 -mx-6 px-6">
 ```
 
-This replaces the AdvanceCM-only version.
-
-### 4. Update the Connection Health Card to show provider name
-
-**File: `src/components/admin/PMSConnectionHealthCard.tsx`**
-- No structural changes needed, it already reads provider from connection config
-
-## Files to Modify
-
-- `src/pages/admin/AdminPMSHealth.tsx` -- Switch to multi-connection view with `useAllPMSConnections()`
-- `src/components/admin/PMSConfigDialog.tsx` -- Use generic ensure/test hooks, remove AdvanceCM hardcoding
-- `src/hooks/useAdminPMSHealth.ts` -- Add `useEnsurePMSConnection()` hook
-
-## What Does NOT Change
-
-- Database schema (already supports multiple connections)
-- Edge functions
-- Booking routing logic (already dynamic)
-- Provider registry (`pms-providers.ts`)
-- Guest-facing UI
+No other files need changes. This is a CSS layout fix only.
 
