@@ -17,7 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
-import { Save, RotateCcw, ChevronDown, FileText, Image } from 'lucide-react';
+import { ContentPreview } from '@/components/admin/ContentPreview';
+import { Save, RotateCcw, ChevronDown, FileText, Image, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminPageContent() {
   const [activePage, setActivePage] = useState(PAGE_CONTENT_SCHEMAS[0].pageSlug);
@@ -63,6 +64,7 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
   // Local form state: { [sectionKey__contentKey]: value }
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [dirtyFields, setDirtyFields] = useState<Set<string>>(new Set());
+  const [showPreview, setShowPreview] = useState(false);
 
   // Initialize form values from defaults + DB overrides
   useEffect(() => {
@@ -137,10 +139,20 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
     );
   }
 
+
   return (
     <div className="space-y-4">
-      {/* Save All button */}
-      <div className="flex justify-end">
+      {/* Top controls */}
+      <div className="flex justify-between">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowPreview(!showPreview)}
+          className="gap-2"
+        >
+          {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {showPreview ? 'Hide Preview' : 'Show Preview'}
+        </Button>
         <Button
           onClick={handleSaveAll}
           disabled={!hasDirtyFields || bulkUpsert.isPending}
@@ -230,6 +242,17 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
                       </div>
                     );
                   })}
+
+                  {showPreview && (
+                    <div className="pt-4 border-t border-border">
+                      <ContentPreview
+                        sectionKey={section.sectionKey}
+                        fields={section.fields}
+                        values={formValues}
+                        pageSlug={schema.pageSlug}
+                      />
+                    </div>
+                  )}
 
                   <div className="flex justify-end pt-2">
                     <Button
