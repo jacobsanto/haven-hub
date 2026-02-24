@@ -132,29 +132,6 @@ export function Header() {
           >
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "rounded-full",
-              isTransparent && "text-white/80 hover:text-white hover:bg-white/10"
-            )}
-            aria-label="Search"
-            onClick={() => navigate('/properties')}
-          >
-            <Search className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "rounded-full",
-              isTransparent && "text-white/80 hover:text-white hover:bg-white/10"
-            )}
-            aria-label="Wishlist"
-          >
-            <Heart className="h-5 w-5" />
-          </Button>
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
