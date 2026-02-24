@@ -40,7 +40,7 @@ const Index = () => {
   return (
     <PageLayout>
       {/* Hero Section - Full Bleed */}
-      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden pb-20">
         {/* Full-bleed hero background */}
         {heroImageUrl ? (
           <>
@@ -129,7 +129,7 @@ const Index = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="relative z-10 flex items-center gap-6 mt-10 mb-6"
+          className="absolute bottom-6 z-10 flex items-center gap-6"
         >
           {[
             { icon: MapPin, label: 'Destinations', to: '/destinations' },
