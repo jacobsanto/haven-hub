@@ -18,6 +18,8 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { ContentPreview } from '@/components/admin/ContentPreview';
+import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
+import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { Save, RotateCcw, ChevronDown, FileText, Image, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminPageContent() {
@@ -219,6 +221,17 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
                             onChange={(e) => handleChange(section.sectionKey, field.key, e.target.value)}
                             rows={3}
                             className="text-sm"
+                          />
+                        ) : field.type === 'image' ? (
+                          <ImageUploadWithOptimizer
+                            value={currentValue || undefined}
+                            onUpload={(url) => handleChange(section.sectionKey, field.key, url)}
+                            onRemove={() => handleChange(section.sectionKey, field.key, '')}
+                            preset={field.key.includes('hero') ? IMAGE_PRESETS.hero : IMAGE_PRESETS.og}
+                            storagePath={`page-content/${schema.pageSlug}`}
+                            label={field.label}
+                            aspectClass={field.key.includes('og') ? 'aspect-[1200/630]' : 'aspect-video'}
+                            compact={field.key.includes('og')}
                           />
                         ) : (
                           <Input
