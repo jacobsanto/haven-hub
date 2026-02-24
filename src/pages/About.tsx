@@ -4,6 +4,7 @@ import { Heart, Shield, Sparkles, Users, ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useBrand } from '@/contexts/BrandContext';
 import { usePageContent } from '@/hooks/usePageContent';
+import { PageSEO } from '@/components/seo/PageSEO';
 import { Button } from '@/components/ui/button';
 import { TrustBadges } from '@/components/booking/TrustBadges';
 
@@ -61,6 +62,7 @@ const About = () => {
 
   return (
     <PageLayout>
+      <PageSEO pageSlug="about" defaults={{ meta_title: 'About Us | Haven Hub', meta_description: "Learn about Haven Hub's story, values, and commitment to extraordinary luxury vacation experiences.", og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
       {/* Hero */}
       <section className="relative py-32 md:py-40 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />

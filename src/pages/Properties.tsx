@@ -12,6 +12,7 @@ import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidg
 import { useProperties } from '@/hooks/useProperties';
 import { useAvailableProperties } from '@/hooks/useAvailableProperties';
 import { usePageContent } from '@/hooks/usePageContent';
+import { PageSEO } from '@/components/seo/PageSEO';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -233,6 +234,7 @@ export default function Properties() {
 
   return (
     <PageLayout>
+      <PageSEO pageSlug="properties" defaults={{ meta_title: 'Luxury Properties | Haven Hub', meta_description: 'Browse our curated collection of luxury vacation homes. Best rates guaranteed with instant booking available.', og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
       <div className="min-h-screen bg-background">
         {/* Header */}
         <div className="bg-warm-cream py-12">

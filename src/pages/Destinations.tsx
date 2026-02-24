@@ -6,6 +6,7 @@ import { DestinationCard } from '@/components/destinations/DestinationCard';
 import { useActiveDestinations } from '@/hooks/useDestinations';
 import { useProperties } from '@/hooks/useProperties';
 import { usePageContent } from '@/hooks/usePageContent';
+import { PageSEO } from '@/components/seo/PageSEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { TrustBadges } from '@/components/booking/TrustBadges';
@@ -31,6 +32,7 @@ const Destinations = () => {
 
   return (
     <PageLayout>
+      <PageSEO pageSlug="destinations" defaults={{ meta_title: 'Destinations | Haven Hub', meta_description: 'Explore extraordinary luxury destinations around the world. Find your perfect getaway.', og_image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1200&q=80' }} />
       {/* Hero */}
       <section className="relative py-32 md:py-40 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />

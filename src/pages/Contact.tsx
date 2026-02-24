@@ -4,6 +4,7 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { ContactForm } from '@/components/contact/ContactForm';
 import { useBrand } from '@/contexts/BrandContext';
 import { usePageContent } from '@/hooks/usePageContent';
+import { PageSEO } from '@/components/seo/PageSEO';
 
 const Contact = () => {
   const { brandName, contactEmail, contactPhone, contactAddress } = useBrand();
@@ -35,6 +36,7 @@ const Contact = () => {
 
   return (
     <PageLayout>
+      <PageSEO pageSlug="contact" defaults={{ meta_title: 'Contact Us | Haven Hub', meta_description: 'Get in touch with Haven Hub. We are here to help you plan your perfect luxury vacation.', og_image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&q=80' }} />
       {/* Hero */}
       <section className="relative py-32 md:py-40 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />

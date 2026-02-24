@@ -7,6 +7,7 @@ import { ExperienceCard } from '@/components/experiences/ExperienceCard';
 import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useActiveExperiences } from '@/hooks/useExperiences';
 import { usePageContent } from '@/hooks/usePageContent';
+import { PageSEO } from '@/components/seo/PageSEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { TrustBadges } from '@/components/booking/TrustBadges';
@@ -32,6 +33,7 @@ const Experiences = () => {
 
   return (
     <PageLayout>
+      <PageSEO pageSlug="experiences" defaults={{ meta_title: 'Curated Experiences | Haven Hub', meta_description: 'Enhance your luxury stay with curated experiences — culinary adventures, cultural immersions, and more.', og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
       {/* Hero */}
       <section className="relative py-24 md:py-32 hero-gradient texture-overlay overflow-hidden">
         <FloatingBlob position="top-left" variant="primary" size="md" animationVariant={2} />
