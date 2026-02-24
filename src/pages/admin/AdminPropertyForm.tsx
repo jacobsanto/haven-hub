@@ -774,7 +774,7 @@ export default function AdminPropertyForm() {
                   onUpload={(url) => setFormData((prev) => ({ ...prev, hero_image_url: url }))}
                   onRemove={() => setFormData((prev) => ({ ...prev, hero_image_url: '' }))}
                   preset={IMAGE_PRESETS.hero}
-                  storagePath="hero"
+                  storagePath={`properties/${formData.slug || id || 'new'}/hero`}
                   label="Click to upload hero image"
                 />
               </div>
@@ -792,7 +792,7 @@ export default function AdminPropertyForm() {
                   <ImageUploadWithOptimizer
                     onUpload={(url) => setFormData((prev) => ({ ...prev, gallery: [...prev.gallery, url] }))}
                     preset={IMAGE_PRESETS.gallery}
-                    storagePath="gallery"
+                    storagePath={`properties/${formData.slug || id || 'new'}/gallery`}
                     label="Add Image"
                     aspectClass="aspect-square"
                     compact

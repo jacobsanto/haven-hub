@@ -532,7 +532,7 @@ export default function AdminQuickOnboard() {
                   onUpload={(url) => setForm((p) => ({ ...p, hero_image_url: url }))}
                   onRemove={() => setForm((p) => ({ ...p, hero_image_url: '' }))}
                   preset={IMAGE_PRESETS.hero}
-                  storagePath="hero"
+                  storagePath={`properties/${form.slug || 'onboard'}/hero`}
                   label="Click to upload hero image"
                 />
               </>
