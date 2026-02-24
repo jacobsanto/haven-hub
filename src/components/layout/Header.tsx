@@ -119,7 +119,7 @@ export function Header() {
 
         {/* Right Section */}
         <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-          <CurrencySwitcher variant="icon" />
+          <CurrencySwitcher variant="icon" className={cn("rounded-full", isTransparent && "text-white/80 hover:text-white hover:bg-white/10")} />
           <Button
             variant="ghost"
             size="icon"
