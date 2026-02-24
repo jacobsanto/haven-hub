@@ -1,147 +1,126 @@
 
 
-# Theme Export/Import and Dark Mode Toggle
+# Full Color Palette Propagation
 
-## Overview
+## Problem
 
-Add two features to the Color Palette settings tab:
+The color palette editor saves colors and sets CSS variables, but the theme does NOT fully propagate across the site because:
 
-1. **Theme Export/Import** -- Export the current color scheme as a JSON file and import one back, enabling sharing themes across environments.
-2. **Dark Mode Toggle with Contrast Checks** -- A light/dark mode toggle that auto-generates dark mode colors from the current palette, with WCAG contrast ratio warnings.
+1. **Missing foreground companion variables** -- `applyTheme()` sets `--primary` but NOT `--primary-foreground`, `--secondary-foreground`, `--accent-foreground`, `--muted-foreground`, `--card-foreground`, `--destructive-foreground`. This means buttons, cards, and badges can become unreadable when colors change (e.g., a dark primary with dark foreground text).
+
+2. **Popover and sidebar variables are ignored** -- Dropdowns, select menus, context menus, and the admin sidebar all use `--popover`, `--popover-foreground`, `--sidebar-background`, etc. These are never updated by `applyTheme()`.
+
+3. **~40 files use hardcoded Tailwind colors** -- Classes like `bg-blue-600`, `text-emerald-700`, `bg-amber-100` bypass the palette entirely. Most of these fall into two categories:
+   - **Status indicators** (confirmed = emerald, pending = amber, error = red) -- these are intentionally semantic and should stay hardcoded for clarity.
+   - **Admin dashboard decorative colors** (quick action icons, stat cards) -- these could be converted but are low-priority admin-only visuals.
+
+## Scope Decision
+
+**What MUST change** (affects every public-facing page):
+- Add auto-computed foreground companions for all 10 color tokens
+- Sync popover variables to background/foreground
+- Sync sidebar variables to the palette
+
+**What should NOT change** (intentional design):
+- Status color indicators (emerald/amber/red for confirmed/pending/failed) -- these are semantic, not brand colors
+- Blog callout variants (tip = amber, info = blue, timing = purple) -- these are content-type indicators
+- Admin dashboard quick-action icon colors -- decorative variety, admin-only
 
 ## Changes
 
-### 1. `src/pages/admin/AdminSettings.tsx` -- Theme Export/Import + Dark Mode
+### 1. `src/contexts/BrandContext.tsx` -- Complete `applyTheme()`
 
-**Export Feature:**
-- "Export Theme" button in the Colors tab header
-- Exports all 10 color fields + fonts as a JSON file (`.havenhub-theme.json`)
-- File download triggered via `Blob` + `URL.createObjectURL`
-- JSON schema includes a `version` key for future compatibility
-
-**Import Feature:**
-- "Import Theme" button next to Export
-- Hidden `<input type="file" accept=".json">` triggered by button click
-- Validates the imported JSON structure before applying
-- Shows toast on success/failure
-- Updates `formState` (does NOT auto-save -- user must click "Save Changes" to persist)
-
-**Dark Mode Section:**
-- New "Mode" subsection at the top of the Colors tab
-- Two-button toggle: "Light" / "Dark" (not a system-level dark mode -- this controls which palette set is being edited)
-- When toggling to "Dark", auto-generate inverted colors from current light palette:
-  - Background becomes dark (swap background/foreground lightness)
-  - Card becomes slightly lighter than background
-  - Muted darkens
-  - Border darkens
-  - Primary/accent may shift lightness for visibility
-- User can manually adjust after auto-generation
-- Save stores a new `dark_` prefixed set of color columns (or a `dark_palette` JSONB column)
-
-**Contrast Checks:**
-- For each color pair (e.g., primary on background, foreground on background, destructive on background), compute WCAG contrast ratio
-- Display a small badge next to each color: green checkmark (>= 4.5:1), amber warning (3:1-4.5:1), red fail (< 3:1)
-- Uses relative luminance formula: `L = 0.2126*R + 0.7152*G + 0.0722*B`
-- Contrast ratio: `(L1 + 0.05) / (L2 + 0.05)`
-- Computed client-side, no backend needed
-
-### 2. Database Migration -- Add `dark_palette` column
-
-Add a single JSONB column to `brand_settings`:
-- `dark_palette` (jsonb, nullable, default null) -- stores the dark mode color overrides as `{ primary_color, secondary_color, ... }`
-
-This avoids adding 10+ new columns. When null, the system uses the CSS-defined dark mode defaults from `index.css`.
-
-### 3. `src/hooks/useBrandSettings.ts` -- Extend interface
-
-- Add `dark_palette` to `BrandSettings` interface as `Record<string, string> | null`
-- Add to `defaultBrandSettings` as `null`
-
-### 4. `src/contexts/BrandContext.tsx` -- Apply dark palette
-
-- In `applyTheme()`, if `settings.dark_palette` exists, inject it as CSS variables scoped under `.dark` class
-- Create a `<style>` tag with `.dark { --primary: ...; --background: ...; }` overrides
-- This integrates with the existing `next-themes` dark mode toggle already in the app
-
-### 5. Theme JSON Schema
+Add an `autoForeground()` helper that determines whether white or dark text is more readable on a given HSL background (using relative luminance). Then set ALL companion variables:
 
 ```text
-{
-  "version": 1,
-  "name": "My Custom Theme",
-  "light": {
-    "primary_color": "245 51% 19%",
-    "secondary_color": "243 29% 86%",
-    "accent_color": "32 48% 66%",
-    "background_color": "0 0% 100%",
-    "foreground_color": "244 42% 28%",
-    "muted_color": "243 29% 86%",
-    "card_color": "0 0% 100%",
-    "border_color": "243 29% 86%",
-    "destructive_color": "0 55% 55%",
-    "ring_color": "32 48% 66%"
-  },
-  "dark": { ... } | null,
-  "fonts": {
-    "heading_font": "Playfair Display",
-    "body_font": "Lato"
-  }
-}
+For each base color (primary, secondary, accent, muted, card, destructive):
+  --{name}-foreground = autoForeground(baseColor)
+
+Sync derived variables:
+  --popover         = --card (or --background)
+  --popover-foreground = --card-foreground
+  --input           = --border
+
+Sidebar sync:
+  --sidebar-background       = --background
+  --sidebar-foreground        = --foreground
+  --sidebar-primary           = --primary
+  --sidebar-primary-foreground = --primary-foreground
+  --sidebar-accent            = --accent
+  --sidebar-accent-foreground  = --accent-foreground
+  --sidebar-border            = --border
+  --sidebar-ring              = --ring
 ```
+
+The `autoForeground()` function:
+- Parses the HSL string (e.g., `"245 51% 19%"`)
+- Converts to RGB, computes relative luminance
+- Returns a light foreground (`"0 0% 100%"`) if luminance < 0.5, or dark foreground (the current `--foreground` value) if luminance >= 0.5
+- This ensures text is always readable on any background color
+
+### 2. `src/contexts/BrandContext.tsx` -- Dark palette foreground sync
+
+The existing `applyDarkPalette()` function injects raw key-value pairs. Update it to also auto-compute foreground companions for any base color present in the dark palette, using the same `autoForeground()` logic.
+
+### 3. No database changes needed
+
+All foreground values are computed client-side from the stored base colors. No new columns required.
+
+### 4. No changes to status/semantic colors
+
+The hardcoded emerald/amber/red status colors in `src/lib/utils.ts` and admin components are intentional semantic indicators (confirmed, pending, error) and will remain unchanged. These are not "brand" colors.
 
 ## Technical Details
 
-### Contrast ratio computation (inline in AdminSettings.tsx):
+### Auto-foreground computation
 
 ```typescript
-function getRelativeLuminance(hslStr: string): number {
-  // Parse HSL -> convert to RGB -> compute luminance
-  const hex = hslStringToHex(hslStr);
-  const r = parseInt(hex.slice(1,3), 16) / 255;
-  const g = parseInt(hex.slice(3,5), 16) / 255;
-  const b = parseInt(hex.slice(5,7), 16) / 255;
-  const toLinear = (c: number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+function parseHsl(hslStr: string): [number, number, number] {
+  const parts = hslStr.match(/[\d.]+/g);
+  if (!parts || parts.length < 3) return [0, 0, 50];
+  return [parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2])];
 }
 
-function getContrastRatio(hsl1: string, hsl2: string): number {
-  const l1 = getRelativeLuminance(hsl1);
-  const l2 = getRelativeLuminance(hsl2);
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-  return (lighter + 0.05) / (darker + 0.05);
+function hslToLuminance(h: number, s: number, l: number): number {
+  // Convert HSL to RGB, then compute relative luminance
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return c;
+  };
+  const toLinear = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * toLinear(f(0)) + 0.7152 * toLinear(f(8)) + 0.0722 * toLinear(f(4));
+}
+
+function autoForeground(baseHsl: string): string {
+  const [h, s, l] = parseHsl(baseHsl);
+  const luminance = hslToLuminance(h, s, l);
+  return luminance > 0.4 ? '244 42% 28%' : '0 0% 100%';
 }
 ```
 
-### Dark palette auto-generation logic:
+### Complete variable list set by applyTheme()
 
-- Take current light palette
-- Invert lightness values: `newL = 100 - oldL` (clamped)
-- Adjust saturation slightly (reduce by ~10% for dark backgrounds)
-- Keep hue unchanged
-- User can override any value after generation
+```text
+Base (10):        --primary, --secondary, --accent, --background, --foreground,
+                  --muted, --card, --border, --destructive, --ring
 
-### BrandContext dark palette injection:
+Foreground (6):   --primary-foreground, --secondary-foreground, --accent-foreground,
+                  --muted-foreground, --card-foreground, --destructive-foreground
 
-```typescript
-function applyDarkPalette(palette: Record<string, string>) {
-  let styleEl = document.getElementById('brand-dark-overrides');
-  if (!styleEl) {
-    styleEl = document.createElement('style');
-    styleEl.id = 'brand-dark-overrides';
-    document.head.appendChild(styleEl);
-  }
-  const vars = Object.entries(palette)
-    .map(([key, val]) => `--${key.replace(/_color$/, '').replace(/_/g, '-')}: ${val};`)
-    .join('\n  ');
-  styleEl.textContent = `.dark {\n  ${vars}\n}`;
-}
+Derived (2):      --input (= border), --popover, --popover-foreground
+
+Sidebar (8):      --sidebar-background, --sidebar-foreground, --sidebar-primary,
+                  --sidebar-primary-foreground, --sidebar-accent,
+                  --sidebar-accent-foreground, --sidebar-border, --sidebar-ring
 ```
+
+Total: 26 CSS variables fully synced to the palette.
 
 ## Files Modified
 
-1. **Database migration** -- Add `dark_palette` JSONB column to `brand_settings`
-2. `src/hooks/useBrandSettings.ts` -- Add `dark_palette` to interface and defaults
-3. `src/contexts/BrandContext.tsx` -- Apply dark palette overrides via injected `<style>` tag
-4. `src/pages/admin/AdminSettings.tsx` -- Export/Import buttons, dark mode editing section, contrast ratio badges
+1. `src/contexts/BrandContext.tsx` -- Add `autoForeground()` helper, expand `applyTheme()` to set all 26 variables, update `applyDarkPalette()` to include foreground companions
 
