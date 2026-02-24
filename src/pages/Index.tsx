@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle, ChevronDown, Star, Eye, Headphones } from 'lucide-react';
+import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle, Star, Eye, Headphones, Home, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -12,6 +12,7 @@ import { useFeaturedDestinations } from '@/hooks/useDestinations';
 import { useProperties } from '@/hooks/useProperties';
 import { useActiveExperiences } from '@/hooks/useExperiences';
 import { useBlogPosts } from '@/hooks/useBlogPosts';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { useBrand } from '@/contexts/BrandContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,7 +24,7 @@ const Index = () => {
   const { data: experiences, isLoading: experiencesLoading } = useActiveExperiences();
   const { data: blogPosts, isLoading: blogLoading } = useBlogPosts({ status: 'published' });
   const { brandName } = useBrand();
-
+  const { format } = useFormatCurrency();
   // Properties count for social proof
   const propertiesAvailable = properties?.length || 0;
 
@@ -39,7 +40,7 @@ const Index = () => {
   return (
     <PageLayout>
       {/* Hero Section - Full Bleed */}
-      <section className="relative h-screen flex flex-col items-center justify-end overflow-hidden">
+      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
         {/* Full-bleed hero background */}
         {heroImageUrl ? (
           <>
@@ -47,27 +48,106 @@ const Index = () => {
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
               style={{ backgroundImage: `url(${heroImageUrl})` }}
             />
-            {/* Minimal gradient - just enough for search bar readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
           </>
         ) : (
           <div className="absolute inset-0 hero-gradient texture-overlay" />
         )}
 
-        {/* Search Bar - positioned at bottom-center of hero */}
-        <div className="relative z-10 w-full max-w-4xl mx-auto px-4 mb-8">
-          <SearchBar variant="hero" />
-        </div>
-
-        {/* Scroll to Discover */}
+        {/* Hero Heading */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="relative z-10 scroll-indicator text-white/80 mb-10"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="relative z-10 text-center mb-10 px-4"
         >
-          <span>Scroll to Discover</span>
-          <ChevronDown className="h-5 w-5" />
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-medium text-white mb-3">
+            Experience {heroProperty?.city || brandName}
+          </h1>
+          <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
+            {heroProperty
+              ? `Book a luxury villa in ${heroProperty.city}, ${heroProperty.country}`
+              : 'Discover extraordinary vacation homes around the world'}
+          </p>
+        </motion.div>
+
+        {/* Search Bar + Featured Villa Card Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="relative z-10 w-full max-w-6xl mx-auto px-4 flex flex-col lg:flex-row items-stretch gap-5"
+        >
+          {/* Search Bar - Left */}
+          <div className="flex-1 min-w-0">
+            <SearchBar variant="hero" />
+          </div>
+
+          {/* Featured Villa Card - Right */}
+          {heroProperty && (
+            <Link
+              to={`/properties/${heroProperty.slug}`}
+              className="glass-panel rounded-2xl overflow-hidden flex flex-row lg:flex-col w-full lg:w-[300px] shrink-0 group hover:shadow-xl transition-shadow duration-300"
+            >
+              <div className="relative w-1/3 lg:w-full h-auto lg:h-36 overflow-hidden">
+                <img
+                  src={heroProperty.hero_image_url || '/placeholder.svg'}
+                  alt={heroProperty.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute top-2 left-2 bg-gold-accent/90 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                  Featured
+                </div>
+              </div>
+              <div className="flex-1 p-3 flex flex-col justify-center gap-1">
+                <h3 className="text-sm font-serif font-semibold text-foreground truncate">
+                  {heroProperty.display_name || heroProperty.name}
+                </h3>
+                <div className="flex items-center gap-1 text-xs text-gold-accent">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-3 w-3 fill-current" />
+                  ))}
+                  <span className="text-muted-foreground ml-1">4.9</span>
+                </div>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {heroProperty.city}, {heroProperty.country}
+                </p>
+                <p className="text-sm font-semibold text-foreground mt-1">
+                  From {format(heroProperty.base_price)} <span className="text-xs font-normal text-muted-foreground">/ per night</span>
+                </p>
+                <span className="text-xs font-medium text-primary group-hover:underline mt-1 inline-flex items-center gap-1">
+                  View Details <ArrowRight className="h-3 w-3" />
+                </span>
+              </div>
+            </Link>
+          )}
+        </motion.div>
+
+        {/* Bottom Navigation Icons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="relative z-10 flex items-center gap-6 mt-10 mb-6"
+        >
+          {[
+            { icon: MapPin, label: 'Destinations', to: '/destinations' },
+            { icon: Home, label: 'Properties', to: '/properties' },
+            { icon: Sparkles, label: 'Experiences', to: '/experiences' },
+            { icon: BookOpen, label: 'Stories', to: '/blog' },
+          ].map((nav) => (
+            <Link
+              key={nav.label}
+              to={nav.to}
+              className="flex flex-col items-center gap-1.5 group"
+            >
+              <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group-hover:bg-white/30 transition-colors duration-200">
+                <nav.icon className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-[11px] text-white/80 font-medium">{nav.label}</span>
+            </Link>
+          ))}
         </motion.div>
       </section>
 
