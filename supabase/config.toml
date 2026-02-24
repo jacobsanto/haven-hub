@@ -41,3 +41,12 @@ verify_jwt = false
 
 [functions.suggest-icon]
 verify_jwt = false
+
+[functions.pms-generic-test]
+verify_jwt = false
+
+[functions.pms-analyze-docs]
+verify_jwt = false
+
+[functions.guesty-sync]
+verify_jwt = false
