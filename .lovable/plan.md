@@ -1,95 +1,40 @@
+# FloatingBookButton Design Improvements
 
+## Summary
 
-# Fix AI Image Generation to Produce Location-Relevant Images
+Update the floating booking button to better match its actual function (search/discovery, not date picking) and improve mobile UX with scroll-aware visibility and better positioning.
 
-## Problem
-The current AI image generation produces generic, repetitive images because:
-1. **Prompts are too vague** -- they use generic photography jargon ("cinematic lighting", "editorial style") without specific visual details about the actual place
-2. **No backend prompt enrichment** -- the edge function passes the client prompt directly to the AI model without adding context
-3. **Fallback text is meaningless** -- when fields are empty, prompts default to "a destination" or "travel experience"
+## Changes (1 file)
 
-## Solution
-Two changes: enhance the backend to build richer, context-aware prompts with a system message, and improve the client-side prompt templates to include more form fields.
+### `src/components/booking/FloatingBookButton.tsx`
 
-## Changes
+**Icon and Label Fix**
 
-### 1. Upgrade the `generate-image` Edge Function
+- Replace `Calendar` icon with `Compass` (desktop) and `Search` (mobile) to match the search/discovery intent
+- Change hover text from "Book Now" to "Find a Stay"
 
-Instead of sending the raw user prompt as a single message, add a **system message** that instructs the model to generate a specific, realistic photograph of the described subject. Also accept an optional `context` object from the client with structured data (name, country, description, category) so the backend can build a much richer prompt.
+**Scroll-Aware Visibility**
 
-**Key changes:**
-- Accept `{ prompt, context }` where context is optional structured data
-- Add a system message that enforces realistic, location-specific imagery
-- Build an enriched prompt on the backend using the context fields
-- Log the final prompt for debugging
+- Add a `useEffect` scroll listener that only shows the button after the user scrolls past ~70% of viewport height (past the hero CTA)
+- Wrap both desktop and mobile buttons in `AnimatePresence` so they fade in/out smoothly
 
-### 2. Update `ImageFieldWithAI` Component
+**Mobile: Bottom-Center Pill**
 
-Pass a `context` object alongside the prompt so the backend has structured data to work with.
+- Move mobile button from `fixed bottom-4 right-4` to `fixed bottom-5 left-1/2 -translate-x-1/2` (centered)
+- Change from icon-only circle to a pill shape with `Search` icon + "Search" text label
+- Slightly smaller height (`h-12` instead of `h-14`) for a sleeker look
 
-### 3. Improve Prompt Templates in Each Form Dialog
+**Desktop: Always Show Label**
 
-Make prompts reference more fields from the form (description, climate, long_description) so the AI has real content to work with.
+- Show "Find a Stay" label always (not just on hover) since the button only appears after scrolling
+- On hover, show a dynamic property count badge (e.g., "- 12 stays") using data from `useProperties`
 
-| Form | Current Prompt Uses | Will Now Also Use |
-|---|---|---|
-| DestinationFormDialog | name, country | description, climate, best_time_to_visit |
-| ExperienceFormDialog | name, category | description, duration, destination name |
-| BlogPostFormDialog | title | category, excerpt/content hint |
-| BlogAuthorFormDialog | name | bio snippet |
-| AddonFormDialog | name, category | description |
-| PromotionalCampaignFormDialog | title, description | discount type, target |
+**Social Proof Badge**
 
-## Technical Details
+- Import `useProperties` to get the count of available properties
+- Show count on both mobile (always) and desktop (on hover) as a subtle secondary text
 
-### Edge Function Changes (`supabase/functions/generate-image/index.ts`)
+### Dependencies
 
-```text
-Current flow:
-  Client sends { prompt } -> model receives [{ role: "user", content: prompt }]
-
-New flow:
-  Client sends { prompt, context } -> backend builds enriched prompt ->
-  model receives [
-    { role: "system", content: "You are a professional travel photographer..." },
-    { role: "user", content: enrichedPrompt }
-  ]
-```
-
-The system message will instruct:
-- Generate a realistic, high-resolution photograph (not illustration, not stock photo)
-- The image must depict the specific location, landmark, or scene described
-- Include distinctive local architecture, vegetation, colors, and atmosphere
-- No text overlays, no watermarks, no borders
-
-The enriched prompt will combine:
-- The base prompt from the client
-- Structured context fields (country, climate, description) woven into a detailed scene description
-
-### Client-Side Prompt Improvements (Example: Destination)
-
-Before:
-```
-Beautiful high-resolution travel hero photograph of ${name || 'a destination'},
-${country || 'scenic landscape'}. Ultra high resolution, cinematic lighting...
-```
-
-After:
-```
-A breathtaking photograph of ${name}, ${country}.
-${description ? `The scene shows: ${description}.` : ''}
-${climate ? `The climate is ${climate}.` : ''}
-Capture the distinctive architecture, natural landscape, and atmosphere
-unique to this specific location.
-```
-
-### File Changes Summary
-- **Edit**: `supabase/functions/generate-image/index.ts` -- add system message and context-aware prompt building
-- **Edit**: `src/components/admin/ImageFieldWithAI.tsx` -- pass context object alongside prompt
-- **Edit**: `src/components/admin/DestinationFormDialog.tsx` -- richer prompt with description, climate
-- **Edit**: `src/components/admin/ExperienceFormDialog.tsx` -- include description, destination context
-- **Edit**: `src/components/admin/BlogPostFormDialog.tsx` -- include category context
-- **Edit**: `src/components/admin/BlogAuthorFormDialog.tsx` -- include bio snippet
-- **Edit**: `src/components/admin/AddonFormDialog.tsx` -- include description
-- **Edit**: `src/components/admin/PromotionalCampaignFormDialog.tsx` -- include more campaign details
-
+- Uses existing `useProperties` hook (no new data fetching)
+- No new components or files needed   CREATE ONE FIELD OF AREAS WITH A DROPDOWN SHOWING DESTINATIONS INSTEAD OF HAVING THEM ALL THERE CAVERING ESTATE
