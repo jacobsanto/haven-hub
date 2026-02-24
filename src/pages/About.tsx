@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Heart, Shield, Sparkles, Users, ArrowRight, CheckCircle } from 'lucide-react';
+import { Heart, Shield, Sparkles, Users, ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useBrand } from '@/contexts/BrandContext';
 import { Button } from '@/components/ui/button';
 import { TrustBadges } from '@/components/booking/TrustBadges';
@@ -42,10 +41,13 @@ const About = () => {
 
   return (
     <PageLayout>
-      {/* Hero Section */}
-      <section className="relative py-24 md:py-32 hero-gradient texture-overlay overflow-hidden">
-        <FloatingBlob position="top-right" variant="primary" size="md" animationVariant={1} />
-        <FloatingBlob position="bottom-left" variant="accent" size="sm" animationVariant={2} />
+      {/* Hero Section - Image Background */}
+      <section className="relative py-32 md:py-40 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80')` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30" />
         
         <div className="container mx-auto px-4 relative z-10">
           <motion.div
@@ -54,10 +56,10 @@ const About = () => {
             transition={{ duration: 0.8 }}
             className="max-w-3xl mx-auto text-center"
           >
-            <h1 className="text-4xl md:text-6xl font-serif font-medium text-foreground mb-6">
+            <h1 className="text-4xl md:text-6xl font-serif font-medium text-white mb-6">
               About {brandName}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
+            <p className="text-lg md:text-xl text-white/80 leading-relaxed">
               {brandTagline || 'Crafting extraordinary vacation experiences in the world\'s most beautiful destinations.'}
             </p>
           </motion.div>
@@ -107,7 +109,7 @@ const About = () => {
       </section>
 
       {/* Mission & Values */}
-      <section className="py-20 md:py-28 bg-secondary/30">
+      <section className="py-20 md:py-28 bg-warm-cream">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -133,8 +135,8 @@ const About = () => {
                 transition={{ delay: index * 0.1 }}
                 className="card-organic p-6 text-center"
               >
-                <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-primary/10 flex items-center justify-center">
-                  <value.icon className="h-7 w-7 text-primary" />
+                <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-gold-accent/10 flex items-center justify-center">
+                  <value.icon className="h-7 w-7 text-gold-accent" />
                 </div>
                 <h3 className="text-lg font-serif font-medium mb-3">{value.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{value.description}</p>
@@ -157,7 +159,7 @@ const About = () => {
                 transition={{ delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="text-4xl md:text-5xl font-serif font-medium text-primary mb-2">
+                <div className="text-4xl md:text-5xl font-serif font-medium text-gold-accent mb-2">
                   {stat.value}
                 </div>
                 <div className="text-sm md:text-base opacity-80">{stat.label}</div>
@@ -168,7 +170,7 @@ const About = () => {
       </section>
 
       {/* Direct Booking Benefits */}
-      <section className="py-20 md:py-28 bg-primary/5">
+      <section className="py-20 md:py-28 bg-warm-cream">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -195,7 +197,7 @@ const About = () => {
             className="text-center"
           >
             <Link to="/properties">
-              <Button size="lg" className="rounded-full gap-2 px-8">
+              <Button variant="gold" size="lg" className="rounded-full gap-2 px-8">
                 Start Booking Now
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -221,7 +223,7 @@ const About = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/properties">
-                <Button size="lg" className="rounded-full px-8 gap-2">
+                <Button variant="gold" size="lg" className="rounded-full px-8 gap-2">
                   Browse & Book Properties
                   <ArrowRight className="h-4 w-4" />
                 </Button>

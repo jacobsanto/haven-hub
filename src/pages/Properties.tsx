@@ -229,7 +229,7 @@ export default function Properties() {
     <PageLayout>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="bg-secondary/30 py-12">
+        <div className="bg-warm-cream py-12">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}

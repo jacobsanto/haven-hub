@@ -90,7 +90,7 @@ export function Footer() {
             <Button 
               onClick={() => navigate('/properties')} 
               size="lg" 
-              variant="secondary" 
+              variant="gold" 
               className="rounded-full gap-2 px-8"
             >
               <Search className="h-5 w-5" />
@@ -307,21 +307,21 @@ export function Footer() {
               <a 
                 href="#" 
                 aria-label="Follow us on Instagram"
-                className="opacity-60 hover:opacity-100 transition-all duration-200 hover:-translate-y-0.5 p-2"
+                className="opacity-60 hover:opacity-100 hover:text-gold-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Instagram className="h-5 w-5" />
               </a>
               <a 
                 href="#" 
                 aria-label="Follow us on Facebook"
-                className="opacity-60 hover:opacity-100 transition-all duration-200 hover:-translate-y-0.5 p-2"
+                className="opacity-60 hover:opacity-100 hover:text-gold-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Facebook className="h-5 w-5" />
               </a>
               <a 
                 href="#" 
                 aria-label="Follow us on X (Twitter)"
-                className="opacity-60 hover:opacity-100 transition-all duration-200 hover:-translate-y-0.5 p-2"
+                className="opacity-60 hover:opacity-100 hover:text-gold-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Twitter className="h-5 w-5" />
               </a>

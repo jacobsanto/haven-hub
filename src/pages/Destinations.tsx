@@ -3,7 +3,6 @@ import { MapPin, ArrowRight, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { DestinationCard } from '@/components/destinations/DestinationCard';
-import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useActiveDestinations } from '@/hooks/useDestinations';
 import { useProperties } from '@/hooks/useProperties';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +13,6 @@ const Destinations = () => {
   const { data: destinations, isLoading } = useActiveDestinations();
   const { data: properties } = useProperties();
 
-  // Count properties per destination (by city/village matching)
   const getPropertyCount = (destinationId: string) => {
     if (!properties) return 0;
     return properties.filter(p => p.destination_id === destinationId).length;
@@ -22,10 +20,13 @@ const Destinations = () => {
 
   return (
     <PageLayout>
-      {/* Hero Section */}
-      <section className="relative py-24 md:py-32 hero-gradient texture-overlay overflow-hidden">
-        <FloatingBlob position="top-right" variant="primary" size="md" animationVariant={1} />
-        <FloatingBlob position="bottom-left" variant="accent" size="sm" animationVariant={3} />
+      {/* Hero Section - Image Background */}
+      <section className="relative py-32 md:py-40 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1920&q=80')` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30" />
         
         <div className="container mx-auto px-4 relative z-10">
           <motion.div
@@ -34,18 +35,18 @@ const Destinations = () => {
             transition={{ duration: 0.8 }}
             className="max-w-3xl mx-auto text-center"
           >
-            <div className="flex items-center justify-center gap-2 text-primary mb-4">
+            <div className="flex items-center justify-center gap-2 text-white/80 mb-4">
               <MapPin className="h-5 w-5" />
               <span className="text-sm font-medium uppercase tracking-wider">Explore</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-serif font-medium text-foreground mb-6">
+            <h1 className="text-4xl md:text-6xl font-serif font-medium text-white mb-6">
               Choose Your Destination
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-6">
+            <p className="text-lg md:text-xl text-white/80 leading-relaxed mb-6">
               Discover extraordinary locations around the world and book your perfect luxury stay.
             </p>
             <Link to="/properties">
-              <Button size="lg" className="rounded-full gap-2">
+              <Button variant="gold" size="lg" className="rounded-full gap-2">
                 <Search className="h-4 w-4" />
                 Browse All Properties
               </Button>
@@ -55,7 +56,7 @@ const Destinations = () => {
       </section>
 
       {/* Destinations Grid */}
-      <section className="py-20 md:py-28 bg-background">
+      <section className="py-20 md:py-28 bg-warm-cream">
         <div className="container mx-auto px-4">
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -106,7 +107,7 @@ const Destinations = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/properties">
-                <Button size="lg" className="rounded-full gap-2 w-full sm:w-auto">
+                <Button variant="gold" size="lg" className="rounded-full gap-2 w-full sm:w-auto">
                   Browse All Properties
                   <ArrowRight className="h-4 w-4" />
                 </Button>

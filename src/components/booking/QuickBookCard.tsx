@@ -87,8 +87,9 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
                   exit={{ opacity: 0 }}
                   className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3"
                 >
-                  <Button
+                   <Button
                     onClick={handleBookNow}
+                    variant="gold"
                     size="lg"
                     className="rounded-full gap-2"
                   >
