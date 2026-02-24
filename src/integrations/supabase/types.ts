@@ -1344,6 +1344,60 @@ export type Database = {
           },
         ]
       }
+      pms_provider_registry: {
+        Row: {
+          api_docs_url: string | null
+          auth_fields: Json
+          auth_type: string
+          base_url: string | null
+          capabilities: Json | null
+          created_at: string | null
+          description: string | null
+          edge_function_name: string | null
+          id: string
+          is_builtin: boolean | null
+          name: string
+          setup_steps: Json | null
+          slug: string
+          token_scope: string | null
+          token_url: string | null
+        }
+        Insert: {
+          api_docs_url?: string | null
+          auth_fields?: Json
+          auth_type?: string
+          base_url?: string | null
+          capabilities?: Json | null
+          created_at?: string | null
+          description?: string | null
+          edge_function_name?: string | null
+          id?: string
+          is_builtin?: boolean | null
+          name: string
+          setup_steps?: Json | null
+          slug: string
+          token_scope?: string | null
+          token_url?: string | null
+        }
+        Update: {
+          api_docs_url?: string | null
+          auth_fields?: Json
+          auth_type?: string
+          base_url?: string | null
+          capabilities?: Json | null
+          created_at?: string | null
+          description?: string | null
+          edge_function_name?: string | null
+          id?: string
+          is_builtin?: boolean | null
+          name?: string
+          setup_steps?: Json | null
+          slug?: string
+          token_scope?: string | null
+          token_url?: string | null
+        }
+        Relationships: []
+      }
       pms_raw_events: {
         Row: {
           created_at: string
