@@ -290,168 +290,182 @@ Deno.serve(async (req) => {
     }
 
     if (action === "sync-all-availability" || action === "sync-property") {
-      // Get active connection
-      const { data: connection, error: connError } = await adminClient
+      // Get ALL active connections (multi-PMS support)
+      const { data: connections, error: connError } = await adminClient
         .from("pms_connections")
         .select("*")
-        .eq("is_active", true)
-        .maybeSingle();
+        .eq("is_active", true);
 
-      if (connError || !connection) {
-        console.log("No active PMS connection found");
+      if (connError || !connections || connections.length === 0) {
+        console.log("No active PMS connections found");
         return new Response(
-          JSON.stringify({ success: false, message: "No active PMS connection" }),
+          JSON.stringify({ success: false, message: "No active PMS connections" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const config = connection.config as PMSConnection["config"];
-      
-      // Check if auto-sync is enabled (skip for manual triggers)
-      if (triggerType === "scheduled" && config?.auto_sync_enabled === false) {
-        console.log("Auto-sync is disabled");
-        return new Response(
-          JSON.stringify({ success: true, message: "Auto-sync disabled", skipped: true }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      console.log(`Found ${connections.length} active PMS connection(s)`);
 
-      // Build query for property mappings
-      let mappingsQuery = adminClient
-        .from("pms_property_map")
-        .select("property_id, external_property_id, pms_connection_id, ical_url")
-        .eq("pms_connection_id", connection.id)
-        .eq("sync_enabled", true);
-      
-      // Filter to single property if specified
-      if (targetPropertyId) {
-        mappingsQuery = mappingsQuery.eq("property_id", targetPropertyId);
-      }
-
-      const { data: mappings, error: mappingsError } = await mappingsQuery;
-
-      if (mappingsError) {
-        throw new Error(`Failed to fetch mappings: ${mappingsError.message}`);
-      }
-
-      if (!mappings || mappings.length === 0) {
-        console.log("No property mappings found");
-        return new Response(
-          JSON.stringify({ success: true, message: "No properties to sync", total: 0 }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Filter to only properties with iCal URLs
-      const mappingsWithICal = (mappings as PMSPropertyMapping[]).filter(m => m.ical_url);
-      const mappingsWithoutICal = mappings.length - mappingsWithICal.length;
-      
-      if (mappingsWithICal.length === 0) {
-        console.log("No properties have iCal URLs configured");
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: "No iCal URLs configured", 
-            total: mappings.length,
-            skipped: mappings.length,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      if (mappingsWithoutICal > 0) {
-        console.log(`${mappingsWithoutICal} properties skipped (no iCal URL)`);
-      }
-
-      // Create sync run record
-      const { data: syncRun, error: syncRunError } = await adminClient
-        .from("pms_sync_runs")
-        .insert({
-          pms_connection_id: connection.id,
-          sync_type: "ical_availability",
-          status: "running",
-          trigger_type: triggerType,
-        })
-        .select()
-        .single();
-
-      if (syncRunError) {
-        console.error("Failed to create sync run:", syncRunError);
-      }
-
-      // Sync each property
-      let synced = 0;
-      let failed = 0;
+      // Aggregate results across all connections
+      let totalSynced = 0;
+      let totalFailed = 0;
       let totalEvents = 0;
       let totalBlockedDays = 0;
-      const errors: string[] = [];
+      let totalSkipped = 0;
+      let totalProperties = 0;
+      const allErrors: string[] = [];
+      const connectionResults: Array<{ connectionId: string; pmsName: string; synced: number; failed: number }> = [];
 
-      for (const mapping of mappingsWithICal) {
-        const result = await syncPropertyFromICal(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-          mapping.property_id,
-          mapping.ical_url!
-        );
+      for (const connection of connections) {
+        const config = connection.config as PMSConnection["config"];
+        
+        // Check if auto-sync is enabled (skip for manual triggers)
+        if (triggerType === "scheduled" && config?.auto_sync_enabled === false) {
+          console.log(`Skipping connection ${connection.pms_name} - auto-sync disabled`);
+          continue;
+        }
 
-        if (result.success) {
-          synced++;
-          totalEvents += result.events;
-          totalBlockedDays += result.blockedDays;
-        } else {
-          failed++;
-          if (result.error) {
-            errors.push(`Property ${mapping.external_property_id}: ${result.error}`);
+        // Build query for property mappings for THIS connection
+        let mappingsQuery = adminClient
+          .from("pms_property_map")
+          .select("property_id, external_property_id, pms_connection_id, ical_url")
+          .eq("pms_connection_id", connection.id)
+          .eq("sync_enabled", true);
+        
+        // Filter to single property if specified
+        if (targetPropertyId) {
+          mappingsQuery = mappingsQuery.eq("property_id", targetPropertyId);
+        }
+
+        const { data: mappings, error: mappingsError } = await mappingsQuery;
+
+        if (mappingsError) {
+          console.error(`Failed to fetch mappings for ${connection.pms_name}: ${mappingsError.message}`);
+          allErrors.push(`${connection.pms_name}: ${mappingsError.message}`);
+          continue;
+        }
+
+        if (!mappings || mappings.length === 0) {
+          console.log(`No property mappings for connection ${connection.pms_name}`);
+          continue;
+        }
+
+        totalProperties += mappings.length;
+
+        // Filter to only properties with iCal URLs
+        const mappingsWithICal = (mappings as PMSPropertyMapping[]).filter(m => m.ical_url);
+        const mappingsWithoutICal = mappings.length - mappingsWithICal.length;
+        totalSkipped += mappingsWithoutICal;
+
+        if (mappingsWithICal.length === 0) {
+          console.log(`No iCal URLs for connection ${connection.pms_name}`);
+          continue;
+        }
+
+        if (mappingsWithoutICal > 0) {
+          console.log(`${connection.pms_name}: ${mappingsWithoutICal} properties skipped (no iCal URL)`);
+        }
+
+        // Create sync run record for THIS connection
+        const { data: syncRun, error: syncRunError } = await adminClient
+          .from("pms_sync_runs")
+          .insert({
+            pms_connection_id: connection.id,
+            sync_type: "ical_availability",
+            status: "running",
+            trigger_type: triggerType,
+          })
+          .select()
+          .single();
+
+        if (syncRunError) {
+          console.error(`Failed to create sync run for ${connection.pms_name}:`, syncRunError);
+        }
+
+        // Sync each property for this connection
+        let synced = 0;
+        let failed = 0;
+        let connEvents = 0;
+        let connBlockedDays = 0;
+        const errors: string[] = [];
+
+        for (const mapping of mappingsWithICal) {
+          const result = await syncPropertyFromICal(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+            mapping.property_id,
+            mapping.ical_url!
+          );
+
+          if (result.success) {
+            synced++;
+            connEvents += result.events;
+            connBlockedDays += result.blockedDays;
+          } else {
+            failed++;
+            if (result.error) {
+              errors.push(`Property ${mapping.external_property_id}: ${result.error}`);
+            }
           }
         }
-      }
 
-      // Update sync run
-      if (syncRun) {
-        const summaryParts: string[] = [];
-        if (totalEvents > 0) {
-          summaryParts.push(`${totalEvents} events, ${totalBlockedDays} blocked days`);
-        }
-        if (errors.length > 0) {
-          summaryParts.push(errors.slice(0, 3).join("; "));
-        }
-        if (mappingsWithoutICal > 0) {
-          summaryParts.push(`${mappingsWithoutICal} skipped (no iCal)`);
+        totalSynced += synced;
+        totalFailed += failed;
+        totalEvents += connEvents;
+        totalBlockedDays += connBlockedDays;
+        allErrors.push(...errors);
+        connectionResults.push({ connectionId: connection.id, pmsName: connection.pms_name, synced, failed });
+
+        // Update sync run for this connection
+        if (syncRun) {
+          const summaryParts: string[] = [];
+          if (connEvents > 0) {
+            summaryParts.push(`${connEvents} events, ${connBlockedDays} blocked days`);
+          }
+          if (errors.length > 0) {
+            summaryParts.push(errors.slice(0, 3).join("; "));
+          }
+          if (mappingsWithoutICal > 0) {
+            summaryParts.push(`${mappingsWithoutICal} skipped (no iCal)`);
+          }
+
+          await adminClient
+            .from("pms_sync_runs")
+            .update({
+              status: failed === 0 ? "success" : synced > 0 ? "partial" : "failed",
+              completed_at: new Date().toISOString(),
+              records_processed: synced,
+              records_failed: failed,
+              error_summary: summaryParts.length > 0 ? summaryParts.join(" | ") : null,
+            })
+            .eq("id", syncRun.id);
         }
 
+        // Update this connection's last sync
         await adminClient
-          .from("pms_sync_runs")
+          .from("pms_connections")
           .update({
-            status: failed === 0 ? "success" : synced > 0 ? "partial" : "failed",
-            completed_at: new Date().toISOString(),
-            records_processed: synced,
-            records_failed: failed,
-            error_summary: summaryParts.length > 0 ? summaryParts.join(" | ") : null,
+            last_sync_at: new Date().toISOString(),
+            sync_status: failed === 0 ? "success" : synced > 0 ? "partial" : "error",
           })
-          .eq("id", syncRun.id);
+          .eq("id", connection.id);
+
+        console.log(`${connection.pms_name}: ${synced} synced, ${failed} failed, ${connEvents} events, ${connBlockedDays} blocked days`);
       }
 
-      // Update connection last sync
-      await adminClient
-        .from("pms_connections")
-        .update({
-          last_sync_at: new Date().toISOString(),
-          sync_status: failed === 0 ? "success" : synced > 0 ? "partial" : "error",
-        })
-        .eq("id", connection.id);
-
-      console.log(`iCal sync complete: ${synced} properties synced, ${failed} failed, ${totalEvents} events, ${totalBlockedDays} blocked days`);
+      console.log(`Multi-PMS sync complete: ${connections.length} connections, ${totalSynced} synced, ${totalFailed} failed`);
 
       return new Response(
         JSON.stringify({
-          success: failed === 0,
-          total: mappings.length,
-          synced,
-          failed,
-          skipped: mappingsWithoutICal,
+          success: totalFailed === 0,
+          connections: connectionResults,
+          total: totalProperties,
+          synced: totalSynced,
+          failed: totalFailed,
+          skipped: totalSkipped,
           events: totalEvents,
           blockedDays: totalBlockedDays,
-          errors: errors.slice(0, 5),
+          errors: allErrors.slice(0, 5),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

@@ -8,7 +8,40 @@ import {
   CouponPromo 
 } from '@/types/booking-engine';
 import { CancellationPolicyKey } from '@/lib/cancellation-policies';
+import { getEdgeFunctionForProvider } from '@/lib/pms-providers';
 import { format, differenceInDays } from 'date-fns';
+
+/**
+ * Look up the PMS edge function name for a given property.
+ * Joins pms_property_map → pms_connections to find the provider,
+ * then maps it to the correct edge function name.
+ * Returns null if the property has no PMS mapping.
+ */
+async function resolveEdgeFunctionForProperty(
+  propertyId: string
+): Promise<{ edgeFunction: string; externalPropertyId: string } | null> {
+  const { data: mapping } = await supabase
+    .from('pms_property_map')
+    .select('external_property_id, pms_connection_id')
+    .eq('property_id', propertyId)
+    .eq('sync_enabled', true)
+    .maybeSingle();
+
+  if (!mapping?.external_property_id) return null;
+
+  // Look up the connection to find the provider
+  const { data: connection } = await supabase
+    .from('pms_connections')
+    .select('config')
+    .eq('id', mapping.pms_connection_id)
+    .maybeSingle();
+
+  const config = connection?.config as { provider?: string } | null;
+  const providerId = config?.provider || 'advancecm';
+  const edgeFunction = getEdgeFunctionForProvider(providerId);
+
+  return { edgeFunction, externalPropertyId: mapping.external_property_id };
+}
 
 // Generate a unique booking reference
 function generateBookingReference(): string {
@@ -204,23 +237,18 @@ export function useCompleteBooking() {
 
       if (property.instant_booking) {
         try {
-          // Get property mapping to find external property ID
-          const { data: mapping } = await supabase
-            .from('pms_property_map')
-            .select('external_property_id')
-            .eq('property_id', propertyId)
-            .eq('sync_enabled', true)
-            .maybeSingle();
+          // Resolve which PMS edge function handles this property
+          const pmsInfo = await resolveEdgeFunctionForProperty(propertyId);
 
-          if (mapping?.external_property_id) {
+          if (pmsInfo) {
             const { data: sessionData } = await supabase.auth.getSession();
             const token = sessionData?.session?.access_token;
 
             if (token) {
-              const response = await supabase.functions.invoke('advancecm-sync', {
+              const response = await supabase.functions.invoke(pmsInfo.edgeFunction, {
                 body: {
                   action: 'create-booking',
-                  externalPropertyId: mapping.external_property_id,
+                  externalPropertyId: pmsInfo.externalPropertyId,
                   bookingReference,
                   checkIn: format(checkIn, 'yyyy-MM-dd'),
                   checkOut: format(checkOut, 'yyyy-MM-dd'),
@@ -321,15 +349,10 @@ export function useConfirmBookingWithPMS() {
         .update({ status: 'confirmed' })
         .eq('id', bookingId);
 
-      // 3. Get property mapping
-      const { data: mapping } = await supabase
-        .from('pms_property_map')
-        .select('external_property_id')
-        .eq('property_id', booking.property_id)
-        .eq('sync_enabled', true)
-        .maybeSingle();
+      // 3. Get property PMS mapping with provider routing
+      const pmsInfo = await resolveEdgeFunctionForProperty(booking.property_id);
 
-      if (!mapping?.external_property_id) {
+      if (!pmsInfo) {
         // No PMS mapping, just confirm locally
         return { success: true };
       }
@@ -340,10 +363,10 @@ export function useConfirmBookingWithPMS() {
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
 
-        const response = await supabase.functions.invoke('advancecm-sync', {
+        const response = await supabase.functions.invoke(pmsInfo.edgeFunction, {
           body: {
             action: 'create-booking',
-            externalPropertyId: mapping.external_property_id,
+            externalPropertyId: pmsInfo.externalPropertyId,
             bookingReference: booking.booking_reference,
             checkIn: booking.check_in,
             checkOut: booking.check_out,
@@ -421,15 +444,10 @@ export function useRetryPMSSync() {
         throw new Error('Booking not found');
       }
 
-      // Get mapping
-      const { data: mapping } = await supabase
-        .from('pms_property_map')
-        .select('external_property_id')
-        .eq('property_id', booking.property_id)
-        .eq('sync_enabled', true)
-        .maybeSingle();
+      // Get mapping with provider routing
+      const pmsInfo = await resolveEdgeFunctionForProperty(booking.property_id);
 
-      if (!mapping?.external_property_id) {
+      if (!pmsInfo) {
         throw new Error('No PMS mapping found for this property');
       }
 
@@ -438,10 +456,10 @@ export function useRetryPMSSync() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
-      const response = await supabase.functions.invoke('advancecm-sync', {
+      const response = await supabase.functions.invoke(pmsInfo.edgeFunction, {
         body: {
           action: 'create-booking',
-          externalPropertyId: mapping.external_property_id,
+          externalPropertyId: pmsInfo.externalPropertyId,
           bookingReference: booking.booking_reference,
           checkIn: booking.check_in,
           checkOut: booking.check_out,

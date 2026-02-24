@@ -1,6 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { pmsAdapter } from '@/integrations/pms';
+import { getEdgeFunctionForProvider } from '@/lib/pms-providers';
+
+/**
+ * Resolve the edge function name for a given PMS connection.
+ */
+async function resolveEdgeFunctionForConnection(connectionId: string): Promise<string> {
+  const { data: connection } = await supabase
+    .from('pms_connections')
+    .select('config')
+    .eq('id', connectionId)
+    .maybeSingle();
+
+  const config = connection?.config as { provider?: string } | null;
+  return getEdgeFunctionForProvider(config?.provider || 'advancecm');
+}
 
 export interface PMSConnection {
   id: string;
@@ -66,6 +81,25 @@ export function usePMSConnectionStatus() {
 
       if (error) throw error;
       return data as PMSConnection | null;
+    },
+  });
+}
+
+/**
+ * Fetch ALL active PMS connections (multi-PMS support).
+ */
+export function useAllPMSConnections() {
+  return useQuery({
+    queryKey: ['admin', 'pms', 'all-connections'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pms_connections')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as PMSConnection[];
     },
   });
 }
@@ -263,12 +297,14 @@ export function useSyncPropertyNow() {
       if (createError) throw createError;
 
       try {
-        // Call the sync-availability edge function
+        // Resolve the correct edge function for this connection
+        const edgeFunction = await resolveEdgeFunctionForConnection(connectionId);
+        
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error('Authentication required');
 
         const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/advancecm-sync`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${edgeFunction}`,
           {
             method: 'POST',
             headers: {
@@ -339,13 +375,16 @@ export function useSyncAllPropertyAvailability() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Authentication required');
 
+      // Resolve the correct edge function for this connection
+      const edgeFunction = await resolveEdgeFunctionForConnection(connectionId);
+
       let synced = 0;
       let failed = 0;
 
       for (const mapping of mappings) {
         try {
           const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/advancecm-sync`,
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${edgeFunction}`,
             {
               method: 'POST',
               headers: {
