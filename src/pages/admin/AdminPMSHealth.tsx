@@ -52,6 +52,7 @@ import {
   useSyncPropertyNow,
   useSyncAllPropertyAvailability,
   useUpdateAutoSyncSettings,
+  useDeactivatePMSConnection,
   type PMSConnection,
 } from '@/hooks/useAdminPMSHealth';
 import { PMSConfigDialog } from '@/components/admin/PMSConfigDialog';
@@ -101,6 +102,23 @@ export default function AdminPMSHealth() {
   const syncPropertyNow = useSyncPropertyNow();
   const syncAllAvailability = useSyncAllPropertyAvailability();
   const updateAutoSyncSettings = useUpdateAutoSyncSettings();
+  const deactivateConnection = useDeactivatePMSConnection();
+
+  const handleDeleteConnection = async (connectionId: string) => {
+    try {
+      await deactivateConnection.mutateAsync(connectionId);
+      toast({
+        title: 'Connection Removed',
+        description: 'The PMS connection has been deactivated. You can now add a new one.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Failed to Remove',
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleUpdateSyncSettings = async (connectionId: string, settings: { autoSyncEnabled?: boolean; syncIntervalMinutes?: number }) => {
     await updateAutoSyncSettings.mutateAsync({
@@ -258,8 +276,10 @@ export default function AdminPMSHealth() {
                   onTestConnection={() => handleTestConnection(conn.id)}
                   onSyncNow={() => handleManualSync(conn.id)}
                   onImportProperties={() => handleImportProperties(conn.id)}
+                  onDelete={() => handleDeleteConnection(conn.id)}
                   isTestingConnection={testConnection.isPending}
                   isSyncing={triggerSync.isPending}
+                  isDeleting={deactivateConnection.isPending}
                 />
 
                 {/* Auto-Sync Settings per connection */}
