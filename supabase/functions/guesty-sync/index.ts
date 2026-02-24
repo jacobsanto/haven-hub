@@ -178,7 +178,7 @@ async function getGuestyAccessToken(): Promise<string> {
     throw new Error("Guesty credentials not configured (GUESTY_CLIENT_ID / GUESTY_API_TOKEN)");
   }
 
-  const response = await fetch("https://open-api.guesty.com/oauth2/token", {
+  const response = await fetch("https://booking.guesty.com/oauth2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -204,7 +204,7 @@ async function getGuestyAccessToken(): Promise<string> {
 
 async function callGuestyAPI(path: string, method = "GET", body?: unknown): Promise<Response> {
   const token = await getGuestyAccessToken();
-  const url = `https://open-api.guesty.com/v1${path}`;
+  const url = `https://booking.guesty.com/api/v1${path}`;
   const options: RequestInit = {
     method,
     headers: {
