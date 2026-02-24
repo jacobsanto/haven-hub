@@ -533,3 +533,52 @@ export function useTestWebhookEndpoint() {
     },
   });
 }
+
+/**
+ * Generic hook to ensure a PMS connection exists for any provider.
+ * Creates a new connection or activates an existing one.
+ */
+export function useEnsurePMSConnection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ providerId, providerName }: { providerId: string; providerName: string }) => {
+      // Check if a connection for this provider already exists
+      const { data: existing, error: fetchError } = await supabase
+        .from('pms_connections')
+        .select('*')
+        .eq('pms_name', providerName)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existing) {
+        // Activate if not already active
+        if (!existing.is_active) {
+          await supabase
+            .from('pms_connections')
+            .update({ is_active: true, config: { provider: providerId } })
+            .eq('id', existing.id);
+        }
+        return existing as PMSConnection;
+      }
+
+      // Create new connection
+      const { data: newConnection, error: createError } = await supabase
+        .from('pms_connections')
+        .insert({
+          pms_name: providerName,
+          is_active: true,
+          config: { provider: providerId },
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      return newConnection as PMSConnection;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'pms'] });
+    },
+  });
+}
