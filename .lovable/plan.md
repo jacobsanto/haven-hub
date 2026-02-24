@@ -1,65 +1,62 @@
 
 
-# Add Responsive Gallery Editor with Drag-and-Drop Reorder
+# Enhance Mobile-Friendly Gallery Reorder Controls
 
 ## Problem
 
-The property gallery editor in the admin form (`AdminPropertyForm.tsx`) only supports adding and removing images. There is no way to reorder gallery images, which means the display order on the public property page is fixed to upload order. For a luxury hospitality platform, image ordering is critical -- the first few images drive booking decisions.
+The current `GalleryEditor` has basic mobile arrow buttons, but they fall short on touch devices:
+
+- Action buttons (remove, set-as-hero) are hidden behind `group-hover` which doesn't trigger on touch
+- Arrow buttons are 24px (h-6 w-6), below the 44px minimum touch target standard
+- No visual animation when items swap via arrows -- the change is jarring
+- Helper text says "Drag to reorder" on mobile where native drag doesn't work
+- The overlay darkens on hover only, so mobile users see no controls at all
 
 ## Solution
 
-Build a drag-and-drop gallery editor component using the **HTML5 Drag and Drop API** (no new dependencies needed). This keeps the bundle lean and avoids adding a library for a single use case.
+Improve the existing `GalleryEditor.tsx` to be properly mobile-friendly with better touch controls and visual drag feedback.
 
-### Features
+### Changes
 
-- Drag-and-drop reorder on desktop (grab handle on each image)
-- Touch-friendly reorder on mobile via up/down arrow buttons
-- Visual drag feedback (opacity change, drop zone highlight)
-- "Set as Hero" button to promote any gallery image to the hero slot
-- Image count indicator
-- Fully responsive grid (2 columns mobile, 4 columns desktop)
+**1. Always-visible controls on mobile**
+- Remove `opacity-0 group-hover:opacity-100` gating on mobile for action buttons (remove, hero)
+- Show a persistent semi-transparent overlay on mobile so buttons are always readable
+- Keep hover-reveal behavior on desktop (`md:opacity-0 md:group-hover:opacity-100`)
 
-## Technical Approach
+**2. Larger touch targets for arrow buttons**
+- Increase mobile arrow buttons from `h-6 w-6` (24px) to `h-9 w-9` (36px) with adequate padding, meeting the 44px effective touch area with surrounding space
+- Keep compact size on desktop
 
-### New Component: `src/components/admin/GalleryEditor.tsx`
+**3. Animated swap feedback**
+- Add a brief CSS transition (`transition-transform`) on the image cards
+- When `moveItem` is called, briefly highlight the swapped card with a scale pulse using a `justMoved` state that auto-clears after 300ms
 
-A self-contained component that receives `gallery` (string array) and callbacks:
+**4. Context-aware helper text**
+- Show "Drag to reorder" on desktop, "Use arrows to reorder" on mobile
+- Use the existing `useIsMobile` hook to switch text
+
+**5. Better disabled state for arrows**
+- Disabled arrows get reduced opacity and a muted style so users understand they're at the boundary
+
+## File to Modify
+
+- `src/components/admin/GalleryEditor.tsx`
+
+### Technical Detail
 
 ```text
-Props:
-  gallery: string[]
-  onReorder: (newGallery: string[]) => void
-  onRemove: (index: number) => void
-  onSetAsHero?: (url: string) => void
+Key state additions:
+  - justMovedIndex: number | null   (briefly set after arrow move, cleared via setTimeout)
+
+Mobile detection:
+  - Import useIsMobile from '@/hooks/use-mobile'
+
+CSS changes (all Tailwind):
+  - Mobile action buttons: "opacity-100 md:opacity-0 md:group-hover:opacity-100"
+  - Mobile overlay: "bg-black/20 md:bg-black/0 md:group-hover:bg-black/40"
+  - Arrow buttons: "h-9 w-9 md:h-6 md:w-6"
+  - Swap animation: "transition-all duration-200" + conditional "scale-105 ring-2 ring-primary/30"
+  - Helper text: conditional on useIsMobile()
 ```
 
-Internal state:
-- `dragIndex`: the index of the item being dragged
-- `dragOverIndex`: the index of the current drop target
-
-Drag events:
-- `onDragStart` -- store the dragged index, set opacity
-- `onDragOver` -- prevent default, update dragOverIndex for visual feedback
-- `onDrop` -- reorder the array by splicing, call `onReorder`
-- `onDragEnd` -- reset visual state
-
-Mobile fallback:
-- Each image card shows small up/down arrow buttons (visible on touch devices or always visible)
-- Clicking moves the image one position in the array
-
-### Integration in `AdminPropertyForm.tsx`
-
-Replace the current gallery grid (lines 781-817) with the new `<GalleryEditor>` component, keeping the `ImageUploadWithOptimizer` "Add Image" button at the end.
-
-## Files to Create
-
-- `src/components/admin/GalleryEditor.tsx` -- Drag-and-drop gallery reorder component
-
-## Files to Modify
-
-- `src/pages/admin/AdminPropertyForm.tsx` -- Replace the static gallery grid with `<GalleryEditor>`, wire up reorder callback that updates `formData.gallery`
-
-## No Database Changes Required
-
-Gallery order is already stored as a JSON array (`gallery: text[]`) in the `properties` table. Reordering simply changes the array order before saving.
-
+No new files, no new dependencies, no database changes.
