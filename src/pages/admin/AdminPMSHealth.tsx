@@ -1,44 +1,21 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { 
-  Activity, 
-  CheckCircle, 
-  XCircle, 
-  RefreshCw,
-  Link as LinkIcon,
-  Clock,
-  Calendar,
-  ChevronDown,
-  ChevronRight,
-  Plus,
+import {
+  Activity, CheckCircle, XCircle, RefreshCw, Clock, Plus,
+  ChevronDown, ChevronRight, AlertTriangle, Shield, Wifi,
+  Radio, BarChart3, Settings2, Eye,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -48,36 +25,134 @@ import {
   usePMSPropertyMappings,
   usePMSRawEvents,
   useTriggerManualSync,
-  useTogglePropertySync,
-  useSyncPropertyNow,
   useSyncAllPropertyAvailability,
   useUpdateAutoSyncSettings,
   useDeactivatePMSConnection,
-  type PMSConnection,
 } from '@/hooks/useAdminPMSHealth';
 import { PMSConnectionWizard } from '@/components/admin/PMSConnectionWizard';
 import { PMSPropertyImportDialog } from '@/components/admin/PMSPropertyImportDialog';
-import { PMSConnectionHealthCard } from '@/components/admin/PMSConnectionHealthCard';
-import { PMSSyncStatusPanel } from '@/components/admin/PMSSyncStatusPanel';
-import { AutoSyncSettingsCard } from '@/components/admin/AutoSyncSettingsCard';
-import { PropertyICalManager } from '@/components/admin/PropertyICalManager';
 import { getProviderById } from '@/lib/pms-providers';
 import { GuestyQuotaMonitor } from '@/components/admin/GuestyQuotaMonitor';
-const getStatusBadge = (status: string | null) => {
+
+// ─── Helpers ────────────────────────────────────────────────────
+
+function relativeTime(date: string | null) {
+  if (!date) return 'Never';
+  const ms = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return format(new Date(date), 'MMM d, HH:mm');
+}
+
+type GlobalHealth = 'stable' | 'minor-drift' | 'critical';
+
+function computeGlobalHealth(
+  connections: { sync_status: string | null; last_sync_at: string | null }[],
+  recentRuns: { status: string; started_at: string }[],
+): GlobalHealth {
+  if (!connections.length) return 'critical';
+
+  const now = Date.now();
+  const failedLast24h = recentRuns.filter(
+    r => r.status === 'failed' && now - new Date(r.started_at).getTime() < 86400000,
+  ).length;
+
+  const anyError = connections.some(c => c.sync_status === 'error');
+  const stalest = connections.reduce((max, c) => {
+    if (!c.last_sync_at) return Infinity;
+    return Math.max(max, now - new Date(c.last_sync_at).getTime());
+  }, 0);
+  const staleHours = stalest / 3600000;
+
+  if (anyError || failedLast24h >= 3 || staleHours > 6) return 'critical';
+  if (failedLast24h > 0 || staleHours > 2) return 'minor-drift';
+  return 'stable';
+}
+
+// ─── Sync Matrix Row ────────────────────────────────────────────
+
+interface SyncDomain {
+  domain: string;
+  status: 'ok' | 'warning' | 'error' | 'idle';
+  lastSync: string | null;
+  failures24h: number;
+  driftCount: number | null;
+}
+
+function buildSyncMatrix(
+  runs: { sync_type: string; status: string; started_at: string; completed_at: string | null; records_failed: number | null }[],
+  connections: { last_sync_at: string | null }[],
+  webhookEvents: { created_at: string; error_message: string | null }[],
+): SyncDomain[] {
+  const now = Date.now();
+  const last24h = runs.filter(r => now - new Date(r.started_at).getTime() < 86400000);
+
+  const domainMap: Record<string, { runs: typeof last24h }> = {
+    availability: { runs: [] },
+    bookings: { runs: [] },
+    rates: { runs: [] },
+  };
+
+  for (const r of last24h) {
+    const type = r.sync_type.toLowerCase();
+    if (type.includes('avail') || type.includes('ical') || type === 'property') {
+      domainMap.availability.runs.push(r);
+    } else if (type.includes('booking')) {
+      domainMap.bookings.runs.push(r);
+    } else if (type.includes('rate')) {
+      domainMap.rates.runs.push(r);
+    } else {
+      domainMap.availability.runs.push(r); // default bucket
+    }
+  }
+
+  const domains: SyncDomain[] = Object.entries(domainMap).map(([domain, { runs: dRuns }]) => {
+    const failures = dRuns.filter(r => r.status === 'failed').length;
+    const lastRun = dRuns.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())[0];
+    const status: SyncDomain['status'] =
+      !lastRun ? 'idle' :
+      failures >= 2 ? 'error' :
+      failures > 0 ? 'warning' : 'ok';
+
+    return {
+      domain: domain.charAt(0).toUpperCase() + domain.slice(1),
+      status,
+      lastSync: lastRun?.completed_at || lastRun?.started_at || connections[0]?.last_sync_at || null,
+      failures24h: failures,
+      driftCount: null,
+    };
+  });
+
+  // Webhooks domain
+  const recent24hEvents = webhookEvents.filter(e => now - new Date(e.created_at).getTime() < 86400000);
+  const webhookErrors = recent24hEvents.filter(e => e.error_message).length;
+  const lastEvent = webhookEvents[0];
+  const webhookStale = !lastEvent || (now - new Date(lastEvent.created_at).getTime() > 86400000);
+
+  domains.push({
+    domain: 'Webhooks',
+    status: webhookErrors >= 2 ? 'error' : webhookStale ? 'warning' : webhookErrors > 0 ? 'warning' : 'ok',
+    lastSync: lastEvent?.created_at || null,
+    failures24h: webhookErrors,
+    driftCount: null,
+  });
+
+  return domains;
+}
+
+const statusBadge = (status: string) => {
   switch (status) {
-    case 'success':
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Success</Badge>;
-    case 'error':
-    case 'failed':
-      return <Badge variant="destructive">Failed</Badge>;
-    case 'running':
-      return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Running</Badge>;
-    case 'idle':
-      return <Badge variant="secondary">Idle</Badge>;
-    default:
-      return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+    case 'ok': return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">OK</Badge>;
+    case 'warning': return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Warning</Badge>;
+    case 'error': return <Badge variant="destructive">Error</Badge>;
+    default: return <Badge variant="secondary">Idle</Badge>;
   }
 };
+
+// ─── Component ──────────────────────────────────────────────────
 
 export default function AdminPMSHealth() {
   const { toast } = useToast();
@@ -85,456 +160,338 @@ export default function AdminPMSHealth() {
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importConnectionId, setImportConnectionId] = useState<string | null>(null);
-  const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
-  const [syncingPropertyId, setSyncingPropertyId] = useState<string | null>(null);
-  const [expandedMappings, setExpandedMappings] = useState<Set<string>>(new Set());
+  const [logsOpen, setLogsOpen] = useState(false);
 
-  // Data hooks - fetch ALL connections
-  const { data: connections, isLoading: connectionsLoading } = useAllPMSConnections();
-  const { data: syncHistory, isLoading: historyLoading } = usePMSSyncHistory(selectedConnectionId || connections?.[0]?.id, 20);
-  const { data: propertyMappings, isLoading: mappingsLoading } = usePMSPropertyMappings(selectedConnectionId || connections?.[0]?.id);
-  const { data: rawEvents, isLoading: eventsLoading } = usePMSRawEvents(50);
+  // Data
+  const { data: connections, isLoading: connLoading } = useAllPMSConnections();
+  const activeConn = connections?.[0];
+  const { data: syncHistory, isLoading: histLoading } = usePMSSyncHistory(activeConn?.id, 50);
+  const { data: propertyMappings } = usePMSPropertyMappings(activeConn?.id);
+  const { data: rawEvents } = usePMSRawEvents(50);
 
   // Mutations
-  const testConnection = useTestPMSConnection();
   const triggerSync = useTriggerManualSync();
-  const togglePropertySync = useTogglePropertySync();
-  const syncPropertyNow = useSyncPropertyNow();
-  const syncAllAvailability = useSyncAllPropertyAvailability();
-  const updateAutoSyncSettings = useUpdateAutoSyncSettings();
+  const syncAll = useSyncAllPropertyAvailability();
   const deactivateConnection = useDeactivatePMSConnection();
 
-  const handleDeleteConnection = async (connectionId: string) => {
+  const globalHealth = connections && syncHistory
+    ? computeGlobalHealth(connections, syncHistory)
+    : 'stable';
+
+  const syncMatrix = syncHistory && connections && rawEvents
+    ? buildSyncMatrix(syncHistory, connections, rawEvents)
+    : [];
+
+  // Last reconciliation = last full sync that touched all properties
+  const lastFullSync = syncHistory?.find(r => r.sync_type === 'full' || r.sync_type === 'availability');
+
+  const handleForceSync = async (domain: string) => {
+    if (!activeConn) return;
     try {
-      await deactivateConnection.mutateAsync(connectionId);
-      toast({
-        title: 'Connection Removed',
-        description: 'The PMS connection has been deactivated. You can now add a new one.',
-      });
+      if (domain === 'Availability') {
+        const result = await syncAll.mutateAsync(activeConn.id);
+        toast({ title: result.failed === 0 ? 'Availability Synced' : 'Partial Sync', description: `Synced ${result.synced}/${result.total} properties.` });
+      } else {
+        const result = await triggerSync.mutateAsync(activeConn.id);
+        toast({ title: result.success ? 'Sync Complete' : 'Sync Failed', description: `Processed ${result.recordsProcessed} records.` });
+      }
     } catch (error) {
-      toast({
-        title: 'Failed to Remove',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive',
-      });
+      toast({ title: 'Sync Failed', description: error instanceof Error ? error.message : 'Unknown error', variant: 'destructive' });
     }
   };
 
-  const handleUpdateSyncSettings = async (connectionId: string, settings: { autoSyncEnabled?: boolean; syncIntervalMinutes?: number }) => {
-    await updateAutoSyncSettings.mutateAsync({
-      connectionId,
-      ...settings,
-    });
-  };
-
-  const handleTestConnection = async (connectionId: string) => {
+  const handleRunFullAudit = async () => {
+    if (!activeConn) return;
     try {
-      const result = await testConnection.mutateAsync(connectionId);
-      toast({
-        title: result.success ? 'Connection Successful' : 'Connection Failed',
-        description: result.success 
-          ? 'PMS connection is working properly.' 
-          : 'Unable to connect to PMS. Check your configuration.',
-        variant: result.success ? 'default' : 'destructive',
-      });
+      const result = await syncAll.mutateAsync(activeConn.id);
+      toast({ title: 'Full Sync Audit Complete', description: `${result.synced} synced, ${result.failed} failed out of ${result.total}.` });
     } catch (error) {
-      toast({
-        title: 'Connection Test Failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive',
-      });
+      toast({ title: 'Audit Failed', description: error instanceof Error ? error.message : 'Unknown error', variant: 'destructive' });
     }
   };
 
-  const handleManualSync = async (connectionId: string) => {
-    try {
-      const result = await triggerSync.mutateAsync(connectionId);
-      toast({
-        title: result.success ? 'Sync Complete' : 'Sync Failed',
-        description: result.success 
-          ? `Processed ${result.recordsProcessed} records.` 
-          : 'Sync encountered errors. Check the history for details.',
-        variant: result.success ? 'default' : 'destructive',
-      });
-    } catch (error) {
-      toast({
-        title: 'Sync Failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive',
-      });
-    }
-  };
+  const providerConfig = activeConn
+    ? getProviderById((activeConn.config as { provider?: string } | null)?.provider || 'advancecm')
+    : null;
 
-  const handleTogglePropertySync = async (mappingId: string, enabled: boolean) => {
-    try {
-      await togglePropertySync.mutateAsync({ mappingId, enabled });
-      toast({
-        title: enabled ? 'Sync Enabled' : 'Sync Disabled',
-        description: `Property sync has been ${enabled ? 'enabled' : 'disabled'}.`,
-      });
-    } catch (error) {
-      toast({
-        title: 'Update Failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive',
-      });
-    }
-  };
+  const isGuesty = (activeConn?.config as { provider?: string } | null)?.provider === 'guesty';
 
-  const handleSyncPropertyNow = async (connectionId: string, externalPropertyId: string) => {
-    setSyncingPropertyId(externalPropertyId);
-    try {
-      const result = await syncPropertyNow.mutateAsync({ 
-        connectionId, 
-        externalPropertyId 
-      });
-      toast({
-        title: result.success ? 'Property Synced' : 'Sync Failed',
-        description: result.success 
-          ? `Processed ${result.recordsProcessed} records.` 
-          : 'Property sync encountered errors.',
-        variant: result.success ? 'default' : 'destructive',
-      });
-    } catch (error) {
-      toast({
-        title: 'Sync Failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive',
-      });
-    } finally {
-      setSyncingPropertyId(null);
-    }
-  };
-
-  const handleSyncAllAvailability = async (connectionId: string) => {
-    try {
-      const result = await syncAllAvailability.mutateAsync(connectionId);
-      toast({
-        title: result.failed === 0 ? 'Availability Synced' : 'Partial Sync',
-        description: `Synced ${result.synced} of ${result.total} properties.${result.failed > 0 ? ` ${result.failed} failed.` : ''}`,
-        variant: result.failed === 0 ? 'default' : 'destructive',
-      });
-    } catch (error) {
-      toast({
-        title: 'Sync Failed',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleImportProperties = (connectionId: string) => {
-    setImportConnectionId(connectionId);
-    setShowImportDialog(true);
-  };
+  if (connLoading) {
+    return (
+      <AdminLayout>
+        <div className="space-y-4 max-w-[1200px]">
+          <Skeleton className="h-8 w-64" />
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-5 max-w-[1200px]">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">PMS Health</h1>
-            <p className="text-muted-foreground">
-              Monitor and configure property management system integrations
-            </p>
+            <h1 className="text-2xl font-serif font-medium">PMS Health</h1>
+            <p className="text-sm text-muted-foreground">Unified sync control center</p>
           </div>
-          <Button onClick={() => setShowConfigDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Connection
+          <Button onClick={() => setShowConfigDialog(true)} size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Add Connection
           </Button>
-        </motion.div>
+        </div>
 
-        {/* Connection Health Cards - one per connection */}
-        {connectionsLoading ? (
-          <div className="space-y-4">
-            {[1, 2].map((i) => (
-              <Skeleton key={i} className="h-40 w-full" />
-            ))}
-          </div>
-        ) : connections && connections.length > 0 ? (
-          connections.map((conn) => {
-            const connConfig = conn.config as { provider?: string } | null;
-            const providerId = connConfig?.provider || 'advancecm';
-            const provider = getProviderById(providerId);
-
-            return (
-              <motion.div
-                key={conn.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <PMSConnectionHealthCard
-                  connection={conn}
-                  isLoading={false}
-                  onConfigure={() => setShowConfigDialog(true)}
-                  onTestConnection={() => handleTestConnection(conn.id)}
-                  onSyncNow={() => handleManualSync(conn.id)}
-                  onImportProperties={() => handleImportProperties(conn.id)}
-                  onDelete={() => handleDeleteConnection(conn.id)}
-                  isTestingConnection={testConnection.isPending}
-                  isSyncing={triggerSync.isPending}
-                  isDeleting={deactivateConnection.isPending}
-                />
-
-                {/* Guesty Quota Monitor */}
-                {providerId === 'guesty' && (
-                  <div className="mt-4">
-                    <GuestyQuotaMonitor />
-                  </div>
+        {/* ═══ 1. GLOBAL SYNC STATUS ═══ */}
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`h-3 w-3 rounded-full ${
+                  globalHealth === 'stable' ? 'bg-green-500' :
+                  globalHealth === 'minor-drift' ? 'bg-amber-400' : 'bg-destructive'
+                }`} />
+                <span className="text-sm font-semibold">
+                  {globalHealth === 'stable' ? '🟢 Stable' :
+                   globalHealth === 'minor-drift' ? '🟠 Minor Drift' : '🔴 Critical'}
+                </span>
+                {activeConn && (
+                  <span className="text-xs text-muted-foreground">
+                    · {providerConfig?.name || activeConn.pms_name} · Last sync: {relativeTime(activeConn.last_sync_at)}
+                  </span>
                 )}
+              </div>
+              {!activeConn && (
+                <Badge variant="outline" className="text-xs">No connection</Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-                {/* Auto-Sync Settings per connection */}
-                <div className="mt-4">
-                  <AutoSyncSettingsCard
-                    connectionId={conn.id}
-                    autoSyncEnabled={conn.auto_sync_enabled ?? true}
-                    syncIntervalMinutes={conn.sync_interval_minutes ?? 5}
-                    lastScheduledSync={conn.last_sync_at}
-                    onUpdateSettings={(settings) => handleUpdateSyncSettings(conn.id, settings)}
-                    isUpdating={updateAutoSyncSettings.isPending}
-                    projectId="xavjbiuhcmupsoocrmhf"
-                  />
-                </div>
-              </motion.div>
-            );
-          })
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <PMSConnectionHealthCard
-              connection={null}
-              isLoading={false}
-              onConfigure={() => setShowConfigDialog(true)}
-              onTestConnection={() => {}}
-              onSyncNow={() => {}}
-              onImportProperties={() => {}}
-              isTestingConnection={false}
-              isSyncing={false}
-            />
-          </motion.div>
+        {/* ═══ 2. SYNC MATRIX ═══ */}
+        {activeConn && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Activity className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">Sync Matrix</span>
+              </div>
+              {histLoading ? (
+                <div className="space-y-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Domain</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Last Sync</TableHead>
+                      <TableHead className="text-center">Failures (24h)</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {syncMatrix.map(row => (
+                      <TableRow key={row.domain}>
+                        <TableCell className="font-medium text-sm">{row.domain}</TableCell>
+                        <TableCell>{statusBadge(row.status)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{relativeTime(row.lastSync)}</TableCell>
+                        <TableCell className="text-center">
+                          {row.failures24h > 0 ? (
+                            <span className="text-destructive font-medium">{row.failures24h}</span>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-1 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => handleForceSync(row.domain)}
+                              disabled={triggerSync.isPending || syncAll.isPending}
+                            >
+                              <RefreshCw className={`h-3 w-3 mr-1 ${(triggerSync.isPending || syncAll.isPending) ? 'animate-spin' : ''}`} />
+                              Force Sync
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => setLogsOpen(true)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              Logs
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
         )}
 
-        {/* Tabs for different views */}
-        {connections && connections.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            {/* Connection filter for tabs */}
-            {connections.length > 1 && (
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm text-muted-foreground">Filter by:</span>
-                <div className="flex gap-2">
-                  {connections.map((conn) => {
-                    const connConfig = conn.config as { provider?: string } | null;
-                    const provider = getProviderById(connConfig?.provider || 'advancecm');
-                    const isSelected = selectedConnectionId === conn.id;
-                    return (
-                      <Button
-                        key={conn.id}
-                        variant={isSelected ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedConnectionId(isSelected ? null : conn.id)}
-                      >
-                        {provider?.name || conn.pms_name}
-                      </Button>
-                    );
-                  })}
+        {/* ═══ 3. DAILY AUTO RECONCILIATION ═══ */}
+        {activeConn && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Reconciliation</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleRunFullAudit}
+                  disabled={syncAll.isPending}
+                >
+                  <RefreshCw className={`h-3 w-3 mr-1 ${syncAll.isPending ? 'animate-spin' : ''}`} />
+                  Run Full Sync Audit
+                </Button>
+              </div>
+              <div className="mt-3 flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  {lastFullSync?.status === 'success' ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : lastFullSync?.status === 'failed' ? (
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  ) : (
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium">
+                      {lastFullSync
+                        ? lastFullSync.status === 'success' ? '✔ Success' : '⚠ Issues detected'
+                        : 'No reconciliation yet'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {lastFullSync ? relativeTime(lastFullSync.completed_at || lastFullSync.started_at) : 'Run an audit to check'}
+                    </p>
+                  </div>
+                </div>
+                {lastFullSync && (lastFullSync.records_failed ?? 0) > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="text-xs text-amber-600 font-medium">
+                      {lastFullSync.records_failed} drift{(lastFullSync.records_failed ?? 0) > 1 ? 's' : ''} detected
+                    </span>
+                  </div>
+                )}
+                {propertyMappings && (
+                  <span className="text-xs text-muted-foreground">
+                    {propertyMappings.length} mapped properties
+                  </span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ═══ 4. AUTO-SYNC CONFIG STRIP ═══ */}
+        {activeConn && (
+          <Card>
+            <CardContent className="p-3">
+              <div className="flex flex-wrap items-center gap-5">
+                <div className="flex items-center gap-1.5">
+                  <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium">Frequency:</span>
+                  <span className="text-xs text-muted-foreground">Every {activeConn.sync_interval_minutes}min</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Radio className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium">Webhook:</span>
+                  <span className="text-xs text-muted-foreground">
+                    {rawEvents && rawEvents.length > 0 ? 'Active' : 'No events'}
+                  </span>
+                </div>
+                {isGuesty && (
+                  <div className="flex items-center gap-1.5">
+                    <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-medium">API Quota:</span>
+                    <span className="text-xs text-muted-foreground">See below</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5">
+                  <Wifi className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium">Auto-sync:</span>
+                  <span className={`text-xs ${activeConn.auto_sync_enabled ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    {activeConn.auto_sync_enabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium">Last full sync:</span>
+                  <span className="text-xs text-muted-foreground">{relativeTime(activeConn.last_sync_at)}</span>
                 </div>
               </div>
-            )}
+            </CardContent>
+          </Card>
+        )}
 
-            <Tabs defaultValue="mappings" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="mappings">Property Mappings</TabsTrigger>
-                <TabsTrigger value="history">Sync History</TabsTrigger>
-                <TabsTrigger value="events">Webhook Events</TabsTrigger>
-              </TabsList>
+        {/* Guesty Quota Monitor (if applicable) */}
+        {isGuesty && <GuestyQuotaMonitor />}
 
-              {/* Property Mappings Tab */}
-              <TabsContent value="mappings">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Property Mappings</CardTitle>
-                      <CardDescription>
-                        Map local properties to external PMS listings
-                      </CardDescription>
+        {/* ═══ 5. COLLAPSIBLE SYNC LOGS ═══ */}
+        {activeConn && (
+          <Collapsible open={logsOpen} onOpenChange={setLogsOpen}>
+            <Card>
+              <CollapsibleTrigger asChild>
+                <CardContent className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {logsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      <span className="text-sm font-semibold">Sync Logs</span>
+                      {syncHistory && (
+                        <Badge variant="secondary" className="text-[10px]">{syncHistory.length}</Badge>
+                      )}
                     </div>
-                    {propertyMappings && propertyMappings.length > 0 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSyncAllAvailability(selectedConnectionId || connections[0].id)}
-                        disabled={syncAllAvailability.isPending}
-                      >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${syncAllAvailability.isPending ? 'animate-spin' : ''}`} />
-                        Sync All Availability
-                      </Button>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    {mappingsLoading ? (
-                      <div className="space-y-2">
-                        {[1, 2, 3].map((i) => (
-                          <Skeleton key={i} className="h-16 w-full" />
-                        ))}
-                      </div>
-                    ) : propertyMappings && propertyMappings.length > 0 ? (
-                      <div className="space-y-2">
-                        {propertyMappings.map((mapping) => {
-                          const isExpanded = expandedMappings.has(mapping.id);
-                          const toggleExpand = () => {
-                            setExpandedMappings(prev => {
-                              const next = new Set(prev);
-                              if (next.has(mapping.id)) {
-                                next.delete(mapping.id);
-                              } else {
-                                next.add(mapping.id);
-                              }
-                              return next;
-                            });
-                          };
-                          
-                          return (
-                            <Collapsible key={mapping.id} open={isExpanded} onOpenChange={toggleExpand}>
-                              <div className="border rounded-lg">
-                                <CollapsibleTrigger asChild>
-                                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                                    <div className="flex items-center gap-4">
-                                      {isExpanded ? (
-                                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                      )}
-                                      <div>
-                                        <p className="font-medium">{mapping.property?.name || 'Unknown'}</p>
-                                        <code className="text-xs text-muted-foreground">
-                                          {mapping.external_property_id}
-                                        </code>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                      {mapping.ical_url ? (
-                                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                          <Calendar className="h-3 w-3 mr-1" />
-                                          iCal
-                                        </Badge>
-                                      ) : (
-                                        <Badge variant="secondary">
-                                          <XCircle className="h-3 w-3 mr-1" />
-                                          No iCal
-                                        </Badge>
-                                      )}
-                                      <span className="text-sm text-muted-foreground hidden md:inline">
-                                        {mapping.last_ical_sync_at
-                                          ? `Synced ${format(new Date(mapping.last_ical_sync_at), 'MMM d, HH:mm')}`
-                                          : mapping.last_availability_sync_at
-                                          ? `Synced ${format(new Date(mapping.last_availability_sync_at), 'MMM d, HH:mm')}`
-                                          : 'Never synced'}
-                                      </span>
-                                      <Switch
-                                        checked={mapping.sync_enabled}
-                                        onCheckedChange={(checked) => handleTogglePropertySync(mapping.id, checked)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        disabled={togglePropertySync.isPending}
-                                      />
-                                    </div>
-                                  </div>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <div className="border-t p-4 bg-muted/30">
-                                    <PropertyICalManager 
-                                      mapping={mapping} 
-                                      onUpdate={() => {
-                                        queryClient.invalidateQueries({ queryKey: ['admin', 'pms', 'property-mappings'] });
-                                      }}
-                                    />
-                                  </div>
-                                </CollapsibleContent>
-                              </div>
-                            </Collapsible>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <LinkIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No property mappings configured.</p>
-                        <p className="text-sm">Import properties from your PMS to create mappings.</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Sync History Tab */}
-              <TabsContent value="history">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Sync History</CardTitle>
-                    <CardDescription>
-                      Recent synchronization runs and their results
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {historyLoading ? (
-                      <div className="space-y-2">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <Skeleton key={i} className="h-12 w-full" />
-                        ))}
-                      </div>
-                    ) : syncHistory && syncHistory.length > 0 ? (
+                  </div>
+                </CardContent>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="border-t">
+                  {histLoading ? (
+                    <div className="p-4 space-y-2">
+                      {[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full" />)}
+                    </div>
+                  ) : syncHistory && syncHistory.length > 0 ? (
+                    <div className="max-h-[400px] overflow-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Started</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>Timestamp</TableHead>
+                            <TableHead>Domain</TableHead>
                             <TableHead>Duration</TableHead>
-                            <TableHead>Processed</TableHead>
-                            <TableHead>Failed</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead>Error</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {syncHistory.map((run) => {
+                          {syncHistory.slice(0, 30).map(run => {
                             const duration = run.completed_at && run.started_at
                               ? Math.round((new Date(run.completed_at).getTime() - new Date(run.started_at).getTime()) / 1000)
                               : null;
                             return (
                               <TableRow key={run.id}>
+                                <TableCell className="text-xs">{format(new Date(run.started_at), 'MMM d, HH:mm:ss')}</TableCell>
                                 <TableCell>
-                                  {format(new Date(run.started_at), 'MMM d, HH:mm:ss')}
+                                  <Badge variant="outline" className="text-[10px] capitalize">{run.sync_type}</Badge>
                                 </TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{duration !== null ? `${duration}s` : '-'}</TableCell>
                                 <TableCell>
-                                  <Badge variant="outline" className="capitalize">
-                                    {run.sync_type}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{getStatusBadge(run.status)}</TableCell>
-                                <TableCell>
-                                  {duration !== null ? `${duration}s` : '-'}
-                                </TableCell>
-                                <TableCell>{run.records_processed ?? '-'}</TableCell>
-                                <TableCell>
-                                  {run.records_failed !== null && run.records_failed > 0 ? (
-                                    <span className="text-destructive">{run.records_failed}</span>
+                                  {run.status === 'success' ? (
+                                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-[10px]">OK</Badge>
+                                  ) : run.status === 'failed' ? (
+                                    <Badge variant="destructive" className="text-[10px]">Fail</Badge>
                                   ) : (
-                                    run.records_failed ?? '-'
+                                    <Badge variant="secondary" className="text-[10px]">{run.status}</Badge>
                                   )}
                                 </TableCell>
-                                <TableCell className="max-w-[200px] truncate">
+                                <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                                   {run.error_summary || '-'}
                                 </TableCell>
                               </TableRow>
@@ -542,100 +499,28 @@ export default function AdminPMSHealth() {
                           })}
                         </TableBody>
                       </Table>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No sync history available.</p>
-                        <p className="text-sm">Run a sync to see results here.</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center text-sm text-muted-foreground">No sync logs yet</div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        )}
 
-              {/* Webhook Events Tab */}
-              <TabsContent value="events">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Webhook Events</CardTitle>
-                    <CardDescription>
-                      Raw events received from the PMS
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {eventsLoading ? (
-                      <div className="space-y-2">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <Skeleton key={i} className="h-12 w-full" />
-                        ))}
-                      </div>
-                    ) : rawEvents && rawEvents.length > 0 ? (
-                      <Accordion type="single" collapsible className="w-full">
-                        {rawEvents.map((event) => (
-                          <AccordionItem key={event.id} value={event.id}>
-                            <AccordionTrigger className="hover:no-underline">
-                              <div className="flex items-center gap-4 text-left w-full pr-4">
-                                <div className="flex-shrink-0">
-                                  {event.processed ? (
-                                    <CheckCircle className="h-4 w-4 text-green-600" />
-                                  ) : event.error_message ? (
-                                    <XCircle className="h-4 w-4 text-destructive" />
-                                  ) : (
-                                    <Clock className="h-4 w-4 text-yellow-600" />
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs">
-                                      {event.event_type}
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                      from {event.source}
-                                    </span>
-                                  </div>
-                                </div>
-                                <span className="text-xs text-muted-foreground flex-shrink-0">
-                                  {format(new Date(event.created_at), 'MMM d, HH:mm:ss')}
-                                </span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="space-y-4 pt-2">
-                                {event.error_message && (
-                                  <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-                                    <p className="text-sm text-destructive">
-                                      <strong>Error:</strong> {event.error_message}
-                                    </p>
-                                  </div>
-                                )}
-                                <div>
-                                  <p className="text-sm font-medium mb-2">Payload:</p>
-                                  <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto max-h-[300px]">
-                                    {JSON.stringify(event.payload, null, 2)}
-                                  </pre>
-                                </div>
-                                {event.processed_at && (
-                                  <p className="text-xs text-muted-foreground">
-                                    Processed: {format(new Date(event.processed_at), 'MMM d, yyyy HH:mm:ss')}
-                                  </p>
-                                )}
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No webhook events recorded.</p>
-                        <p className="text-sm">Events will appear here when received from the PMS.</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </motion.div>
+        {/* No connection state */}
+        {!activeConn && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Activity className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+              <p className="text-sm font-medium">No PMS connection configured</p>
+              <p className="text-xs text-muted-foreground mt-1 mb-4">Add a connection to start syncing properties and availability.</p>
+              <Button onClick={() => setShowConfigDialog(true)} size="sm">
+                <Plus className="h-4 w-4 mr-1" /> Add Connection
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
 
