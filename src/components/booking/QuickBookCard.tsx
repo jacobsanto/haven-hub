@@ -141,9 +141,17 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
 
             {/* CTA */}
             <div className="flex items-center justify-between pt-3 border-t border-border">
-              <span className="text-xs text-muted-foreground">
-                {property.instant_booking ? 'Instant confirmation' : 'Book direct & save'}
-              </span>
+              <Button
+                size="sm"
+                variant={property.instant_booking ? "default" : "outline"}
+                className="rounded-full text-xs gap-1.5"
+              >
+                {property.instant_booking ? (
+                  <><Zap className="h-3 w-3 fill-current" /> Instant Book</>
+                ) : (
+                  'Book Direct & Save'
+                )}
+              </Button>
               <div className="flex items-center gap-1 text-accent text-sm font-medium group-hover:gap-2 transition-all">
                 <span>View Details</span>
                 <ArrowRight className="h-4 w-4" />
