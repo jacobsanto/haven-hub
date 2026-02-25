@@ -86,7 +86,7 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
             {/* Badges - Top Left */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
               {property.instant_booking && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium backdrop-blur-sm">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-accent/10 text-accent rounded-full text-xs font-medium backdrop-blur-sm">
                   <Zap className="h-3 w-3 fill-current" />
                   Instant Book
                 </span>
@@ -106,7 +106,7 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
                     <span className="line-through text-muted-foreground mr-1">
                       {priceInfo.display}
                     </span>
-                    <span className="text-primary">
+                    <span className="text-accent">
                       {discountedPrice.display}
                     </span>
                   </>
@@ -149,7 +149,7 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
                 {property.highlights.slice(0, 2).map((highlight, idx) => (
                   <span
                     key={idx}
-                    className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full"
+                    className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-full"
                   >
                     {highlight}
                   </span>

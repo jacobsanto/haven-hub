@@ -69,7 +69,7 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
             )}
             
             {experience.price_from && (
-              <div className="flex items-center gap-1 text-primary font-medium">
+              <div className="flex items-center gap-1 text-accent font-medium">
                 <DollarSign className="h-4 w-4" />
                 <span>From €{experience.price_from}</span>
                 {experience.price_type && (
