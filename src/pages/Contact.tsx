@@ -1,13 +1,16 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { ContactForm } from '@/components/contact/ContactForm';
 import { useBrand } from '@/contexts/BrandContext';
 import { usePageContent } from '@/hooks/usePageContent';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { fadeUp, viewportOnce, getReducedMotionVariants } from '@/lib/motion';
 
 const Contact = () => {
   const { brandName, contactEmail, contactPhone, contactAddress } = useBrand();
+  const prefersReduced = useReducedMotion();
+  const sectionVariants = getReducedMotionVariants(fadeUp, prefersReduced);
 
   const heroContent = usePageContent('contact', 'hero', {
     heading: 'Get in Touch',
@@ -42,7 +45,7 @@ const Contact = () => {
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30" />
         <div className="container mx-auto px-4 relative z-10">
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-3xl mx-auto text-center">
+          <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-serif font-medium text-white mb-6">{heroContent.heading}</h1>
             <p className="text-lg md:text-xl text-white/80 leading-relaxed">{heroContent.subtitle}</p>
           </motion.div>
@@ -50,26 +53,26 @@ const Contact = () => {
       </section>
 
       {/* Contact Section */}
-      <section className="py-20 md:py-28 bg-background">
+      <section className="py-16 md:py-28 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
-              <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="lg:col-span-3">
+              <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="lg:col-span-3">
                 <h2 className="text-2xl md:text-3xl font-serif font-medium mb-6">{formContent.form_heading}</h2>
                 <ContactForm />
               </motion.div>
-              <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="lg:col-span-2">
+              <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="lg:col-span-2">
                 <h2 className="text-2xl md:text-3xl font-serif font-medium mb-6">{formContent.info_heading}</h2>
                 <div className="space-y-6">
                   {contactInfo.map((item) => (
                     <div key={item.label} className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gold-accent/10 flex items-center justify-center flex-shrink-0">
-                        <item.icon className="h-5 w-5 text-gold-accent" />
+                      <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                        <item.icon className="h-5 w-5 text-accent" />
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">{item.label}</p>
                         {item.href ? (
-                          <a href={item.href} className="text-foreground font-medium hover:text-gold-accent transition-colors">{item.value}</a>
+                          <a href={item.href} className="text-foreground font-medium hover:text-accent transition-colors">{item.value}</a>
                         ) : (
                           <p className="text-foreground font-medium">{item.value}</p>
                         )}
@@ -77,7 +80,7 @@ const Contact = () => {
                     </div>
                   ))}
                 </div>
-                <div className="mt-10 card-organic p-6 bg-warm-cream">
+                <div className="mt-10 card-organic p-6 bg-section-alt">
                   <h3 className="font-serif font-medium mb-3">{assistanceContent.heading}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{assistanceContent.description}</p>
                 </div>
@@ -88,9 +91,9 @@ const Contact = () => {
       </section>
 
       {/* Map */}
-      <section className="bg-warm-cream">
-        <div className="container mx-auto px-4 py-20">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-4xl mx-auto text-center">
+      <section className="bg-section-alt">
+        <div className="container mx-auto px-4 py-16 md:py-20">
+          <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-3xl font-serif font-medium mb-4">{mapContent.heading}</h2>
             <p className="text-muted-foreground mb-8">{mapContent.subtitle}</p>
             <div className="aspect-video rounded-2xl bg-muted flex items-center justify-center border border-border">

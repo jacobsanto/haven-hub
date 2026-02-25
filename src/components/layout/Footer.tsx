@@ -282,7 +282,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Follow us on Instagram"
-                className="opacity-60 hover:opacity-100 hover:text-gold-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
+                 className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Instagram className="h-5 w-5" />
               </a>
@@ -291,7 +291,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Follow us on Facebook"
-                className="opacity-60 hover:opacity-100 hover:text-gold-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
+                 className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Facebook className="h-5 w-5" />
               </a>
@@ -300,7 +300,7 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Follow us on X (Twitter)"
-                className="opacity-60 hover:opacity-100 hover:text-gold-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
+                className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
               >
                 <Twitter className="h-5 w-5" />
               </a>

@@ -133,6 +133,18 @@ function applyDarkPalette(palette: Record<string, string> | null) {
   styleEl.textContent = `.dark {\n  ${vars.join('\n  ')}\n}`;
 }
 
+function deriveAccentHover(accentHsl: string): string {
+  const [h, s, l] = parseHsl(accentHsl);
+  return `${Math.round(h)} ${Math.round(Math.min(100, s + 15))}% ${Math.round(Math.max(0, l - 5))}%`;
+}
+
+function deriveSectionAlt(bgHsl: string): string {
+  const [h, s, l] = parseHsl(bgHsl);
+  // Slightly warmer tint of the background
+  const newH = h === 0 && s === 0 ? 36 : h; // Pure white → warm tint
+  return `${Math.round(newH)} ${Math.round(Math.min(100, Math.max(s, 33)))}% ${Math.round(Math.min(99, l - 1.5))}%`;
+}
+
 function applyTheme(settings: BrandSettings) {
   const root = document.documentElement;
   const fg = settings.foreground_color;
@@ -152,6 +164,10 @@ function applyTheme(settings: BrandSettings) {
   }
   if (settings.destructive_color) root.style.setProperty('--destructive', settings.destructive_color);
   if (settings.ring_color) root.style.setProperty('--ring', settings.ring_color);
+
+  // Derived tokens — auto-computed from accent and background
+  root.style.setProperty('--accent-hover', deriveAccentHover(settings.accent_color));
+  root.style.setProperty('--section-alt', deriveSectionAlt(settings.background_color));
 
   // Auto-computed foreground companions
   root.style.setProperty('--primary-foreground', autoForeground(settings.primary_color, fg));

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Heart, Shield, Sparkles, Users, ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -10,11 +10,14 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { Button } from '@/components/ui/button';
 import { TrustBadges } from '@/components/booking/TrustBadges';
 import { resolveIcon } from '@/utils/icon-resolver';
+import { fadeUp, viewportOnce, getReducedMotionVariants } from '@/lib/motion';
 
 const defaultValueIcons = [Heart, Shield, Sparkles, Users];
 
 const About = () => {
   const { brandName, brandTagline } = useBrand();
+  const prefersReduced = useReducedMotion();
+  const sectionVariants = getReducedMotionVariants(fadeUp, prefersReduced);
 
   const heroContent = usePageContent('about', 'hero', {
     heading: 'About {brandName}',
@@ -79,7 +82,7 @@ const About = () => {
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30" />
         <div className="container mx-auto px-4 relative z-10">
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-3xl mx-auto text-center">
+          <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-serif font-medium text-white mb-6">{r(heroContent.heading)}</h1>
             <p className="text-lg md:text-xl text-white/80 leading-relaxed">{brandTagline || r(heroContent.subtitle)}</p>
           </motion.div>
@@ -87,13 +90,13 @@ const About = () => {
       </section>
 
       {/* Our Story */}
-      <section className="py-20 md:py-28 bg-background">
+      <section className="py-16 md:py-28 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+            <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-6">{storyContent.heading}</h2>
             </motion.div>
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="prose prose-lg max-w-none text-muted-foreground text-center">
+            <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="prose prose-lg max-w-none text-muted-foreground text-center">
               <p className="mb-6 leading-relaxed">{r(storyContent.paragraph_1)}</p>
               <p className="mb-6 leading-relaxed">{r(storyContent.paragraph_2)}</p>
               <p className="leading-relaxed">{r(storyContent.paragraph_3)}</p>
@@ -103,17 +106,17 @@ const About = () => {
       </section>
 
       {/* Values */}
-      <section className="py-20 md:py-28 bg-warm-cream">
+      <section className="py-16 md:py-28 bg-section-alt">
         <div className="container mx-auto px-4">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
+          <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-4">{valuesContent.heading}</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{valuesContent.subtitle}</p>
           </motion.div>
           <SectionRenderer settings={valuesDisplay} className="max-w-6xl mx-auto">
             {values.map((value, index) => (
-              <motion.div key={value.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="card-organic p-6 text-center">
-                <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-gold-accent/10 flex items-center justify-center">
-                  <value.icon className="h-7 w-7 text-gold-accent" />
+              <motion.div key={value.title} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} transition={{ delay: index * 0.1 }} className="card-organic p-6 text-center">
+                <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-accent/10 flex items-center justify-center">
+                  <value.icon className="h-7 w-7 text-accent" />
                 </div>
                 <h3 className="text-lg font-serif font-medium mb-3">{value.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{value.description}</p>
@@ -124,12 +127,12 @@ const About = () => {
       </section>
 
       {/* Statistics */}
-      <section className="py-20 md:py-28 bg-foreground text-background">
+      <section className="py-16 md:py-28 bg-foreground text-background">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             {stats.map((stat, index) => (
-              <motion.div key={stat.label} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="text-center">
-                <div className="text-4xl md:text-5xl font-serif font-medium text-gold-accent mb-2">{stat.value}</div>
+              <motion.div key={stat.label} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} transition={{ delay: index * 0.1 }} className="text-center">
+                <div className="text-4xl md:text-5xl font-serif font-medium text-accent mb-2">{stat.value}</div>
                 <div className="text-sm md:text-base opacity-80">{stat.label}</div>
               </motion.div>
             ))}
@@ -138,16 +141,16 @@ const About = () => {
       </section>
 
       {/* Direct Booking Benefits */}
-      <section className="py-20 md:py-28 bg-warm-cream">
+      <section className="py-16 md:py-28 bg-section-alt">
         <div className="container mx-auto px-4">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
+          <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-4">Why Book Direct with {brandName}</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">When you book directly, you get the best rates and exclusive benefits</p>
           </motion.div>
           <div className="max-w-3xl mx-auto mb-12">
             <TrustBadges variant="grid" badges={['price', 'cancellation', 'support', 'verified']} />
           </div>
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
+          <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center">
             <Link to="/properties">
               <Button variant="gold" size="lg" className="rounded-full gap-2 px-8">Start Booking Now <ArrowRight className="h-4 w-4" /></Button>
             </Link>
@@ -156,9 +159,9 @@ const About = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-20 md:py-28 bg-background">
+      <section className="py-16 md:py-28 bg-background">
         <div className="container mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-2xl mx-auto">
+          <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="max-w-2xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-serif font-medium mb-6">{ctaContent.heading}</h2>
             <p className="text-muted-foreground text-lg mb-8">{ctaContent.subtitle}</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

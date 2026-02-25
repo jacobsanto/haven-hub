@@ -240,7 +240,7 @@ export default function Properties() {
       <PageSEO pageSlug="properties" defaults={{ meta_title: 'Luxury Properties | Haven Hub', meta_description: 'Browse our curated collection of luxury vacation homes. Best rates guaranteed with instant booking available.', og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="bg-warm-cream py-12">
+        <div className="bg-section-alt py-12">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
