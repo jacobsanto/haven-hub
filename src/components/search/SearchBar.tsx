@@ -148,7 +148,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
               >
                 <div className="text-[10px] font-medium uppercase tracking-wider text-foreground/60 mb-0.5">Destination</div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gold-accent flex-shrink-0" />
+                  <MapPin className="h-4 w-4 text-accent flex-shrink-0" />
                   <span className={cn("text-sm truncate", !selectedDestination && "text-muted-foreground")}>
                     {selectedDestinationData
                       ? `${selectedDestinationData.name}, ${selectedDestinationData.country}`
@@ -214,7 +214,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
               <button className="w-full text-left">
                 <div className="text-[10px] font-medium uppercase tracking-wider text-foreground/60 mb-0.5">Check In</div>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gold-accent flex-shrink-0" />
+                   <Calendar className="h-4 w-4 text-accent flex-shrink-0" />
                   <span className={cn("text-sm", !checkIn && "text-muted-foreground")}>
                     {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Add date'}
                   </span>
@@ -244,7 +244,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
               <button className="w-full text-left">
                 <div className="text-[10px] font-medium uppercase tracking-wider text-foreground/60 mb-0.5">Check Out</div>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gold-accent flex-shrink-0" />
+                  <Calendar className="h-4 w-4 text-accent flex-shrink-0" />
                   <span className={cn("text-sm", !checkOut && "text-muted-foreground")}>
                     {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Add date'}
                   </span>
@@ -272,7 +272,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
           <div className="flex-1 lg:flex-initial">
             <div className="text-[10px] font-medium uppercase tracking-wider text-foreground/60 mb-0.5">Guests</div>
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-gold-accent flex-shrink-0" />
+              <Users className="h-4 w-4 text-accent flex-shrink-0" />
               <input
                 type="number"
                 min={1}

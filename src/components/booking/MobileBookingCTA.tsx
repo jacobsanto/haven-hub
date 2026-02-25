@@ -97,7 +97,7 @@ export function MobileBookingCTA({ property, priceDisplay, specialOffer, initial
         transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 25 }}
         className="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-inset-bottom"
         style={{
-          boxShadow: '0 -4px 20px -4px hsl(var(--navy-blue) / 0.12)'
+          boxShadow: '0 -4px 20px -4px hsl(var(--foreground) / 0.12)'
         }}>
 
         {/* Special Offer Strip */}
