@@ -197,7 +197,7 @@ const Index = () => {
                 </div>
               </div>
               {/* Content */}
-              <div className="p-4 flex flex-col gap-2 bg-black/30 backdrop-blur-[2.8px]">
+              <div className="p-4 flex flex-col gap-2 bg-black/30 backdrop-blur-[1.5px]">
                 <h3 className="text-lg font-serif font-semibold text-white truncate">
                   {heroProperty.display_name || heroProperty.name}
                 </h3>
