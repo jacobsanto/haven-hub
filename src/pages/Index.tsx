@@ -144,14 +144,10 @@ const Index = () => {
           className="relative z-10 text-center mb-10 px-4"
         >
           <motion.h1 variants={heroVariants} className="text-4xl md:text-6xl lg:text-7xl font-serif font-medium text-white mb-3">
-            {hero.heading_prefix} {heroProperty?.city || brandName}
+            {hero.heading_prefix || brandName}
           </motion.h1>
           <motion.p variants={heroVariants} className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
-            {heroProperty
-              ? hero.subtitle_with_property
-                  .replace('{city}', heroProperty.city)
-                  .replace('{country}', heroProperty.country)
-              : hero.subtitle_default}
+            {hero.subtitle_default}
           </motion.p>
         </motion.div>
 
