@@ -176,7 +176,7 @@ const Index = () => {
           >
             <Link
               to={`/properties/${heroProperty.slug}`}
-              className="glass-panel rounded-2xl overflow-hidden block group hover:shadow-2xl transition-all duration-500"
+              className="bg-black/20 backdrop-blur-md border border-white/15 rounded-2xl overflow-hidden block group hover:shadow-2xl transition-all duration-500"
             >
               {/* Image */}
               <div className="relative aspect-video overflow-hidden">
@@ -197,7 +197,7 @@ const Index = () => {
                 </div>
               </div>
               {/* Content */}
-              <div className="p-4 flex flex-col gap-2">
+              <div className="p-4 flex flex-col gap-2 bg-black/30 backdrop-blur-sm">
                 <h3 className="text-lg font-serif font-semibold text-white truncate">
                   {heroProperty.display_name || heroProperty.name}
                 </h3>
