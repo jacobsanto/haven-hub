@@ -63,7 +63,7 @@ export function DestinationCard({ destination, propertyCount = 0, index = 0 }: D
             </p>
           )}
 
-          <div className="flex items-center gap-1 text-sm text-primary">
+          <div className="flex items-center gap-1 text-sm text-accent">
             <Home className="h-4 w-4" />
             <span>
               {propertyCount} {propertyCount === 1 ? 'property' : 'properties'}

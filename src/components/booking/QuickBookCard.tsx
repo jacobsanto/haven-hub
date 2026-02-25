@@ -144,7 +144,7 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
               <span className="text-xs text-muted-foreground">
                 {property.instant_booking ? 'Instant confirmation' : 'Book direct & save'}
               </span>
-              <div className="flex items-center gap-1 text-primary text-sm font-medium group-hover:gap-2 transition-all">
+              <div className="flex items-center gap-1 text-accent text-sm font-medium group-hover:gap-2 transition-all">
                 <span>View Details</span>
                 <ArrowRight className="h-4 w-4" />
               </div>
