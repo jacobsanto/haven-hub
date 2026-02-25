@@ -40,7 +40,7 @@ export function DestinationCard({ destination, propertyCount = 0, index = 0 }: D
           
           {/* Featured badge */}
           {destination.is_featured && (
-            <div className="absolute top-4 right-4 bg-accent text-white text-xs font-medium px-3 py-1 rounded-full">
+            <div className="absolute top-4 right-4 bg-accent/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full">
               Featured
             </div>
           )}
