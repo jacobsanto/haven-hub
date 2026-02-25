@@ -48,7 +48,7 @@ export function DestinationCard({ destination, propertyCount = 0, index = 0 }: D
 
         {/* Content */}
         <div className="p-5">
-          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+          <div className="flex items-center gap-1 text-sm text-accent mb-2">
             <MapPin className="h-4 w-4" />
             <span>{destination.country}</span>
           </div>

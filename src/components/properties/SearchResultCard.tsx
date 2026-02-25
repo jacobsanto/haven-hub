@@ -109,8 +109,8 @@ export function SearchResultCard({ property, index = 0, nights, checkIn, checkOu
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-muted-foreground text-sm mb-4">
-                <MapPin className="h-3.5 w-3.5 text-primary/60" />
+              <div className="flex items-center gap-1 text-accent text-sm mb-4">
+                <MapPin className="h-3.5 w-3.5" />
                 <span>{property.city}, {property.country}</span>
               </div>
 
