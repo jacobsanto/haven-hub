@@ -1,191 +1,216 @@
-# Complete CMS Overhaul: Theme Alignment, Editable Icons, and Section Display Modes
 
-## Three Problems to Solve
 
-### Problem 1: Hardcoded Colors Not Following the Brand Palette
+# Complete CMS Overhaul: Unified Color System, Premium Hero, Motion System, and Mobile-First UX
 
-Many components use hardcoded Tailwind color classes (e.g., `text-amber-500`, `bg-green-100`, `text-red-600`) instead of the semantic design tokens (`text-primary`, `bg-accent`, `text-destructive`). When an admin changes the brand palette in Settings, these elements stay the same color -- breaking visual consistency.
-
-**Components with hardcoded colors (27+ files affected):**
-
-- `LiveAvailabilityBadge.tsx` -- green/amber hardcoded for status
-- `InstantBookingBadge.tsx` -- amber hardcoded
-- `PropertyCard.tsx` -- amber, green hardcoded for badges
-- `TipCallout.tsx` -- amber, blue hardcoded for callout types
-- `PMSConnectionHealthCard.tsx` -- green/red/blue/yellow hardcoded
-- `PMSSyncStatusPanel.tsx` -- green hardcoded
-- `GuestyQuotaMonitor.tsx` -- likely hardcoded status colors
-- `DestinationCard.tsx` -- `text-white` on featured badge
-- Blog components -- white text on overlays
-- Hero sections on About, Destinations, Contact -- `text-white` on image overlays
-
-**Note:** Some hardcoded colors are intentionally correct (e.g., `text-white` over dark image overlays, `bg-black/60` for backdrop overlays). These will be left alone since they serve contrast purposes over images. The fix targets status indicators, badges, and UI chrome that should follow the theme.
-
-### Problem 2: Hero Quick-Nav Icons Cannot Be Edited
-
-The Navigation Manager currently shows a plain text input for the icon name. Users must know Lucide icon names (e.g., "MapPin", "Home"). There is no visual icon picker for the hero quick-nav items -- unlike the Page Content editor which has a full `IconPicker` component with search and visual grid.
-
-### Problem 3: No Section Display Mode Controls
-
-Every content section (properties grid, experiences grid, destinations grid, blog posts) is locked to a single layout. Admins have no way to choose between a grid, carousel/slider, list, or featured-highlight layout. There are no animation or transition options either.
+This plan covers all 8 deliverables (A through H) from the approved request. It is a deep, systematic refactor touching CSS foundations, Tailwind config, every page, key components, and the admin panel.
 
 ---
 
-## Solution
+## Part A: Eliminate Dual Color System (Global)
 
-### Part 1: Theme-Aligned Colors
+### CSS Foundation (`src/index.css`)
 
-**Approach:** Audit all components with hardcoded Tailwind color classes and replace them with semantic tokens that respond to the brand palette. This uses the existing `getStatusColors()` utility in `src/lib/utils.ts` where applicable, and maps remaining hardcoded colors to the closest semantic token.
-
-**Mapping:**
-
+**Remove** these 7 custom variables from `:root`:
 ```text
-bg-amber-100 / text-amber-700  -->  bg-accent/10 text-accent (for feature badges)
-bg-green-100 / text-green-600  -->  Uses getStatusColors('success') 
-bg-red-100 / text-red-600      -->  Uses getStatusColors('error') or text-destructive
-bg-blue-100 / text-blue-600    -->  Uses getStatusColors('running') or text-primary
+--navy-blue, --primary-blue, --gold-accent, --sand-brown, --light-blue, --pale-blue, --warm-cream
 ```
 
-**Files to modify (public-facing, highest impact):**
-
-
-| File                        | Change                                 |
-| --------------------------- | -------------------------------------- |
-| `InstantBookingBadge.tsx`   | amber --> accent tokens                |
-| `PropertyCard.tsx`          | amber/green badges --> accent/semantic |
-| `QuickBookCard.tsx`         | Already mostly semantic, minor fixes   |
-| `LiveAvailabilityBadge.tsx` | green/amber --> semantic status tokens |
-| `DestinationCard.tsx`       | gold-accent badge already OK, verify   |
-
-
-**Files to modify (admin, lower priority but included):**
-
-
-| File                          | Change                      |
-| ----------------------------- | --------------------------- |
-| `PMSConnectionHealthCard.tsx` | green/red/blue --> semantic |
-| `PMSSyncStatusPanel.tsx`      | green --> semantic          |
-| `GuestyQuotaMonitor.tsx`      | status colors --> semantic  |
-
-
-**Also we should have a single column slider especially for mobile mode showcasing either properties or experiences or destinations . Blog components** like `TipCallout.tsx` are intentionally styled with fixed semantic colors for readability (tip = amber, info = blue) and will be kept as-is since they are content presentation, not chrome.
-
-### Part 2: Icon Picker for Navigation Items
-
-**Change:** Replace the plain text `<Input>` for the icon field in `NavigationItemFormDialog.tsx` with the existing `IconPicker` component (already used in Page Content editor). This gives admins a visual grid with search to pick any Lucide icon.
-
-**Files to modify:**
-
-
-| File                           | Change                                                                  |
-| ------------------------------ | ----------------------------------------------------------------------- |
-| `NavigationItemFormDialog.tsx` | Import and use `IconPicker` component instead of `Input` for icon field |
-
-
-This is a small change -- the `IconPicker` component already exists and works well.
-
-### Part 3: Section Display Modes (Layout + Animation Options)
-
-This is the largest piece. It introduces a new database table and admin UI to let admins choose how each content section renders.
-
-#### New Database Table: `section_display_settings`
-
-
-| Column              | Type        | Purpose                                             |
-| ------------------- | ----------- | --------------------------------------------------- |
-| `id`                | uuid (PK)   | Primary key                                         |
-| `page_slug`         | text        | Which page (e.g., `home`, `about`)                  |
-| `section_key`       | text        | Which section (e.g., `properties`, `experiences`)   |
-| `layout_mode`       | text        | `grid` (default), `carousel`, `list`, `featured`    |
-| `columns`           | integer     | Number of grid columns (2, 3, or 4)                 |
-| `animation`         | text        | `fade-up` (default), `scale-in`, `slide-in`, `none` |
-| `autoplay`          | boolean     | For carousel mode, auto-advance                     |
-| `autoplay_interval` | integer     | Seconds between slides                              |
-| `items_per_view`    | integer     | For carousel, how many visible at once              |
-| `show_navigation`   | boolean     | Show prev/next arrows (carousel)                    |
-| `show_dots`         | boolean     | Show pagination dots (carousel)                     |
-| `updated_at`        | timestamptz | Auto-set                                            |
-
-
-**Unique constraint** on `(page_slug, section_key)`.
-**RLS**: Public read, admin full CRUD.
-
-**Seed data:** Insert defaults for all existing sections so current behavior is preserved.
-
-#### New Hook: `useSectionDisplay`
-
+**Add** two derived tokens:
 ```text
-useSectionDisplay(pageSlug, sectionKey) --> { layoutMode, columns, animation, ... }
+--accent-hover: 38 83% 61%;    (for gradient/hover states, derived from accent)
+--section-alt: 36 33% 97%;     (alternating section background)
 ```
 
-Returns the display configuration for a section, with sensible defaults if no database row exists.
+**Update** these CSS classes to use semantic tokens:
+- `.btn-organic` -- `hsl(var(--gold-accent))` becomes `hsl(var(--accent))`; hover uses `hsl(var(--accent-hover))`
+- `.btn-gold-gradient` -- both gradient stops use `--accent` and `--accent-hover`
+- `.card-organic` -- shadow references `--accent` and `--foreground` instead of `--gold-accent` and `--navy-blue`
+- `.hero-gradient` -- `--pale-blue` becomes `--muted`
+- `.hover-lift` -- `--navy-blue` becomes `--foreground`
 
-#### New Component: `SectionRenderer`
+### Tailwind Config (`tailwind.config.ts`)
 
-A wrapper component that takes children (the content items) and renders them according to the display settings:
+**Remove** custom color entries: `navy-blue`, `primary-blue`, `gold-accent`, `sand-brown`, `light-blue`, `pale-blue`, `warm-cream`
 
-- **Grid mode**: CSS grid with configurable columns
-- **Carousel mode**: Embla carousel (already installed) with arrows, dots, autoplay
-- **List mode**: Vertical stack with alternating layout
-- **Featured mode**: First item large, rest in a smaller grid below
+**Add** two new semantic colors:
+```text
+"accent-hover": "hsl(var(--accent-hover))"
+"section-alt": "hsl(var(--section-alt))"
+```
 
-Each mode applies the chosen entrance animation using Framer Motion.
+**Update** `boxShadow` values -- replace hardcoded HSL strings with CSS variable references.
 
-#### Admin UI: Section Display Editor
+### Pages -- Token Replacement
 
-Add a "Display Settings" expandable panel to each section in `AdminPageContent.tsx`. This shows:
+| File | Find | Replace |
+|------|------|---------|
+| `Index.tsx` | `bg-warm-cream` (3x) | `bg-section-alt` |
+| `Index.tsx` | `text-gold-accent` (6x) | `text-accent` |
+| `Index.tsx` | `bg-gold-accent/90` | `bg-accent/90` |
+| `Index.tsx` | `bg-gold-accent/10` | `bg-accent/10` |
+| `Index.tsx` | `bg-gold-accent/20` | `bg-accent/20` |
+| `Index.tsx` | `border-gold-accent/30` | `border-accent/30` |
+| `Index.tsx` | `text-gold-accent/90` | `text-accent/90` |
+| `About.tsx` | `bg-warm-cream` (2x) | `bg-section-alt` |
+| `About.tsx` | `bg-gold-accent/10` | `bg-accent/10` |
+| `About.tsx` | `text-gold-accent` (3x) | `text-accent` |
+| `Contact.tsx` | `bg-gold-accent/10` | `bg-accent/10` |
+| `Contact.tsx` | `text-gold-accent` (2x) | `text-accent` |
+| `Contact.tsx` | `hover:text-gold-accent` | `hover:text-accent` |
+| `Contact.tsx` | `bg-warm-cream` (2x) | `bg-section-alt` |
+| `Destinations.tsx` | `bg-warm-cream` (1x) | `bg-section-alt` |
 
-- Layout mode selector (4 visual options: grid, carousel, list, featured)
-- Column count (for grid)
-- Animation selector (4 options with preview)
-- Carousel-specific options (autoplay, interval, arrows, dots)
+### Components -- Token Replacement
 
-#### Frontend Integration
-
-Update these page sections to use `SectionRenderer`:
-
-- Homepage: properties, destinations, experiences, blog posts
-- Properties page: property grid
-- Destinations page: destination grid
-- Experiences page: experience grid
-- Blog page: post grid
+| File | Find | Replace |
+|------|------|---------|
+| `SearchBar.tsx` | `text-gold-accent` (4x) | `text-accent` |
+| `DestinationCard.tsx` | `bg-gold-accent` | `bg-accent` |
+| `Footer.tsx` | `hover:text-gold-accent` (3x) | `hover:text-accent` |
+| `MobileBookingCTA.tsx` | `hsl(var(--navy-blue) / 0.12)` | `hsl(var(--foreground) / 0.12)` |
 
 ---
 
-## Files to Create
+## Part B: BrandContext Enhancement -- Sync Derived Tokens
 
+Update `BrandContext.tsx` `applyTheme()` to also set `--accent-hover` and `--section-alt` as derived values whenever the admin changes palette:
 
-| File                                    | Purpose                                                 |
-| --------------------------------------- | ------------------------------------------------------- |
-| `src/hooks/useSectionDisplay.ts`        | Hook for reading/writing section display settings       |
-| `src/components/ui/SectionRenderer.tsx` | Universal layout renderer (grid/carousel/list/featured) |
+```text
+--accent-hover: same hue as accent, +15% saturation, -5% lightness
+--section-alt: same hue as background, slightly warmer/tinted
+```
 
+This ensures the alternating section backgrounds and button hover states always harmonize with the admin-chosen palette.
+
+---
+
+## Part C: Admin Theme Panel Enhancements
+
+The existing Admin Settings already has color pickers and font selectors. Enhancements:
+
+1. **Add radius scale control** -- a slider for `--radius` (0.25rem to 1.5rem)
+2. **Add shadow intensity control** -- light/medium/strong presets that scale `card-organic` and `hover-lift` shadows
+3. **Add spacing density control** -- compact/normal/airy that adjusts section padding via a CSS variable
+4. No new database columns needed -- store these as additional keys in the existing `brand_settings` JSON or as new columns
+
+---
+
+## Part D: Homepage Hero Upgrades
+
+### D1: Premium Featured Villa Card
+
+Replace the current small `w-28 h-28` card with a larger, more impressive hero card:
+
+- Larger image area (aspect-video or similar)
+- "Top Pick" badge, star rating, 3 key highlights (bedrooms, guests, location)
+- Stronger CTA button
+- Glass-panel backdrop with better typography hierarchy
+- On mobile: full-width card below the search bar
+- On desktop: max-w-xl centered card
+
+### D2: Fix Hero Quick-Nav Icons
+
+The current code uses `resolveIcon()` which works correctly at runtime. The issue is the icon circle styling. Update to:
+
+- **Transparent background, stroke-only circle**: `border border-accent` with no fill
+- Ensure icon name from database is used without any hardcoded fallback overriding the admin choice
+- Verify `resolveIcon` does not cache stale values (it doesn't -- it resolves on each render from the database-fetched `nav.icon`)
+
+---
+
+## Part E: 2026-Ready Motion System
+
+### E1: Global Motion Infrastructure
+
+Create a motion utilities module (`src/lib/motion.ts`):
+
+```text
+- Shared easing curves (ease-premium, ease-out-expo)
+- Stagger container/child variants
+- Viewport-triggered reveal variants
+- prefers-reduced-motion wrapper that disables all motion
+- GPU-only transforms (opacity + translate + scale)
+```
+
+### E2: Page-by-Page Motion
+
+**Homepage**
+- Hero: staggered entrance (headline delay 0, subtitle delay 0.1, search delay 0.2, featured card delay 0.3)
+- Section headings: fade-up on viewport entry
+- Cards: stagger reveal (already partially done via SectionRenderer, enhance timing)
+
+**Property Detail**
+- Gallery: already uses swipe; ensure smooth snapping
+- Amenities: stagger reveal
+- CTA: subtle scale pulse (not spammy -- one gentle pulse then stop)
+
+**About**
+- Story paragraphs: sequential fade-up
+- Values cards: stagger from SectionRenderer
+- Stats: count-up animation on viewport entry
+
+**Experiences**
+- Cards: stagger reveal (already via SectionRenderer)
+- Mobile: cards are tap-friendly (no hover dependency)
+
+**Contact**
+- Form fields: progressive reveal (each field fades in after previous)
+- Success state: scale-in + checkmark animation
+
+### E3: Reduced Motion Support
+
+Wrap all Framer Motion usage with a `useReducedMotion()` check. When enabled:
+- All `initial` states become final states (no animation)
+- Transitions become instant
+- No floating/pulsing animations
+
+---
+
+## Part F: Mobile-First Fixes
+
+1. **Hero featured card**: Full-width on mobile, no overflow clipping
+2. **Quick-nav icons**: Horizontal scroll on small screens if more than 4 items
+3. **Section padding**: Reduce to `py-16` on mobile (currently `py-24`)
+4. **Gallery swipe**: Already Embla-based; verify touch behavior
+5. **Bottom-sheet modals**: Already using Vaul/Sheet for MobileBookingCTA
+6. **Thumb-friendly CTAs**: Minimum 44px touch targets verified
+7. **No hover dependency**: All hover states have tap equivalents on mobile
+
+---
+
+## Part G: Cleanup and Maintainability
+
+1. Remove dead CSS variables from `src/index.css`
+2. Remove unused Tailwind color entries from config
+3. Ensure no component uses literal color values that bypass the token system
+4. All shadow values reference CSS variables
+
+---
 
 ## Files to Modify
 
+| File | Changes |
+|------|---------|
+| `src/index.css` | Remove 7 hardcoded variables, add 2 derived tokens, update 5 CSS classes |
+| `tailwind.config.ts` | Remove 7 custom colors, add 2 new ones, update boxShadow |
+| `src/contexts/BrandContext.tsx` | Add derived token computation in `applyTheme()` |
+| `src/pages/Index.tsx` | Replace all hardcoded brand tokens + upgrade hero card + enhance motion |
+| `src/pages/About.tsx` | Replace tokens + enhance motion |
+| `src/pages/Contact.tsx` | Replace tokens + progressive form reveal |
+| `src/pages/Destinations.tsx` | Replace tokens |
+| `src/components/search/SearchBar.tsx` | Replace `text-gold-accent` with `text-accent` |
+| `src/components/destinations/DestinationCard.tsx` | Replace `bg-gold-accent` with `bg-accent` |
+| `src/components/layout/Footer.tsx` | Replace `hover:text-gold-accent` with `hover:text-accent` |
+| `src/components/booking/MobileBookingCTA.tsx` | Replace `--navy-blue` shadow with `--foreground` |
+| `src/pages/admin/AdminSettings.tsx` | Add radius/shadow/spacing controls |
 
-| File                                                | Change                                                                 |
-| --------------------------------------------------- | ---------------------------------------------------------------------- |
-| `src/components/admin/NavigationItemFormDialog.tsx` | Replace icon text input with `IconPicker`                              |
-| `src/components/properties/InstantBookingBadge.tsx` | amber --> accent tokens                                                |
-| `src/components/properties/PropertyCard.tsx`        | amber/green --> semantic tokens                                        |
-| `src/components/booking/LiveAvailabilityBadge.tsx`  | green/amber --> semantic tokens                                        |
-| `src/components/admin/PMSConnectionHealthCard.tsx`  | hardcoded colors --> semantic                                          |
-| `src/components/admin/PMSSyncStatusPanel.tsx`       | green --> semantic                                                     |
-| `src/pages/Index.tsx`                               | Wrap property/destination/experience/blog grids with `SectionRenderer` |
-| `src/pages/Properties.tsx`                          | Wrap property grid with `SectionRenderer`                              |
-| `src/pages/About.tsx`                               | Wrap values grid with `SectionRenderer`                                |
-| `src/hooks/usePageContent.ts`                       | No schema changes needed -- display settings are separate              |
-| `src/pages/admin/AdminPageContent.tsx`              | Add display settings panel per section                                 |
+## Files to Create
 
+| File | Purpose |
+|------|---------|
+| `src/lib/motion.ts` | Shared motion variants, easing curves, reduced-motion utility |
 
-## Database Migration
+## No Database Changes Required
 
-One migration creating `section_display_settings` table with RLS policies and seed data.
+All token changes are CSS-level. The existing `brand_settings` table and `BrandContext` already handle admin palette propagation -- this plan ensures every component actually respects those tokens.
 
-## What Does NOT Change
-
-- Booking logic, PMS integrations, pricing -- untouched
-- The `page_content` CMS system -- enhanced, not replaced
-- Image overlays using `text-white` over dark backgrounds -- these are correct as-is
-- Blog article styling (TipCallout colors are intentional for content semantics)
