@@ -8,6 +8,7 @@ import {
   type PageContentSchema,
   type ContentField,
 } from '@/hooks/usePageContent';
+import { useAllSectionDisplaySettings, useUpsertSectionDisplay, type SectionDisplaySettings } from '@/hooks/useSectionDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,14 +16,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ContentPreview } from '@/components/admin/ContentPreview';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IconPicker, AMENITY_ICONS } from '@/components/admin/IconPicker';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { useIconSuggestion } from '@/hooks/useIconSuggestion';
-import { Save, RotateCcw, ChevronDown, FileText, Image, Eye, EyeOff, Sparkles, Palette } from 'lucide-react';
+import { Save, RotateCcw, ChevronDown, FileText, Image, Eye, EyeOff, Sparkles, Palette, LayoutGrid, LayoutList, Star, Play } from 'lucide-react';
 
 export default function AdminPageContent() {
   const [activePage, setActivePage] = useState(PAGE_CONTENT_SCHEMAS[0].pageSlug);
@@ -323,6 +327,193 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
           </Collapsible>
         );
       })}
+
+      {/* Section Display Settings */}
+      <SectionDisplayEditor pageSlug={schema.pageSlug} />
     </div>
+  );
+}
+
+// ── Section Display Settings Editor ──────────────────────────────────
+const SECTION_LABELS: Record<string, Record<string, string>> = {
+  home: { properties: 'Properties Grid', destinations: 'Destinations Grid', experiences: 'Experiences Grid', blog: 'Blog Posts Grid' },
+  properties: { grid: 'Property Listing' },
+  destinations: { grid: 'Destinations Listing' },
+  experiences: { grid: 'Experiences Listing' },
+  about: { values: 'Values Grid' },
+};
+
+const LAYOUT_OPTIONS = [
+  { value: 'grid', label: 'Grid', icon: LayoutGrid },
+  { value: 'carousel', label: 'Carousel', icon: Play },
+  { value: 'list', label: 'List', icon: LayoutList },
+  { value: 'featured', label: 'Featured', icon: Star },
+] as const;
+
+const ANIMATION_OPTIONS = [
+  { value: 'fade-up', label: 'Fade Up' },
+  { value: 'scale-in', label: 'Scale In' },
+  { value: 'slide-in', label: 'Slide In' },
+  { value: 'none', label: 'None' },
+] as const;
+
+function SectionDisplayEditor({ pageSlug }: { pageSlug: string }) {
+  const { data: allSettings } = useAllSectionDisplaySettings();
+  const upsert = useUpsertSectionDisplay();
+  const { toast } = useToast();
+
+  const pageSections = SECTION_LABELS[pageSlug];
+  if (!pageSections) return null;
+
+  const settings = allSettings?.filter(s => s.page_slug === pageSlug) || [];
+
+  const handleUpdate = async (sectionKey: string, field: string, value: unknown) => {
+    const current = settings.find(s => s.section_key === sectionKey) || {
+      page_slug: pageSlug,
+      section_key: sectionKey,
+      layout_mode: 'grid',
+      columns: 3,
+      animation: 'fade-up',
+      autoplay: false,
+      autoplay_interval: 5,
+      items_per_view: 3,
+      show_navigation: true,
+      show_dots: false,
+    };
+
+    try {
+      await upsert.mutateAsync({
+        ...current,
+        [field]: value,
+      } as SectionDisplaySettings);
+      toast({ title: 'Display updated', description: `${pageSections[sectionKey]} layout saved.` });
+    } catch {
+      toast({ title: 'Update failed', variant: 'destructive' });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <LayoutGrid className="h-4 w-4" />
+          Section Display Settings
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Choose layout mode, animation, and carousel options for each content section.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {Object.entries(pageSections).map(([sectionKey, sectionLabel]) => {
+          const setting = settings.find(s => s.section_key === sectionKey);
+          const layoutMode = setting?.layout_mode || 'grid';
+          const columns = setting?.columns || 3;
+          const animation = setting?.animation || 'fade-up';
+          const autoplay = setting?.autoplay || false;
+          const autoplayInterval = setting?.autoplay_interval || 5;
+          const itemsPerView = setting?.items_per_view || 3;
+          const showNav = setting?.show_navigation ?? true;
+          const showDots = setting?.show_dots || false;
+
+          return (
+            <div key={sectionKey} className="p-4 rounded-lg border bg-muted/30 space-y-4">
+              <h4 className="font-medium text-sm">{sectionLabel}</h4>
+
+              {/* Layout Mode */}
+              <div className="space-y-2">
+                <Label className="text-xs">Layout Mode</Label>
+                <div className="flex gap-2">
+                  {LAYOUT_OPTIONS.map(opt => (
+                    <Button
+                      key={opt.value}
+                      variant={layoutMode === opt.value ? 'default' : 'outline'}
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => handleUpdate(sectionKey, 'layout_mode', opt.value)}
+                    >
+                      <opt.icon className="h-3.5 w-3.5" />
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Columns (grid/featured) */}
+              {(layoutMode === 'grid' || layoutMode === 'featured') && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Columns: {columns}</Label>
+                  <Slider
+                    value={[columns]}
+                    onValueChange={([v]) => handleUpdate(sectionKey, 'columns', v)}
+                    min={2}
+                    max={4}
+                    step={1}
+                    className="max-w-xs"
+                  />
+                </div>
+              )}
+
+              {/* Animation */}
+              <div className="space-y-2">
+                <Label className="text-xs">Animation</Label>
+                <Select value={animation} onValueChange={(v) => handleUpdate(sectionKey, 'animation', v)}>
+                  <SelectTrigger className="w-48 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ANIMATION_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Carousel options */}
+              {layoutMode === 'carousel' && (
+                <div className="space-y-3 p-3 rounded-md border bg-background">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Carousel Options</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Items per view</Label>
+                      <Select value={String(itemsPerView)} onValueChange={(v) => handleUpdate(sectionKey, 'items_per_view', Number(v))}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Autoplay interval (s)</Label>
+                      <Input
+                        type="number"
+                        value={autoplayInterval}
+                        onChange={e => handleUpdate(sectionKey, 'autoplay_interval', Number(e.target.value))}
+                        className="h-8 text-xs"
+                        min={2}
+                        max={15}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                      <Switch checked={autoplay} onCheckedChange={(v) => handleUpdate(sectionKey, 'autoplay', v)} />
+                      <Label className="text-xs">Autoplay</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={showNav} onCheckedChange={(v) => handleUpdate(sectionKey, 'show_navigation', v)} />
+                      <Label className="text-xs">Arrows</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={showDots} onCheckedChange={(v) => handleUpdate(sectionKey, 'show_dots', v)} />
+                      <Label className="text-xs">Dots</Label>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
   );
 }

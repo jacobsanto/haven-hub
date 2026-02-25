@@ -2018,6 +2018,51 @@ export type Database = {
           },
         ]
       }
+      section_display_settings: {
+        Row: {
+          animation: string
+          autoplay: boolean
+          autoplay_interval: number
+          columns: number
+          id: string
+          items_per_view: number
+          layout_mode: string
+          page_slug: string
+          section_key: string
+          show_dots: boolean
+          show_navigation: boolean
+          updated_at: string
+        }
+        Insert: {
+          animation?: string
+          autoplay?: boolean
+          autoplay_interval?: number
+          columns?: number
+          id?: string
+          items_per_view?: number
+          layout_mode?: string
+          page_slug: string
+          section_key: string
+          show_dots?: boolean
+          show_navigation?: boolean
+          updated_at?: string
+        }
+        Update: {
+          animation?: string
+          autoplay?: boolean
+          autoplay_interval?: number
+          columns?: number
+          id?: string
+          items_per_view?: number
+          layout_mode?: string
+          page_slug?: string
+          section_key?: string
+          show_dots?: boolean
+          show_navigation?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       security_deposits: {
         Row: {
           amount: number

@@ -37,7 +37,7 @@ export function LiveAvailabilityBadge({
     <div className={`flex items-center gap-2 text-xs ${className}`}>
       <div className="relative flex items-center gap-1.5">
         <motion.div
-          className={`h-2 w-2 rounded-full ${isUpdating ? 'bg-amber-500' : 'bg-green-500'}`}
+          className={`h-2 w-2 rounded-full ${isUpdating ? 'bg-muted-foreground' : 'bg-primary'}`}
           animate={{
             scale: [1, 1.2, 1],
             opacity: [1, 0.7, 1],
@@ -48,8 +48,8 @@ export function LiveAvailabilityBadge({
             ease: 'easeInOut',
           }}
         />
-        <Radio className={`h-3 w-3 ${isUpdating ? 'text-amber-600' : 'text-green-600'}`} />
-        <span className={`font-medium ${isUpdating ? 'text-amber-600' : 'text-green-600'}`}>
+        <Radio className={`h-3 w-3 ${isUpdating ? 'text-muted-foreground' : 'text-primary'}`} />
+        <span className={`font-medium ${isUpdating ? 'text-muted-foreground' : 'text-primary'}`}>
           {isUpdating ? 'Updating...' : 'Live'}
         </span>
       </div>

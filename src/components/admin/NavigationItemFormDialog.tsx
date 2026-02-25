@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { IconPicker } from '@/components/admin/IconPicker';
 import { NavigationItem, NavigationPlacement } from '@/hooks/useNavigationItems';
 
 interface NavigationItemFormDialogProps {
@@ -92,8 +93,8 @@ export function NavigationItemFormDialog({
             <Input value={path} onChange={e => setPath(e.target.value)} required placeholder="e.g. /properties" />
           </div>
           <div className="space-y-2">
-            <Label>Icon (Lucide name, optional)</Label>
-            <Input value={icon} onChange={e => setIcon(e.target.value)} placeholder="e.g. MapPin, Home, Sparkles" />
+            <Label>Icon (optional)</Label>
+            <IconPicker value={icon} onChange={setIcon} />
           </div>
           <div className="space-y-2">
             <Label>Placement</Label>

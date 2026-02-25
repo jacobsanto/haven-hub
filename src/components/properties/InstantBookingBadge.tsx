@@ -27,7 +27,7 @@ export function InstantBookingBadge({
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full font-medium',
+        'inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-full font-medium',
         sizeClasses[size],
         className
       )}

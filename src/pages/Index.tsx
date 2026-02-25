@@ -3,6 +3,8 @@ import { ArrowRight, MapPin, Sparkles, Calendar, Shield, Clock, CheckCircle, Sta
 import { resolveIcon } from '@/utils/icon-resolver';
 import { useNavigationItems } from '@/hooks/useNavigationItems';
 import { useHeroSettings } from '@/hooks/useHeroSettings';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -32,6 +34,10 @@ const Index = () => {
   const { format } = useFormatCurrency();
   const { data: quickNavItems = [] } = useNavigationItems('hero_quicknav');
   const { showSearchBar, showFeaturedVilla, showQuickNav, featuredPropertyId } = useHeroSettings();
+  const propertiesDisplay = useSectionDisplay('home', 'properties');
+  const destinationsDisplay = useSectionDisplay('home', 'destinations');
+  const experiencesDisplay = useSectionDisplay('home', 'experiences');
+  const blogDisplay = useSectionDisplay('home', 'blog');
 
   // CMS content
   const hero = usePageContent('home', 'hero', {
@@ -280,11 +286,11 @@ const Index = () => {
                 ))}
               </div>
             ) : featuredDestinations && featuredDestinations.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <SectionRenderer settings={destinationsDisplay}>
                 {featuredDestinations.map((destination, index) => (
                   <DestinationCard key={destination.id} destination={destination} index={index} propertyCount={allProperties?.filter(p => p.destination_id === destination.id).length || 0} />
                 ))}
-              </div>
+              </SectionRenderer>
             ) : null}
           </div>
         </section>
@@ -320,11 +326,11 @@ const Index = () => {
               ))}
             </div>
           ) : properties && properties.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <SectionRenderer settings={propertiesDisplay}>
               {properties.map((property, index) => (
                 <QuickBookCard key={property.id} property={property} index={index} />
               ))}
-            </div>
+            </SectionRenderer>
           ) : (
             <div className="text-center py-16">
               <p className="text-muted-foreground text-lg">
@@ -390,11 +396,11 @@ const Index = () => {
                 ))}
               </div>
             ) : featuredExperiences && featuredExperiences.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <SectionRenderer settings={experiencesDisplay}>
                 {featuredExperiences.map((experience, index) => (
                   <ExperienceCard key={experience.id} experience={experience} index={index} />
                 ))}
-              </div>
+              </SectionRenderer>
             ) : null}
           </div>
         </section>
@@ -487,11 +493,11 @@ const Index = () => {
                 ))}
               </div>
             ) : latestBlogPosts && latestBlogPosts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <SectionRenderer settings={blogDisplay}>
                 {latestBlogPosts.map((post) => (
                   <BlogPostCard key={post.id} post={post} />
                 ))}
-              </div>
+              </SectionRenderer>
             ) : null}
           </div>
         </section>

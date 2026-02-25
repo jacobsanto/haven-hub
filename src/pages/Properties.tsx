@@ -9,6 +9,8 @@ import { QuickBookCard } from '@/components/booking/QuickBookCard';
 import { SearchResultCard } from '@/components/properties/SearchResultCard';
 import { TrustBadges } from '@/components/booking/TrustBadges';
 import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidget';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 import { useProperties } from '@/hooks/useProperties';
 import { useAvailableProperties } from '@/hooks/useAvailableProperties';
 import { usePageContent } from '@/hooks/usePageContent';
@@ -40,6 +42,7 @@ export default function Properties() {
   const [bathrooms, setBathrooms] = useState<number | undefined>(undefined);
   const [propertyType, setPropertyType] = useState<PropertyType | undefined>(undefined);
   const [instantBooking, setInstantBooking] = useState(false);
+  const propertiesDisplay = useSectionDisplay('properties', 'grid');
 
   const location = searchParams.get('location') || undefined;
   const guests = searchParams.get('guests') ? parseInt(searchParams.get('guests')!) : undefined;
@@ -122,7 +125,7 @@ export default function Properties() {
       {/* Instant Booking Toggle */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-amber-500" />
+          <Zap className="h-4 w-4 text-primary" />
           <Label htmlFor="instant-booking" className="font-medium">Instant Book Only</Label>
         </div>
         <Switch
@@ -404,11 +407,11 @@ export default function Properties() {
                     ))}
                   </div>
                 ) : properties && properties.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                   <SectionRenderer settings={propertiesDisplay}>
                     {properties.map((property, index) => (
                       <QuickBookCard key={property.id} property={property} index={index} />
                     ))}
-                  </div>
+                  </SectionRenderer>
                 ) : (
                   <div className="text-center py-16 card-organic">
                     <p className="text-muted-foreground text-lg mb-4">

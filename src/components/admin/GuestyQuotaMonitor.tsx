@@ -30,18 +30,18 @@ export function GuestyQuotaMonitor() {
   const statusConfig = {
     ok: {
       icon: CheckCircle,
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-950/30',
-      borderColor: 'border-green-200 dark:border-green-800',
+      color: 'text-primary',
+      bgColor: 'bg-primary/5',
+      borderColor: 'border-primary/20',
       progressColor: '',
       label: 'Healthy',
     },
     warning: {
       icon: AlertTriangle,
-      color: 'text-yellow-600 dark:text-yellow-400',
-      bgColor: 'bg-yellow-50 dark:bg-yellow-950/30',
-      borderColor: 'border-yellow-200 dark:border-yellow-800',
-      progressColor: '[&>div]:bg-yellow-500',
+      color: 'text-muted-foreground',
+      bgColor: 'bg-muted/50',
+      borderColor: 'border-border',
+      progressColor: '[&>div]:bg-muted-foreground',
       label: 'Low Quota',
     },
     exhausted: {
@@ -140,7 +140,7 @@ export function GuestyQuotaMonitor() {
         )}
 
         {quota.status === 'warning' && (
-          <div className="rounded-md bg-yellow-50 dark:bg-yellow-950/30 p-3 text-sm text-yellow-800 dark:text-yellow-300 flex items-start gap-2">
+          <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium">Low quota warning</p>
@@ -166,7 +166,7 @@ export function GuestyQuotaMonitor() {
                 >
                   <div className="flex items-center gap-2">
                     {req.success ? (
-                      <CheckCircle className="h-3 w-3 text-green-500" />
+                      <CheckCircle className="h-3 w-3 text-primary" />
                     ) : (
                       <XCircle className="h-3 w-3 text-destructive" />
                     )}
@@ -184,7 +184,7 @@ export function GuestyQuotaMonitor() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
-                            <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                            <AlertTriangle className="h-3 w-3 text-muted-foreground" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <p className="text-xs">{req.error_message}</p>

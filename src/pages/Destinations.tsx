@@ -6,6 +6,8 @@ import { DestinationCard } from '@/components/destinations/DestinationCard';
 import { useActiveDestinations } from '@/hooks/useDestinations';
 import { useProperties } from '@/hooks/useProperties';
 import { usePageContent } from '@/hooks/usePageContent';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -14,6 +16,7 @@ import { TrustBadges } from '@/components/booking/TrustBadges';
 const Destinations = () => {
   const { data: destinations, isLoading } = useActiveDestinations();
   const { data: properties } = useProperties();
+  const destinationsDisplay = useSectionDisplay('destinations', 'grid');
 
   const heroContent = usePageContent('destinations', 'hero', {
     heading: 'Choose Your Destination',
@@ -72,11 +75,11 @@ const Destinations = () => {
               ))}
             </div>
           ) : destinations && destinations.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <SectionRenderer settings={destinationsDisplay}>
               {destinations.map((destination, index) => (
                 <DestinationCard key={destination.id} destination={destination} propertyCount={getPropertyCount(destination.id)} index={index} />
               ))}
-            </div>
+            </SectionRenderer>
           ) : (
             <div className="text-center py-16">
               <MapPin className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
