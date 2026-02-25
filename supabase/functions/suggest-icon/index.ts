@@ -26,6 +26,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Limit icons list to avoid schema branching limits
+    const iconsList = availableIcons.slice(0, 200).join(", ");
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -38,39 +41,13 @@ serve(async (req) => {
           {
             role: "system",
             content:
-              "You are an icon matching assistant for a luxury vacation property platform. Given an item's title and description, pick the single best matching Lucide icon from the provided list. Consider the semantic meaning of both the title and description.",
+              "You are an icon matching assistant for a luxury vacation property platform. Given an item's title and description, pick the single best matching Lucide icon from the provided list. Consider the semantic meaning of both the title and description. Reply with ONLY the exact icon name from the list, nothing else.",
           },
           {
             role: "user",
-            content: `Title: "${title}"\nDescription: "${description || ""}"\n\nPick the best matching icon.`,
+            content: `Title: "${title}"\nDescription: "${description || ""}"\n\nAvailable icons: ${iconsList}\n\nReply with only the icon name.`,
           },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "select_icon",
-              description: "Select the best matching Lucide icon for the given content.",
-              parameters: {
-                type: "object",
-                properties: {
-                  icon: {
-                    type: "string",
-                    enum: availableIcons,
-                    description: "The Lucide icon name that best matches the content.",
-                  },
-                  reasoning: {
-                    type: "string",
-                    description: "Brief explanation of why this icon was chosen.",
-                  },
-                },
-                required: ["icon"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "select_icon" } },
       }),
     });
 
@@ -99,17 +76,25 @@ serve(async (req) => {
     }
 
     const result = await response.json();
-    const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
+    const content = result.choices?.[0]?.message?.content?.trim() || "";
 
-    if (toolCall?.function?.arguments) {
-      const args = JSON.parse(toolCall.function.arguments);
-      // Validate the icon is actually in the allowed list
-      if (availableIcons.includes(args.icon)) {
-        return new Response(
-          JSON.stringify({ icon: args.icon, reasoning: args.reasoning }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+    // Try to match the response to an available icon
+    const suggestedIcon = content.replace(/[^a-zA-Z0-9-]/g, "");
+    if (availableIcons.includes(suggestedIcon)) {
+      return new Response(
+        JSON.stringify({ icon: suggestedIcon, reasoning: "AI suggestion" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Try case-insensitive match
+    const lowerContent = suggestedIcon.toLowerCase();
+    const matched = availableIcons.find((i: string) => i.toLowerCase() === lowerContent);
+    if (matched) {
+      return new Response(
+        JSON.stringify({ icon: matched, reasoning: "AI suggestion" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Fallback: return first icon
