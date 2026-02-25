@@ -176,7 +176,7 @@ const Index = () => {
           >
             <Link
               to={`/properties/${heroProperty.slug}`}
-              className="bg-black/20 backdrop-blur-md border border-white/15 rounded-2xl overflow-hidden block group hover:shadow-2xl transition-all duration-500"
+              className="bg-black/20 backdrop-blur-[8.4px] border border-white/15 rounded-2xl overflow-hidden block group hover:shadow-2xl transition-all duration-500"
             >
               {/* Image */}
               <div className="relative aspect-video overflow-hidden">
