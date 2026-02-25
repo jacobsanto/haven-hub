@@ -1,61 +1,43 @@
-# CMS Overhaul — COMPLETED
 
-All deliverables from the approved plan have been implemented:
 
-## ✅ Part A: Dual Color System Eliminated
-- Removed 7 hardcoded CSS variables (--gold-accent, --warm-cream, --navy-blue, --sand-brown, --light-blue, --pale-blue, --primary-blue)
-- Added 2 derived tokens: --accent-hover, --section-alt
-- Updated all CSS utility classes to use semantic tokens only
+# Fix Hero Card & Search Bar Backgrounds
 
-## ✅ Part B: BrandContext Derived Tokens
-- applyTheme() now auto-computes --accent-hover and --section-alt from admin palette
-- deriveAccentHover: same hue, +15% saturation, -5% lightness
-- deriveSectionAlt: warm tint of background color
+## What's Wrong
 
-## ✅ Part C: Tailwind Config Cleaned
-- Removed all 7 custom brand colors
-- Added accent-hover and section-alt semantic colors
-- boxShadow values now reference CSS variables
+Both the Top Pick card and the Search Bar use the `.glass-panel` class, which applies `background: hsl(var(--background) / 0.75)` -- a 75% opaque background. Over the dark hero photograph, this creates a visible colored panel that hurts readability and looks heavy.
 
-## ✅ Part D: Homepage Hero Upgraded
-- Premium featured villa card: larger (aspect-video), "Top Pick" badge, bedroom/guest/location highlights, stronger CTA
-- Quick-nav icons: transparent outlined circles (border border-accent, no fill)
-- Horizontal scroll on mobile for quick-nav overflow
+## The Fix
 
-## ✅ Part E: Motion System Created
-- src/lib/motion.ts: shared easing curves, stagger variants, viewport reveals
-- useReducedMotion support with getReducedMotionVariants()
-- GPU-only transforms (opacity + translate + scale)
+### 1. Top Pick Card -- Transparent Frosted Glass
 
-## ✅ Part F: Motion Applied to All Pages
-- Homepage: staggered hero entrance, section reveals
-- About: sequential story paragraphs, values stagger, stats reveal
-- Contact: progressive form reveal with motion variants
-- All sections use consistent timing from motion.ts
+Replace the `glass-panel` class on the featured villa card with a custom transparent glass treatment:
+- Background: `bg-black/20 backdrop-blur-md` (very subtle dark tint + blur for readability over photos)
+- Border: `border border-white/15` (faint white edge)
+- Text inside remains white (already is) -- now reads cleanly over a lightly blurred photo background
+- The card content area (below the image) also gets `bg-black/30 backdrop-blur-md` instead of the current opaque background
 
-## ✅ Part G: Mobile-First Fixes
-- Section padding: py-16 on mobile, md:py-24 on desktop
-- Quick-nav: horizontal scroll with scrollbar-hide
-- Hero card: full-width on mobile (max-w-xl on desktop)
+**File:** `src/pages/Index.tsx` (line 179)
+- Change: `glass-panel rounded-2xl` to `bg-black/20 backdrop-blur-md border border-white/15 rounded-2xl`
+- Update content area `p-4` div to also have transparent dark glass styling
 
-## ✅ Part H: Full Token Audit
-- 0 remaining hardcoded brand tokens across entire codebase
-- All pages (Index, About, Contact, Destinations, Properties) use semantic tokens
-- All components (SearchBar, DestinationCard, Footer, MobileBookingCTA) use semantic tokens
+### 2. Search Bar -- White Background Inside
 
-## Files Modified
-- src/index.css
-- tailwind.config.ts
-- src/contexts/BrandContext.tsx
-- src/pages/Index.tsx
-- src/pages/About.tsx
-- src/pages/Contact.tsx
-- src/pages/Destinations.tsx
-- src/pages/Properties.tsx
-- src/components/search/SearchBar.tsx
-- src/components/destinations/DestinationCard.tsx
-- src/components/layout/Footer.tsx
-- src/components/booking/MobileBookingCTA.tsx
+Give the search bar an explicit white/card background so it looks like a solid, readable input bar over the hero:
+- Replace `glass-panel` class with `bg-white/95 backdrop-blur-sm border border-white/50 shadow-lg`
+- This creates a clean white pill that is legible over any hero image
+- On dark mode, it will use `bg-card/95` instead
 
-## Files Created
-- src/lib/motion.ts
+**File:** `src/components/search/SearchBar.tsx` (line 137)
+- Change: `glass-panel rounded-2xl lg:rounded-full` to `bg-card/95 backdrop-blur-sm border border-border/30 shadow-lg rounded-2xl lg:rounded-full`
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/pages/Index.tsx` | Remove `glass-panel` from featured villa card, use transparent dark glass instead |
+| `src/components/search/SearchBar.tsx` | Remove `glass-panel`, use solid white/card background with subtle blur |
+
+### What Does NOT Change
+- The `.glass-panel` CSS class itself stays in `index.css` (used elsewhere)
+- Hero overlay gradients, text colors, booking logic -- untouched
+- All other pages and components -- unaffected
