@@ -124,7 +124,7 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+            <div className="flex items-center gap-4 text-sm text-accent mb-4">
               <div className="flex items-center gap-1">
                 <Bed className="h-4 w-4" />
                 <span>{property.bedrooms}</span>
