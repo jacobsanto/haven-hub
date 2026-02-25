@@ -42,9 +42,9 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
           
           {/* Featured badge */}
           {experience.is_featured && (
-            <Badge variant="secondary" className="absolute top-4 right-4">
+            <div className="absolute top-4 right-4 bg-accent/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full">
               Featured
-            </Badge>
+            </div>
           )}
         </div>
 
