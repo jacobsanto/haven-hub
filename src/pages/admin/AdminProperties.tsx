@@ -9,6 +9,10 @@ import {
 import { getStatusColors } from '@/lib/utils';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
+import { AdminLoadingSkeleton } from '@/components/admin/AdminLoadingSkeleton';
+import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
+import { TablePagination } from '@/components/admin/TablePagination';
+import { useTablePagination } from '@/hooks/useTablePagination';
 import { useAdminProperties, useDeleteProperty, useUpdateProperty } from '@/hooks/useProperties';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -167,10 +171,13 @@ export default function AdminProperties() {
 
           {/* Content */}
           {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading properties...</p>
-            </div>
+            viewMode === 'grid' ? (
+              <AdminLoadingSkeleton variant="cards" />
+            ) : (
+              <div className="card-organic overflow-hidden">
+                <AdminLoadingSkeleton variant="table" rows={8} />
+              </div>
+            )
           ) : filteredProperties && filteredProperties.length > 0 ? (
             viewMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -379,17 +386,13 @@ export default function AdminProperties() {
               </div>
             )
           ) : (
-            <div className="p-8 text-center card-organic">
-              <Building2 className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">
-                {search || statusFilter !== 'all' ? 'No properties match your filters.' : 'No properties found'}
-              </p>
-              <Link to="/admin/properties/new">
-                <Button className="rounded-full gap-2">
-                  <Plus className="h-4 w-4" /> Add Your First Property
-                </Button>
-              </Link>
-            </div>
+            <AdminEmptyState
+              icon={Building2}
+              title={search || statusFilter !== 'all' ? 'No properties match your filters' : 'No properties yet'}
+              description="Add your first property to get started"
+              actionLabel="Add Property"
+              onAction={() => navigate('/admin/properties/new')}
+            />
           )}
         </div>
 

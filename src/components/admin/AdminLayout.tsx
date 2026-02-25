@@ -32,6 +32,8 @@ import {
   Sun,
   Moon,
   Navigation,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,9 +42,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'admin-sidebar-collapsed-sections';
+const SIDEBAR_COLLAPSED_KEY = 'admin-sidebar-collapsed';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -137,14 +141,75 @@ function useCollapsedSections() {
   }, []);
 
   const isSectionOpen = useCallback((sectionTitle: string) => {
-    // Default to open if not explicitly collapsed
     return collapsedSections[sectionTitle] !== true;
   }, [collapsedSections]);
 
   return { toggleSection, isSectionOpen };
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function useSidebarCollapsed() {
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggle = useCallback(() => {
+    setCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+      return next;
+    });
+  }, []);
+
+  return { collapsed, toggle };
+}
+
+function NavItemLink({
+  item,
+  isActive,
+  collapsed,
+  onClick,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  collapsed: boolean;
+  onClick?: () => void;
+}) {
+  const link = (
+    <Link
+      to={item.href}
+      onClick={onClick}
+      className={cn(
+        'flex items-center gap-3 rounded-xl text-sm font-medium transition-colors min-h-[40px]',
+        collapsed ? 'justify-center px-2 py-2.5' : 'px-4 py-2.5',
+        isActive
+          ? 'bg-primary text-primary-foreground'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+      )}
+    >
+      <item.icon className="h-4 w-4 flex-shrink-0" />
+      {!collapsed && <span>{item.label}</span>}
+    </Link>
+  );
+
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8}>
+          {item.label}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return link;
+}
+
+function SidebarContent({ onNavigate, collapsed = false }: { onNavigate?: () => void; collapsed?: boolean }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
@@ -165,16 +230,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     onNavigate?.();
   };
 
-  // Check if any item in a section is active
   const isSectionActive = (section: NavSection) => {
     return section.items.some(item => location.pathname === item.href);
   };
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-6 border-b border-border">
+      <div className={cn('border-b border-border', collapsed ? 'p-3 flex justify-center' : 'p-6')}>
         <Link to="/admin" className="flex items-center gap-2" onClick={handleNavClick}>
-          {logoUrl ? (
+          {collapsed ? (
+            <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-1 rounded-full">A</span>
+          ) : logoUrl ? (
             <img src={logoUrl} alt={brandName} className="h-8 w-auto max-w-[120px] object-contain" />
           ) : (
             <h1 className="text-xl font-serif">
@@ -182,39 +248,47 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
             </h1>
           )}
-          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Admin</span>
+          {!collapsed && (
+            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Admin</span>
+          )}
         </Link>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className={cn('flex-1 space-y-2 overflow-y-auto', collapsed ? 'p-2' : 'p-4')}>
         {navSections.map((section, sectionIndex) => {
           const hasTitle = !!section.title;
           const isOpen = hasTitle ? isSectionOpen(section.title) : true;
           const hasActiveItem = isSectionActive(section);
 
-          // Sections without title render directly
           if (!hasTitle) {
             return (
               <div key={sectionIndex} className="space-y-1">
-                {section.items.map((item) => {
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      onClick={handleNavClick}
-                      className={cn(
-                        'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors min-h-[40px]',
-                        isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                      )}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
+                {section.items.map((item) => (
+                  <NavItemLink
+                    key={item.href}
+                    item={item}
+                    isActive={location.pathname === item.href}
+                    collapsed={collapsed}
+                    onClick={handleNavClick}
+                  />
+                ))}
+              </div>
+            );
+          }
+
+          // In collapsed mode, show items directly (no section headers)
+          if (collapsed) {
+            return (
+              <div key={sectionIndex} className="space-y-1 pt-2 border-t border-border first:border-t-0 first:pt-0">
+                {section.items.map((item) => (
+                  <NavItemLink
+                    key={item.href}
+                    item={item}
+                    isActive={location.pathname === item.href}
+                    collapsed={collapsed}
+                    onClick={handleNavClick}
+                  />
+                ))}
               </div>
             );
           }
@@ -250,25 +324,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               </CollapsibleTrigger>
               <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
                 <div className="space-y-1 pt-1">
-                  {section.items.map((item) => {
-                    const isActive = location.pathname === item.href;
-                    return (
-                      <Link
-                        key={item.href}
-                        to={item.href}
-                        onClick={handleNavClick}
-                        className={cn(
-                          'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors min-h-[40px]',
-                          isActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                        )}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </Link>
-                    );
-                  })}
+                  {section.items.map((item) => (
+                    <NavItemLink
+                      key={item.href}
+                      item={item}
+                      isActive={location.pathname === item.href}
+                      collapsed={false}
+                      onClick={handleNavClick}
+                    />
+                  ))}
                 </div>
               </CollapsibleContent>
             </Collapsible>
@@ -276,12 +340,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
 
-      <div className="p-4 border-t border-border space-y-4">
-        <Link to="/" onClick={handleNavClick} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]">
-          <ChevronLeft className="h-4 w-4" />
-          Back to Website
-        </Link>
-        <div className="flex items-center justify-between">
+      <div className={cn('border-t border-border', collapsed ? 'p-2 space-y-2' : 'p-4 space-y-4')}>
+        {!collapsed && (
+          <Link to="/" onClick={handleNavClick} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]">
+            <ChevronLeft className="h-4 w-4" />
+            Back to Website
+          </Link>
+        )}
+        <div className={cn('flex items-center', collapsed ? 'flex-col gap-2' : 'justify-between')}>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -292,11 +358,24 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <span className="text-xs text-muted-foreground truncate max-w-[110px]">{user?.email}</span>
+            {!collapsed && (
+              <span className="text-xs text-muted-foreground truncate max-w-[110px]">{user?.email}</span>
+            )}
           </div>
-          <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-10 w-10" aria-label="Sign out">
-            <LogOut className="h-4 w-4" />
-          </Button>
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-8 w-8" aria-label="Sign out">
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Sign out</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-10 w-10" aria-label="Sign out">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -308,6 +387,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { brandName, logoUrl } = useBrand();
   const { theme, setTheme } = useTheme();
+  const { collapsed, toggle } = useSidebarCollapsed();
 
   const nameParts = brandName.split(' ');
   const primaryPart = nameParts[0] || brandName;
@@ -363,15 +443,41 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 flex">
-      <aside className="w-64 bg-card border-r border-border flex flex-col shrink-0">
-        <SidebarContent />
-      </aside>
-      <main className="flex-1 overflow-auto">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="p-8">
-          {children}
-        </motion.div>
-      </main>
-    </div>
+    <TooltipProvider delayDuration={0}>
+      <div className="min-h-screen bg-muted/30 flex">
+        <aside
+          className={cn(
+            'bg-card border-r border-border flex flex-col shrink-0 transition-all duration-200',
+            collapsed ? 'w-14' : 'w-64'
+          )}
+        >
+          <SidebarContent collapsed={collapsed} />
+          {/* Collapse toggle */}
+          <div className={cn('border-t border-border', collapsed ? 'p-1' : 'px-4 py-2')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggle}
+              className={cn('w-full gap-2 text-muted-foreground hover:text-foreground', collapsed && 'px-0 justify-center')}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <>
+                  <PanelLeftClose className="h-4 w-4" />
+                  <span className="text-xs">Collapse</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </aside>
+        <main className="flex-1 overflow-auto">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="p-8">
+            {children}
+          </motion.div>
+        </main>
+      </div>
+    </TooltipProvider>
   );
 }

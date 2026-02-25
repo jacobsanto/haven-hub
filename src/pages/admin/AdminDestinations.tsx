@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, MapPin, Eye, EyeOff } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
+import { AdminLoadingSkeleton } from '@/components/admin/AdminLoadingSkeleton';
+import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import { useDestinations, useDeleteDestination, useUpdateDestination } from '@/hooks/useDestinations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -105,13 +107,11 @@ const AdminDestinations = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  [...Array(3)].map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell colSpan={5}>
-                        <div className="h-12 bg-muted animate-pulse rounded" />
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  <TableRow>
+                    <TableCell colSpan={5} className="p-0">
+                      <AdminLoadingSkeleton variant="table" rows={4} />
+                    </TableCell>
+                  </TableRow>
                 ) : destinations && destinations.length > 0 ? (
                   destinations.map((destination) => (
                     <TableRow key={destination.id}>
@@ -183,16 +183,14 @@ const AdminDestinations = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12">
-                      <MapPin className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                      <p className="text-muted-foreground">No destinations yet</p>
-                      <Button 
-                        variant="link" 
-                        onClick={() => setShowCreateDialog(true)}
-                        className="mt-2"
-                      >
-                        Add your first destination
-                      </Button>
+                    <TableCell colSpan={5} className="p-0">
+                      <AdminEmptyState
+                        icon={MapPin}
+                        title="No destinations yet"
+                        description="Add destinations to showcase your locations"
+                        actionLabel="Add Destination"
+                        onAction={() => setShowCreateDialog(true)}
+                      />
                     </TableCell>
                   </TableRow>
                 )}

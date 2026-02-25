@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminGuard } from '@/components/admin/AdminGuard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
@@ -43,6 +44,7 @@ export default function AdminExitIntent() {
   }
 
   return (
+    <AdminGuard>
     <AdminLayout>
       <div className="space-y-6">
         <div>
@@ -343,5 +345,6 @@ export default function AdminExitIntent() {
         </Tabs>
       </div>
     </AdminLayout>
+    </AdminGuard>
   );
 }

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, EyeOff, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
+import { AdminLoadingSkeleton } from '@/components/admin/AdminLoadingSkeleton';
+import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import { useBlogPosts, useDeleteBlogPost, useUpdateBlogPost } from '@/hooks/useBlogPosts';
 import { useBlogCategories } from '@/hooks/useBlogCategories';
 import { BlogPostFormDialog } from '@/components/admin/BlogPostFormDialog';
@@ -27,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Skeleton } from '@/components/ui/skeleton';
+
 
 export default function AdminBlogPosts() {
   const { data: posts, isLoading } = useBlogPosts();
@@ -88,11 +90,7 @@ export default function AdminBlogPosts() {
 
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             {isLoading ? (
-              <div className="p-6 space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
+              <AdminLoadingSkeleton variant="table" rows={5} />
             ) : posts && posts.length > 0 ? (
               <Table>
                 <TableHeader>
@@ -162,13 +160,13 @@ export default function AdminBlogPosts() {
                 </TableBody>
               </Table>
             ) : (
-              <div className="p-12 text-center">
-                <p className="text-muted-foreground mb-4">No blog posts yet</p>
-                <Button onClick={handleCreate}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create your first post
-                </Button>
-              </div>
+              <AdminEmptyState
+                icon={FileText}
+                title="No blog posts yet"
+                description="Start creating content for your blog"
+                actionLabel="Create First Post"
+                onAction={handleCreate}
+              />
             )}
           </div>
         </div>

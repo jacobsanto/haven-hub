@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Download, FileText, CheckCircle, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminGuard } from '@/components/admin/AdminGuard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -215,6 +216,7 @@ export default function AdminSeasonalRatesImport() {
   const invalidCount = validationResults?.filter(r => !r.valid).length || 0;
 
   return (
+    <AdminGuard>
     <AdminLayout>
       <div className="space-y-6">
         <motion.div
@@ -456,5 +458,6 @@ export default function AdminSeasonalRatesImport() {
         )}
       </div>
     </AdminLayout>
+    </AdminGuard>
   );
 }

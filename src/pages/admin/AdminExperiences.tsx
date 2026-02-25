@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
+import { AdminLoadingSkeleton } from '@/components/admin/AdminLoadingSkeleton';
+import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import { useExperiences, useDeleteExperience, useUpdateExperience } from '@/hooks/useExperiences';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -106,13 +108,11 @@ const AdminExperiences = () => {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  [...Array(3)].map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell colSpan={6}>
-                        <div className="h-12 bg-muted animate-pulse rounded" />
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  <TableRow>
+                    <TableCell colSpan={6} className="p-0">
+                      <AdminLoadingSkeleton variant="table" rows={4} />
+                    </TableCell>
+                  </TableRow>
                 ) : experiences && experiences.length > 0 ? (
                   experiences.map((experience) => (
                     <TableRow key={experience.id}>
@@ -187,16 +187,14 @@ const AdminExperiences = () => {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12">
-                      <Sparkles className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                      <p className="text-muted-foreground">No experiences yet</p>
-                      <Button 
-                        variant="link" 
-                        onClick={() => setShowCreateDialog(true)}
-                        className="mt-2"
-                      >
-                        Add your first experience
-                      </Button>
+                    <TableCell colSpan={6} className="p-0">
+                      <AdminEmptyState
+                        icon={Sparkles}
+                        title="No experiences yet"
+                        description="Create curated experiences for your guests"
+                        actionLabel="Add Experience"
+                        onAction={() => setShowCreateDialog(true)}
+                      />
                     </TableCell>
                   </TableRow>
                 )}

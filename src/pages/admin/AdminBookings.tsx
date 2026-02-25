@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Search, Check, X, Clock, Eye, RefreshCw, Loader2 } from 'lucide-react';
+import { Search, Check, X, Clock, Eye, Loader2, Calendar } from 'lucide-react';
 import { getStatusColors } from '@/lib/utils';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
@@ -8,6 +8,10 @@ import { useAdminBookings, useUpdateBookingStatus } from '@/hooks/useBookings';
 import { useConfirmBookingWithPMS } from '@/hooks/useCompleteBooking';
 import { useAdminProperties } from '@/hooks/useProperties';
 import { BookingDetailDialog } from '@/components/admin/BookingDetailDialog';
+import { AdminLoadingSkeleton } from '@/components/admin/AdminLoadingSkeleton';
+import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
+import { TablePagination } from '@/components/admin/TablePagination';
+import { useTablePagination } from '@/hooks/useTablePagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -51,32 +55,21 @@ export default function AdminBookings() {
       b.guest_email.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Use centralized EUR formatter for admin display
+  const pagination = useTablePagination(filteredBookings);
 
   const handleStatusUpdate = async (id: string, status: BookingStatus) => {
     try {
       await updateStatus.mutateAsync({ id, status });
-      toast({
-        title: 'Status Updated',
-        description: `Booking has been marked as ${status}.`,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update booking status.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Status Updated', description: `Booking has been marked as ${status}.` });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update booking status.', variant: 'destructive' });
     }
   };
 
-  // Confirm booking with PMS sync
   const handleConfirmWithPMS = async (id: string) => {
     try {
       await confirmWithPMS.mutateAsync(id);
-      toast({
-        title: 'Booking Confirmed',
-        description: 'Booking confirmed and synced to PMS.',
-      });
+      toast({ title: 'Booking Confirmed', description: 'Booking confirmed and synced to PMS.' });
     } catch (error) {
       toast({
         title: 'Confirmation Error',
@@ -92,29 +85,19 @@ export default function AdminBookings() {
     <AdminGuard>
       <AdminLayout>
         <div className="space-y-6">
-          {/* Header */}
           <div>
             <h1 className="text-3xl font-serif font-medium">Bookings</h1>
-            <p className="text-muted-foreground">
-              Manage and track all booking requests
-            </p>
+            <p className="text-muted-foreground">Manage and track all booking requests</p>
           </div>
 
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by guest name or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 input-organic"
-              />
+              <Input placeholder="Search by guest name or email..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 input-organic" />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as BookingStatus | 'all')}>
-              <SelectTrigger className="w-[180px] input-organic">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
+              <SelectTrigger className="w-[180px] input-organic"><SelectValue placeholder="Filter by status" /></SelectTrigger>
               <SelectContent className="bg-card">
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
@@ -123,15 +106,11 @@ export default function AdminBookings() {
               </SelectContent>
             </Select>
             <Select value={propertyFilter} onValueChange={setPropertyFilter}>
-              <SelectTrigger className="w-[200px] input-organic">
-                <SelectValue placeholder="Filter by property" />
-              </SelectTrigger>
+              <SelectTrigger className="w-[200px] input-organic"><SelectValue placeholder="Filter by property" /></SelectTrigger>
               <SelectContent className="bg-card">
                 <SelectItem value="all">All Properties</SelectItem>
                 {properties?.map((property) => (
-                  <SelectItem key={property.id} value={property.id}>
-                    {property.name}
-                  </SelectItem>
+                  <SelectItem key={property.id} value={property.id}>{property.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -140,152 +119,102 @@ export default function AdminBookings() {
           {/* Table */}
           <div className="card-organic overflow-hidden">
             {isLoading ? (
-              <div className="p-8 text-center">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-muted-foreground">Loading bookings...</p>
-              </div>
-            ) : filteredBookings && filteredBookings.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Guest</TableHead>
-                    <TableHead>Property</TableHead>
-                    <TableHead>Dates</TableHead>
-                    <TableHead>Guests</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{booking.guest_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {booking.guest_email}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium">
-                          {booking.property?.name || 'Unknown'}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p>
-                            {format(new Date(booking.check_in), 'MMM d, yyyy')}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            to {format(new Date(booking.check_out), 'MMM d, yyyy')}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {booking.nights} nights
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{booking.guests}</TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(booking.total_price)}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusBadge(
-                            booking.status
-                          )}`}
-                        >
-                          {booking.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => setSelectedBookingId(booking.id)}
-                            aria-label="View booking details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {booking.status === 'pending' && (
-                            <>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
-                                onClick={() => handleConfirmWithPMS(booking.id)}
-                                disabled={confirmWithPMS.isPending}
-                                aria-label="Confirm booking and sync to PMS"
-                              >
-                                {confirmWithPMS.isPending ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Check className="h-4 w-4" />
-                                )}
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() =>
-                                  handleStatusUpdate(booking.id, 'cancelled')
-                                }
-                                aria-label="Cancel booking"
-                              >
+              <AdminLoadingSkeleton variant="table" rows={8} />
+            ) : pagination.paginatedData.length > 0 ? (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Guest</TableHead>
+                      <TableHead>Property</TableHead>
+                      <TableHead>Dates</TableHead>
+                      <TableHead>Guests</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pagination.paginatedData.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{booking.guest_name}</p>
+                            <p className="text-sm text-muted-foreground">{booking.guest_email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell><p className="font-medium">{booking.property?.name || 'Unknown'}</p></TableCell>
+                        <TableCell>
+                          <div>
+                            <p>{format(new Date(booking.check_in), 'MMM d, yyyy')}</p>
+                            <p className="text-sm text-muted-foreground">to {format(new Date(booking.check_out), 'MMM d, yyyy')}</p>
+                            <p className="text-xs text-muted-foreground">{booking.nights} nights</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{booking.guests}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(booking.total_price)}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusBadge(booking.status)}`}>
+                            {booking.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setSelectedBookingId(booking.id)} aria-label="View booking details">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {booking.status === 'pending' && (
+                              <>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => handleConfirmWithPMS(booking.id)} disabled={confirmWithPMS.isPending} aria-label="Confirm booking and sync to PMS">
+                                  {confirmWithPMS.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                </Button>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleStatusUpdate(booking.id, 'cancelled')} aria-label="Cancel booking">
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            {booking.status === 'confirmed' && (
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleStatusUpdate(booking.id, 'cancelled')} aria-label="Cancel booking">
                                 <X className="h-4 w-4" />
                               </Button>
-                            </>
-                          )}
-                          {booking.status === 'confirmed' && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() =>
-                                handleStatusUpdate(booking.id, 'cancelled')
-                              }
-                              aria-label="Cancel booking"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {booking.status === 'cancelled' && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-                              onClick={() =>
-                                handleStatusUpdate(booking.id, 'pending')
-                              }
-                              aria-label="Reopen booking"
-                            >
-                              <Clock className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                            )}
+                            {booking.status === 'cancelled' && (
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => handleStatusUpdate(booking.id, 'pending')} aria-label="Reopen booking">
+                                <Clock className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <TablePagination
+                  page={pagination.page}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.totalItems}
+                  pageSize={pagination.pageSize}
+                  hasNextPage={pagination.hasNextPage}
+                  hasPrevPage={pagination.hasPrevPage}
+                  onNextPage={pagination.nextPage}
+                  onPrevPage={pagination.prevPage}
+                  onPageSizeChange={pagination.changePageSize}
+                />
+              </>
             ) : (
-              <div className="p-8 text-center">
-                <p className="text-muted-foreground">No bookings found</p>
-              </div>
+              <AdminEmptyState
+                icon={Calendar}
+                title="No bookings found"
+                description={search ? 'Try adjusting your search or filters' : 'Bookings will appear here once guests start booking'}
+              />
             )}
           </div>
         </div>
 
-        {/* Booking Detail Dialog */}
         <BookingDetailDialog
           bookingId={selectedBookingId}
           open={!!selectedBookingId}
-          onOpenChange={(open) => {
-            if (!open) setSelectedBookingId(null);
-          }}
+          onOpenChange={(open) => { if (!open) setSelectedBookingId(null); }}
         />
       </AdminLayout>
     </AdminGuard>
