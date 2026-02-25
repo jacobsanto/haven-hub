@@ -14,6 +14,13 @@ export interface AddonCatalog {
   image_url: string | null;
   is_active: boolean;
   sort_order: number;
+  visibility: string;
+  internal_cost: number | null;
+  confirmation_type: string;
+  availability_mode: string;
+  daily_capacity: number | null;
+  season_start: string | null;
+  season_end: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +37,13 @@ export type AddonFormData = {
   image_url: string | null;
   is_active: boolean;
   sort_order: number;
+  visibility: string;
+  internal_cost: number | null;
+  confirmation_type: string;
+  availability_mode: string;
+  daily_capacity: number | null;
+  season_start: string | null;
+  season_end: string | null;
 };
 
 export function useAdminAddons(propertyId?: string) {
@@ -52,6 +66,59 @@ export function useAdminAddons(propertyId?: string) {
   });
 }
 
+export function useAddonPerformance() {
+  return useQuery({
+    queryKey: ['admin', 'addon-performance'],
+    queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const [addonsRes, bookingAddonsRes, bookingsRes] = await Promise.all([
+        supabase.from('addons_catalog').select('*').order('sort_order'),
+        supabase.from('booking_addons').select('*'),
+        supabase.from('bookings').select('id, created_at'),
+      ]);
+
+      if (addonsRes.error) throw addonsRes.error;
+      if (bookingAddonsRes.error) throw bookingAddonsRes.error;
+      if (bookingsRes.error) throw bookingsRes.error;
+
+      const recentBookings = (bookingsRes.data || []).filter(
+        b => new Date(b.created_at) >= thirtyDaysAgo
+      );
+      const recentBookingIds = new Set(recentBookings.map(b => b.id));
+      const totalRecentBookings = recentBookings.length;
+
+      const allBookingAddons = bookingAddonsRes.data || [];
+      const recentBookingAddons = allBookingAddons.filter(ba => recentBookingIds.has(ba.booking_id));
+
+      return (addonsRes.data || []).map((addon: any) => {
+        const addonBookings = recentBookingAddons.filter(ba => ba.addon_id === addon.id);
+        const revenue30d = addonBookings.reduce((sum: number, ba: any) => sum + Number(ba.total_price), 0);
+        const uniqueBookings = new Set(addonBookings.map((ba: any) => ba.booking_id)).size;
+        const attachRate = totalRecentBookings > 0 ? (uniqueBookings / totalRecentBookings) * 100 : 0;
+        const refunds = addonBookings.filter((ba: any) => ba.status === 'refunded').length;
+        const refundRate = addonBookings.length > 0 ? (refunds / addonBookings.length) * 100 : 0;
+        const margin = addon.internal_cost != null && addon.price > 0
+          ? ((addon.price - addon.internal_cost) / addon.price) * 100
+          : null;
+
+        return {
+          id: addon.id,
+          name: addon.name,
+          category: addon.category,
+          revenue30d,
+          attachRate: Math.round(attachRate * 10) / 10,
+          totalBookingsWithAddon: uniqueBookings,
+          refundRate: Math.round(refundRate * 10) / 10,
+          margin: margin != null ? Math.round(margin * 10) / 10 : null,
+          is_active: addon.is_active,
+        };
+      });
+    },
+  });
+}
+
 export function useCreateAddon() {
   const queryClient = useQueryClient();
 
@@ -59,7 +126,7 @@ export function useCreateAddon() {
     mutationFn: async (addon: AddonFormData) => {
       const { data, error } = await supabase
         .from('addons_catalog')
-        .insert(addon)
+        .insert(addon as any)
         .select()
         .single();
 
@@ -68,6 +135,7 @@ export function useCreateAddon() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'addons'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'addon-performance'] });
       queryClient.invalidateQueries({ queryKey: ['addons'] });
     },
   });
@@ -80,7 +148,7 @@ export function useUpdateAddon() {
     mutationFn: async ({ id, ...addon }: Partial<AddonCatalog> & { id: string }) => {
       const { data, error } = await supabase
         .from('addons_catalog')
-        .update(addon)
+        .update(addon as any)
         .eq('id', id)
         .select()
         .single();
@@ -90,6 +158,7 @@ export function useUpdateAddon() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'addons'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'addon-performance'] });
       queryClient.invalidateQueries({ queryKey: ['addons'] });
     },
   });
@@ -109,6 +178,7 @@ export function useDeleteAddon() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'addons'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'addon-performance'] });
       queryClient.invalidateQueries({ queryKey: ['addons'] });
     },
   });
