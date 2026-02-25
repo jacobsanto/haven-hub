@@ -88,8 +88,6 @@ const navSections: NavSection[] = [
     title: 'Growth',
     items: [
       { href: '/admin/promotions', icon: Tag, label: 'Promotions' },
-      { href: '/admin/campaigns', icon: Megaphone, label: 'Campaigns' },
-      { href: '/admin/exit-intent', icon: LogOut, label: 'Exit Intent' },
       { href: '/admin/newsletter', icon: Mail, label: 'Newsletter' },
       { href: '/admin/content-hub', icon: FileText, label: 'Content Hub' },
     ],

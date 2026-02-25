@@ -50,7 +50,7 @@ const AdminBlogCategories = React.lazy(() => import("./pages/admin/AdminBlogCate
 const AdminBlogAuthors = React.lazy(() => import("./pages/admin/AdminBlogAuthors"));
 const AdminNewsletterSubscribers = React.lazy(() => import("./pages/admin/AdminNewsletterSubscribers"));
 const AdminAddonsManagement = React.lazy(() => import("./pages/admin/AdminAddonsManagement"));
-const AdminPromotions = React.lazy(() => import("./pages/admin/AdminPromotions"));
+const AdminPromotions = React.lazy(() => import("./pages/admin/AdminPromotionsCenter"));
 const AdminAnalytics = React.lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminPMSHealth = React.lazy(() => import("./pages/admin/AdminPMSHealth"));
 const AdminFees = React.lazy(() => import("./pages/admin/AdminFees"));
