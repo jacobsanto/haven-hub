@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useBrandSettings, useUpdateBrandSettings, defaultBrandSettings } from '@/hooks/useBrandSettings';
-import { supabase } from '@/integrations/supabase/client';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,65 +10,26 @@ import { FontSelector } from '@/components/admin/FontSelector';
 import { CurrencySettingsCard } from '@/components/admin/CurrencySettingsCard';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X } from 'lucide-react';
+import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X, CreditCard, Settings2, ChevronDown, Clock } from 'lucide-react';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { SupportedCurrency } from '@/types/currency';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const HEADING_FONTS = [
-  'Playfair Display',
-  'Cormorant Garamond',
-  'Lora',
-  'Merriweather',
-  'Crimson Text',
-  'Libre Baskerville',
-  'Georgia',
-  'DM Serif Display',
-  'Spectral',
-  'Fraunces',
-  'Abril Fatface',
-  'Josefin Slab',
-  'EB Garamond',
-  'Sorts Mill Goudy',
-  'Bitter',
-  'Vollkorn',
-  'Cardo',
-  'Neuton',
-  'Alegreya',
-  'Gentium Book Plus',
-  'Source Serif Pro',
-  'PT Serif',
-  'Noto Serif',
-  'IBM Plex Serif',
-  'Zilla Slab',
+  'Playfair Display', 'Cormorant Garamond', 'Lora', 'Merriweather', 'Crimson Text',
+  'Libre Baskerville', 'Georgia', 'DM Serif Display', 'Spectral', 'Fraunces',
+  'Abril Fatface', 'Josefin Slab', 'EB Garamond', 'Sorts Mill Goudy', 'Bitter',
+  'Vollkorn', 'Cardo', 'Neuton', 'Alegreya', 'Gentium Book Plus',
+  'Source Serif Pro', 'PT Serif', 'Noto Serif', 'IBM Plex Serif', 'Zilla Slab',
 ];
 
 const BODY_FONTS = [
-  'Lato',
-  'Montserrat',
-  'Inter',
-  'Open Sans',
-  'Source Sans Pro',
-  'Nunito',
-  'Roboto',
-  'Work Sans',
-  'Poppins',
-  'Raleway',
-  'Karla',
-  'Cabin',
-  'Rubik',
-  'DM Sans',
-  'Plus Jakarta Sans',
-  'Outfit',
-  'Mulish',
-  'Quicksand',
-  'Barlow',
-  'Manrope',
-  'Sora',
-  'Space Grotesk',
-  'Albert Sans',
-  'Red Hat Display',
-  'Figtree',
+  'Lato', 'Montserrat', 'Inter', 'Open Sans', 'Source Sans Pro',
+  'Nunito', 'Roboto', 'Work Sans', 'Poppins', 'Raleway',
+  'Karla', 'Cabin', 'Rubik', 'DM Sans', 'Plus Jakarta Sans',
+  'Outfit', 'Mulish', 'Quicksand', 'Barlow', 'Manrope',
+  'Sora', 'Space Grotesk', 'Albert Sans', 'Red Hat Display', 'Figtree',
 ];
 
 // --- HSL <-> Hex conversion helpers ---
@@ -117,7 +76,6 @@ function hexToHslString(hex: string): string {
   }
 }
 
-// --- WCAG Contrast helpers ---
 function getRelativeLuminance(hslStr: string): number {
   try {
     const hex = hslStringToHex(hslStr);
@@ -143,26 +101,25 @@ function ContrastBadge({ fg, bg }: { fg: string; bg: string }) {
   const ratio = getContrastRatio(fg, bg);
   if (ratio >= 4.5) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-green-700 bg-green-100 rounded px-1.5 py-0.5" title={`Contrast: ${ratio.toFixed(1)}:1 — WCAG AA pass`}>
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-green-700 bg-green-100 rounded px-1.5 py-0.5">
         <Check className="h-3 w-3" /> {ratio.toFixed(1)}
       </span>
     );
   }
   if (ratio >= 3) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-700 bg-amber-100 rounded px-1.5 py-0.5" title={`Contrast: ${ratio.toFixed(1)}:1 — Large text only`}>
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">
         <AlertTriangle className="h-3 w-3" /> {ratio.toFixed(1)}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-700 bg-red-100 rounded px-1.5 py-0.5" title={`Contrast: ${ratio.toFixed(1)}:1 — WCAG fail`}>
+    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-700 bg-red-100 rounded px-1.5 py-0.5">
       <X className="h-3 w-3" /> {ratio.toFixed(1)}
     </span>
   );
 }
 
-// --- Dark palette auto-generation ---
 function invertHslLightness(hsl: string, satReduction = 10): string {
   const parts = hsl.match(/([\d.]+)\s+([\d.]+)%?\s+([\d.]+)%?/);
   if (!parts) return hsl;
@@ -187,7 +144,6 @@ function generateDarkPalette(light: Record<string, string>): Record<string, stri
   };
 }
 
-// --- Theme JSON schema ---
 const COLOR_KEYS = [
   'primary_color', 'secondary_color', 'accent_color', 'background_color',
   'foreground_color', 'muted_color', 'card_color', 'border_color',
@@ -216,11 +172,46 @@ interface FormState {
   base_currency: SupportedCurrency;
 }
 
+// Collapsible section wrapper with timestamp
+function SettingsSection({ title, icon, description, children, defaultOpen = false }: {
+  title: string;
+  icon: React.ReactNode;
+  description: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <Card>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {icon}
+                <div>
+                  <CardTitle className="text-base">{title}</CardTitle>
+                  <CardDescription className="text-xs">{description}</CardDescription>
+                </div>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="pt-0">{children}</CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+}
+
 export default function AdminSettings() {
   const { data: settings, isLoading } = useBrandSettings();
   const updateSettings = useUpdateBrandSettings();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const [formState, setFormState] = useState<FormState>({
     brand_name: defaultBrandSettings.brand_name,
@@ -244,7 +235,6 @@ export default function AdminSettings() {
     base_currency: defaultBrandSettings.base_currency,
   });
 
-  // Dark mode editing state
   const [editingMode, setEditingMode] = useState<'light' | 'dark'>('light');
   const [darkPalette, setDarkPalette] = useState<Record<string, string> | null>(null);
 
@@ -287,7 +277,6 @@ export default function AdminSettings() {
     setFormState((prev) => ({ ...prev, logo_url: '' }));
   };
 
-  // Get the current color value based on editing mode
   const getColorValue = (key: string): string => {
     if (editingMode === 'dark' && darkPalette) {
       return darkPalette[key] ?? formState[key as keyof FormState] as string;
@@ -295,12 +284,8 @@ export default function AdminSettings() {
     return formState[key as keyof FormState] as string;
   };
 
-  // Get the background color for contrast checks based on current mode
-  const currentBg = getColorValue('background_color');
-
   const handleSave = async () => {
     if (!settings?.id) return;
-
     try {
       await updateSettings.mutateAsync({
         id: settings.id,
@@ -308,16 +293,11 @@ export default function AdminSettings() {
         logo_url: formState.logo_url || null,
         dark_palette: darkPalette,
       } as any);
-      toast({
-        title: 'Settings Saved',
-        description: 'Brand settings have been updated successfully.',
-      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      toast({ title: 'Settings Saved', description: 'Brand settings have been updated successfully.' });
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save settings. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to save settings. Please try again.', variant: 'destructive' });
     }
   };
 
@@ -347,7 +327,6 @@ export default function AdminSettings() {
     setEditingMode('light');
   };
 
-  // --- Theme Export ---
   const handleExportTheme = () => {
     const lightColors: Record<string, string> = {};
     for (const key of COLOR_KEYS) {
@@ -358,10 +337,7 @@ export default function AdminSettings() {
       name: formState.brand_name + ' Theme',
       light: lightColors,
       dark: darkPalette,
-      fonts: {
-        heading_font: formState.heading_font,
-        body_font: formState.body_font,
-      },
+      fonts: { heading_font: formState.heading_font, body_font: formState.body_font },
     };
     const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -373,7 +349,6 @@ export default function AdminSettings() {
     toast({ title: 'Theme Exported', description: 'Theme file downloaded.' });
   };
 
-  // --- Theme Import ---
   const handleImportTheme = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -382,18 +357,15 @@ export default function AdminSettings() {
       try {
         const json = JSON.parse(ev.target?.result as string);
         if (!json.version || !json.light) throw new Error('Invalid theme schema');
-        // Validate light palette keys
         for (const key of COLOR_KEYS) {
           if (typeof json.light[key] !== 'string') throw new Error(`Missing color: ${key}`);
         }
-        // Apply light palette
         setFormState((prev) => ({
           ...prev,
           ...json.light,
           heading_font: json.fonts?.heading_font ?? prev.heading_font,
           body_font: json.fonts?.body_font ?? prev.body_font,
         }));
-        // Apply dark palette if present
         setDarkPalette(json.dark ?? null);
         setEditingMode('light');
         toast({ title: 'Theme Imported', description: 'Review the colors and click Save Changes to persist.' });
@@ -402,14 +374,11 @@ export default function AdminSettings() {
       }
     };
     reader.readAsText(file);
-    // Reset input so re-importing same file works
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // --- Switch to dark mode editing ---
   const handleModeSwitch = (mode: 'light' | 'dark') => {
     if (mode === 'dark' && !darkPalette) {
-      // Auto-generate dark palette from current light
       const lightColors: Record<string, string> = {};
       for (const key of COLOR_KEYS) {
         lightColors[key] = formState[key as keyof FormState] as string;
@@ -425,7 +394,6 @@ export default function AdminSettings() {
     toast({ title: 'Dark palette removed', description: 'The site will use CSS defaults for dark mode.' });
   };
 
-  // Helper to convert HSL string to CSS color
   const hslToColor = (hsl: string) => `hsl(${hsl})`;
 
   if (isLoading) {
@@ -440,7 +408,6 @@ export default function AdminSettings() {
     );
   }
 
-  // Color definitions for the grid
   const brandColors = [
     { key: 'primary_color', label: 'Primary', desc: 'Main brand color', contrastAgainst: 'background_color' },
     { key: 'secondary_color', label: 'Secondary', desc: 'Supporting color', contrastAgainst: null },
@@ -491,25 +458,40 @@ export default function AdminSettings() {
     );
   };
 
+  const lastUpdated = settings?.updated_at
+    ? new Date(settings.updated_at).toLocaleString()
+    : null;
+
   return (
     <AdminGuard>
       <AdminLayout>
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-serif font-medium">Brand Settings</h1>
+              <h1 className="text-3xl font-serif font-medium">System Settings</h1>
               <p className="text-muted-foreground mt-1">
-                Customize your brand identity, colors, and typography
+                Configure your brand, payments, and system preferences
               </p>
+              {lastUpdated && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  Last saved: {lastUpdated}
+                </div>
+              )}
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 items-center">
+              {saveSuccess && (
+                <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 gap-1">
+                  <Check className="h-3 w-3" /> Saved
+                </Badge>
+              )}
               <Button variant="outline" onClick={handleReset} className="gap-2">
                 <RotateCcw className="h-4 w-4" />
-                Reset
+                Reset All
               </Button>
-              <Button 
-                onClick={handleSave} 
+              <Button
+                onClick={handleSave}
                 disabled={updateSettings.isPending}
                 className="gap-2"
               >
@@ -519,340 +501,191 @@ export default function AdminSettings() {
             </div>
           </div>
 
-          <Tabs defaultValue="identity" className="space-y-6">
-            <TabsList className="grid w-full max-w-lg grid-cols-4">
-              <TabsTrigger value="identity" className="gap-2">
-                <Building2 className="h-4 w-4" />
-                Identity
-              </TabsTrigger>
-              <TabsTrigger value="colors" className="gap-2">
-                <Palette className="h-4 w-4" />
-                Colors
-              </TabsTrigger>
-              <TabsTrigger value="typography" className="gap-2">
-                <Type className="h-4 w-4" />
-                Typography
-              </TabsTrigger>
-              <TabsTrigger value="currency" className="gap-2">
-                <Coins className="h-4 w-4" />
-                Currency
-              </TabsTrigger>
-            </TabsList>
+          {/* Section 1: Brand Identity */}
+          <SettingsSection
+            title="Brand Identity"
+            icon={<Building2 className="h-5 w-5 text-primary" />}
+            description="Logo, name, tagline, and contact information"
+            defaultOpen={true}
+          >
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <Label>Brand Logo</Label>
+                <ImageUploadWithOptimizer
+                  value={formState.logo_url || undefined}
+                  onUpload={(url) => setFormState((prev) => ({ ...prev, logo_url: url }))}
+                  onRemove={handleRemoveLogo}
+                  preset={IMAGE_PRESETS.logo}
+                  storagePath="logos"
+                  label="Upload Logo"
+                  aspectClass="aspect-[2/1] max-w-[300px]"
+                  compact
+                />
+                <p className="text-xs text-muted-foreground">
+                  Recommended: PNG or SVG with transparent background.
+                </p>
+              </div>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="brand_name">Brand Name</Label>
+                  <Input id="brand_name" value={formState.brand_name} onChange={(e) => handleInputChange('brand_name', e.target.value)} placeholder="Arivia Villas" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="brand_tagline">Tagline</Label>
+                  <Input id="brand_tagline" value={formState.brand_tagline} onChange={(e) => handleInputChange('brand_tagline', e.target.value)} placeholder="Luxury Living, Redefined" />
+                </div>
+              </div>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="contact_email">Contact Email</Label>
+                  <Input id="contact_email" type="email" value={formState.contact_email} onChange={(e) => handleInputChange('contact_email', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contact_phone">Contact Phone</Label>
+                  <Input id="contact_phone" value={formState.contact_phone} onChange={(e) => handleInputChange('contact_phone', e.target.value)} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact_address">Contact Address</Label>
+                <Input id="contact_address" value={formState.contact_address} onChange={(e) => handleInputChange('contact_address', e.target.value)} />
+              </div>
+            </div>
+          </SettingsSection>
 
-            {/* Brand Identity Tab */}
-            <TabsContent value="identity">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Brand Identity</CardTitle>
-                  <CardDescription>
-                    Configure your brand name, logo, tagline, and contact information
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Logo Upload Section */}
-                  <div className="space-y-3">
-                    <Label>Brand Logo</Label>
-                    <ImageUploadWithOptimizer
-                      value={formState.logo_url || undefined}
-                      onUpload={(url) => setFormState((prev) => ({ ...prev, logo_url: url }))}
-                      onRemove={handleRemoveLogo}
-                      preset={IMAGE_PRESETS.logo}
-                      storagePath="logos"
-                      label="Upload Logo"
-                      aspectClass="aspect-[2/1] max-w-[300px]"
-                      compact
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Recommended: PNG or SVG with transparent background. Auto-optimized before upload.
-                    </p>
+          {/* Section 2: Color Palette */}
+          <SettingsSection
+            title="Color Palette"
+            icon={<Palette className="h-5 w-5 text-primary" />}
+            description="Brand and system colors for light and dark modes"
+          >
+            <div className="space-y-6">
+              {/* Mode toggle + Import/Export */}
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-muted-foreground">Editing:</span>
+                  <div className="inline-flex rounded-lg border border-border p-0.5">
+                    <button className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${editingMode === 'light' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`} onClick={() => handleModeSwitch('light')}>
+                      <Sun className="h-3.5 w-3.5" /> Light
+                    </button>
+                    <button className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${editingMode === 'dark' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`} onClick={() => handleModeSwitch('dark')}>
+                      <Moon className="h-3.5 w-3.5" /> Dark
+                    </button>
                   </div>
-
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="brand_name">Brand Name</Label>
-                      <Input
-                        id="brand_name"
-                        value={formState.brand_name}
-                        onChange={(e) => handleInputChange('brand_name', e.target.value)}
-                        placeholder="Arivia Villas"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Used as fallback when no logo is set
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="brand_tagline">Tagline</Label>
-                      <Input
-                        id="brand_tagline"
-                        value={formState.brand_tagline}
-                        onChange={(e) => handleInputChange('brand_tagline', e.target.value)}
-                        placeholder="Luxury Living, Redefined"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_email">Contact Email</Label>
-                      <Input
-                        id="contact_email"
-                        type="email"
-                        value={formState.contact_email}
-                        onChange={(e) => handleInputChange('contact_email', e.target.value)}
-                        placeholder="hello@ariviavillas.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_phone">Contact Phone</Label>
-                      <Input
-                        id="contact_phone"
-                        value={formState.contact_phone}
-                        onChange={(e) => handleInputChange('contact_phone', e.target.value)}
-                        placeholder="+1 (234) 567-890"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_address">Contact Address</Label>
-                    <Input
-                      id="contact_address"
-                      value={formState.contact_address}
-                      onChange={(e) => handleInputChange('contact_address', e.target.value)}
-                      placeholder="123 Luxury Lane, Paradise City"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Colors Tab */}
-            <TabsContent value="colors">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Color Palette</CardTitle>
-                      <CardDescription>
-                        Customize the colors used throughout your website. Use the color picker or enter HSL values manually.
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".json"
-                        className="hidden"
-                        onChange={handleImportTheme}
-                      />
-                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="gap-1.5">
-                        <Upload className="h-3.5 w-3.5" />
-                        Import
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleExportTheme} className="gap-1.5">
-                        <Download className="h-3.5 w-3.5" />
-                        Export
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                  {/* Mode Toggle */}
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-medium text-muted-foreground">Editing:</span>
-                    <div className="inline-flex rounded-lg border border-border p-0.5">
-                      <button
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${editingMode === 'light' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                        onClick={() => handleModeSwitch('light')}
-                      >
-                        <Sun className="h-3.5 w-3.5" />
-                        Light
-                      </button>
-                      <button
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${editingMode === 'dark' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                        onClick={() => handleModeSwitch('dark')}
-                      >
-                        <Moon className="h-3.5 w-3.5" />
-                        Dark
-                      </button>
-                    </div>
-                    {editingMode === 'dark' && darkPalette && (
-                      <Button variant="ghost" size="sm" onClick={handleRemoveDarkPalette} className="text-destructive text-xs gap-1">
-                        <X className="h-3 w-3" /> Remove dark palette
-                      </Button>
-                    )}
-                  </div>
-
-                  {editingMode === 'dark' && (
-                    <p className="text-xs text-muted-foreground -mt-4">
-                      Editing the dark mode palette. These colors override the light palette when dark mode is active.
-                    </p>
+                  {editingMode === 'dark' && darkPalette && (
+                    <Button variant="ghost" size="sm" onClick={handleRemoveDarkPalette} className="text-destructive text-xs gap-1">
+                      <X className="h-3 w-3" /> Remove dark palette
+                    </Button>
                   )}
+                </div>
+                <div className="flex gap-2">
+                  <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImportTheme} />
+                  <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="gap-1.5">
+                    <Upload className="h-3.5 w-3.5" /> Import
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleExportTheme} className="gap-1.5">
+                    <Download className="h-3.5 w-3.5" /> Export
+                  </Button>
+                </div>
+              </div>
 
-                  {/* Brand Colors */}
-                  <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Brand Colors</h3>
-                    <div className="grid gap-6 md:grid-cols-3">
-                      {brandColors.map(renderColorRow)}
-                    </div>
-                  </div>
+              {editingMode === 'dark' && (
+                <p className="text-xs text-muted-foreground -mt-2">Editing the dark mode palette. These colors override the light palette when dark mode is active.</p>
+              )}
 
-                  {/* System Colors */}
-                  <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">System Colors</h3>
-                    <div className="grid gap-6 md:grid-cols-2">
-                      {systemColors.map(renderColorRow)}
-                    </div>
-                  </div>
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Brand Colors</h3>
+                <div className="grid gap-6 md:grid-cols-3">{brandColors.map(renderColorRow)}</div>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">System Colors</h3>
+                <div className="grid gap-6 md:grid-cols-2">{systemColors.map(renderColorRow)}</div>
+              </div>
 
-                  {/* Color Preview */}
-                  <div className="p-6 rounded-xl border" style={{ backgroundColor: hslToColor(getColorValue('background_color')) }}>
-                    <h3 
-                      className="text-xl font-serif mb-2" 
-                      style={{ color: hslToColor(getColorValue('foreground_color')) }}
-                    >
-                      Color Preview {editingMode === 'dark' && <Badge variant="secondary" className="ml-2 text-xs">Dark Mode</Badge>}
-                    </h3>
-                    <p 
-                      className="text-sm mb-4" 
-                      style={{ color: hslToColor(getColorValue('foreground_color')), opacity: 0.7 }}
-                    >
-                      This is how your color palette will look across the site.
-                    </p>
-                    <div className="flex flex-wrap gap-3 mb-4">
-                      <button
-                        className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                        style={{ backgroundColor: hslToColor(getColorValue('primary_color')) }}
-                      >
-                        Primary
-                      </button>
-                      <button
-                        className="px-4 py-2 rounded-lg text-sm font-medium"
-                        style={{ 
-                          backgroundColor: hslToColor(getColorValue('secondary_color')),
-                          color: hslToColor(getColorValue('foreground_color'))
-                        }}
-                      >
-                        Secondary
-                      </button>
-                      <span
-                        className="px-3 py-2 rounded-lg text-sm"
-                        style={{ backgroundColor: hslToColor(getColorValue('accent_color')) }}
-                      >
-                        Accent
-                      </span>
-                      <button
-                        className="px-4 py-2 rounded-lg text-white text-sm font-medium"
-                        style={{ backgroundColor: hslToColor(getColorValue('destructive_color')) }}
-                      >
-                        Destructive
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      <div
-                        className="px-4 py-3 rounded-lg text-sm"
-                        style={{ 
-                          backgroundColor: hslToColor(getColorValue('muted_color')),
-                          color: hslToColor(getColorValue('foreground_color'))
-                        }}
-                      >
-                        Muted bg
-                      </div>
-                      <div
-                        className="px-4 py-3 rounded-lg text-sm"
-                        style={{ 
-                          backgroundColor: hslToColor(getColorValue('card_color')),
-                          border: `1px solid ${hslToColor(getColorValue('border_color'))}`,
-                          color: hslToColor(getColorValue('foreground_color'))
-                        }}
-                      >
-                        Card surface
-                      </div>
-                      <div
-                        className="px-4 py-3 rounded-lg text-sm"
-                        style={{ 
-                          backgroundColor: hslToColor(getColorValue('background_color')),
-                          border: `2px solid ${hslToColor(getColorValue('ring_color'))}`,
-                          color: hslToColor(getColorValue('foreground_color'))
-                        }}
-                      >
-                        Focus ring
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+              {/* Preview */}
+              <div className="p-6 rounded-xl border" style={{ backgroundColor: hslToColor(getColorValue('background_color')) }}>
+                <h3 className="text-xl font-serif mb-2" style={{ color: hslToColor(getColorValue('foreground_color')) }}>
+                  Color Preview {editingMode === 'dark' && <Badge variant="secondary" className="ml-2 text-xs">Dark Mode</Badge>}
+                </h3>
+                <p className="text-sm mb-4" style={{ color: hslToColor(getColorValue('foreground_color')), opacity: 0.7 }}>
+                  This is how your color palette will look across the site.
+                </p>
+                <div className="flex flex-wrap gap-3 mb-4">
+                  <button className="px-4 py-2 rounded-lg text-white text-sm font-medium" style={{ backgroundColor: hslToColor(getColorValue('primary_color')) }}>Primary</button>
+                  <button className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: hslToColor(getColorValue('secondary_color')), color: hslToColor(getColorValue('foreground_color')) }}>Secondary</button>
+                  <span className="px-3 py-2 rounded-lg text-sm" style={{ backgroundColor: hslToColor(getColorValue('accent_color')) }}>Accent</span>
+                  <button className="px-4 py-2 rounded-lg text-white text-sm font-medium" style={{ backgroundColor: hslToColor(getColorValue('destructive_color')) }}>Destructive</button>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <div className="px-4 py-3 rounded-lg text-sm" style={{ backgroundColor: hslToColor(getColorValue('muted_color')), color: hslToColor(getColorValue('foreground_color')) }}>Muted bg</div>
+                  <div className="px-4 py-3 rounded-lg text-sm" style={{ backgroundColor: hslToColor(getColorValue('card_color')), border: `1px solid ${hslToColor(getColorValue('border_color'))}`, color: hslToColor(getColorValue('foreground_color')) }}>Card surface</div>
+                  <div className="px-4 py-3 rounded-lg text-sm" style={{ backgroundColor: hslToColor(getColorValue('background_color')), border: `2px solid ${hslToColor(getColorValue('ring_color'))}`, color: hslToColor(getColorValue('foreground_color')) }}>Focus ring</div>
+                </div>
+              </div>
+            </div>
+          </SettingsSection>
 
-            {/* Typography Tab */}
-            <TabsContent value="typography">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Typography</CardTitle>
-                  <CardDescription>
-                    Choose fonts for headings and body text
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="heading_font">Heading Font</Label>
-                      <FontSelector
-                        value={formState.heading_font}
-                        onValueChange={(value) => handleInputChange('heading_font', value)}
-                        fonts={HEADING_FONTS}
-                        placeholder="Select a heading font"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Used for titles and section headings
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="body_font">Body Font</Label>
-                      <FontSelector
-                        value={formState.body_font}
-                        onValueChange={(value) => handleInputChange('body_font', value)}
-                        fonts={BODY_FONTS}
-                        placeholder="Select a body font"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Used for paragraphs and general text
-                      </p>
-                    </div>
-                  </div>
+          {/* Section 3: Typography */}
+          <SettingsSection
+            title="Typography"
+            icon={<Type className="h-5 w-5 text-primary" />}
+            description="Heading and body font selections"
+          >
+            <div className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="heading_font">Heading Font</Label>
+                  <FontSelector value={formState.heading_font} onValueChange={(value) => handleInputChange('heading_font', value)} fonts={HEADING_FONTS} placeholder="Select a heading font" />
+                  <p className="text-xs text-muted-foreground">Used for titles and section headings</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="body_font">Body Font</Label>
+                  <FontSelector value={formState.body_font} onValueChange={(value) => handleInputChange('body_font', value)} fonts={BODY_FONTS} placeholder="Select a body font" />
+                  <p className="text-xs text-muted-foreground">Used for paragraphs and general text</p>
+                </div>
+              </div>
+              <div className="p-6 rounded-xl border bg-card">
+                <h3 className="text-3xl mb-2" style={{ fontFamily: `"${formState.heading_font}", serif` }}>Heading Preview</h3>
+                <h4 className="text-xl mb-4" style={{ fontFamily: `"${formState.heading_font}", serif` }}>Subheading Example</h4>
+                <p className="text-base text-muted-foreground" style={{ fontFamily: `"${formState.body_font}", sans-serif` }}>
+                  This is how your body text will appear throughout the website.
+                </p>
+              </div>
+            </div>
+          </SettingsSection>
 
-                  {/* Typography Preview */}
-                  <div className="mt-8 p-6 rounded-xl border bg-card">
-                    <h3 
-                      className="text-3xl mb-2"
-                      style={{ fontFamily: `"${formState.heading_font}", serif` }}
-                    >
-                      Heading Preview
-                    </h3>
-                    <h4 
-                      className="text-xl mb-4"
-                      style={{ fontFamily: `"${formState.heading_font}", serif` }}
-                    >
-                      Subheading Example
-                    </h4>
-                    <p 
-                      className="text-base text-muted-foreground"
-                      style={{ fontFamily: `"${formState.body_font}", sans-serif` }}
-                    >
-                      This is how your body text will appear throughout the website. 
-                      The font you choose affects readability and the overall feel of your brand.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+          {/* Section 4: Currency */}
+          <SettingsSection
+            title="Currency & Payments"
+            icon={<Coins className="h-5 w-5 text-primary" />}
+            description="Base currency and payment configuration"
+          >
+            <CurrencySettingsCard
+              value={formState.base_currency}
+              onChange={(currency) => handleInputChange('base_currency', currency)}
+            />
+          </SettingsSection>
 
-            {/* Currency Tab */}
-            <TabsContent value="currency">
-              <CurrencySettingsCard
-                value={formState.base_currency}
-                onChange={(currency) => handleInputChange('base_currency', currency)}
-              />
-            </TabsContent>
-          </Tabs>
+          {/* Section 5: Booking Defaults (placeholder) */}
+          <SettingsSection
+            title="Booking Defaults"
+            icon={<Settings2 className="h-5 w-5 text-primary" />}
+            description="Default check-in/out times, cancellation policies, and guest limits"
+          >
+            <p className="text-sm text-muted-foreground py-4">
+              Booking defaults are managed per-property. Visit <strong>Properties → Edit</strong> to configure check-in/out times, cancellation policies, and guest limits.
+            </p>
+          </SettingsSection>
+
+          {/* Section 6: Integrations (placeholder) */}
+          <SettingsSection
+            title="Integrations"
+            icon={<CreditCard className="h-5 w-5 text-primary" />}
+            description="PMS connections, Stripe, and third-party services"
+          >
+            <p className="text-sm text-muted-foreground py-4">
+              Manage PMS connections from <strong>PMS Health</strong>. Stripe configuration is handled via Lovable Cloud secrets.
+            </p>
+          </SettingsSection>
         </div>
       </AdminLayout>
     </AdminGuard>
