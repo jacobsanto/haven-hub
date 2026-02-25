@@ -4,6 +4,8 @@ import { Heart, Shield, Sparkles, Users, ArrowRight } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useBrand } from '@/contexts/BrandContext';
 import { usePageContent } from '@/hooks/usePageContent';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Button } from '@/components/ui/button';
 import { TrustBadges } from '@/components/booking/TrustBadges';
@@ -53,6 +55,7 @@ const About = () => {
   });
 
   const r = (text: string) => text.replace(/{brandName}/g, brandName);
+  const valuesDisplay = useSectionDisplay('about', 'values');
 
   const values = [1, 2, 3, 4].map((i) => ({
     icon: resolveIcon(
@@ -106,7 +109,7 @@ const About = () => {
             <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-4">{valuesContent.heading}</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{valuesContent.subtitle}</p>
           </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+          <SectionRenderer settings={valuesDisplay} className="max-w-6xl mx-auto">
             {values.map((value, index) => (
               <motion.div key={value.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="card-organic p-6 text-center">
                 <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-gold-accent/10 flex items-center justify-center">
@@ -116,7 +119,7 @@ const About = () => {
                 <p className="text-muted-foreground text-sm leading-relaxed">{value.description}</p>
               </motion.div>
             ))}
-          </div>
+          </SectionRenderer>
         </div>
       </section>
 

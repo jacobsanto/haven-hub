@@ -7,6 +7,8 @@ import { ExperienceCard } from '@/components/experiences/ExperienceCard';
 import { FloatingBlob } from '@/components/decorative/FloatingBlob';
 import { useActiveExperiences } from '@/hooks/useExperiences';
 import { usePageContent } from '@/hooks/usePageContent';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -17,6 +19,7 @@ const categories = ['All', 'Culinary', 'Adventure', 'Cultural', 'Wellness'];
 const Experiences = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { data: experiences, isLoading } = useActiveExperiences();
+  const experiencesDisplay = useSectionDisplay('experiences', 'grid');
 
   const heroContent = usePageContent('experiences', 'hero', {
     heading: 'Enhance Your Stay',
@@ -85,11 +88,11 @@ const Experiences = () => {
               ))}
             </div>
           ) : filteredExperiences && filteredExperiences.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <SectionRenderer settings={experiencesDisplay}>
               {filteredExperiences.map((experience, index) => (
                 <ExperienceCard key={experience.id} experience={experience} index={index} />
               ))}
-            </div>
+            </SectionRenderer>
           ) : (
             <div className="text-center py-16">
               <Sparkles className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />

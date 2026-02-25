@@ -82,14 +82,14 @@ export function PMSConnectionHealthCard({
   const getStatusIcon = (status: string | null) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="h-6 w-6 text-green-600" />;
+        return <CheckCircle className="h-6 w-6 text-primary" />;
       case 'error':
       case 'failed':
-        return <XCircle className="h-6 w-6 text-red-600" />;
+        return <XCircle className="h-6 w-6 text-destructive" />;
       case 'running':
-        return <RefreshCw className="h-6 w-6 text-blue-600 animate-spin" />;
+        return <RefreshCw className="h-6 w-6 text-primary animate-spin" />;
       default:
-        return <AlertTriangle className="h-6 w-6 text-yellow-600" />;
+        return <AlertTriangle className="h-6 w-6 text-muted-foreground" />;
     }
   };
 
@@ -172,15 +172,15 @@ export function PMSConnectionHealthCard({
             <StatusCard
               icon={
                 connection.is_active ? (
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <CheckCircle className="h-6 w-6 text-primary" />
                 ) : (
-                  <XCircle className="h-6 w-6 text-red-600" />
+                  <XCircle className="h-6 w-6 text-destructive" />
                 )
               }
               iconBg={
                 connection.is_active
-                  ? "bg-green-100 dark:bg-green-900/30"
-                  : "bg-red-100 dark:bg-red-900/30"
+                  ? "bg-primary/10"
+                  : "bg-destructive/10"
               }
               label="Status"
               value={connection.is_active ? "Connected" : "Disconnected"}

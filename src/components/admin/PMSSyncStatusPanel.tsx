@@ -25,21 +25,21 @@ function SyncCapabilityCard({
   
   return (
     <div className={`p-3 rounded-lg border ${
-      active 
-        ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800' 
+    active 
+        ? 'border-primary/30 bg-primary/5' 
         : enabled 
-          ? 'border-border bg-muted/30' 
-          : 'border-dashed border-muted-foreground/30 bg-muted/10'
+           ? 'border-border bg-muted/30' 
+           : 'border-dashed border-muted-foreground/30 bg-muted/10'
     }`}>
       <div className="flex items-center gap-2 mb-1">
         <Icon className={`h-4 w-4 ${
-          active ? 'text-green-600' : enabled ? 'text-primary' : 'text-muted-foreground'
+          active ? 'text-primary' : enabled ? 'text-primary' : 'text-muted-foreground'
         }`} />
         <span className="font-medium text-sm">{label}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <StatusIcon className={`h-3 w-3 ${
-          active ? 'text-green-600' : enabled ? 'text-muted-foreground' : 'text-muted-foreground/50'
+          active ? 'text-primary' : enabled ? 'text-muted-foreground' : 'text-muted-foreground/50'
         }`} />
         <span className="text-xs text-muted-foreground">
           {active ? 'Active' : enabled ? 'Enabled' : 'Coming Soon'}
@@ -99,7 +99,7 @@ export function PMSSyncStatusPanel({
         <CardTitle className="text-base flex items-center gap-2">
           Sync Capabilities
           {isConnected && (
-            <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 dark:bg-green-900/30 dark:text-green-400">
+            <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5">
               Connected
             </Badge>
           )}
@@ -141,12 +141,12 @@ export function PMSSyncStatusPanel({
             
             <div className="flex flex-col items-center gap-1 px-4">
               <div className="flex items-center gap-1 text-xs">
-                <ArrowDown className="h-3 w-3 text-green-600" />
+                <ArrowDown className="h-3 w-3 text-primary" />
                 <span className="text-muted-foreground">PULL (iCal)</span>
               </div>
               <div className="h-px w-16 bg-border" />
               <div className="flex items-center gap-1 text-xs">
-                <ArrowUp className="h-3 w-3 text-blue-600" />
+                <ArrowUp className="h-3 w-3 text-primary" />
                 <span className="text-muted-foreground">PUSH</span>
               </div>
             </div>
