@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -88,11 +89,9 @@ export default function AdminPropertyForm() {
     bedrooms: 1,
     bathrooms: 1,
     property_type: 'villa' as PropertyType,
-    // Timing/timezone fields
     timezone: 'Europe/Athens',
     check_in_time: '14:00',
     check_out_time: '11:00',
-    // Address/geo fields
     address: null as string | null,
     latitude: null as number | null,
     longitude: null as number | null,
@@ -145,63 +144,38 @@ export default function AdminPropertyForm() {
     }
   }, [existingProperty]);
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
+  const generateSlug = (name: string) =>
+    name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
-    setFormData((prev) => ({
-      ...prev,
-      name,
-      slug: isEditing ? prev.slug : generateSlug(name),
-    }));
+    setFormData((prev) => ({ ...prev, name, slug: isEditing ? prev.slug : generateSlug(name) }));
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'hero' | 'gallery') => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
     const filePath = `${type}/${fileName}`;
-
-    const { error: uploadError, data } = await supabase.storage
-      .from('property-images')
-      .upload(filePath, file);
-
+    const { error: uploadError } = await supabase.storage.from('property-images').upload(filePath, file);
     if (uploadError) {
-      toast({
-        title: 'Upload Failed',
-        description: uploadError.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Upload Failed', description: uploadError.message, variant: 'destructive' });
       setUploading(false);
       return;
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('property-images')
-      .getPublicUrl(filePath);
-
+    const { data: { publicUrl } } = supabase.storage.from('property-images').getPublicUrl(filePath);
     if (type === 'hero') {
       setFormData((prev) => ({ ...prev, hero_image_url: publicUrl }));
     } else {
       setFormData((prev) => ({ ...prev, gallery: [...prev.gallery, publicUrl] }));
     }
-
     setUploading(false);
   };
 
   const removeGalleryImage = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      gallery: prev.gallery.filter((_, i) => i !== index),
-    }));
+    setFormData((prev) => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== index) }));
   };
 
   const autoMatchDestination = (city: string, country: string) => {
@@ -239,9 +213,7 @@ export default function AdminPropertyForm() {
   const handleAddressLookup = async () => {
     const results = await geocode.lookup(addressQuery);
     setShowGeoResults(true);
-    if (results.length === 1) {
-      applyGeoResult(results[0]);
-    }
+    if (results.length === 1) applyGeoResult(results[0]);
   };
 
   const toggleAmenity = (amenity: string) => {
@@ -255,557 +227,328 @@ export default function AdminPropertyForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.name || !formData.slug || !formData.city || !formData.country) {
-      toast({
-        title: 'Missing Required Fields',
-        description: 'Please fill in all required fields.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Missing Required Fields', description: 'Please fill in all required fields.', variant: 'destructive' });
       return;
     }
-
-    // Warn about missing destination but allow saving
     if (!formData.destination_id && !confirmNoDestination) {
       setShowDestinationWarning(true);
       return;
     }
-
     try {
       if (isEditing && id) {
         await updateProperty.mutateAsync({ id, ...formData });
-        toast({
-          title: 'Property Updated',
-          description: 'The property has been successfully updated.',
-        });
+        toast({ title: 'Property Updated', description: 'The property has been successfully updated.' });
       } else {
         await createProperty.mutateAsync(formData);
-        toast({
-          title: 'Property Created',
-          description: 'The property has been successfully created.',
-        });
+        toast({ title: 'Property Created', description: 'The property has been successfully created.' });
       }
       navigate('/admin/properties');
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error.message || 'Something went wrong.', variant: 'destructive' });
     }
   };
 
   return (
     <AdminGuard>
       <AdminLayout>
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/admin/properties')}
-            >
+            <Button variant="ghost" size="icon" onClick={() => navigate('/admin/properties')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-serif font-medium">
+              <h1 className="text-2xl font-serif font-medium">
                 {isEditing ? 'Edit Property' : 'Add New Property'}
               </h1>
-              <p className="text-muted-foreground">
-                {isEditing
-                  ? 'Update the property details below'
-                  : 'Fill in the details to create a new property listing'}
+              <p className="text-muted-foreground text-sm">
+                {isEditing ? 'Update the property details below' : 'Fill in the details to create a new property listing'}
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Basic Info */}
-            <div className="card-organic p-6 space-y-6">
-              <h2 className="font-serif text-xl font-medium">Basic Information</h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Tabs defaultValue="core" className="space-y-6">
+              <TabsList className="flex flex-wrap h-auto gap-1">
+                <TabsTrigger value="core">Core</TabsTrigger>
+                <TabsTrigger value="media">Media</TabsTrigger>
+                <TabsTrigger value="experience">Experience</TabsTrigger>
+                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              </TabsList>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Property Name (Internal) *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={handleNameChange}
-                    placeholder="e.g., PROP-001-TUSCANY"
-                    className="input-organic"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Used for admin, PMS sync, and internal reference
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="display_name">Display Name (Customer-Facing)</Label>
-                  <Input
-                    id="display_name"
-                    value={formData.display_name || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, display_name: e.target.value || null }))
-                    }
-                    placeholder="e.g., Sunset Villa with Caldera View"
-                    className="input-organic"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Shown on Stripe checkout, receipts, and confirmations
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="slug">URL Slug *</Label>
-                  <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, slug: e.target.value }))
-                    }
-                    placeholder="e.g., villa-serena"
-                    className="input-organic"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="short_description">Short Description</Label>
-                <Textarea
-                  id="short_description"
-                  value={formData.short_description || ''}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, short_description: e.target.value || null }))
-                  }
-                  placeholder="A compelling 1-2 sentence intro that is always visible to guests"
-                  className="input-organic min-h-[80px]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  This editorial hook is always displayed — make it count
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Full Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  placeholder="Detailed property description. Use blank lines to separate paragraphs."
-                  className="input-organic min-h-[160px]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Use blank lines between paragraphs for proper formatting on the property page
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="neighborhood_description">Neighborhood Description</Label>
-                <Textarea
-                  id="neighborhood_description"
-                  value={formData.neighborhood_description || ''}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, neighborhood_description: e.target.value || null }))
-                  }
-                  placeholder="Describe the area, vibe, and what makes the location special"
-                  className="input-organic min-h-[100px]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Shown in the Location & Neighborhood section of the property page
-                </p>
-              </div>
-
-              {/* Address Lookup */}
-              <div className="space-y-2">
-                <Label>Address Lookup</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={addressQuery}
-                    onChange={(e) => setAddressQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddressLookup())}
-                    placeholder="Type address or place name and click Lookup"
-                    className="input-organic flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddressLookup}
-                    disabled={geocode.loading || addressQuery.trim().length < 2}
-                    className="gap-2"
-                  >
-                    {geocode.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                    Lookup
-                  </Button>
-                </div>
-                {showGeoResults && geocode.results.length > 1 && (
-                  <div className="border border-border rounded-lg divide-y divide-border max-h-48 overflow-y-auto">
-                    {geocode.results.map((r, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 transition-colors"
-                        onClick={() => applyGeoResult(r)}
-                      >
-                        {r.display_name}
-                      </button>
-                    ))}
+              {/* ── TAB 1: CORE ── */}
+              <TabsContent value="core" className="space-y-6">
+                {/* Basic Information */}
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Basic Information</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Property Name (Internal) *</Label>
+                      <Input id="name" value={formData.name} onChange={handleNameChange} placeholder="e.g., PROP-001-TUSCANY" className="input-organic" required />
+                      <p className="text-xs text-muted-foreground">Used for admin, PMS sync, and internal reference</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="display_name">Display Name (Customer-Facing)</Label>
+                      <Input id="display_name" value={formData.display_name || ''} onChange={(e) => setFormData((prev) => ({ ...prev, display_name: e.target.value || null }))} placeholder="e.g., Sunset Villa with Caldera View" className="input-organic" />
+                      <p className="text-xs text-muted-foreground">Shown on Stripe checkout, receipts, and confirmations</p>
+                    </div>
                   </div>
-                )}
-                {geocode.error && <p className="text-sm text-destructive">{geocode.error}</p>}
-              </div>
-
-              {/* Matched destination */}
-              {formData.destination_id && destinations && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Linked to:</span>
-                  <Badge variant="secondary">
-                    {destinations.find((d) => d.id === formData.destination_id)?.name || 'Destination'}
-                  </Badge>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City *</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => {
-                      const city = e.target.value;
-                      const destId = autoMatchDestination(city, formData.country);
-                      setFormData((prev) => ({ ...prev, city, destination_id: destId ?? prev.destination_id }));
-                    }}
-                    placeholder="e.g., Florence"
-                    className="input-organic"
-                    required
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="slug">URL Slug *</Label>
+                      <Input id="slug" value={formData.slug} onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))} placeholder="e.g., villa-serena" className="input-organic" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="property_type">Property Type</Label>
+                      <Select value={formData.property_type} onValueChange={(value) => setFormData((prev) => ({ ...prev, property_type: value as PropertyType }))}>
+                        <SelectTrigger className="input-organic"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-card">
+                          <SelectItem value="villa">Villa</SelectItem>
+                          <SelectItem value="apartment">Apartment</SelectItem>
+                          <SelectItem value="estate">Estate</SelectItem>
+                          <SelectItem value="cottage">Cottage</SelectItem>
+                          <SelectItem value="penthouse">Penthouse</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="short_description">Short Description</Label>
+                    <Textarea id="short_description" value={formData.short_description || ''} onChange={(e) => setFormData((prev) => ({ ...prev, short_description: e.target.value || null }))} placeholder="A compelling 1-2 sentence intro" className="input-organic min-h-[80px]" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Full Description</Label>
+                    <Textarea id="description" value={formData.description} onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))} placeholder="Detailed property description" className="input-organic min-h-[120px]" />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="region">Region</Label>
-                  <Input
-                    id="region"
-                    value={formData.region}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, region: e.target.value }))
-                    }
-                    placeholder="e.g., Tuscany"
-                    className="input-organic"
-                  />
+                {/* Location */}
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Location</h2>
+                  <div className="space-y-2">
+                    <Label>Address Lookup</Label>
+                    <div className="flex gap-2">
+                      <Input value={addressQuery} onChange={(e) => setAddressQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddressLookup())} placeholder="Type address or place name" className="input-organic flex-1" />
+                      <Button type="button" variant="outline" onClick={handleAddressLookup} disabled={geocode.loading || addressQuery.trim().length < 2} className="gap-2">
+                        {geocode.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                        Lookup
+                      </Button>
+                    </div>
+                    {showGeoResults && geocode.results.length > 1 && (
+                      <div className="border border-border rounded-lg divide-y divide-border max-h-48 overflow-y-auto">
+                        {geocode.results.map((r, i) => (
+                          <button key={i} type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-accent/50 transition-colors" onClick={() => applyGeoResult(r)}>
+                            {r.display_name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {geocode.error && <p className="text-sm text-destructive">{geocode.error}</p>}
+                  </div>
+                  {formData.destination_id && destinations && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Linked to:</span>
+                      <Badge variant="secondary">{destinations.find((d) => d.id === formData.destination_id)?.name || 'Destination'}</Badge>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City *</Label>
+                      <Input id="city" value={formData.city} onChange={(e) => { const city = e.target.value; const destId = autoMatchDestination(city, formData.country); setFormData((prev) => ({ ...prev, city, destination_id: destId ?? prev.destination_id })); }} placeholder="e.g., Florence" className="input-organic" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="region">Region</Label>
+                      <Input id="region" value={formData.region} onChange={(e) => setFormData((prev) => ({ ...prev, region: e.target.value }))} placeholder="e.g., Tuscany" className="input-organic" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country *</Label>
+                      <Input id="country" value={formData.country} onChange={(e) => { const country = e.target.value; const destId = autoMatchDestination(formData.city, country); setFormData((prev) => ({ ...prev, country, destination_id: destId ?? prev.destination_id })); }} placeholder="e.g., Italy" className="input-organic" required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Full Address</Label>
+                      <Input id="address" value={formData.address || ''} onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value || null }))} placeholder="Street address" className="input-organic" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="postal_code">Postal Code</Label>
+                      <Input id="postal_code" value={formData.postal_code || ''} onChange={(e) => setFormData((prev) => ({ ...prev, postal_code: e.target.value || null }))} placeholder="e.g., 84700" className="input-organic" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Coordinates</Label>
+                      <p className="text-sm text-muted-foreground pt-2">
+                        {formData.latitude != null && formData.longitude != null ? `${formData.latitude.toFixed(5)}, ${formData.longitude.toFixed(5)}` : 'Not set — use address lookup'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country *</Label>
-                  <Input
-                    id="country"
-                    value={formData.country}
-                    onChange={(e) => {
-                      const country = e.target.value;
-                      const destId = autoMatchDestination(formData.city, country);
-                      setFormData((prev) => ({ ...prev, country, destination_id: destId ?? prev.destination_id }));
-                    }}
-                    placeholder="e.g., Italy"
-                    className="input-organic"
-                    required
-                  />
+                {/* Pricing & Capacity */}
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Pricing & Capacity</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="base_price">Price/Night ($) *</Label>
+                      <Input id="base_price" type="number" min={0} value={formData.base_price} onChange={(e) => setFormData((prev) => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))} className="input-organic" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="max_guests">Max Guests *</Label>
+                      <Input id="max_guests" type="number" min={1} value={formData.max_guests} onChange={(e) => setFormData((prev) => ({ ...prev, max_guests: parseInt(e.target.value) || 1 }))} className="input-organic" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bedrooms">Bedrooms</Label>
+                      <Input id="bedrooms" type="number" min={1} value={formData.bedrooms} onChange={(e) => setFormData((prev) => ({ ...prev, bedrooms: parseInt(e.target.value) || 1 }))} className="input-organic" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bathrooms">Bathrooms</Label>
+                      <Input id="bathrooms" type="number" min={1} step={0.5} value={formData.bathrooms} onChange={(e) => setFormData((prev) => ({ ...prev, bathrooms: parseFloat(e.target.value) || 1 }))} className="input-organic" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="area_sqm">Size (m²)</Label>
+                      <Input id="area_sqm" type="number" min={0} value={formData.area_sqm ?? ''} onChange={(e) => setFormData((prev) => ({ ...prev, area_sqm: e.target.value ? parseInt(e.target.value) : null }))} placeholder="e.g., 250" className="input-organic" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={formData.status} onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value as PropertyStatus }))}>
+                        <SelectTrigger className="input-organic"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-card">
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="archived">Archived</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </TabsContent>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="address">Full Address</Label>
-                  <Input
-                    id="address"
-                    value={formData.address || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, address: e.target.value || null }))
-                    }
-                    placeholder="Street address"
-                    className="input-organic"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="postal_code">Postal Code</Label>
-                  <Input
-                    id="postal_code"
-                    value={formData.postal_code || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, postal_code: e.target.value || null }))
-                    }
-                    placeholder="e.g., 84700"
-                    className="input-organic"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Coordinates</Label>
-                  <p className="text-sm text-muted-foreground pt-2">
-                    {formData.latitude != null && formData.longitude != null
-                      ? `${formData.latitude.toFixed(5)}, ${formData.longitude.toFixed(5)}`
-                      : 'Not set — use address lookup'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Property Details */}
-            <div className="card-organic p-6 space-y-6">
-              <h2 className="font-serif text-xl font-medium">Property Details</h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="property_type">Property Type</Label>
-                  <Select
-                    value={formData.property_type}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        property_type: value as PropertyType,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="input-organic">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card">
-                      <SelectItem value="villa">Villa</SelectItem>
-                      <SelectItem value="apartment">Apartment</SelectItem>
-                      <SelectItem value="estate">Estate</SelectItem>
-                      <SelectItem value="cottage">Cottage</SelectItem>
-                      <SelectItem value="penthouse">Penthouse</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bedrooms">Bedrooms</Label>
-                  <Input
-                    id="bedrooms"
-                    type="number"
-                    min={1}
-                    value={formData.bedrooms}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        bedrooms: parseInt(e.target.value) || 1,
-                      }))
-                    }
-                    className="input-organic"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bathrooms">Bathrooms</Label>
-                  <Input
-                    id="bathrooms"
-                    type="number"
-                    min={1}
-                    step={0.5}
-                    value={formData.bathrooms}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        bathrooms: parseFloat(e.target.value) || 1,
-                      }))
-                    }
-                    className="input-organic"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="area_sqm">Size (m²)</Label>
-                  <Input
-                    id="area_sqm"
-                    type="number"
-                    min={0}
-                    value={formData.area_sqm ?? ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        area_sqm: e.target.value ? parseInt(e.target.value) : null,
-                      }))
-                    }
-                    placeholder="e.g., 250"
-                    className="input-organic"
-                  />
-                </div>
-
-                <div className="space-y-2 flex items-center pt-8">
-                  <Checkbox
-                    id="instant_booking"
-                    checked={formData.instant_booking}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        instant_booking: !!checked,
-                      }))
-                    }
-                  />
-                  <Label htmlFor="instant_booking" className="ml-2 cursor-pointer">
-                    Instant Booking
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            {/* Property Highlights */}
-            <HighlightsEditor
-              highlights={formData.highlights}
-              onChange={(highlights) =>
-                setFormData((prev) => ({ ...prev, highlights }))
-              }
-            />
-
-            {/* Pricing & Capacity */}
-            <div className="card-organic p-6 space-y-6">
-              <h2 className="font-serif text-xl font-medium">Pricing & Capacity</h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="base_price">Price per Night ($) *</Label>
-                  <Input
-                    id="base_price"
-                    type="number"
-                    min={0}
-                    value={formData.base_price}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        base_price: parseFloat(e.target.value) || 0,
-                      }))
-                    }
-                    className="input-organic"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="max_guests">Maximum Guests *</Label>
-                  <Input
-                    id="max_guests"
-                    type="number"
-                    min={1}
-                    value={formData.max_guests}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        max_guests: parseInt(e.target.value) || 1,
-                      }))
-                    }
-                    className="input-organic"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        status: value as PropertyStatus,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="input-organic">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card">
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* Media & Virtual Tour */}
-            <div className="card-organic p-6 space-y-6">
-              <h2 className="font-serif text-xl font-medium">Media & Virtual Tour</h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="video_url">Video URL</Label>
-                  <Input
-                    id="video_url"
-                    value={formData.video_url || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, video_url: e.target.value || null }))
-                    }
-                    placeholder="https://youtube.com/..."
-                    className="input-organic"
-                  />
-                  <p className="text-xs text-muted-foreground">YouTube, Vimeo, or direct video URL</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="virtual_tour_url">Virtual Tour URL</Label>
-                  <Input
-                    id="virtual_tour_url"
-                    value={formData.virtual_tour_url || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, virtual_tour_url: e.target.value || null }))
-                    }
-                    placeholder="https://my.matterport.com/..."
-                    className="input-organic"
-                  />
-                  <p className="text-xs text-muted-foreground">Matterport, 360° tour, or similar</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Images */}
-            <div className="card-organic p-6 space-y-6">
-              <h2 className="font-serif text-xl font-medium">Images</h2>
-
-              {/* Hero Image */}
-              <div className="space-y-2">
-                <Label>Hero Image</Label>
-                <ImageUploadWithOptimizer
-                  value={formData.hero_image_url || undefined}
-                  onUpload={(url) => setFormData((prev) => ({ ...prev, hero_image_url: url }))}
-                  onRemove={() => setFormData((prev) => ({ ...prev, hero_image_url: '' }))}
-                  preset={IMAGE_PRESETS.hero}
-                  storagePath={`properties/${formData.slug || id || 'new'}/hero`}
-                  label="Click to upload hero image"
-                />
-              </div>
-
-              {/* Gallery */}
-              <div className="space-y-2">
-                <Label>Gallery Images</Label>
-                <GalleryEditor
-                  gallery={formData.gallery}
-                  onReorder={(newGallery) => setFormData((prev) => ({ ...prev, gallery: newGallery }))}
-                  onRemove={removeGalleryImage}
-                  onSetAsHero={(url) => setFormData((prev) => ({ ...prev, hero_image_url: url }))}
-                />
-                <div className="aspect-square max-w-[200px]">
+              {/* ── TAB 2: MEDIA ── */}
+              <TabsContent value="media" className="space-y-6">
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Hero Image</h2>
                   <ImageUploadWithOptimizer
-                    onUpload={(url) => setFormData((prev) => ({ ...prev, gallery: [...prev.gallery, url] }))}
-                    preset={IMAGE_PRESETS.gallery}
-                    storagePath={`properties/${formData.slug || id || 'new'}/gallery`}
-                    label="Add Image"
-                    aspectClass="aspect-square"
-                    compact
+                    value={formData.hero_image_url || undefined}
+                    onUpload={(url) => setFormData((prev) => ({ ...prev, hero_image_url: url }))}
+                    onRemove={() => setFormData((prev) => ({ ...prev, hero_image_url: '' }))}
+                    preset={IMAGE_PRESETS.hero}
+                    storagePath={`properties/${formData.slug || id || 'new'}/hero`}
+                    label="Click to upload hero image"
                   />
                 </div>
-              </div>
-            </div>
 
-            {/* Amenities - Dynamic with Categories */}
-            <AmenitiesSection
-              selectedAmenities={formData.amenities}
-              onToggle={toggleAmenity}
-            />
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Gallery</h2>
+                  <GalleryEditor
+                    gallery={formData.gallery}
+                    onReorder={(newGallery) => setFormData((prev) => ({ ...prev, gallery: newGallery }))}
+                    onRemove={removeGalleryImage}
+                    onSetAsHero={(url) => setFormData((prev) => ({ ...prev, hero_image_url: url }))}
+                  />
+                  <div className="aspect-square max-w-[200px]">
+                    <ImageUploadWithOptimizer
+                      onUpload={(url) => setFormData((prev) => ({ ...prev, gallery: [...prev.gallery, url] }))}
+                      preset={IMAGE_PRESETS.gallery}
+                      storagePath={`properties/${formData.slug || id || 'new'}/gallery`}
+                      label="Add Image"
+                      aspectClass="aspect-square"
+                      compact
+                    />
+                  </div>
+                </div>
+
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Video & Virtual Tour</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="video_url">Video URL</Label>
+                      <Input id="video_url" value={formData.video_url || ''} onChange={(e) => setFormData((prev) => ({ ...prev, video_url: e.target.value || null }))} placeholder="https://youtube.com/..." className="input-organic" />
+                      <p className="text-xs text-muted-foreground">YouTube, Vimeo, or direct video URL</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="virtual_tour_url">Virtual Tour URL</Label>
+                      <Input id="virtual_tour_url" value={formData.virtual_tour_url || ''} onChange={(e) => setFormData((prev) => ({ ...prev, virtual_tour_url: e.target.value || null }))} placeholder="https://my.matterport.com/..." className="input-organic" />
+                      <p className="text-xs text-muted-foreground">Matterport, 360° tour, or similar</p>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* ── TAB 3: EXPERIENCE ── */}
+              <TabsContent value="experience" className="space-y-6">
+                <HighlightsEditor highlights={formData.highlights} onChange={(highlights) => setFormData((prev) => ({ ...prev, highlights }))} />
+                <AmenitiesSection selectedAmenities={formData.amenities} onToggle={toggleAmenity} />
+
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Neighborhood</h2>
+                  <div className="space-y-2">
+                    <Label htmlFor="neighborhood_description">Neighborhood Description</Label>
+                    <Textarea id="neighborhood_description" value={formData.neighborhood_description || ''} onChange={(e) => setFormData((prev) => ({ ...prev, neighborhood_description: e.target.value || null }))} placeholder="Describe the area, vibe, and what makes the location special" className="input-organic min-h-[100px]" />
+                  </div>
+                </div>
+
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">House Rules & Policies</h2>
+                  <div className="space-y-2">
+                    <Label htmlFor="cancellation_policy">Cancellation Policy</Label>
+                    <Select value={formData.cancellation_policy || ''} onValueChange={(v) => setFormData((prev) => ({ ...prev, cancellation_policy: v || null }))}>
+                      <SelectTrigger className="input-organic"><SelectValue placeholder="Select policy" /></SelectTrigger>
+                      <SelectContent className="bg-card">
+                        <SelectItem value="flexible">Flexible</SelectItem>
+                        <SelectItem value="moderate">Moderate</SelectItem>
+                        <SelectItem value="strict">Strict</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pet_policy">Pet Policy</Label>
+                    <Input id="pet_policy" value={formData.pet_policy || ''} onChange={(e) => setFormData((prev) => ({ ...prev, pet_policy: e.target.value || null }))} placeholder="e.g., Small dogs allowed with deposit" className="input-organic" />
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* ── TAB 4: ADVANCED ── */}
+              <TabsContent value="advanced" className="space-y-6">
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Check-in / Check-out</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="check_in_time">Check-in Time</Label>
+                      <Input id="check_in_time" type="time" value={formData.check_in_time} onChange={(e) => setFormData((prev) => ({ ...prev, check_in_time: e.target.value }))} className="input-organic" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="check_out_time">Check-out Time</Label>
+                      <Input id="check_out_time" type="time" value={formData.check_out_time} onChange={(e) => setFormData((prev) => ({ ...prev, check_out_time: e.target.value }))} className="input-organic" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="timezone">Timezone</Label>
+                      <Input id="timezone" value={formData.timezone} onChange={(e) => setFormData((prev) => ({ ...prev, timezone: e.target.value }))} placeholder="e.g., Europe/Athens" className="input-organic" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Booking Settings</h2>
+                  <div className="flex items-center gap-3">
+                    <Checkbox id="instant_booking" checked={formData.instant_booking} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, instant_booking: !!checked }))} />
+                    <Label htmlFor="instant_booking" className="cursor-pointer">Enable Instant Booking</Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Destination Override</Label>
+                    <Select value={formData.destination_id || ''} onValueChange={(v) => setFormData((prev) => ({ ...prev, destination_id: v || null }))}>
+                      <SelectTrigger className="input-organic"><SelectValue placeholder="Auto-matched or select" /></SelectTrigger>
+                      <SelectContent className="bg-card">
+                        {destinations?.filter((d) => d.status === 'active').map((d) => (
+                          <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
 
             {/* Destination warning */}
             {showDestinationWarning && !formData.destination_id && (
@@ -813,31 +556,12 @@ export default function AdminPropertyForm() {
                 <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-destructive">No destination linked</p>
-                  <p className="text-xs text-destructive/80 mt-1">
-                    This property won't appear on any destination page. Use the address lookup above to auto-link, or save anyway.
-                  </p>
+                  <p className="text-xs text-destructive/80 mt-1">This property won't appear on any destination page.</p>
                   <div className="flex gap-2 mt-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setConfirmNoDestination(true);
-                        setShowDestinationWarning(false);
-                        // Re-trigger form submit
-                        const form = document.querySelector('form');
-                        form?.requestSubmit();
-                      }}
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={() => { setConfirmNoDestination(true); setShowDestinationWarning(false); const form = document.querySelector('form'); form?.requestSubmit(); }}>
                       Save Without Destination
                     </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => setShowDestinationWarning(false)}
-                    >
-                      Go Back & Fix
-                    </Button>
+                    <Button type="button" size="sm" onClick={() => setShowDestinationWarning(false)}>Go Back & Fix</Button>
                   </div>
                 </div>
               </div>
@@ -845,23 +569,9 @@ export default function AdminPropertyForm() {
 
             {/* Submit */}
             <div className="flex gap-4 justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/admin/properties')}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createProperty.isPending || updateProperty.isPending}
-                className="rounded-full px-8"
-              >
-                {createProperty.isPending || updateProperty.isPending
-                  ? 'Saving...'
-                  : isEditing
-                  ? 'Update Property'
-                  : 'Create Property'}
+              <Button type="button" variant="outline" onClick={() => navigate('/admin/properties')}>Cancel</Button>
+              <Button type="submit" disabled={createProperty.isPending || updateProperty.isPending} className="rounded-full px-8">
+                {createProperty.isPending || updateProperty.isPending ? 'Saving...' : isEditing ? 'Update Property' : 'Create Property'}
               </Button>
             </div>
           </form>
@@ -871,7 +581,7 @@ export default function AdminPropertyForm() {
   );
 }
 
-// Amenities section with categories
+// ── Amenities Section ──
 interface AmenitiesSectionProps {
   selectedAmenities: string[];
   onToggle: (slug: string) => void;
@@ -883,20 +593,10 @@ function AmenitiesSection({ selectedAmenities, onToggle }: AmenitiesSectionProps
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
 
-  // Get sorted categories
-  const categories = Object.keys(amenitiesByCategory).sort();
-
-  // Filter amenities by search
   const filteredByCategory = search
     ? Object.entries(amenitiesByCategory).reduce((acc, [category, items]) => {
-        const filtered = items.filter(
-          (a) =>
-            a.name.toLowerCase().includes(search.toLowerCase()) ||
-            a.slug.toLowerCase().includes(search.toLowerCase())
-        );
-        if (filtered.length > 0) {
-          acc[category] = filtered;
-        }
+        const filtered = items.filter((a) => a.name.toLowerCase().includes(search.toLowerCase()) || a.slug.toLowerCase().includes(search.toLowerCase()));
+        if (filtered.length > 0) acc[category] = filtered;
         return acc;
       }, {} as Record<string, AmenityType[]>)
     : amenitiesByCategory;
@@ -904,28 +604,21 @@ function AmenitiesSection({ selectedAmenities, onToggle }: AmenitiesSectionProps
   const toggleCategory = (category: string) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
-      if (next.has(category)) {
-        next.delete(category);
-      } else {
-        next.add(category);
-      }
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
       return next;
     });
   };
 
-  // Count selected per category
-  const countSelected = (categoryAmenities: AmenityType[]) => {
-    return categoryAmenities.filter((a) => selectedAmenities.includes(a.slug)).length;
-  };
+  const countSelected = (categoryAmenities: AmenityType[]) =>
+    categoryAmenities.filter((a) => selectedAmenities.includes(a.slug)).length;
 
   if (isLoading) {
     return (
       <div className="card-organic p-6">
-        <h2 className="font-serif text-xl font-medium mb-4">Amenities</h2>
+        <h2 className="font-serif text-lg font-medium mb-4">Amenities</h2>
         <div className="animate-pulse space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 bg-muted rounded-lg" />
-          ))}
+          {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-muted rounded-lg" />)}
         </div>
       </div>
     );
@@ -934,62 +627,27 @@ function AmenitiesSection({ selectedAmenities, onToggle }: AmenitiesSectionProps
   return (
     <div className="card-organic p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-xl font-medium">Amenities</h2>
-        <Link
-          to="/admin/amenities"
-          className="text-sm text-primary hover:underline flex items-center gap-1"
-        >
-          <Settings2 className="h-4 w-4" />
-          Manage Amenities
+        <h2 className="font-serif text-lg font-medium">Amenities</h2>
+        <Link to="/admin/amenities" className="text-sm text-primary hover:underline flex items-center gap-1">
+          <Settings2 className="h-4 w-4" /> Manage Amenities
         </Link>
       </div>
-
-      {/* Search */}
-      <Input
-        placeholder="Search amenities..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-md"
-      />
-
-      {/* Selected count */}
-      <p className="text-sm text-muted-foreground">
-        {selectedAmenities.length} amenities selected
-      </p>
-
-      {/* Categories */}
+      <Input placeholder="Search amenities..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+      <p className="text-sm text-muted-foreground">{selectedAmenities.length} amenities selected</p>
       <div className="space-y-2">
         {Object.entries(filteredByCategory).map(([category, categoryAmenities]) => {
           const isExpanded = expandedCategories.has(category) || search.length > 0;
           const selectedCount = countSelected(categoryAmenities);
-
           return (
-            <Collapsible
-              key={category}
-              open={isExpanded}
-              onOpenChange={() => toggleCategory(category)}
-            >
+            <Collapsible key={category} open={isExpanded} onOpenChange={() => toggleCategory(category)}>
               <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
+                <button type="button" className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
                   <div className="flex items-center gap-2">
-                    {isExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
+                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     <span className="font-medium">{category}</span>
-                    <span className="text-xs text-muted-foreground">
-                      ({categoryAmenities.length} amenities)
-                    </span>
+                    <span className="text-xs text-muted-foreground">({categoryAmenities.length})</span>
                   </div>
-                  {selectedCount > 0 && (
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                      {selectedCount} selected
-                    </span>
-                  )}
+                  {selectedCount > 0 && <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">{selectedCount} selected</span>}
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent>
@@ -998,21 +656,13 @@ function AmenitiesSection({ selectedAmenities, onToggle }: AmenitiesSectionProps
                     <Tooltip key={amenity.id}>
                       <TooltipTrigger asChild>
                         <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-muted transition-colors">
-                          <Checkbox
-                            checked={selectedAmenities.includes(amenity.slug)}
-                            onCheckedChange={() => onToggle(amenity.slug)}
-                          />
-                          <DynamicIcon
-                            name={amenity.icon}
-                            className="h-4 w-4 text-primary"
-                          />
+                          <Checkbox checked={selectedAmenities.includes(amenity.slug)} onCheckedChange={() => onToggle(amenity.slug)} />
+                          <DynamicIcon name={amenity.icon} className="h-4 w-4 text-primary" />
                           <span className="text-sm">{amenity.name}</span>
                         </label>
                       </TooltipTrigger>
                       {amenity.description && (
-                        <TooltipContent side="top" className="max-w-xs bg-popover">
-                          <p className="text-sm">{amenity.description}</p>
-                        </TooltipContent>
+                        <TooltipContent side="top" className="max-w-xs bg-popover"><p className="text-sm">{amenity.description}</p></TooltipContent>
                       )}
                     </Tooltip>
                   ))}
@@ -1022,162 +672,73 @@ function AmenitiesSection({ selectedAmenities, onToggle }: AmenitiesSectionProps
           );
         })}
       </div>
-
       {Object.keys(filteredByCategory).length === 0 && (
-        <p className="text-center text-muted-foreground py-4">
-          No amenities found matching "{search}"
-        </p>
+        <p className="text-center text-muted-foreground py-4">No amenities found matching "{search}"</p>
       )}
     </div>
   );
 }
 
-// Highlights Editor Component
-interface HighlightsEditorProps {
-  highlights: string[];
-  onChange: (highlights: string[]) => void;
-}
-
+// ── Highlights Editor ──
 const SUGGESTED_HIGHLIGHTS = [
-  'Beachfront',
-  'Ocean View',
-  'Mountain View',
-  'Private Pool',
-  'Infinity Pool',
-  'Chef\'s Kitchen',
-  'Private Chef',
-  'Spa',
-  'Wine Cellar',
-  'Home Theater',
-  'Gym',
-  'Tennis Court',
-  'Golf Access',
-  'Yacht Dock',
-  'Helipad',
-  'Butler Service',
-  'Pet Friendly',
-  'Family Friendly',
-  'Secluded',
-  'Historic Property',
-  'Newly Renovated',
-  'Award Winning',
-  'Celebrity Owned',
-  'Eco-Friendly',
+  'Beachfront', 'Ocean View', 'Mountain View', 'Private Pool', 'Infinity Pool',
+  'Chef\'s Kitchen', 'Private Chef', 'Spa', 'Wine Cellar', 'Home Theater',
+  'Gym', 'Tennis Court', 'Golf Access', 'Yacht Dock', 'Helipad',
+  'Butler Service', 'Pet Friendly', 'Family Friendly', 'Secluded',
+  'Historic Property', 'Newly Renovated', 'Award Winning', 'Celebrity Owned', 'Eco-Friendly',
 ];
 
-function HighlightsEditor({ highlights, onChange }: HighlightsEditorProps) {
+function HighlightsEditor({ highlights, onChange }: { highlights: string[]; onChange: (h: string[]) => void }) {
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const addHighlight = (highlight: string) => {
     const trimmed = highlight.trim();
-    if (trimmed && !highlights.includes(trimmed)) {
-      onChange([...highlights, trimmed]);
-    }
+    if (trimmed && !highlights.includes(trimmed)) onChange([...highlights, trimmed]);
     setInputValue('');
     setShowSuggestions(false);
   };
 
-  const removeHighlight = (index: number) => {
-    onChange(highlights.filter((_, i) => i !== index));
-  };
+  const removeHighlight = (index: number) => onChange(highlights.filter((_, i) => i !== index));
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (inputValue.trim()) {
-        addHighlight(inputValue);
-      }
-    } else if (e.key === 'Backspace' && !inputValue && highlights.length > 0) {
-      removeHighlight(highlights.length - 1);
-    }
+    if (e.key === 'Enter') { e.preventDefault(); if (inputValue.trim()) addHighlight(inputValue); }
+    else if (e.key === 'Backspace' && !inputValue && highlights.length > 0) removeHighlight(highlights.length - 1);
   };
 
-  // Filter suggestions based on input and already selected
-  const filteredSuggestions = SUGGESTED_HIGHLIGHTS.filter(
-    (s) =>
-      !highlights.includes(s) &&
-      s.toLowerCase().includes(inputValue.toLowerCase())
-  );
+  const filteredSuggestions = SUGGESTED_HIGHLIGHTS.filter((s) => !highlights.includes(s) && s.toLowerCase().includes(inputValue.toLowerCase()));
 
   return (
-    <div className="card-organic p-6 space-y-6">
+    <div className="card-organic p-6 space-y-4">
       <div className="flex items-center gap-2">
         <Sparkles className="h-5 w-5 text-primary" />
-        <h2 className="font-serif text-xl font-medium">Property Highlights</h2>
+        <h2 className="font-serif text-lg font-medium">Property Highlights</h2>
       </div>
-      <p className="text-sm text-muted-foreground">
-        Add key selling points that make this property special (e.g., "Beachfront", "Private Pool", "Chef's Kitchen")
-      </p>
-
-      {/* Current highlights */}
-      <div className="flex flex-wrap gap-2 min-h-[40px]">
+      <div className="flex flex-wrap gap-2 min-h-[36px]">
         {highlights.map((highlight, index) => (
-          <span
-            key={index}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium"
-          >
+          <span key={index} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
             {highlight}
-            <button
-              type="button"
-              onClick={() => removeHighlight(index)}
-              className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            <button type="button" onClick={() => removeHighlight(index)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><X className="h-3.5 w-3.5" /></button>
           </span>
         ))}
       </div>
-
-      {/* Input */}
       <div className="relative">
-        <Input
-          value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value);
-            setShowSuggestions(true);
-          }}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-          placeholder="Type a highlight and press Enter..."
-          className="input-organic"
-        />
-
-        {/* Suggestions dropdown */}
+        <Input value={inputValue} onChange={(e) => { setInputValue(e.target.value); setShowSuggestions(true); }} onKeyDown={handleKeyDown} onFocus={() => setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} placeholder="Type a highlight and press Enter..." className="input-organic" />
         {showSuggestions && filteredSuggestions.length > 0 && (
           <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-            {filteredSuggestions.slice(0, 8).map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => addHighlight(suggestion)}
-                className="w-full text-left px-4 py-2 hover:bg-muted transition-colors text-sm"
-              >
-                {suggestion}
-              </button>
+            {filteredSuggestions.slice(0, 8).map((s) => (
+              <button key={s} type="button" onClick={() => addHighlight(s)} className="w-full text-left px-4 py-2 hover:bg-muted transition-colors text-sm">{s}</button>
             ))}
           </div>
         )}
       </div>
-
-      {/* Quick add suggestions */}
       {highlights.length < 3 && (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Quick add suggestions:</p>
+          <p className="text-xs text-muted-foreground">Quick add:</p>
           <div className="flex flex-wrap gap-2">
-            {SUGGESTED_HIGHLIGHTS.filter((s) => !highlights.includes(s))
-              .slice(0, 6)
-              .map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => addHighlight(suggestion)}
-                  className="px-3 py-1 text-xs border border-dashed border-border rounded-full hover:border-primary hover:text-primary transition-colors"
-                >
-                  + {suggestion}
-                </button>
-              ))}
+            {SUGGESTED_HIGHLIGHTS.filter((s) => !highlights.includes(s)).slice(0, 6).map((s) => (
+              <button key={s} type="button" onClick={() => addHighlight(s)} className="px-3 py-1 text-xs border border-dashed border-border rounded-full hover:border-primary hover:text-primary transition-colors">+ {s}</button>
+            ))}
           </div>
         </div>
       )}

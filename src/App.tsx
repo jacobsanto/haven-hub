@@ -58,6 +58,7 @@ const AdminRatePlans = React.lazy(() => import("./pages/admin/AdminRatePlans"));
 const AdminSeasonalRatesImport = React.lazy(() => import("./pages/admin/AdminSeasonalRatesImport"));
 const AdminAIContent = React.lazy(() => import("./pages/admin/AdminAIContent"));
 const AdminContentCalendar = React.lazy(() => import("./pages/admin/AdminContentCalendar"));
+const AdminContentHub = React.lazy(() => import("./pages/admin/AdminContentHub"));
 const AdminPromotionalCampaigns = React.lazy(() => import("./pages/admin/AdminPromotionalCampaigns"));
 const AdminExitIntent = React.lazy(() => import("./pages/admin/AdminExitIntent"));
 const AdminUserRoles = React.lazy(() => import("./pages/admin/AdminUserRoles"));
@@ -130,6 +131,7 @@ const App = () => (
                 <Route path="/admin/seasonal-rates-import" element={<AdminSeasonalRatesImport />} />
                 <Route path="/admin/ai-content" element={<AdminAIContent />} />
                 <Route path="/admin/content-calendar" element={<AdminContentCalendar />} />
+                <Route path="/admin/content-hub" element={<AdminContentHub />} />
                 <Route path="/admin/campaigns" element={<AdminPromotionalCampaigns />} />
                 <Route path="/admin/exit-intent" element={<AdminExitIntent />} />
                 <Route path="/admin/user-roles" element={<AdminUserRoles />} />

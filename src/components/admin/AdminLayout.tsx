@@ -71,53 +71,49 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Booking Engine',
+    title: 'Operations',
     items: [
       { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
+      { href: '/admin/experience-enquiries', icon: MessageSquare, label: 'Enquiries' },
+      { href: '/admin/pms', icon: Activity, label: 'PMS Health' },
+    ],
+  },
+  {
+    title: 'Inventory',
+    items: [
+      { href: '/admin/properties', icon: Building2, label: 'Properties' },
+      { href: '/admin/amenities', icon: Sparkles, label: 'Amenities' },
+      { href: '/admin/destinations', icon: MapPin, label: 'Destinations' },
+      { href: '/admin/experiences', icon: Star, label: 'Experiences' },
       { href: '/admin/addons', icon: Package, label: 'Add-ons' },
+      { href: '/admin/rate-plans', icon: DollarSign, label: 'Rate Plans' },
+      { href: '/admin/seasonal-rates-import', icon: Upload, label: 'Seasonal Rates' },
+      { href: '/admin/fees', icon: Receipt, label: 'Fees & Taxes' },
+    ],
+  },
+  {
+    title: 'Growth',
+    items: [
       { href: '/admin/promotions', icon: Tag, label: 'Promotions' },
       { href: '/admin/campaigns', icon: Megaphone, label: 'Campaigns' },
       { href: '/admin/exit-intent', icon: LogOut, label: 'Exit Intent' },
-      { href: '/admin/fees', icon: Receipt, label: 'Fees & Taxes' },
-      { href: '/admin/rate-plans', icon: DollarSign, label: 'Rate Plans' },
-      { href: '/admin/seasonal-rates-import', icon: Upload, label: 'Import Rates' },
-    ],
-  },
-  {
-    title: 'Properties',
-    items: [
-      { href: '/admin/properties', icon: Building2, label: 'Properties' },
-      { href: '/admin/destinations', icon: MapPin, label: 'Destinations' },
-      { href: '/admin/amenities', icon: Sparkles, label: 'Amenities' },
-    ],
-  },
-  {
-    title: 'Experiences',
-    items: [
-      { href: '/admin/experiences', icon: Star, label: 'Experiences' },
-      { href: '/admin/experience-enquiries', icon: MessageSquare, label: 'Enquiries' },
-    ],
-  },
-  {
-    title: 'Content',
-    items: [
-      { href: '/admin/content', icon: PenLine, label: 'Page Content' },
-      { href: '/admin/navigation', icon: Navigation, label: 'Navigation' },
-      { href: '/admin/ai-content', icon: Sparkles, label: 'AI Generator' },
-      { href: '/admin/content-calendar', icon: CalendarDays, label: 'Content Calendar' },
-      { href: '/admin/blog', icon: FileText, label: 'Blog Posts' },
-      { href: '/admin/blog/authors', icon: Users, label: 'Authors' },
-      { href: '/admin/blog/categories', icon: FolderOpen, label: 'Categories' },
       { href: '/admin/newsletter', icon: Mail, label: 'Newsletter' },
+      { href: '/admin/content-hub', icon: FileText, label: 'Content Hub' },
+    ],
+  },
+  {
+    title: 'Performance',
+    items: [
+      { href: '/admin/analytics', icon: TrendingUp, label: 'Analytics' },
     ],
   },
   {
     title: 'System',
     items: [
-      { href: '/admin/pms', icon: Activity, label: 'PMS Health' },
-      { href: '/admin/analytics', icon: TrendingUp, label: 'Analytics' },
-      { href: '/admin/user-roles', icon: Shield, label: 'User Roles' },
+      { href: '/admin/navigation', icon: Navigation, label: 'Navigation' },
+      { href: '/admin/content', icon: PenLine, label: 'Page Content' },
       { href: '/admin/settings', icon: Settings, label: 'Settings' },
+      { href: '/admin/user-roles', icon: Shield, label: 'User Roles' },
     ],
   },
 ];
