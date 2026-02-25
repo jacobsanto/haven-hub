@@ -1,47 +1,42 @@
 import { useState, useEffect, KeyboardEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2, Sparkles, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, ChevronDown, ChevronRight, Settings2, Sparkles, Search, Loader2, AlertTriangle, ExternalLink, DollarSign, BarChart3 } from 'lucide-react';
 import { GalleryEditor } from '@/components/admin/GalleryEditor';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import {
-  useCreateProperty,
-  useUpdateProperty,
-  useAdminProperties,
+  useCreateProperty, useUpdateProperty, useAdminProperties,
 } from '@/hooks/useProperties';
 import { useAmenities, useAmenitiesByCategory, Amenity as AmenityType } from '@/hooks/useAmenities';
+import { useAdminRatePlans } from '@/hooks/useAdminRatePlans';
+import { useSeasonalRates } from '@/hooks/useSeasonalRates';
 import { DynamicIcon } from '@/components/admin/IconPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
+  Tooltip, TooltipContent, TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { PropertyStatus, PropertyType } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeocode, GeocodeResult } from '@/hooks/useGeocode';
 import { useDestinations } from '@/hooks/useDestinations';
-import { Badge } from '@/components/ui/badge';
+import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 
 export default function AdminPropertyForm() {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +46,9 @@ export default function AdminPropertyForm() {
   const updateProperty = useUpdateProperty();
   const { data: properties } = useAdminProperties();
   const { data: destinations } = useDestinations();
+  const { data: ratePlans } = useAdminRatePlans();
+  const { data: seasonalRates } = useSeasonalRates(id || '');
+  const { format: formatCurrency } = useFormatCurrency();
   const geocode = useGeocode();
   const [addressQuery, setAddressQuery] = useState('');
   const [showGeoResults, setShowGeoResults] = useState(false);
@@ -249,49 +247,63 @@ export default function AdminPropertyForm() {
     }
   };
 
+  // Pricing helpers (read-only summaries)
+  const propertyRatePlans = ratePlans?.filter(r => r.property_id === id && r.is_active) || [];
+  const propertySeasonalRates = seasonalRates || [];
+
   return (
     <AdminGuard>
       <AdminLayout>
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/admin/properties')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-serif font-medium">
-                {isEditing ? 'Edit Property' : 'Add New Property'}
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                {isEditing ? 'Update the property details below' : 'Fill in the details to create a new property listing'}
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/admin/properties')}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-serif font-medium">
+                  {isEditing ? 'Edit Property' : 'Add New Property'}
+                </h1>
+                <p className="text-muted-foreground text-sm">
+                  {isEditing ? 'Update the property details below' : 'Fill in the details to create a new property listing'}
+                </p>
+              </div>
             </div>
+            {isEditing && existingProperty && (
+              <Link to={`/properties/${existingProperty.slug}`} target="_blank">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <ExternalLink className="h-3.5 w-3.5" /> View on Site
+                </Button>
+              </Link>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <Tabs defaultValue="core" className="space-y-6">
+            <Tabs defaultValue="identity" className="space-y-6">
               <TabsList className="flex flex-wrap h-auto gap-1">
-                <TabsTrigger value="core">Core</TabsTrigger>
+                <TabsTrigger value="identity">Identity</TabsTrigger>
+                <TabsTrigger value="pricing">Pricing</TabsTrigger>
                 <TabsTrigger value="media">Media</TabsTrigger>
-                <TabsTrigger value="experience">Experience</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
+                <TabsTrigger value="amenities">Amenities</TabsTrigger>
+                <TabsTrigger value="policies">Policies</TabsTrigger>
+                {isEditing && <TabsTrigger value="performance">Performance</TabsTrigger>}
               </TabsList>
 
-              {/* ── TAB 1: CORE ── */}
-              <TabsContent value="core" className="space-y-6">
-                {/* Basic Information */}
+              {/* ═══════ TAB 1: IDENTITY ═══════ */}
+              <TabsContent value="identity" className="space-y-6">
                 <div className="card-organic p-6 space-y-6">
                   <h2 className="font-serif text-lg font-medium">Basic Information</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Property Name (Internal) *</Label>
-                      <Input id="name" value={formData.name} onChange={handleNameChange} placeholder="e.g., PROP-001-TUSCANY" className="input-organic" required />
-                      <p className="text-xs text-muted-foreground">Used for admin, PMS sync, and internal reference</p>
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="display_name">Display Name (Customer-Facing)</Label>
                       <Input id="display_name" value={formData.display_name || ''} onChange={(e) => setFormData((prev) => ({ ...prev, display_name: e.target.value || null }))} placeholder="e.g., Sunset Villa with Caldera View" className="input-organic" />
-                      <p className="text-xs text-muted-foreground">Shown on Stripe checkout, receipts, and confirmations</p>
+                      <p className="text-xs text-muted-foreground">Shown on website, Stripe checkout, and confirmations</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Internal Name *</Label>
+                      <Input id="name" value={formData.name} onChange={handleNameChange} placeholder="e.g., PROP-001-TUSCANY" className="input-organic" required />
+                      <p className="text-xs text-muted-foreground">Used for admin, PMS sync, and internal reference</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -384,14 +396,10 @@ export default function AdminPropertyForm() {
                   </div>
                 </div>
 
-                {/* Pricing & Capacity */}
+                {/* Capacity & Status */}
                 <div className="card-organic p-6 space-y-6">
-                  <h2 className="font-serif text-lg font-medium">Pricing & Capacity</h2>
+                  <h2 className="font-serif text-lg font-medium">Capacity & Status</h2>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="base_price">Price/Night ($) *</Label>
-                      <Input id="base_price" type="number" min={0} value={formData.base_price} onChange={(e) => setFormData((prev) => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))} className="input-organic" required />
-                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="max_guests">Max Guests *</Label>
                       <Input id="max_guests" type="number" min={1} value={formData.max_guests} onChange={(e) => setFormData((prev) => ({ ...prev, max_guests: parseInt(e.target.value) || 1 }))} className="input-organic" required />
@@ -404,12 +412,12 @@ export default function AdminPropertyForm() {
                       <Label htmlFor="bathrooms">Bathrooms</Label>
                       <Input id="bathrooms" type="number" min={1} step={0.5} value={formData.bathrooms} onChange={(e) => setFormData((prev) => ({ ...prev, bathrooms: parseFloat(e.target.value) || 1 }))} className="input-organic" />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="area_sqm">Size (m²)</Label>
                       <Input id="area_sqm" type="number" min={0} value={formData.area_sqm ?? ''} onChange={(e) => setFormData((prev) => ({ ...prev, area_sqm: e.target.value ? parseInt(e.target.value) : null }))} placeholder="e.g., 250" className="input-organic" />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="status">Status</Label>
                       <Select value={formData.status} onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value as PropertyStatus }))}>
@@ -421,14 +429,110 @@ export default function AdminPropertyForm() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2">
+                      <Label>Destination Override</Label>
+                      <Select value={formData.destination_id || ''} onValueChange={(v) => setFormData((prev) => ({ ...prev, destination_id: v || null }))}>
+                        <SelectTrigger className="input-organic"><SelectValue placeholder="Auto-matched or select" /></SelectTrigger>
+                        <SelectContent className="bg-card">
+                          {destinations?.filter((d) => d.status === 'active').map((d) => (
+                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </TabsContent>
 
-              {/* ── TAB 2: MEDIA ── */}
+              {/* ═══════ TAB 2: PRICING (Read-only summary) ═══════ */}
+              <TabsContent value="pricing" className="space-y-6">
+                <div className="card-organic p-6 space-y-6">
+                  <h2 className="font-serif text-lg font-medium">Base Rate</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="base_price">Price/Night *</Label>
+                      <Input id="base_price" type="number" min={0} value={formData.base_price} onChange={(e) => setFormData((prev) => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))} className="input-organic" required />
+                    </div>
+                    <div className="flex items-center gap-3 pt-6">
+                      <Checkbox id="instant_booking" checked={formData.instant_booking} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, instant_booking: !!checked }))} />
+                      <Label htmlFor="instant_booking" className="cursor-pointer">Enable Instant Booking</Label>
+                    </div>
+                  </div>
+                </div>
+
+                {isEditing && (
+                  <>
+                    {/* Active Rate Plans summary */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Active Rate Plans</CardTitle>
+                        <CardDescription>
+                          {propertyRatePlans.length} active rate plan{propertyRatePlans.length !== 1 ? 's' : ''}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {propertyRatePlans.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No active rate plans for this property.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {propertyRatePlans.slice(0, 5).map(rp => (
+                              <div key={rp.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0">
+                                <span className="font-medium">{rp.name}</span>
+                                <span className="text-muted-foreground">{formatCurrency(rp.base_rate)}/night · {rp.rate_type}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Seasonal Rates summary */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Seasonal Overrides</CardTitle>
+                        <CardDescription>
+                          {propertySeasonalRates.length} seasonal rate{propertySeasonalRates.length !== 1 ? 's' : ''}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {propertySeasonalRates.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No seasonal rates configured.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {propertySeasonalRates.slice(0, 5).map(sr => (
+                              <div key={sr.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0">
+                                <span className="font-medium">{sr.name}</span>
+                                <span className="text-muted-foreground">
+                                  {sr.nightly_rate ? formatCurrency(sr.nightly_rate) : `×${sr.price_multiplier}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <div className="flex justify-center">
+                      <Link to="/admin/pricing">
+                        <Button variant="outline" className="gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          Open Pricing Control Center
+                        </Button>
+                      </Link>
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+
+              {/* ═══════ TAB 3: MEDIA ═══════ */}
               <TabsContent value="media" className="space-y-6">
                 <div className="card-organic p-6 space-y-6">
-                  <h2 className="font-serif text-lg font-medium">Hero Image</h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-serif text-lg font-medium">Hero Image</h2>
+                    {formData.hero_image_url && (
+                      <Badge variant="secondary">Hero Set</Badge>
+                    )}
+                  </div>
                   <ImageUploadWithOptimizer
                     value={formData.hero_image_url || undefined}
                     onUpload={(url) => setFormData((prev) => ({ ...prev, hero_image_url: url }))}
@@ -440,7 +544,10 @@ export default function AdminPropertyForm() {
                 </div>
 
                 <div className="card-organic p-6 space-y-6">
-                  <h2 className="font-serif text-lg font-medium">Gallery</h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-serif text-lg font-medium">Gallery</h2>
+                    <Badge variant="secondary">{formData.gallery.length} images</Badge>
+                  </div>
                   <GalleryEditor
                     gallery={formData.gallery}
                     onReorder={(newGallery) => setFormData((prev) => ({ ...prev, gallery: newGallery }))}
@@ -465,32 +572,25 @@ export default function AdminPropertyForm() {
                     <div className="space-y-2">
                       <Label htmlFor="video_url">Video URL</Label>
                       <Input id="video_url" value={formData.video_url || ''} onChange={(e) => setFormData((prev) => ({ ...prev, video_url: e.target.value || null }))} placeholder="https://youtube.com/..." className="input-organic" />
-                      <p className="text-xs text-muted-foreground">YouTube, Vimeo, or direct video URL</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="virtual_tour_url">Virtual Tour URL</Label>
                       <Input id="virtual_tour_url" value={formData.virtual_tour_url || ''} onChange={(e) => setFormData((prev) => ({ ...prev, virtual_tour_url: e.target.value || null }))} placeholder="https://my.matterport.com/..." className="input-organic" />
-                      <p className="text-xs text-muted-foreground">Matterport, 360° tour, or similar</p>
                     </div>
                   </div>
                 </div>
               </TabsContent>
 
-              {/* ── TAB 3: EXPERIENCE ── */}
-              <TabsContent value="experience" className="space-y-6">
+              {/* ═══════ TAB 4: AMENITIES ═══════ */}
+              <TabsContent value="amenities" className="space-y-6">
                 <HighlightsEditor highlights={formData.highlights} onChange={(highlights) => setFormData((prev) => ({ ...prev, highlights }))} />
                 <AmenitiesSection selectedAmenities={formData.amenities} onToggle={toggleAmenity} />
+              </TabsContent>
 
+              {/* ═══════ TAB 5: POLICIES ═══════ */}
+              <TabsContent value="policies" className="space-y-6">
                 <div className="card-organic p-6 space-y-6">
-                  <h2 className="font-serif text-lg font-medium">Neighborhood</h2>
-                  <div className="space-y-2">
-                    <Label htmlFor="neighborhood_description">Neighborhood Description</Label>
-                    <Textarea id="neighborhood_description" value={formData.neighborhood_description || ''} onChange={(e) => setFormData((prev) => ({ ...prev, neighborhood_description: e.target.value || null }))} placeholder="Describe the area, vibe, and what makes the location special" className="input-organic min-h-[100px]" />
-                  </div>
-                </div>
-
-                <div className="card-organic p-6 space-y-6">
-                  <h2 className="font-serif text-lg font-medium">House Rules & Policies</h2>
+                  <h2 className="font-serif text-lg font-medium">Cancellation & Rules</h2>
                   <div className="space-y-2">
                     <Label htmlFor="cancellation_policy">Cancellation Policy</Label>
                     <Select value={formData.cancellation_policy || ''} onValueChange={(v) => setFormData((prev) => ({ ...prev, cancellation_policy: v || null }))}>
@@ -507,10 +607,7 @@ export default function AdminPropertyForm() {
                     <Input id="pet_policy" value={formData.pet_policy || ''} onChange={(e) => setFormData((prev) => ({ ...prev, pet_policy: e.target.value || null }))} placeholder="e.g., Small dogs allowed with deposit" className="input-organic" />
                   </div>
                 </div>
-              </TabsContent>
 
-              {/* ── TAB 4: ADVANCED ── */}
-              <TabsContent value="advanced" className="space-y-6">
                 <div className="card-organic p-6 space-y-6">
                   <h2 className="font-serif text-lg font-medium">Check-in / Check-out</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -530,24 +627,62 @@ export default function AdminPropertyForm() {
                 </div>
 
                 <div className="card-organic p-6 space-y-6">
-                  <h2 className="font-serif text-lg font-medium">Booking Settings</h2>
-                  <div className="flex items-center gap-3">
-                    <Checkbox id="instant_booking" checked={formData.instant_booking} onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, instant_booking: !!checked }))} />
-                    <Label htmlFor="instant_booking" className="cursor-pointer">Enable Instant Booking</Label>
-                  </div>
+                  <h2 className="font-serif text-lg font-medium">Neighborhood</h2>
                   <div className="space-y-2">
-                    <Label>Destination Override</Label>
-                    <Select value={formData.destination_id || ''} onValueChange={(v) => setFormData((prev) => ({ ...prev, destination_id: v || null }))}>
-                      <SelectTrigger className="input-organic"><SelectValue placeholder="Auto-matched or select" /></SelectTrigger>
-                      <SelectContent className="bg-card">
-                        {destinations?.filter((d) => d.status === 'active').map((d) => (
-                          <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="neighborhood_description">Neighborhood Description</Label>
+                    <Textarea id="neighborhood_description" value={formData.neighborhood_description || ''} onChange={(e) => setFormData((prev) => ({ ...prev, neighborhood_description: e.target.value || null }))} placeholder="Describe the area, vibe, and what makes the location special" className="input-organic min-h-[100px]" />
                   </div>
                 </div>
+
+                <HouseRulesEditor rules={formData.house_rules} onChange={(house_rules) => setFormData((prev) => ({ ...prev, house_rules }))} />
               </TabsContent>
+
+              {/* ═══════ TAB 6: PERFORMANCE (Read-only, edit mode only) ═══════ */}
+              {isEditing && (
+                <TabsContent value="performance" className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5 text-primary" />
+                        Property Performance
+                      </CardTitle>
+                      <CardDescription>
+                        Key metrics for this property. For detailed analytics, visit the Analytics page.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Performance data is available in the Analytics dashboard. This tab provides a quick overview.
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-4 rounded-lg bg-muted/50 text-center">
+                          <p className="text-xs text-muted-foreground">Occupancy (30d)</p>
+                          <p className="text-lg font-semibold">—</p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-muted/50 text-center">
+                          <p className="text-xs text-muted-foreground">Revenue (30d)</p>
+                          <p className="text-lg font-semibold">—</p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-muted/50 text-center">
+                          <p className="text-xs text-muted-foreground">Add-on %</p>
+                          <p className="text-lg font-semibold">—</p>
+                        </div>
+                        <div className="p-4 rounded-lg bg-muted/50 text-center">
+                          <p className="text-xs text-muted-foreground">Cancellation %</p>
+                          <p className="text-lg font-semibold">—</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-center pt-2">
+                        <Link to="/admin/analytics">
+                          <Button variant="outline" size="sm" className="gap-2">
+                            <BarChart3 className="h-4 w-4" /> View Full Analytics
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
             </Tabs>
 
             {/* Destination warning */}
@@ -613,6 +748,14 @@ function AmenitiesSection({ selectedAmenities, onToggle }: AmenitiesSectionProps
   const countSelected = (categoryAmenities: AmenityType[]) =>
     categoryAmenities.filter((a) => selectedAmenities.includes(a.slug)).length;
 
+  // Core amenities check
+  const coreCategories = ['essentials', 'bathroom', 'kitchen'];
+  const missingCoreCategories = coreCategories.filter(cat => {
+    const items = amenitiesByCategory[cat];
+    if (!items) return false;
+    return countSelected(items) === 0;
+  });
+
   if (isLoading) {
     return (
       <div className="card-organic p-6">
@@ -632,6 +775,16 @@ function AmenitiesSection({ selectedAmenities, onToggle }: AmenitiesSectionProps
           <Settings2 className="h-4 w-4" /> Manage Amenities
         </Link>
       </div>
+
+      {missingCoreCategories.length > 0 && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+          <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <p className="text-sm text-destructive">
+            Missing core amenities in: {missingCoreCategories.join(', ')}
+          </p>
+        </div>
+      )}
+
       <Input placeholder="Search amenities..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
       <p className="text-sm text-muted-foreground">{selectedAmenities.length} amenities selected</p>
       <div className="space-y-2">
@@ -742,6 +895,43 @@ function HighlightsEditor({ highlights, onChange }: { highlights: string[]; onCh
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── House Rules Editor ──
+function HouseRulesEditor({ rules, onChange }: { rules: string[]; onChange: (r: string[]) => void }) {
+  const [inputValue, setInputValue] = useState('');
+
+  const addRule = () => {
+    const trimmed = inputValue.trim();
+    if (trimmed && !rules.includes(trimmed)) {
+      onChange([...rules, trimmed]);
+      setInputValue('');
+    }
+  };
+
+  return (
+    <div className="card-organic p-6 space-y-4">
+      <h2 className="font-serif text-lg font-medium">House Rules</h2>
+      {rules.length > 0 && (
+        <ul className="space-y-2">
+          {rules.map((rule, i) => (
+            <li key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+              <span className="text-sm">{rule}</span>
+              <button type="button" onClick={() => onChange(rules.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive">
+                <X className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex gap-2">
+        <Input value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addRule())} placeholder="Add a house rule..." className="input-organic" />
+        <Button type="button" variant="outline" onClick={addRule} disabled={!inputValue.trim()}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
