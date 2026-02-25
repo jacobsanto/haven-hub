@@ -8,6 +8,8 @@ import {
   useUpdateSubscriberStatus, 
   useDeleteSubscriber 
 } from '@/hooks/useNewsletterSubscribers';
+import { AdminLoadingSkeleton } from '@/components/admin/AdminLoadingSkeleton';
+import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
 import {
   Table,
   TableBody,
@@ -19,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -135,18 +137,13 @@ export default function AdminNewsletterSubscribers() {
           <Card>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="p-6 space-y-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
+                <AdminLoadingSkeleton variant="table" rows={5} />
               ) : filteredSubscribers.length === 0 ? (
-                <div className="p-12 text-center">
-                  <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    {searchQuery ? 'No subscribers match your search' : 'No subscribers yet'}
-                  </p>
-                </div>
+                <AdminEmptyState
+                  icon={Mail}
+                  title={searchQuery ? 'No subscribers match your search' : 'No subscribers yet'}
+                  description="Newsletter subscribers will appear here"
+                />
               ) : (
                 <Table>
                   <TableHeader>
