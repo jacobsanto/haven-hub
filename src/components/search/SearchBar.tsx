@@ -205,7 +205,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
         </div>
 
         {/* Divider */}
-        <div className="hidden lg:block w-px h-10 bg-border/50" />
+        <div className="border-t border-border/40 lg:border-t-0 lg:border-l lg:w-px lg:h-10 lg:border-border/60" />
 
         {/* Check In */}
         <div className="flex-1 lg:px-4">
@@ -235,7 +235,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
         </div>
 
         {/* Divider */}
-        <div className="hidden lg:block w-px h-10 bg-border/50" />
+        <div className="border-t border-border/40 lg:border-t-0 lg:border-l lg:w-px lg:h-10 lg:border-border/60" />
 
         {/* Check Out */}
         <div className="flex-1 lg:px-4">
@@ -265,7 +265,7 @@ export function SearchBar({ variant = 'hero', className }: SearchBarProps) {
         </div>
 
         {/* Divider */}
-        <div className="hidden lg:block w-px h-10 bg-border/50" />
+        <div className="border-t border-border/40 lg:border-t-0 lg:border-l lg:w-px lg:h-10 lg:border-border/60" />
 
         {/* Guests + Search */}
         <div className="flex items-center gap-2 lg:pl-4 lg:pr-2">
