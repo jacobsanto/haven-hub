@@ -1,0 +1,1 @@
+UPDATE brand_settings SET brand_tagline = 'Live Like A Local', updated_at = now() WHERE id = '003de226-11bd-46cd-b64a-3cbf3f0a1666';
