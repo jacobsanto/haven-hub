@@ -124,7 +124,7 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
               {property.name}
             </h3>
 
-            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-accent">
               <span className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
                 {property.city}, {property.country}
