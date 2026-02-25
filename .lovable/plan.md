@@ -1,22 +1,113 @@
 
 
-## Remove City References from Hero Section
+## Admin UX Polish -- Comprehensive Improvement Plan
 
-### Problem
-Line 147 of `src/pages/Index.tsx` renders: `{hero.heading_prefix} {heroProperty?.city || brandName}`
+This plan covers four areas: security fixes, table pagination, collapsible sidebar, and polished loading/empty states.
 
-When you clear the "Heading Prefix" field in admin, the city name ("Fira") still shows because it's hardcoded as a separate part of the heading. The subtitle also substitutes `{city}` and `{country}` placeholders with the property's location data.
+---
 
-### Changes
+### 1. Fix Missing AdminGuard on 2 Pages
 
-**File: `src/pages/Index.tsx`**
+**Problem**: `AdminExitIntent` and `AdminSeasonalRatesImport` are wrapped in `AdminLayout` but NOT in `AdminGuard`, meaning any authenticated user (not just admins) can access them.
 
-1. **Line 147 (heading)**: Replace `{hero.heading_prefix} {heroProperty?.city || brandName}` with `{hero.heading_prefix || brandName}` -- shows the prefix text if set, otherwise falls back to the brand name. No city reference.
+**Files to change**:
+- `src/pages/admin/AdminExitIntent.tsx` -- Wrap the return in `<AdminGuard>` around `<AdminLayout>`
+- `src/pages/admin/AdminSeasonalRatesImport.tsx` -- Same treatment, add `<AdminGuard>` wrapper
 
-2. **Lines 150-154 (subtitle)**: Replace the conditional city/country substitution with just `{hero.subtitle_default}` -- always shows the default subtitle text regardless of whether a featured property is loaded.
+**Impact**: Security fix. No visual change for admin users; non-admin users will be redirected.
 
-### Result
-- If heading prefix is "Experience": shows "Experience"
-- If heading prefix is empty: shows brand name (e.g. "Arivia Villas")
-- Subtitle always shows the default text (e.g. "Discover extraordinary vacation homes around the world")
-- "Fira" will no longer appear anywhere in the hero text
+---
+
+### 2. Add Pagination to Admin Tables
+
+**Problem**: The Bookings and Properties tables render all records at once. With growth, this causes performance degradation and poor UX.
+
+**Approach**: Create a reusable `useTablePagination` hook and a `TablePagination` component.
+
+**New files**:
+- `src/hooks/useTablePagination.ts` -- Generic hook managing `page`, `pageSize`, `totalPages`, `paginatedData`, and navigation functions
+- `src/components/admin/TablePagination.tsx` -- Reusable pagination bar with page info, prev/next buttons, and optional page size selector
+
+**Files to change**:
+- `src/pages/admin/AdminBookings.tsx` -- Wire up `useTablePagination` on `filteredBookings`, render `TablePagination` below the table
+- `src/pages/admin/AdminProperties.tsx` -- Same for `filteredProperties` in table view mode (grid view will also paginate with a "Load More" button or same bar)
+
+**Default page size**: 15 rows. Options: 15, 30, 50.
+
+---
+
+### 3. Collapsible Sidebar
+
+**Problem**: The sidebar is fixed at 264px (`w-64`), consuming significant screen real estate on smaller desktop screens.
+
+**Approach**: Add a mini/collapsed mode (56px wide, icons only) with a toggle button.
+
+**Files to change**:
+- `src/components/admin/AdminLayout.tsx`:
+  - Add `sidebarCollapsed` state persisted to `localStorage` (key: `admin-sidebar-collapsed`)
+  - In collapsed mode: sidebar becomes `w-14`, only icons visible, section labels hidden
+  - Add a toggle button (chevron icon) at the bottom of the sidebar
+  - Hovering a collapsed nav item shows a tooltip with the label
+  - Collapsible sections auto-close in mini mode
+  - Mobile layout stays unchanged (already uses Sheet drawer)
+
+**No new files needed** -- all changes within `AdminLayout.tsx`.
+
+---
+
+### 4. Polish Loading and Empty States
+
+**Problem**: Loading states are inconsistent (some use `Skeleton`, some use spinner, some have nothing). Empty states are minimal text-only.
+
+**Approach**: Create two small reusable components and apply them consistently.
+
+**New files**:
+- `src/components/admin/AdminLoadingSkeleton.tsx` -- Configurable skeleton component with variants: `table` (rows of skeleton lines), `cards` (grid of skeleton cards), `form` (label + input skeletons)
+- `src/components/admin/AdminEmptyState.tsx` -- Centered empty state with icon, title, description, and optional action button
+
+**Files to change** (apply new components):
+- `src/pages/admin/AdminBookings.tsx` -- Use `AdminLoadingSkeleton variant="table"` and `AdminEmptyState` with "No bookings found" + icon
+- `src/pages/admin/AdminProperties.tsx` -- Use skeleton for grid/table loading, empty state for no results
+- `src/pages/admin/AdminExperiences.tsx` -- Same pattern
+- `src/pages/admin/AdminDestinations.tsx` -- Same pattern
+- `src/pages/admin/AdminBlogPosts.tsx` -- Same pattern
+- `src/pages/admin/AdminNewsletterSubscribers.tsx` -- Same pattern
+
+**Pattern for each page**:
+```text
+if (isLoading)  -->  <AdminLoadingSkeleton variant="table" rows={8} />
+if (data.length === 0)  -->  <AdminEmptyState icon={Calendar} title="No bookings yet" description="..." />
+```
+
+---
+
+### Summary of New Files
+
+| File | Purpose |
+|------|---------|
+| `src/hooks/useTablePagination.ts` | Generic pagination hook |
+| `src/components/admin/TablePagination.tsx` | Pagination bar UI |
+| `src/components/admin/AdminLoadingSkeleton.tsx` | Loading skeleton variants |
+| `src/components/admin/AdminEmptyState.tsx` | Empty state component |
+
+### Summary of Modified Files
+
+| File | Changes |
+|------|---------|
+| `AdminExitIntent.tsx` | Add AdminGuard wrapper |
+| `AdminSeasonalRatesImport.tsx` | Add AdminGuard wrapper |
+| `AdminLayout.tsx` | Collapsible sidebar with mini mode |
+| `AdminBookings.tsx` | Pagination + loading/empty states |
+| `AdminProperties.tsx` | Pagination + loading/empty states |
+| `AdminExperiences.tsx` | Loading/empty states |
+| `AdminDestinations.tsx` | Loading/empty states |
+| `AdminBlogPosts.tsx` | Loading/empty states |
+| `AdminNewsletterSubscribers.tsx` | Loading/empty states |
+
+### Implementation Order
+
+1. Security fixes (AdminGuard) -- quick, critical
+2. Reusable components (skeleton, empty state, pagination)
+3. Collapsible sidebar
+4. Apply pagination and polished states across pages
+
