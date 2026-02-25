@@ -186,7 +186,7 @@ const Index = () => {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute top-3 left-3 bg-accent text-accent-foreground text-xs font-semibold px-3 py-1 rounded-full">
+                <div className="absolute top-3 left-3 bg-accent text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
                   ✦ Top Pick
                 </div>
                 <div className="absolute bottom-3 right-3 flex items-center gap-0.5 text-accent">
