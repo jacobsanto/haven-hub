@@ -16,11 +16,15 @@ export type Database = {
     Tables: {
       addons_catalog: {
         Row: {
+          availability_mode: string
           category: string
+          confirmation_type: string
           created_at: string
+          daily_capacity: number | null
           description: string | null
           id: string
           image_url: string | null
+          internal_cost: number | null
           is_active: boolean
           max_quantity: number | null
           name: string
@@ -28,15 +32,22 @@ export type Database = {
           price_type: string
           property_id: string | null
           requires_lead_time_hours: number | null
+          season_end: string | null
+          season_start: string | null
           sort_order: number
           updated_at: string
+          visibility: string
         }
         Insert: {
+          availability_mode?: string
           category: string
+          confirmation_type?: string
           created_at?: string
+          daily_capacity?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
+          internal_cost?: number | null
           is_active?: boolean
           max_quantity?: number | null
           name: string
@@ -44,15 +55,22 @@ export type Database = {
           price_type?: string
           property_id?: string | null
           requires_lead_time_hours?: number | null
+          season_end?: string | null
+          season_start?: string | null
           sort_order?: number
           updated_at?: string
+          visibility?: string
         }
         Update: {
+          availability_mode?: string
           category?: string
+          confirmation_type?: string
           created_at?: string
+          daily_capacity?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
+          internal_cost?: number | null
           is_active?: boolean
           max_quantity?: number | null
           name?: string
@@ -60,8 +78,11 @@ export type Database = {
           price_type?: string
           property_id?: string | null
           requires_lead_time_hours?: number | null
+          season_end?: string | null
+          season_start?: string | null
           sort_order?: number
           updated_at?: string
+          visibility?: string
         }
         Relationships: [
           {

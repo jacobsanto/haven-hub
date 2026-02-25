@@ -1,81 +1,85 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, GripVertical, Package } from 'lucide-react';
+import { Plus, Pencil, Trash2, Copy, Package, GripVertical, ArrowUpDown, Eye } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { useAdminAddons, useUpdateAddon, useDeleteAddon, AddonCatalog } from '@/hooks/useAdminAddons';
-import { AddonFormDialog } from '@/components/admin/AddonFormDialog';
-import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  useAdminAddons, useUpdateAddon, useDeleteAddon, useCreateAddon,
+  useAddonPerformance, AddonCatalog,
+} from '@/hooks/useAdminAddons';
+import { AddonFormDialog } from '@/components/admin/AddonFormDialog';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
-
-const ADDON_CATEGORIES = ['transfer', 'food', 'experience', 'service', 'package'];
-
-const categoryColors: Record<string, string> = {
-  transfer: 'bg-blue-100 text-blue-700',
-  food: 'bg-orange-100 text-orange-700',
-  experience: 'bg-purple-100 text-purple-700',
-  service: 'bg-green-100 text-green-700',
-  package: 'bg-pink-100 text-pink-700',
-};
+import { toast } from 'sonner';
 
 const priceTypeLabels: Record<string, string> = {
   fixed: 'Fixed',
-  per_person: 'Per Person',
+  per_person: 'Per Guest',
   per_night: 'Per Night',
-  per_person_per_night: 'Per Person/Night',
+  per_person_per_night: 'Per Guest/Night',
+};
+
+const visibilityLabels: Record<string, string> = {
+  booking: 'Booking',
+  post_booking: 'Post-Booking',
+  both: 'Both',
 };
 
 export default function AdminAddonsManagement() {
   const { format: formatCurrency } = useFormatCurrency();
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAddon, setEditingAddon] = useState<AddonCatalog | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: addons, isLoading } = useAdminAddons();
+  const { data: performance, isLoading: perfLoading } = useAddonPerformance();
   const updateAddon = useUpdateAddon();
   const deleteAddon = useDeleteAddon();
+  const createAddon = useCreateAddon();
 
-  const filteredAddons = addons?.filter(
-    (addon) => categoryFilter === 'all' || addon.category === categoryFilter
-  );
+  const bookingAddons = addons?.filter(a => a.visibility === 'booking' || a.visibility === 'both') || [];
+  const postBookingAddons = addons?.filter(a => a.visibility === 'post_booking' || a.visibility === 'both') || [];
 
   const handleToggleActive = async (addon: AddonCatalog) => {
     try {
-      await updateAddon.mutateAsync({
-        id: addon.id,
-        is_active: !addon.is_active,
-      });
+      await updateAddon.mutateAsync({ id: addon.id, is_active: !addon.is_active });
       toast.success(`Add-on ${addon.is_active ? 'deactivated' : 'activated'}`);
-    } catch (error) {
-      toast.error('Failed to update add-on');
-    }
+    } catch { toast.error('Failed to update'); }
   };
 
-  const handleEdit = (addon: AddonCatalog) => {
-    setEditingAddon(addon);
-    setDialogOpen(true);
+  const handleDuplicate = async (addon: AddonCatalog) => {
+    try {
+      await createAddon.mutateAsync({
+        name: `${addon.name} (Copy)`,
+        description: addon.description,
+        category: addon.category,
+        price: addon.price,
+        price_type: addon.price_type,
+        property_id: addon.property_id,
+        max_quantity: addon.max_quantity,
+        requires_lead_time_hours: addon.requires_lead_time_hours,
+        image_url: addon.image_url,
+        is_active: false,
+        sort_order: (addon.sort_order || 0) + 1,
+        visibility: addon.visibility || 'booking',
+        internal_cost: addon.internal_cost,
+        confirmation_type: addon.confirmation_type || 'auto',
+        availability_mode: addon.availability_mode || 'unlimited',
+        daily_capacity: addon.daily_capacity,
+        season_start: addon.season_start,
+        season_end: addon.season_end,
+      });
+      toast.success('Add-on duplicated');
+    } catch { toast.error('Failed to duplicate'); }
   };
 
   const handleDelete = async () => {
@@ -84,167 +88,194 @@ export default function AdminAddonsManagement() {
       await deleteAddon.mutateAsync(deleteId);
       toast.success('Add-on deleted');
       setDeleteId(null);
-    } catch (error) {
-      toast.error('Failed to delete add-on');
-    }
+    } catch { toast.error('Failed to delete'); }
   };
 
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    setEditingAddon(null);
+  const handleEdit = (addon: AddonCatalog) => { setEditingAddon(addon); setDialogOpen(true); };
+  const handleDialogClose = () => { setDialogOpen(false); setEditingAddon(null); };
+
+  const margin = (addon: AddonCatalog) => {
+    if (addon.internal_cost == null || addon.price <= 0) return null;
+    return Math.round(((addon.price - addon.internal_cost) / addon.price) * 100);
   };
 
-  // Use centralized EUR formatter for admin display
+  const renderAllTable = (items: AddonCatalog[]) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Category</TableHead>
+          <TableHead>Pricing</TableHead>
+          <TableHead>Margin %</TableHead>
+          <TableHead>Visibility</TableHead>
+          <TableHead>Active</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map(addon => (
+          <TableRow key={addon.id}>
+            <TableCell className="font-medium">{addon.name}</TableCell>
+            <TableCell>
+              <Badge variant="secondary" className="capitalize">{addon.category}</Badge>
+            </TableCell>
+            <TableCell>
+              {formatCurrency(addon.price)} <span className="text-xs text-muted-foreground">{priceTypeLabels[addon.price_type]}</span>
+            </TableCell>
+            <TableCell>
+              {margin(addon) != null ? `${margin(addon)}%` : <span className="text-muted-foreground">—</span>}
+            </TableCell>
+            <TableCell>
+              <Badge variant="outline">{visibilityLabels[addon.visibility] || addon.visibility}</Badge>
+            </TableCell>
+            <TableCell>
+              <Switch checked={addon.is_active} onCheckedChange={() => handleToggleActive(addon)} />
+            </TableCell>
+            <TableCell className="text-right">
+              <div className="flex justify-end gap-1">
+                <Button variant="ghost" size="icon" onClick={() => handleEdit(addon)}><Pencil className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDuplicate(addon)}><Copy className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setDeleteId(addon.id)}><Trash2 className="h-4 w-4" /></Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+        {items.length === 0 && (
+          <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No add-ons found</TableCell></TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
+
+  const renderVisibilityTable = (items: AddonCatalog[], showConfirmation?: boolean) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-8"><GripVertical className="h-4 w-4 text-muted-foreground" /></TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Sort</TableHead>
+          {showConfirmation && <TableHead>Confirmation</TableHead>}
+          <TableHead>Active</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.sort((a, b) => a.sort_order - b.sort_order).map(addon => (
+          <TableRow key={addon.id}>
+            <TableCell><GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" /></TableCell>
+            <TableCell className="font-medium">{addon.name}</TableCell>
+            <TableCell>{addon.sort_order}</TableCell>
+            {showConfirmation && (
+              <TableCell>
+                <Badge variant={addon.confirmation_type === 'auto' ? 'default' : 'secondary'}>
+                  {addon.confirmation_type === 'auto' ? 'Auto' : 'Manual'}
+                </Badge>
+              </TableCell>
+            )}
+            <TableCell>
+              <Switch checked={addon.is_active} onCheckedChange={() => handleToggleActive(addon)} />
+            </TableCell>
+            <TableCell className="text-right">
+              <Button variant="ghost" size="icon" onClick={() => handleEdit(addon)}><Pencil className="h-4 w-4" /></Button>
+            </TableCell>
+          </TableRow>
+        ))}
+        {items.length === 0 && (
+          <TableRow><TableCell colSpan={showConfirmation ? 6 : 5} className="text-center py-8 text-muted-foreground">No add-ons in this category</TableCell></TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
 
   return (
     <AdminGuard>
       <AdminLayout>
         <div className="space-y-6">
-          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-serif font-medium">Add-ons</h1>
-              <p className="text-muted-foreground">
-                Manage upsells and additional services for bookings
-              </p>
+              <h1 className="text-3xl font-serif font-medium">Add-ons Engine</h1>
+              <p className="text-muted-foreground">Manage upsells, services, and post-booking extras</p>
             </div>
             <Button onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add New
+              <Plus className="h-4 w-4 mr-2" />Add New
             </Button>
           </div>
 
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">Filter by Category:</span>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {ADDON_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+          <Tabs defaultValue="all">
+            <TabsList>
+              <TabsTrigger value="all">All Add-ons ({addons?.length || 0})</TabsTrigger>
+              <TabsTrigger value="booking">Booking Page ({bookingAddons.length})</TabsTrigger>
+              <TabsTrigger value="post">Post-Booking ({postBookingAddons.length})</TabsTrigger>
+              <TabsTrigger value="performance">Performance</TabsTrigger>
+            </TabsList>
 
-          {/* Add-ons List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Add-ons Catalog ({filteredAddons?.length || 0})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+            <TabsContent value="all" className="mt-4">
               {isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Loading add-ons...
-                </div>
-              ) : filteredAddons && filteredAddons.length > 0 ? (
-                <div className="space-y-3">
-                  {filteredAddons.map((addon, index) => (
-                    <motion.div
-                      key={addon.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center gap-4 p-4 bg-muted/50 rounded-xl"
-                    >
-                      <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-                      
-                      {addon.image_url ? (
-                        <img
-                          src={addon.image_url}
-                          alt={addon.name}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
-                          <Package className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                      )}
+                <div className="text-center py-8 text-muted-foreground">Loading…</div>
+              ) : renderAllTable(addons || [])}
+            </TabsContent>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium truncate">{addon.name}</h3>
-                          <Badge
-                            variant="secondary"
-                            className={categoryColors[addon.category] || ''}
-                          >
-                            {addon.category}
-                          </Badge>
-                          {addon.property_id && (
-                            <Badge variant="outline">Property-specific</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {addon.description || 'No description'}
-                        </p>
-                      </div>
+            <TabsContent value="booking" className="mt-4">
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading…</div>
+              ) : renderVisibilityTable(bookingAddons)}
+            </TabsContent>
 
-                      <div className="text-right">
-                        <p className="font-semibold">{formatCurrency(addon.price)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {priceTypeLabels[addon.price_type] || addon.price_type}
-                        </p>
-                      </div>
+            <TabsContent value="post" className="mt-4">
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading…</div>
+              ) : renderVisibilityTable(postBookingAddons, true)}
+            </TabsContent>
 
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={addon.is_active}
-                          onCheckedChange={() => handleToggleActive(addon)}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(addon)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteId(addon.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+            <TabsContent value="performance" className="mt-4">
+              {perfLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading performance…</div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No add-ons found. Create your first add-on to get started.
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Add-on</TableHead>
+                      <TableHead>Revenue (30d)</TableHead>
+                      <TableHead>Attach Rate %</TableHead>
+                      <TableHead>Bookings</TableHead>
+                      <TableHead>Refund Rate %</TableHead>
+                      <TableHead>Margin %</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(performance || []).map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium">{p.name}</TableCell>
+                        <TableCell>{formatCurrency(p.revenue30d)}</TableCell>
+                        <TableCell>
+                          <span className={p.attachRate < 5 ? 'text-destructive font-medium' : ''}>
+                            {p.attachRate}%
+                          </span>
+                        </TableCell>
+                        <TableCell>{p.totalBookingsWithAddon}</TableCell>
+                        <TableCell>{p.refundRate}%</TableCell>
+                        <TableCell>
+                          {p.margin != null ? `${p.margin}%` : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!performance || performance.length === 0) && (
+                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No performance data</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               )}
-            </CardContent>
-          </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
-        {/* Form Dialog */}
-        <AddonFormDialog
-          open={dialogOpen}
-          onOpenChange={handleDialogClose}
-          addon={editingAddon}
-        />
+        <AddonFormDialog open={dialogOpen} onOpenChange={handleDialogClose} addon={editingAddon} />
 
-        {/* Delete Confirmation */}
         <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Add-on</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this add-on? This action cannot be undone.
-              </AlertDialogDescription>
+              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
