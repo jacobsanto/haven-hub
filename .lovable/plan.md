@@ -1,127 +1,191 @@
+# Complete CMS Overhaul: Theme Alignment, Editable Icons, and Section Display Modes
 
+## Three Problems to Solve
 
-# Make Header, Hero, and Navigation Fully Editable Across All Pages
+### Problem 1: Hardcoded Colors Not Following the Brand Palette
 
-## Overview
+Many components use hardcoded Tailwind color classes (e.g., `text-amber-500`, `bg-green-100`, `text-red-600`) instead of the semantic design tokens (`text-primary`, `bg-accent`, `text-destructive`). When an admin changes the brand palette in Settings, these elements stay the same color -- breaking visual consistency.
 
-Currently, the header navigation links, homepage hero quick-nav icons, homepage featured villa card, and footer navigation links are all **hardcoded arrays** in component files. The existing CMS (`page_content` table) handles text/image fields well but has no concept of **dynamic lists** -- items that can be added, removed, or reordered.
+**Components with hardcoded colors (27+ files affected):**
 
-This plan introduces two new database tables and a dedicated admin page to make all of these elements fully manageable.
+- `LiveAvailabilityBadge.tsx` -- green/amber hardcoded for status
+- `InstantBookingBadge.tsx` -- amber hardcoded
+- `PropertyCard.tsx` -- amber, green hardcoded for badges
+- `TipCallout.tsx` -- amber, blue hardcoded for callout types
+- `PMSConnectionHealthCard.tsx` -- green/red/blue/yellow hardcoded
+- `PMSSyncStatusPanel.tsx` -- green hardcoded
+- `GuestyQuotaMonitor.tsx` -- likely hardcoded status colors
+- `DestinationCard.tsx` -- `text-white` on featured badge
+- Blog components -- white text on overlays
+- Hero sections on About, Destinations, Contact -- `text-white` on image overlays
+
+**Note:** Some hardcoded colors are intentionally correct (e.g., `text-white` over dark image overlays, `bg-black/60` for backdrop overlays). These will be left alone since they serve contrast purposes over images. The fix targets status indicators, badges, and UI chrome that should follow the theme.
+
+### Problem 2: Hero Quick-Nav Icons Cannot Be Edited
+
+The Navigation Manager currently shows a plain text input for the icon name. Users must know Lucide icon names (e.g., "MapPin", "Home"). There is no visual icon picker for the hero quick-nav items -- unlike the Page Content editor which has a full `IconPicker` component with search and visual grid.
+
+### Problem 3: No Section Display Mode Controls
+
+Every content section (properties grid, experiences grid, destinations grid, blog posts) is locked to a single layout. Admins have no way to choose between a grid, carousel/slider, list, or featured-highlight layout. There are no animation or transition options either.
 
 ---
 
-## What Becomes Editable
+## Solution
 
-| Element | Current State | After This Change |
-|---------|--------------|-------------------|
-| Header nav links (5 items) | Hardcoded in `Header.tsx` | Database-driven, add/remove/reorder/hide |
-| Hero quick-nav icons (4 items) | Hardcoded in `Index.tsx` | Database-driven, add/remove/reorder/hide |
-| Footer "Explore" links (4 items) | Hardcoded in `Footer.tsx` | Database-driven, same source as header |
-| Footer "Company" links (4 items) | Hardcoded in `Footer.tsx` | Database-driven, add/remove/reorder/hide |
-| Hero search bar visibility | Always shown | Toggleable via settings |
-| Hero featured villa card | Auto-selects first property | Choose specific property or hide entirely |
-| Hero quick-nav section | Always shown | Toggleable via settings |
+### Part 1: Theme-Aligned Colors
 
----
+**Approach:** Audit all components with hardcoded Tailwind color classes and replace them with semantic tokens that respond to the brand palette. This uses the existing `getStatusColors()` utility in `src/lib/utils.ts` where applicable, and maps remaining hardcoded colors to the closest semantic token.
 
-## Database Changes
+**Mapping:**
 
-### Table 1: `navigation_items`
+```text
+bg-amber-100 / text-amber-700  -->  bg-accent/10 text-accent (for feature badges)
+bg-green-100 / text-green-600  -->  Uses getStatusColors('success') 
+bg-red-100 / text-red-600      -->  Uses getStatusColors('error') or text-destructive
+bg-blue-100 / text-blue-600    -->  Uses getStatusColors('running') or text-primary
+```
 
-Stores all navigation links for header, hero quick-nav, and footer columns.
+**Files to modify (public-facing, highest impact):**
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `id` | uuid (PK) | Primary key |
-| `placement` | text | `header`, `hero_quicknav`, `footer_explore`, or `footer_company` |
-| `label` | text | Display text |
-| `path` | text | Route path (e.g., `/properties`) |
-| `icon` | text | Lucide icon name (optional, used for hero icons) |
-| `sort_order` | integer | Display order |
-| `is_visible` | boolean | Toggle visibility |
-| `show_on_mobile` | boolean | Show in mobile menu |
-| `priority` | boolean | Show on large screens vs extra-large only (header) |
-| `created_at` | timestamptz | Auto-set |
-| `updated_at` | timestamptz | Auto-set |
 
-**RLS**: Public read for visible items, admin full CRUD.
+| File                        | Change                                 |
+| --------------------------- | -------------------------------------- |
+| `InstantBookingBadge.tsx`   | amber --> accent tokens                |
+| `PropertyCard.tsx`          | amber/green badges --> accent/semantic |
+| `QuickBookCard.tsx`         | Already mostly semantic, minor fixes   |
+| `LiveAvailabilityBadge.tsx` | green/amber --> semantic status tokens |
+| `DestinationCard.tsx`       | gold-accent badge already OK, verify   |
 
-**Seed data**: All current hardcoded items inserted as initial rows so nothing changes visually until the admin makes edits.
 
-### Table 2: `hero_settings`
+**Files to modify (admin, lower priority but included):**
 
-Simple key-value configuration for homepage hero toggles.
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `id` | uuid (PK) | Primary key |
-| `key` | text (unique) | Setting name |
-| `value` | text | Setting value |
-| `updated_at` | timestamptz | Auto-set |
+| File                          | Change                      |
+| ----------------------------- | --------------------------- |
+| `PMSConnectionHealthCard.tsx` | green/red/blue --> semantic |
+| `PMSSyncStatusPanel.tsx`      | green --> semantic          |
+| `GuestyQuotaMonitor.tsx`      | status colors --> semantic  |
 
-Initial settings:
-- `show_search_bar` = `true`
-- `show_featured_villa` = `true`
-- `featured_property_id` = `auto` (first featured property)
-- `show_quick_nav` = `true`
 
+**Also we should have a single column slider especially for mobile mode showcasing either properties or experiences or destinations . Blog components** like `TipCallout.tsx` are intentionally styled with fixed semantic colors for readability (tip = amber, info = blue) and will be kept as-is since they are content presentation, not chrome.
+
+### Part 2: Icon Picker for Navigation Items
+
+**Change:** Replace the plain text `<Input>` for the icon field in `NavigationItemFormDialog.tsx` with the existing `IconPicker` component (already used in Page Content editor). This gives admins a visual grid with search to pick any Lucide icon.
+
+**Files to modify:**
+
+
+| File                           | Change                                                                  |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| `NavigationItemFormDialog.tsx` | Import and use `IconPicker` component instead of `Input` for icon field |
+
+
+This is a small change -- the `IconPicker` component already exists and works well.
+
+### Part 3: Section Display Modes (Layout + Animation Options)
+
+This is the largest piece. It introduces a new database table and admin UI to let admins choose how each content section renders.
+
+#### New Database Table: `section_display_settings`
+
+
+| Column              | Type        | Purpose                                             |
+| ------------------- | ----------- | --------------------------------------------------- |
+| `id`                | uuid (PK)   | Primary key                                         |
+| `page_slug`         | text        | Which page (e.g., `home`, `about`)                  |
+| `section_key`       | text        | Which section (e.g., `properties`, `experiences`)   |
+| `layout_mode`       | text        | `grid` (default), `carousel`, `list`, `featured`    |
+| `columns`           | integer     | Number of grid columns (2, 3, or 4)                 |
+| `animation`         | text        | `fade-up` (default), `scale-in`, `slide-in`, `none` |
+| `autoplay`          | boolean     | For carousel mode, auto-advance                     |
+| `autoplay_interval` | integer     | Seconds between slides                              |
+| `items_per_view`    | integer     | For carousel, how many visible at once              |
+| `show_navigation`   | boolean     | Show prev/next arrows (carousel)                    |
+| `show_dots`         | boolean     | Show pagination dots (carousel)                     |
+| `updated_at`        | timestamptz | Auto-set                                            |
+
+
+**Unique constraint** on `(page_slug, section_key)`.
 **RLS**: Public read, admin full CRUD.
 
----
+**Seed data:** Insert defaults for all existing sections so current behavior is preserved.
 
-## New Admin Page: Navigation Manager
+#### New Hook: `useSectionDisplay`
 
-A new admin page at `/admin/navigation` with tabs:
+```text
+useSectionDisplay(pageSlug, sectionKey) --> { layoutMode, columns, animation, ... }
+```
 
-- **Header Navigation** -- Table of links with add/edit/delete, visibility toggle, mobile toggle, sort order
-- **Hero Quick Nav** -- Same UI but includes icon picker for each item
-- **Footer Explore** -- Links for the "Explore" footer column
-- **Footer Company** -- Links for the "Company" footer column
-- **Hero Settings** -- Toggle switches for search bar, featured villa, quick-nav visibility; property selector for featured villa
+Returns the display configuration for a section, with sensible defaults if no database row exists.
 
----
+#### New Component: `SectionRenderer`
 
-## Frontend Component Updates
+A wrapper component that takes children (the content items) and renders them according to the display settings:
 
-### `Header.tsx`
-- Replace static `navItems` array with data from `useNavigationItems('header')`
-- Fallback to current hardcoded items if the database returns empty (safety net)
+- **Grid mode**: CSS grid with configurable columns
+- **Carousel mode**: Embla carousel (already installed) with arrows, dots, autoplay
+- **List mode**: Vertical stack with alternating layout
+- **Featured mode**: First item large, rest in a smaller grid below
 
-### `Index.tsx` (Hero Section)
-- Replace hardcoded quick-nav icons with `useNavigationItems('hero_quicknav')`
-- Read `useHeroSettings()` to conditionally show/hide search bar, featured villa card, and quick-nav
-- Use `featured_property_id` setting to select a specific property or auto-select
+Each mode applies the chosen entrance animation using Framer Motion.
 
-### `Footer.tsx`
-- Replace hardcoded "Explore" links with `useNavigationItems('footer_explore')`
-- Replace hardcoded "Company" links with `useNavigationItems('footer_company')`
+#### Admin UI: Section Display Editor
 
----
+Add a "Display Settings" expandable panel to each section in `AdminPageContent.tsx`. This shows:
 
-## New Files
+- Layout mode selector (4 visual options: grid, carousel, list, featured)
+- Column count (for grid)
+- Animation selector (4 options with preview)
+- Carousel-specific options (autoplay, interval, arrows, dots)
 
-| File | Purpose |
-|------|---------|
-| `src/hooks/useNavigationItems.ts` | Hook to fetch visible, sorted nav items by placement; admin CRUD mutations |
-| `src/hooks/useHeroSettings.ts` | Hook to read hero settings (public) and update them (admin) |
-| `src/components/admin/NavigationItemFormDialog.tsx` | Add/edit dialog for nav items (label, path, icon, placement, visibility, mobile, priority) |
-| `src/pages/admin/AdminNavigation.tsx` | Full navigation management page with tabs for each placement |
+#### Frontend Integration
 
-## Modified Files
+Update these page sections to use `SectionRenderer`:
 
-| File | Change |
-|------|--------|
-| `src/components/layout/Header.tsx` | Use `useNavigationItems('header')` instead of static array |
-| `src/pages/Index.tsx` | Use `useNavigationItems('hero_quicknav')` and `useHeroSettings()` |
-| `src/components/layout/Footer.tsx` | Use `useNavigationItems('footer_explore')` and `useNavigationItems('footer_company')` |
-| `src/components/admin/AdminLayout.tsx` | Add "Navigation" link to Content section in sidebar |
-| `src/App.tsx` | Add `/admin/navigation` route |
+- Homepage: properties, destinations, experiences, blog posts
+- Properties page: property grid
+- Destinations page: destination grid
+- Experiences page: experience grid
+- Blog page: post grid
 
 ---
 
-## Safety Measures
+## Files to Create
 
-- All components fall back to their current hardcoded defaults if the database query returns empty or fails, so the site never shows a blank header/footer
-- Seed data ensures the migration itself populates the tables with the current values
-- No changes to booking logic, PMS integrations, or any operational systems
 
+| File                                    | Purpose                                                 |
+| --------------------------------------- | ------------------------------------------------------- |
+| `src/hooks/useSectionDisplay.ts`        | Hook for reading/writing section display settings       |
+| `src/components/ui/SectionRenderer.tsx` | Universal layout renderer (grid/carousel/list/featured) |
+
+
+## Files to Modify
+
+
+| File                                                | Change                                                                 |
+| --------------------------------------------------- | ---------------------------------------------------------------------- |
+| `src/components/admin/NavigationItemFormDialog.tsx` | Replace icon text input with `IconPicker`                              |
+| `src/components/properties/InstantBookingBadge.tsx` | amber --> accent tokens                                                |
+| `src/components/properties/PropertyCard.tsx`        | amber/green --> semantic tokens                                        |
+| `src/components/booking/LiveAvailabilityBadge.tsx`  | green/amber --> semantic tokens                                        |
+| `src/components/admin/PMSConnectionHealthCard.tsx`  | hardcoded colors --> semantic                                          |
+| `src/components/admin/PMSSyncStatusPanel.tsx`       | green --> semantic                                                     |
+| `src/pages/Index.tsx`                               | Wrap property/destination/experience/blog grids with `SectionRenderer` |
+| `src/pages/Properties.tsx`                          | Wrap property grid with `SectionRenderer`                              |
+| `src/pages/About.tsx`                               | Wrap values grid with `SectionRenderer`                                |
+| `src/hooks/usePageContent.ts`                       | No schema changes needed -- display settings are separate              |
+| `src/pages/admin/AdminPageContent.tsx`              | Add display settings panel per section                                 |
+
+
+## Database Migration
+
+One migration creating `section_display_settings` table with RLS policies and seed data.
+
+## What Does NOT Change
+
+- Booking logic, PMS integrations, pricing -- untouched
+- The `page_content` CMS system -- enhanced, not replaced
+- Image overlays using `text-white` over dark backgrounds -- these are correct as-is
+- Blog article styling (TipCallout colors are intentional for content semantics)
