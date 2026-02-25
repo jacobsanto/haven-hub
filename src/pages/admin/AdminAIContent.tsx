@@ -57,9 +57,67 @@ export default function AdminAIContent() {
     }
   }, [selectedEntity, destinations, experiences, properties, posts]);
 
-  const handleApply = async (itemId: string, content: GeneratedContent) => {
+  const generateSlug = (name: string) =>
+    name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+
+  const handleApply = async (itemId: string, content: GeneratedContent, entityName?: string) => {
     try {
       let error;
+
+      // CREATE NEW flow
+      if (itemId === '__new__') {
+        switch (selectedEntity) {
+          case 'destinations': {
+            const c = content as DestinationContent;
+            const name = entityName || 'New Destination';
+            ({ error } = await supabase.from('destinations').insert({
+              name, slug: generateSlug(name), country: 'TBD', status: 'draft' as any,
+              description: c.description, long_description: c.long_description,
+              highlights: c.highlights, best_time_to_visit: c.best_time_to_visit, climate: c.climate,
+            }));
+            queryClient.invalidateQueries({ queryKey: ['destinations'] });
+            break;
+          }
+          case 'experiences': {
+            const c = content as ExperienceContent;
+            const name = entityName || 'New Experience';
+            ({ error } = await supabase.from('experiences').insert({
+              name, slug: generateSlug(name), category: 'Cultural', status: 'draft' as any,
+              description: c.description, long_description: c.long_description, includes: c.includes,
+            }));
+            queryClient.invalidateQueries({ queryKey: ['experiences'] });
+            break;
+          }
+          case 'properties': {
+            const c = content as PropertyContent;
+            const name = entityName || 'New Property';
+            ({ error } = await supabase.from('properties').insert({
+              name, slug: generateSlug(name), city: 'TBD', country: 'TBD', status: 'draft' as any,
+              price_per_night: 0, bedrooms: 1, bathrooms: 1, max_guests: 2,
+              short_description: c.short_description, description: c.description,
+              highlights: c.highlights, neighborhood_description: c.neighborhood_description,
+            }));
+            queryClient.invalidateQueries({ queryKey: ['properties'] });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'properties'] });
+            break;
+          }
+          case 'blog': {
+            const c = content as BlogContent;
+            const title = entityName || c.title;
+            ({ error } = await supabase.from('blog_posts').insert({
+              title, slug: generateSlug(title), status: 'draft' as any,
+              excerpt: c.excerpt, content: c.content, tags: c.tags,
+            }));
+            queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+            break;
+          }
+        }
+        if (error) throw error;
+        toast({ title: 'Entity created', description: 'New draft entity has been created successfully.' });
+        return;
+      }
+
+      // UPDATE existing flow
       switch (selectedEntity) {
         case 'destinations': {
           const c = content as DestinationContent;

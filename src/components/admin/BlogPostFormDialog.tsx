@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,6 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ImageFieldWithAI } from '@/components/admin/ImageFieldWithAI';
 import {
   Select,
@@ -32,6 +33,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Sparkles, ChevronDown, RefreshCw, Feather, Check } from 'lucide-react';
+import { useAIContent, ToneType, BlogContent } from '@/hooks/useAIContent';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -59,6 +64,12 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
   const createPost = useCreateBlogPost();
   const updatePost = useUpdateBlogPost();
   const { data: authors } = useBlogAuthors();
+
+  // AI assist state
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiTone, setAiTone] = useState<ToneType>('luxury');
+  const [aiInstructions, setAiInstructions] = useState('');
+  const { generateContent, humanizeContent, isGenerating, isHumanizing, generatedContent, clearContent } = useAIContent();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -104,6 +115,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
         tags: '',
       });
     }
+    clearContent();
   }, [post, form]);
 
   const generateSlug = (title: string) => {
@@ -113,6 +125,50 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim();
+  };
+
+  const handleAIGenerate = async () => {
+    const title = form.getValues('title');
+    if (!title) return;
+    await generateContent({
+      contentType: 'blog',
+      targetName: title,
+      existingData: {
+        title,
+        excerpt: form.getValues('excerpt'),
+        tags: form.getValues('tags'),
+      },
+      tone: aiTone,
+      customInstructions: aiInstructions || undefined,
+    });
+  };
+
+  const handleAIHumanize = async () => {
+    if (!generatedContent) return;
+    await humanizeContent({ contentType: 'blog', contentToHumanize: generatedContent });
+  };
+
+  const applyField = (field: 'title' | 'excerpt' | 'content' | 'tags') => {
+    if (!generatedContent) return;
+    const c = generatedContent as BlogContent;
+    if (field === 'tags') {
+      form.setValue('tags', c.tags.join(', '));
+    } else {
+      form.setValue(field, c[field]);
+    }
+    if (field === 'title' && !post) {
+      form.setValue('slug', generateSlug(c.title));
+    }
+  };
+
+  const applyAll = () => {
+    if (!generatedContent) return;
+    const c = generatedContent as BlogContent;
+    form.setValue('title', c.title);
+    if (!post) form.setValue('slug', generateSlug(c.title));
+    form.setValue('excerpt', c.excerpt);
+    form.setValue('content', c.content);
+    form.setValue('tags', c.tags.join(', '));
   };
 
   const onSubmit = (values: FormValues) => {
@@ -320,6 +376,104 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
                 </FormItem>
               )}
             />
+
+            {/* AI Content Assistant */}
+            <Collapsible open={aiOpen} onOpenChange={setAiOpen}>
+              <CollapsibleTrigger asChild>
+                <Button type="button" variant="outline" size="sm" className="w-full justify-between border-primary/30 text-primary hover:bg-primary/5">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    AI Content Assistant
+                  </span>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", aiOpen && "rotate-180")} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-3 space-y-3 border border-primary/20 rounded-lg p-4 mt-2 bg-primary/[0.02]">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Tone</label>
+                  <Select value={aiTone} onValueChange={(v) => setAiTone(v as ToneType)}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="luxury">Luxury</SelectItem>
+                      <SelectItem value="warm">Warm & Inviting</SelectItem>
+                      <SelectItem value="professional">Professional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Custom Instructions (optional)</label>
+                  <Textarea
+                    placeholder="e.g. Focus on wellness aspects, mention private pool..."
+                    value={aiInstructions}
+                    onChange={(e) => setAiInstructions(e.target.value)}
+                    rows={2}
+                    className="text-sm"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleAIGenerate}
+                  disabled={!form.watch('title') || isGenerating}
+                  size="sm"
+                  className="w-full"
+                >
+                  {isGenerating ? (
+                    <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Generating...</>
+                  ) : (
+                    <><Sparkles className="h-3.5 w-3.5 mr-1.5" /> Generate Content</>
+                  )}
+                </Button>
+
+                {!form.watch('title') && (
+                  <p className="text-xs text-muted-foreground">Enter a title above first to generate content.</p>
+                )}
+
+                {generatedContent && (
+                  <div className="space-y-3 pt-2 border-t border-primary/10">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-primary">Generated Preview</span>
+                      <div className="flex gap-1.5">
+                        <Button type="button" variant="outline" size="sm" onClick={handleAIHumanize} disabled={isHumanizing} className="h-7 text-xs">
+                          <Feather className={cn("h-3 w-3 mr-1", isHumanizing && "animate-pulse")} />
+                          {isHumanizing ? 'Humanizing...' : 'Humanize'}
+                        </Button>
+                        <Button type="button" size="sm" onClick={applyAll} className="h-7 text-xs">
+                          <Check className="h-3 w-3 mr-1" /> Apply All
+                        </Button>
+                      </div>
+                    </div>
+
+                    {(['title', 'excerpt', 'content', 'tags'] as const).map((field) => {
+                      const c = generatedContent as BlogContent;
+                      const val = field === 'tags' ? c.tags.join(', ') : c[field];
+                      return (
+                        <div key={field} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-medium capitalize text-muted-foreground">{field}</label>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => applyField(field)} className="h-6 text-xs px-2">
+                              Apply
+                            </Button>
+                          </div>
+                          <div className="bg-muted/50 rounded p-2 text-xs max-h-24 overflow-y-auto whitespace-pre-wrap">
+                            {field === 'tags' ? (
+                              <div className="flex flex-wrap gap-1">
+                                {c.tags.map((t, i) => <Badge key={i} variant="secondary" className="text-[10px]">{t}</Badge>)}
+                              </div>
+                            ) : (
+                              <span>{val.length > 300 ? val.slice(0, 300) + '…' : val}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
 
             <FormField
               control={form.control}

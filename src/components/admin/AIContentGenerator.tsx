@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Copy, Check, RefreshCw, ChevronDown, Wand2, Target, Users, Feather, Info, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,8 @@ interface ContentItem {
 interface AIContentGeneratorProps {
   contentType: ContentType;
   items: ContentItem[];
-  onApplyContent?: (itemId: string, content: GeneratedContent) => void;
+  onApplyContent?: (itemId: string, content: GeneratedContent, entityName?: string) => void;
+  allowCreateNew?: boolean;
 }
 
 const contentTypeLabels: Record<ContentType, string> = {
@@ -63,8 +65,9 @@ const lengthOptions: { value: LengthType; label: string }[] = [
   { value: 'long', label: 'Comprehensive' },
 ];
 
-export function AIContentGenerator({ contentType, items, onApplyContent }: AIContentGeneratorProps) {
+export function AIContentGenerator({ contentType, items, onApplyContent, allowCreateNew = true }: AIContentGeneratorProps) {
   const [selectedItemId, setSelectedItemId] = useState<string>('');
+  const [newEntityName, setNewEntityName] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [customInstructions, setCustomInstructions] = useState('');
   const [tone, setTone] = useState<ToneType>('luxury');
@@ -90,10 +93,12 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
   const { generateContent, humanizeContent, isGenerating, isHumanizing, generatedContent, clearContent } = useAIContent();
   const { toast } = useToast();
 
-  const selectedItem = useMemo(() => 
-    items.find(item => item.id === selectedItemId),
-    [items, selectedItemId]
-  );
+  const isCreateNew = selectedItemId === '__new__';
+
+  const selectedItem = useMemo(() => {
+    if (isCreateNew) return { id: '__new__', name: newEntityName || `New ${contentTypeLabels[contentType]}` };
+    return items.find(item => item.id === selectedItemId);
+  }, [items, selectedItemId, isCreateNew, newEntityName, contentType]);
 
   const availableTemplates = useMemo(() => 
     contentTemplates.filter(t => (t.contentTypes as readonly string[]).includes(contentType)),
@@ -101,10 +106,12 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
   );
 
   const handleGenerate = async () => {
-    if (!selectedItem) {
+    if (!selectedItem || (isCreateNew && !newEntityName.trim())) {
       toast({
-        title: 'Select an item',
-        description: `Please select a ${contentTypeLabels[contentType].toLowerCase()} to generate content for.`,
+        title: isCreateNew ? 'Enter a name' : 'Select an item',
+        description: isCreateNew
+          ? `Please enter a name for the new ${contentTypeLabels[contentType].toLowerCase()}.`
+          : `Please select a ${contentTypeLabels[contentType].toLowerCase()} to generate content for.`,
         variant: 'destructive',
       });
       return;
@@ -117,8 +124,8 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
 
     await generateContent({
       contentType,
-      targetName: selectedItem.name,
-      existingData: selectedItem.existingData,
+      targetName: isCreateNew ? newEntityName.trim() : selectedItem.name,
+      existingData: isCreateNew ? undefined : selectedItem.existingData,
       customInstructions: customInstructions || undefined,
       tone,
       length,
@@ -224,7 +231,7 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
   const handleApply = () => {
     if (selectedItemId && generatedContent && onApplyContent) {
       const contentWithDisclosure = applyDisclosure(generatedContent);
-      onApplyContent(selectedItemId, contentWithDisclosure);
+      onApplyContent(selectedItemId, contentWithDisclosure, isCreateNew ? newEntityName.trim() : undefined);
       toast({
         title: 'Content Applied',
         description: `Generated content has been applied to ${selectedItem?.name}.`,
@@ -367,11 +374,16 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
           {/* Target Selection */}
           <div className="space-y-2">
             <Label>Select {contentTypeLabels[contentType]}</Label>
-            <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+            <Select value={selectedItemId} onValueChange={(v) => { setSelectedItemId(v); if (v !== '__new__') setNewEntityName(''); }}>
               <SelectTrigger>
                 <SelectValue placeholder={`Choose a ${contentTypeLabels[contentType].toLowerCase()}...`} />
               </SelectTrigger>
               <SelectContent>
+                {allowCreateNew && (
+                  <SelectItem value="__new__" className="font-medium text-primary">
+                    + Create New {contentTypeLabels[contentType]}
+                  </SelectItem>
+                )}
                 {items.map(item => (
                   <SelectItem key={item.id} value={item.id}>
                     {item.name}
@@ -379,6 +391,16 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
                 ))}
               </SelectContent>
             </Select>
+            {isCreateNew && (
+              <div className="pt-2 space-y-1">
+                <Label>{contentTypeLabels[contentType]} Name</Label>
+                <Input
+                  placeholder={`Enter ${contentTypeLabels[contentType].toLowerCase()} name...`}
+                  value={newEntityName}
+                  onChange={(e) => setNewEntityName(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           {/* Template Selection */}
@@ -545,7 +567,7 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
           {/* Generate Button */}
           <Button
             onClick={handleGenerate}
-            disabled={!selectedItemId || isGenerating}
+            disabled={(!selectedItemId || (isCreateNew && !newEntityName.trim())) || isGenerating}
             className="w-full"
             size="lg"
           >
@@ -622,7 +644,7 @@ export function AIContentGenerator({ contentType, items, onApplyContent }: AICon
                     </TooltipProvider>
                     {onApplyContent && !showComparison && (
                       <Button size="sm" onClick={handleApply}>
-                        Apply to {selectedItem?.name}
+                        {isCreateNew ? 'Create & Save' : `Apply to ${selectedItem?.name}`}
                       </Button>
                     )}
                     {onApplyContent && showComparison && hasBeenHumanized && (
