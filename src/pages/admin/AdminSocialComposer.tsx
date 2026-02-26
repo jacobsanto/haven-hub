@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Instagram, Linkedin, Globe, Facebook, Twitter,
-  ArrowLeft, ArrowRight, Check, Sparkles, Loader2, Clock, Save, RefreshCw,
+  ArrowLeft, ArrowRight, Check, Sparkles, Loader2, Clock, Save, RefreshCw, User,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -73,6 +73,7 @@ export default function AdminSocialComposer() {
   const [aiTopic, setAiTopic] = useState('');
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [rewritingPlatform, setRewritingPlatform] = useState<SocialPlatform | null>(null);
+  const [humanizingPlatform, setHumanizingPlatform] = useState<SocialPlatform | 'core' | null>(null);
 
   // Step 2 state
   const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatform[]>([]);
@@ -136,6 +137,37 @@ export default function AdminSocialComposer() {
       toast({ title: 'Rewrite failed', description: err.message, variant: 'destructive' });
     } finally {
       setRewritingPlatform(null);
+    }
+  };
+
+  const handleHumanize = async (target: SocialPlatform | 'core') => {
+    setHumanizingPlatform(target);
+    try {
+      const sourceText = target === 'core' ? coreText : variants.find(v => v.platform === target)?.content_text || '';
+      const sourceHashtags = target === 'core' ? parsedHashtags : variants.find(v => v.platform === target)?.hashtags || [];
+      const platform = target === 'core' ? 'general' : target;
+
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          contentType: 'social_humanize',
+          existingData: { platform, content_text: sourceText, hashtags: sourceHashtags },
+        },
+      });
+      if (error) throw error;
+      if (data?.content) {
+        if (target === 'core') {
+          setCoreText(data.content.content_text || '');
+          if (data.content.hashtags?.length) setCoreHashtags(data.content.hashtags.join(', '));
+        } else {
+          updateVariant(target, 'content_text', data.content.content_text);
+          if (data.content.hashtags?.length) updateVariant(target, 'hashtags', data.content.hashtags);
+        }
+        toast({ title: target === 'core' ? 'Content humanized!' : `${getPlatformLabel(target)} variant humanized` });
+      }
+    } catch (err: any) {
+      toast({ title: 'Humanize failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setHumanizingPlatform(null);
     }
   };
 
@@ -291,7 +323,25 @@ export default function AdminSocialComposer() {
                 </div>
 
                 <div>
-                  <Label>Core Message</Label>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label>Core Message</Label>
+                    {coreText.trim() && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleHumanize('core')}
+                        disabled={humanizingPlatform === 'core'}
+                        className="h-7 text-xs"
+                      >
+                        {humanizingPlatform === 'core' ? (
+                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                        ) : (
+                          <User className="h-3 w-3 mr-1" />
+                        )}
+                        Humanize
+                      </Button>
+                    )}
+                  </div>
                   <Textarea
                     value={coreText}
                     onChange={e => setCoreText(e.target.value)}
@@ -404,6 +454,20 @@ export default function AdminSocialComposer() {
                                   <RefreshCw className="h-3 w-3 mr-1" />
                                 )}
                                 Rewrite
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleHumanize(variant.platform)}
+                                disabled={humanizingPlatform === variant.platform}
+                                className="h-7 text-xs"
+                              >
+                                {humanizingPlatform === variant.platform ? (
+                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                ) : (
+                                  <User className="h-3 w-3 mr-1" />
+                                )}
+                                Humanize
                               </Button>
                               <span className={cn('text-xs', over ? 'text-destructive font-medium' : 'text-muted-foreground')}>
                                 {count} / {limit.toLocaleString()}

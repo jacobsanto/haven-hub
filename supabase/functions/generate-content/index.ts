@@ -485,6 +485,72 @@ Keep the core message but optimize format, length, and style for the platform.`;
       );
     }
 
+    // Handle social_humanize mode — make content sound more natural
+    if ((contentType as string) === "social_humanize" && existingData) {
+      const { platform: humPlatform, content_text: humText, hashtags: humHashtags } = existingData as { platform: string; content_text: string; hashtags?: string[] };
+
+      const socialHumanizePrompt = `${humanizeSystemPrompt}
+
+SOCIAL MEDIA SPECIFIC RULES:
+- Keep the content appropriate for ${humPlatform || "social media"}
+- Preserve the platform-specific format and length constraints
+- Make it sound like a real person wrote it, not a brand bot
+- Keep hashtags relevant but vary them naturally
+- Maintain any emojis that feel authentic, remove ones that feel forced`;
+
+      const humTool = {
+        type: "function",
+        function: {
+          name: "rewrite_social_content",
+          description: "Humanize social media content to sound more natural",
+          parameters: {
+            type: "object",
+            properties: {
+              content_text: { type: "string", description: "The humanized content" },
+              hashtags: { type: "array", items: { type: "string" }, description: "Refined hashtags without # prefix" },
+            },
+            required: ["content_text", "hashtags"],
+            additionalProperties: false,
+          },
+        },
+      };
+
+      const humResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: socialHumanizePrompt },
+            { role: "user", content: `Humanize this social media post for ${humPlatform}:\n\n${humText}${humHashtags?.length ? `\n\nCurrent hashtags: ${humHashtags.join(", ")}` : ""}` },
+          ],
+          tools: [humTool],
+          tool_choice: { type: "function", function: { name: "rewrite_social_content" } },
+        }),
+      });
+
+      if (!humResponse.ok) {
+        if (humResponse.status === 429) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (humResponse.status === 402) return new Response(JSON.stringify({ error: "AI usage limit reached." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const errText = await humResponse.text();
+        console.error("AI gateway error:", humResponse.status, errText);
+        throw new Error(`AI gateway error: ${humResponse.status}`);
+      }
+
+      const humData = await humResponse.json();
+      const humToolCall = humData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!humToolCall) throw new Error("No tool call in response");
+
+      const humContent = JSON.parse(humToolCall.function.arguments);
+      return new Response(
+        JSON.stringify({ success: true, content: humContent, contentType: "social_humanize" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Handle social_variants mode
     if (contentType === "social_variants" && existingData) {
       const { core_text, core_hashtags, platforms } = existingData as {

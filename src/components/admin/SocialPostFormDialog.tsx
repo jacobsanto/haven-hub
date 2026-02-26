@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Instagram, Linkedin, Globe, Hash, Sparkles, Loader2, ChevronDown } from 'lucide-react';
+import { Instagram, Linkedin, Globe, Hash, Sparkles, Loader2, ChevronDown, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,36 @@ export function SocialPostFormDialog({ open, onOpenChange, editingPost, defaultP
   const [aiTopic, setAiTopic] = useState('');
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [isHumanizing, setIsHumanizing] = useState(false);
+
+  const handleHumanize = async () => {
+    if (!contentText.trim()) return;
+    setIsHumanizing(true);
+    try {
+      const currentHashtags = hashtags
+        .split(/[,\s]+/)
+        .map(h => h.replace(/^#/, '').trim())
+        .filter(Boolean);
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          contentType: 'social_humanize',
+          existingData: { platform, content_text: contentText, hashtags: currentHashtags },
+        },
+      });
+      if (error) throw error;
+      if (data?.content) {
+        setContentText(data.content.content_text || '');
+        if (data.content.hashtags?.length) {
+          setHashtags(data.content.hashtags.join(', '));
+        }
+        toast({ title: 'Content humanized!' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Humanize failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsHumanizing(false);
+    }
+  };
 
   const handleAIAssist = async () => {
     if (!aiTopic.trim()) return;
@@ -188,7 +218,25 @@ export function SocialPostFormDialog({ open, onOpenChange, editingPost, defaultP
           {/* Content */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <Label>Content</Label>
+              <div className="flex items-center gap-2">
+                <Label>Content</Label>
+                {contentText.trim() && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleHumanize}
+                    disabled={isHumanizing}
+                    className="h-6 text-xs px-2"
+                  >
+                    {isHumanizing ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : (
+                      <User className="h-3 w-3 mr-1" />
+                    )}
+                    Humanize
+                  </Button>
+                )}
+              </div>
               <span className={`text-xs ${isOverLimit ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
                 {charCount} / {charLimit}
               </span>
