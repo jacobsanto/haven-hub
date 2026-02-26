@@ -1,3 +1,5 @@
+import type { ArticleStyle } from './article-styles';
+
 export type BlogStatus = 'draft' | 'published' | 'archived';
 
 export interface BlogCategory {
@@ -27,7 +29,7 @@ export interface InlineImage {
   url: string;
   alt: string;
   caption?: string;
-  position: string; // e.g., 'after-heading-1', 'after-section-2'
+  position: string;
 }
 
 export interface BlogPost {
@@ -46,6 +48,7 @@ export interface BlogPost {
   created_at: string;
   updated_at: string;
   inline_images?: InlineImage[] | null;
+  article_style?: ArticleStyle | null;
   category?: BlogCategory;
   author?: BlogAuthor;
 }

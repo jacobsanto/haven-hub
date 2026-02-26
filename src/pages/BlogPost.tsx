@@ -7,9 +7,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { getArticleStyle } from '@/types/article-styles';
+import type { ArticleStyle } from '@/types/article-styles';
 import { DestinationGuideLayout } from '@/components/blog/layouts/DestinationGuideLayout';
 import { LifestyleLayout } from '@/components/blog/layouts/LifestyleLayout';
 import { TravelTipsLayout } from '@/components/blog/layouts/TravelTipsLayout';
+import { ClassicListPostLayout } from '@/components/blog/layouts/ClassicListPostLayout';
+import { BeginnersGuideLayout } from '@/components/blog/layouts/BeginnersGuideLayout';
+import { ThingsToDoAfterLayout } from '@/components/blog/layouts/ThingsToDoAfterLayout';
+import { ProductShowdownLayout } from '@/components/blog/layouts/ProductShowdownLayout';
+import { DetailedCaseStudyLayout } from '@/components/blog/layouts/DetailedCaseStudyLayout';
+import { HowTheyDidItLayout } from '@/components/blog/layouts/HowTheyDidItLayout';
+import { MythDebunkerLayout } from '@/components/blog/layouts/MythDebunkerLayout';
 
 function estimateReadTime(content: string | null): number {
   if (!content) return 1;
@@ -26,19 +34,15 @@ export default function BlogPost() {
     categorySlug: post?.category?.slug 
   });
 
-  // Filter out current post from related
   const filteredRelated = relatedPosts?.filter(p => p.id !== post?.id).slice(0, 3);
 
-  // Extract headings for Table of Contents
   const headings = useMemo(() => {
     if (!post?.content) return [];
     return extractHeadings(post.content);
   }, [post?.content]);
 
-  // Add IDs to the content headings after render
   useEffect(() => {
     if (!post?.content) return;
-    
     headings.forEach(({ id, text }) => {
       const headingElements = document.querySelectorAll('h2, h3');
       headingElements.forEach((el) => {
@@ -59,11 +63,6 @@ export default function BlogPost() {
             <Skeleton className="h-10 w-3/4 mb-4" />
             <Skeleton className="h-4 w-1/2" />
           </div>
-          <div className="max-w-4xl mx-auto mt-12 space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
         </div>
       </PageLayout>
     );
@@ -74,12 +73,8 @@ export default function BlogPost() {
       <PageLayout>
         <div className="container mx-auto px-4 py-32 text-center">
           <h1 className="text-3xl font-serif text-foreground mb-4">Post Not Found</h1>
-          <p className="text-muted-foreground mb-8">
-            The blog post you're looking for doesn't exist or has been removed.
-          </p>
-          <Button asChild>
-            <Link to="/blog">Back to Blog</Link>
-          </Button>
+          <p className="text-muted-foreground mb-8">The blog post you're looking for doesn't exist or has been removed.</p>
+          <Button asChild><Link to="/blog">Back to Blog</Link></Button>
         </div>
       </PageLayout>
     );
@@ -94,8 +89,8 @@ export default function BlogPost() {
     bio: 'Our editorial team curates the finest travel insights, destination guides, and luxury living inspiration.',
   };
 
-  // Determine article style based on category
-  const articleStyle = getArticleStyle(post.category?.slug);
+  // Use explicit article_style if set, otherwise fall back to category-based
+  const articleStyle: ArticleStyle = post.article_style || getArticleStyle(post.category?.slug);
 
   const layoutProps = {
     post,
@@ -106,11 +101,22 @@ export default function BlogPost() {
     relatedPosts: filteredRelated,
   };
 
+  const layoutMap: Record<ArticleStyle, React.ReactNode> = {
+    'destination-guide': <DestinationGuideLayout {...layoutProps} />,
+    'lifestyle': <LifestyleLayout {...layoutProps} />,
+    'travel-tips': <TravelTipsLayout {...layoutProps} />,
+    'classic-list-post': <ClassicListPostLayout {...layoutProps} />,
+    'beginners-guide': <BeginnersGuideLayout {...layoutProps} />,
+    'things-to-do-after': <ThingsToDoAfterLayout {...layoutProps} />,
+    'product-showdown': <ProductShowdownLayout {...layoutProps} />,
+    'detailed-case-study': <DetailedCaseStudyLayout {...layoutProps} />,
+    'how-they-did-it': <HowTheyDidItLayout {...layoutProps} />,
+    'myth-debunker': <MythDebunkerLayout {...layoutProps} />,
+  };
+
   return (
     <PageLayout>
-      {articleStyle === 'destination-guide' && <DestinationGuideLayout {...layoutProps} />}
-      {articleStyle === 'lifestyle' && <LifestyleLayout {...layoutProps} />}
-      {articleStyle === 'travel-tips' && <TravelTipsLayout {...layoutProps} />}
+      {layoutMap[articleStyle] || <DestinationGuideLayout {...layoutProps} />}
     </PageLayout>
   );
 }

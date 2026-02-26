@@ -143,6 +143,7 @@ export function BlogPostCard({ post, featured = false }: BlogPostCardProps) {
               {readTime} min
             </span>
             <ArticleStyleBadge 
+              articleStyle={post.article_style}
               categorySlug={post.category?.slug} 
               variant="compact" 
             />

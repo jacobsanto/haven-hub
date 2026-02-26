@@ -38,6 +38,8 @@ import { Sparkles, ChevronDown, RefreshCw, Feather, Check } from 'lucide-react';
 import { useAIContent, ToneType, BlogContent, contentTemplates } from '@/hooks/useAIContent';
 import { cn } from '@/lib/utils';
 
+import { articleStyleOptions, ArticleStyle } from '@/types/article-styles';
+
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   slug: z.string().min(1, 'Slug is required').max(200).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase with hyphens'),
@@ -46,6 +48,7 @@ const formSchema = z.object({
   featured_image_url: z.string().url().optional().or(z.literal('')),
   category_id: z.string().optional(),
   author_id: z.string().optional(),
+  article_style: z.string().optional(),
   status: z.enum(['draft', 'published', 'archived']),
   is_featured: z.boolean(),
   tags: z.string().optional(),
@@ -82,6 +85,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
       featured_image_url: '',
       category_id: '',
       author_id: '',
+      article_style: '',
       status: 'draft',
       is_featured: false,
       tags: '',
@@ -98,6 +102,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
         featured_image_url: post.featured_image_url || '',
         category_id: post.category_id || '',
         author_id: post.author_id || '',
+        article_style: post.article_style || '',
         status: post.status,
         is_featured: post.is_featured,
         tags: post.tags?.join(', ') || '',
@@ -111,6 +116,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
         featured_image_url: '',
         category_id: '',
         author_id: '',
+        article_style: '',
         status: 'draft',
         is_featured: false,
         tags: '',
@@ -186,6 +192,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
       featured_image_url: values.featured_image_url || null,
       category_id: values.category_id || null,
       author_id: values.author_id || null,
+      article_style: (values.article_style as ArticleStyle) || null,
       status: values.status as BlogStatus,
       is_featured: values.is_featured,
       tags: tagsArray,
@@ -324,6 +331,34 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
                               </AvatarFallback>
                             </Avatar>
                             {author.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="article_style"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Article Style (Layout)</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Auto (based on category)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {articleStyleOptions.map((style) => (
+                        <SelectItem key={style.value} value={style.value}>
+                          <div className="flex flex-col">
+                            <span>{style.label}</span>
+                            <span className="text-xs text-muted-foreground">{style.description}</span>
                           </div>
                         </SelectItem>
                       ))}
