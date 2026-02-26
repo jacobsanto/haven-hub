@@ -35,7 +35,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Sparkles, ChevronDown, RefreshCw, Feather, Check } from 'lucide-react';
-import { useAIContent, ToneType, BlogContent } from '@/hooks/useAIContent';
+import { useAIContent, ToneType, BlogContent, contentTemplates } from '@/hooks/useAIContent';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
@@ -68,6 +68,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
   // AI assist state
   const [aiOpen, setAiOpen] = useState(false);
   const [aiTone, setAiTone] = useState<ToneType>('luxury');
+  const [aiTemplate, setAiTemplate] = useState('');
   const [aiInstructions, setAiInstructions] = useState('');
   const { generateContent, humanizeContent, isGenerating, isHumanizing, generatedContent, clearContent } = useAIContent();
 
@@ -139,6 +140,7 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
         tags: form.getValues('tags'),
       },
       tone: aiTone,
+      template: aiTemplate || undefined,
       customInstructions: aiInstructions || undefined,
     });
   };
@@ -399,6 +401,22 @@ export function BlogPostFormDialog({ open, onOpenChange, post, categories }: Blo
                       <SelectItem value="luxury">Luxury</SelectItem>
                       <SelectItem value="warm">Warm & Inviting</SelectItem>
                       <SelectItem value="professional">Professional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Structure Template (optional)</label>
+                  <Select value={aiTemplate} onValueChange={setAiTemplate}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="No template — freeform" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contentTemplates
+                        .filter(t => t.contentTypes.includes('blog'))
+                        .map(t => (
+                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>

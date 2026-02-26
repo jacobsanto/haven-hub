@@ -122,6 +122,61 @@ const templatePrompts: Record<string, string> = {
 - Limited-time offer details
 - Why this season is special
 - Call to action`,
+  classic_list_post: `Structure this as a Classic List Post:
+1. TITLE: Write a benefit-driven, numbered title (e.g. "7 Strategies to…", "10 Ways to…")
+2. INTRODUCTION: Open by identifying a problem or desire the reader has, then promise the benefit they'll gain from reading. Keep it to 2-3 paragraphs.
+3. BODY — NUMBERED ITEMS: Create 5-10 numbered items, each with:
+   - A clear subheading (## Heading)
+   - 1-2 paragraphs explaining the tip/strategy
+   - A concrete action item or takeaway the reader can apply immediately
+4. CONCLUSION: Summarize the key takeaways and end with a strong call-to-action (e.g. book now, explore properties, subscribe).`,
+  beginners_guide: `Structure this as a Beginner's Guide:
+1. TITLE: Use "The Beginner's Guide to…" or "A Complete Guide to…" format
+2. INTRODUCTION: Start with a promise statement — what the reader will know/be able to do after reading. Provide context on why this topic matters. 2-3 paragraphs.
+3. TOPIC OVERVIEW: Define key terms and concepts. Use examples to illustrate. This section orients the reader.
+4. DETAILED STEPS/SECTIONS: Break the guide into logical sections with clear headings. Each section should:
+   - Explain one concept or step thoroughly
+   - Use smooth transitions between sections
+   - Include practical examples or scenarios
+5. CONCLUSION: Recap the main points learned, reinforce the promise from the intro, and include a CTA.`,
+  things_to_do_after: `Structure this as a "Things To Do After X" post:
+1. TITLE: Use "X Things To Do After [Scenario]" format
+2. INTRODUCTION: Help the reader visualize the scenario (e.g. "You've just arrived at your villa…"). Then raise the "now what?" question to set up the list. 1-2 paragraphs.
+3. NUMBERED STEPS: Create 5-10 numbered action items, each with:
+   - A clear subheading
+   - Specific, actionable instructions (not vague advice)
+   - Why this step matters
+4. CONCLUSION: Highlight the importance of taking action, call back to the best tips, and end with a CTA.`,
+  product_showdown: `Structure this as a Product Showdown / Comparison post:
+1. TITLE: Name the items being compared (e.g. "Villa A vs Villa B: Which Is Right for You?")
+2. INTRODUCTION: Explain what's being compared and the criteria used for evaluation. Set reader expectations. 1-2 paragraphs.
+3. INDIVIDUAL OVERVIEWS: Give a brief overview of each item being compared — key features, strengths, ideal use case.
+4. FEATURE-BY-FEATURE COMPARISON: Compare across specific dimensions (location, amenities, price, experience, etc.) using clear subheadings.
+5. CONCLUSION: Provide a clear recommendation based on different reader needs/preferences. End with a CTA.`,
+  detailed_case_study: `Structure this as a Detailed Case Study:
+1. TITLE: Include a specific benefit and timeframe (e.g. "How [Guest] Found Their Perfect Getaway in 3 Days")
+2. INTRODUCTION: Introduce a relatable hero/protagonist the reader can identify with. 1-2 paragraphs.
+3. BACKGROUND & PROBLEM: Tell the hero's story — what challenge or desire brought them to this experience? Build empathy.
+4. RESULTS: Present the outcomes with specific details and data where possible. What changed? What was achieved?
+5. DETAILED STEPS: Walk through how the transformation happened — the journey, decisions, and key moments.
+6. CONCLUSION: End with a motivational message and CTA encouraging readers to create their own story.`,
+  how_they_did_it: `Structure this as a "How They Did It" post:
+1. TITLE: Focus on successful people, properties, or organizations (e.g. "How Top Travelers Plan the Perfect Villa Holiday")
+2. INTRODUCTION: Overview the opportunity or achievement being discussed. Why should readers care? 1-2 paragraphs.
+3. STRATEGIES SECTION: Present 4-6 strategies, each with:
+   - The approach or method used
+   - Why it works (the reasoning)
+   - How the reader can apply it to their own plans
+4. CONCLUSION: Encourage readers to take action and apply what they've learned. End with an inspiring CTA.`,
+  myth_debunker: `Structure this as a Myth Debunker post:
+1. TITLE: Highlight the myths being addressed (e.g. "5 Myths About Luxury Travel — Debunked")
+2. INTRODUCTION: Use an attention-grabbing hook, then promise to set the record straight. 1-2 paragraphs.
+3. MYTHS SECTION: Present 4-7 myths, each with:
+   - The myth stated clearly (## Myth: "...")
+   - Background on why people believe it
+   - Evidence or reasoning for why it's wrong
+   - What to do instead / the truth
+4. CONCLUSION: Recap what was debunked, reinforce the correct perspective, and end with a CTA.`,
 };
 
 function buildToolDefinition(contentType: ContentType) {

@@ -138,6 +138,13 @@ export const contentTemplates = [
   { value: 'experience_spotlight', label: 'Experience Spotlight', contentTypes: ['blog', 'experience'] },
   { value: 'property_showcase', label: 'Property Showcase', contentTypes: ['blog', 'property'] },
   { value: 'seasonal_promotion', label: 'Seasonal Promotion', contentTypes: ['blog'] },
+  { value: 'classic_list_post', label: 'The Classic List Post', contentTypes: ['blog'] },
+  { value: 'beginners_guide', label: "The Beginner's Guide", contentTypes: ['blog'] },
+  { value: 'things_to_do_after', label: 'Things To Do After X', contentTypes: ['blog'] },
+  { value: 'product_showdown', label: 'The Product Showdown', contentTypes: ['blog'] },
+  { value: 'detailed_case_study', label: 'The Detailed Case Study', contentTypes: ['blog'] },
+  { value: 'how_they_did_it', label: 'The How They Did It Post', contentTypes: ['blog'] },
+  { value: 'myth_debunker', label: 'The Myth Debunker', contentTypes: ['blog'] },
 ] as const;
 
 export function useAIContent() {
