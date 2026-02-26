@@ -6,8 +6,10 @@ import { Footer } from './Footer';
 import { ExitIntentModal } from '@/components/booking/ExitIntentModal';
 import { FloatingBookButton } from '@/components/booking/FloatingBookButton';
 import { PromotionalPopup } from '@/components/promotions/PromotionalPopup';
+import { WelcomeBackBanner } from '@/components/promotions/WelcomeBackBanner';
 import { PromotionProvider, usePromotion } from '@/contexts/PromotionContext';
 import { useExitIntent } from '@/hooks/useExitIntent';
+import { useWelcomeBack } from '@/hooks/useWelcomeBack';
 import { usePageTracking } from '@/hooks/usePageTracking';
 interface PageLayoutProps {
   children: ReactNode;
@@ -30,6 +32,7 @@ function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
   
   // Exit intent with settings from database
   const { showExitIntent, dismiss: dismissExitIntent, settings: exitIntentSettings, isEnabled: exitIntentEnabled } = useExitIntent();
+  const { showWelcomeBack, dismiss: dismissWelcomeBack } = useWelcomeBack();
   const shouldShowExitPromo = activePromotion && 
     (activePromotion.trigger_type === 'exit' || activePromotion.trigger_type === 'both') &&
     !hasBeenDismissed;
@@ -70,6 +73,9 @@ function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
       
       {/* Floating Book Button */}
       <FloatingBookButton />
+      
+      {/* Welcome Back Banner for returning visitors */}
+      <WelcomeBackBanner isVisible={showWelcomeBack} onDismiss={dismissWelcomeBack} />
     </div>
   );
 }
