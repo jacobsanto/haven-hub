@@ -411,11 +411,25 @@ export function AIContentGenerator({ contentType, items, onApplyContent, allowCr
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a template..." />
                 </SelectTrigger>
-              <SelectContent>
+                <SelectContent>
                   <SelectItem value="_none">No template</SelectItem>
                   {availableTemplates.map(template => (
                     <SelectItem key={template.value} value={template.value}>
-                      {template.label}
+                      <div className="flex items-center gap-2">
+                        <span>{template.label}</span>
+                        {'description' in template && template.description && (
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-[240px] text-xs">
+                                {template.description}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
