@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useHeroSettings, useHeroSettingsMutations } from '@/hooks/useHeroSettings';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { useBrandSettings, useUpdateBrandSettings, defaultBrandSettings } from '@/hooks/useBrandSettings';
@@ -10,7 +11,7 @@ import { FontSelector } from '@/components/admin/FontSelector';
 import { CurrencySettingsCard } from '@/components/admin/CurrencySettingsCard';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X, CreditCard, Settings2, ChevronDown, Clock } from 'lucide-react';
+import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X, CreditCard, Settings2, ChevronDown, Clock, Image } from 'lucide-react';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { SupportedCurrency } from '@/types/currency';
@@ -203,6 +204,48 @@ function SettingsSection({ title, icon, description, children, defaultOpen = fal
         </CollapsibleContent>
       </Card>
     </Collapsible>
+  );
+}
+
+function HeroImageSection() {
+  const { heroBackgroundImage } = useHeroSettings();
+  const { updateSetting } = useHeroSettingsMutations();
+  const { toast } = useToast();
+
+  const handleUpload = (url: string) => {
+    updateSetting.mutate({ key: 'hero_background_image', value: url }, {
+      onSuccess: () => toast({ title: 'Hero image updated' }),
+      onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+    });
+  };
+
+  const handleRemove = () => {
+    updateSetting.mutate({ key: 'hero_background_image', value: '' }, {
+      onSuccess: () => toast({ title: 'Hero image removed', description: 'The featured property image will be used instead.' }),
+    });
+  };
+
+  return (
+    <SettingsSection
+      title="Homepage Hero"
+      icon={<Image className="h-5 w-5 text-primary" />}
+      description="Custom background image for the homepage hero section"
+    >
+      <div className="space-y-4">
+        <ImageUploadWithOptimizer
+          value={heroBackgroundImage || undefined}
+          onUpload={handleUpload}
+          onRemove={handleRemove}
+          preset={IMAGE_PRESETS.hero}
+          storagePath="hero"
+          label="Upload Hero Background"
+          aspectClass="aspect-[21/9] max-w-full"
+        />
+        <p className="text-xs text-muted-foreground">
+          Upload a custom hero background image. If left empty, the featured property's image will be used. Recommended size: 1920×800px or wider.
+        </p>
+      </div>
+    </SettingsSection>
   );
 }
 
@@ -551,6 +594,9 @@ export default function AdminSettings() {
               </div>
             </div>
           </SettingsSection>
+
+          {/* Section: Homepage Hero Image */}
+          <HeroImageSection />
 
           {/* Section 2: Color Palette */}
           <SettingsSection

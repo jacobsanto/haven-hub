@@ -45,13 +45,33 @@ export default function AdminAIContent() {
   const items = useMemo(() => {
     switch (selectedEntity) {
       case 'destinations':
-        return (destinations || []).map(d => ({ id: d.id, name: d.name, existingData: { country: d.country, description: d.description, highlights: d.highlights } }));
+        return (destinations || []).map(d => ({ id: d.id, name: d.name, existingData: {
+          country: d.country, description: d.description, long_description: d.long_description,
+          highlights: d.highlights, best_time_to_visit: d.best_time_to_visit, climate: d.climate,
+          latitude: d.latitude, longitude: d.longitude,
+        } }));
       case 'experiences':
-        return (experiences || []).map(e => ({ id: e.id, name: e.name, existingData: { category: e.category, description: e.description, duration: e.duration, price_from: e.price_from } }));
+        return (experiences || []).map(e => ({ id: e.id, name: e.name, existingData: {
+          category: e.category, description: e.description, long_description: e.long_description,
+          duration: e.duration, price_from: e.price_from, includes: e.includes,
+          destination_id: e.destination_id, is_featured: e.is_featured,
+        } }));
       case 'properties':
-        return (properties || []).map(p => ({ id: p.id, name: p.name, existingData: { city: p.city, country: p.country, bedrooms: p.bedrooms, bathrooms: p.bathrooms, short_description: p.short_description, description: p.description, amenities: p.amenities } }));
+        return (properties || []).map(p => ({ id: p.id, name: p.name, existingData: {
+          property_type: p.property_type, city: p.city, region: p.region, country: p.country,
+          address: p.address, latitude: p.latitude, longitude: p.longitude,
+          bedrooms: p.bedrooms, bathrooms: p.bathrooms, max_guests: p.max_guests,
+          area_sqm: p.area_sqm, base_price: p.base_price,
+          short_description: p.short_description, description: p.description,
+          amenities: p.amenities, highlights: p.highlights,
+          rooms: p.rooms, nearby_attractions: p.nearby_attractions,
+          neighborhood_description: p.neighborhood_description, house_rules: p.house_rules,
+        } }));
       case 'blog':
-        return (posts || []).map(p => ({ id: p.id, name: p.title, existingData: { title: p.title, excerpt: p.excerpt, tags: p.tags } }));
+        return (posts || []).map(p => ({ id: p.id, name: p.title, existingData: {
+          title: p.title, excerpt: p.excerpt, content: p.content,
+          tags: p.tags, article_style: p.article_style,
+        } }));
       default:
         return [];
     }
