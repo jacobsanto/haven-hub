@@ -1,70 +1,56 @@
 
 
-# AI Copywriter for Social Media Campaigns & Posts
+# Add Humanize Button to Social Media Posts & Campaigns
 
 ## Overview
-Add an AI-powered copywriting assistant directly into the Social Media Composer (campaign flow) and the individual Social Post Form Dialog. The AI can generate core content from a topic/prompt in Step 1 of the composer, and can also generate or rewrite content for individual posts in the single-post dialog.
+Add the existing "Humanize" AI capability to social media content, allowing admins to refine AI-generated social posts to sound more natural and authentic. This adds a "Humanize" button alongside the existing "Rewrite" button in both the Campaign Composer (Step 3) and the Single Post Dialog.
 
-## What Gets Built
+## What Changes
 
-### 1. AI Generate in Campaign Composer (Step 1)
+### 1. Edge Function: `generate-content/index.ts`
+Add a `social_humanize` handler that:
+- Accepts `content_text` and `hashtags` from a social post
+- Uses the existing `humanizeSystemPrompt` with social-specific instructions
+- Returns humanized `content_text` and `hashtags` in the same structure
+- Uses the `rewrite_social_content` tool schema for structured output
 
-Add an "AI Write" panel to the core content step of `AdminSocialComposer.tsx`:
-- A text input for a **topic/prompt** (e.g., "Promote our new Bali villa for summer season")
-- An "AI Generate" button with sparkles icon
-- When clicked, calls `generate-content` with a new `social_core` content type
-- AI returns a polished core message + suggested hashtags
-- Content fills into the existing core text and hashtag fields
-- Admin can then edit before proceeding to platform selection
+### 2. Campaign Composer: `AdminSocialComposer.tsx` (Step 1 + Step 3)
+- **Step 1**: Add a "Humanize" button next to the core text area (visible when core text exists). Calls `social_humanize` to refine the core message.
+- **Step 3**: Add a "Humanize" button on each platform variant card, next to the existing "Rewrite" button. Refines that variant's text to sound more natural while keeping it platform-appropriate.
+- Track `humanizingPlatform` state (similar to existing `rewritingPlatform`).
 
-### 2. AI Rewrite per Variant (Step 3)
-
-Add a small "Rewrite with AI" button on each platform variant card in Step 3:
-- Sends just that variant's text back to AI with platform-specific instructions
-- Returns a refreshed version optimized for that specific platform
-- Replaces the variant text in place (admin can undo by going back)
-
-### 3. AI Generate in Single Post Dialog
-
-Add an "AI Assist" section to `SocialPostFormDialog.tsx`:
-- A collapsible panel with a topic input and "Generate" button
-- Generates platform-specific content based on the selected platform
-- Fills the content textarea and suggests hashtags
-
-### 4. Edge Function Update
-
-Extend `generate-content/index.ts` with two new modes:
-- **`social_core`**: Generates a core social media message + hashtags from a topic. Returns `{ core_text, hashtags }`.
-- **`social_rewrite`**: Takes existing text + platform and rewrites it optimized for that specific platform. Returns `{ content_text, hashtags }`.
+### 3. Single Post Dialog: `SocialPostFormDialog.tsx`
+- Add a "Humanize" button below the content textarea (visible when content exists).
+- Calls `social_humanize` with the current `content_text` and platform.
+- Replaces content and hashtags in place.
+- Track `isHumanizing` state with loading indicator.
 
 ## Technical Details
 
-### Modified Files
+### Edge Function Addition (in `generate-content/index.ts`)
+Add a new handler block for `social_humanize` content type, placed after the existing `social_rewrite` block:
+- Receives `{ contentType: 'social_humanize', existingData: { platform, content_text, hashtags } }`
+- System prompt combines the existing `humanizeSystemPrompt` philosophy with social-specific guidance (keep platform tone, preserve hashtag relevance)
+- Returns `{ content_text, hashtags }` via the `rewrite_social_content` tool
 
-**`supabase/functions/generate-content/index.ts`**
-- Add `social_core` and `social_rewrite` to the ContentType union
-- Add handler blocks for each:
-  - `social_core`: System prompt for luxury travel social media copywriting. Tool returns `{ core_text: string, hashtags: string[] }`.
-  - `social_rewrite`: Takes `platform` and `content_text` from `existingData`, rewrites with platform-specific rules. Tool returns `{ content_text: string, hashtags: string[] }`.
+### UI Changes
 
-**`src/pages/admin/AdminSocialComposer.tsx`**
-- Add state: `aiTopic`, `isAIGenerating`
-- Add an AI panel in Step 1 with topic input and generate button
-- On generate: call `supabase.functions.invoke('generate-content', { body: { contentType: 'social_core', targetName: aiTopic, tone } })`
-- Fill `coreText` and `coreHashtags` from response
-- In Step 3: add a small "Rewrite" button per variant card that calls `generate-content` with `social_rewrite` mode
+**AdminSocialComposer.tsx:**
+- Add `humanizingPlatform` state (type `SocialPlatform | 'core' | null`)
+- Step 1: "Humanize" button with User icon, visible when `coreText` is non-empty, calls `social_humanize` with platform set to "general"
+- Step 3: "Humanize" button per variant card (next to Rewrite), calls `social_humanize` with the variant's platform
 
-**`src/components/admin/SocialPostFormDialog.tsx`**
-- Add a collapsible AI assist section above the content textarea
-- Topic input + "Generate" button
-- Calls `generate-content` with `social_rewrite` mode using current platform
-- Fills `contentText` and `hashtags` fields
+**SocialPostFormDialog.tsx:**
+- Add `isHumanizing` state
+- Add a "Humanize" button next to or below the content textarea
+- Visible only when `contentText` is non-empty
+- Calls `social_humanize` and updates `contentText` and `hashtags`
 
 ### No Database Changes Required
 All changes are UI and edge function logic only.
 
 ## Sequencing
-1. Update `generate-content` edge function with `social_core` and `social_rewrite` handlers
-2. Add AI copywriter panel to `AdminSocialComposer.tsx` (Step 1 + Step 3 rewrite buttons)
-3. Add AI assist to `SocialPostFormDialog.tsx`
+1. Update `generate-content` edge function with `social_humanize` handler
+2. Add Humanize button to `AdminSocialComposer.tsx` (Step 1 core text + Step 3 variants)
+3. Add Humanize button to `SocialPostFormDialog.tsx`
 
