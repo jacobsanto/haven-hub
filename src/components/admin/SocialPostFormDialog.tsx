@@ -11,12 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSocialAccounts, type SocialPlatform, getPlatformLabel } from '@/hooks/useSocialAccounts';
 import { useCreateSocialPost, useUpdateSocialPost, type SocialPost, type CreateSocialPostInput } from '@/hooks/useSocialPosts';
 
-const CHAR_LIMITS: Record<SocialPlatform, number> = {
-  instagram: 2200,
-  linkedin: 3000,
-  tiktok: 2200,
-  google_business: 1500,
-};
+import { PLATFORM_CHAR_LIMITS } from '@/hooks/useSocialAccounts';
 
 interface SocialPostFormDialogProps {
   open: boolean;
@@ -61,7 +56,7 @@ export function SocialPostFormDialog({ open, onOpenChange, editingPost, defaultP
     [accounts, platform]
   );
 
-  const charLimit = CHAR_LIMITS[platform];
+  const charLimit = PLATFORM_CHAR_LIMITS[platform];
   const charCount = contentText.length;
   const isOverLimit = charCount > charLimit;
 
@@ -106,7 +101,11 @@ export function SocialPostFormDialog({ open, onOpenChange, editingPost, defaultP
               <SelectContent>
                 <SelectItem value="instagram">Instagram</SelectItem>
                 <SelectItem value="linkedin">LinkedIn</SelectItem>
+                <SelectItem value="twitter">Twitter / X</SelectItem>
+                <SelectItem value="facebook">Facebook</SelectItem>
                 <SelectItem value="tiktok">TikTok</SelectItem>
+                <SelectItem value="pinterest">Pinterest</SelectItem>
+                <SelectItem value="reddit">Reddit</SelectItem>
                 <SelectItem value="google_business">Google Business</SelectItem>
               </SelectContent>
             </Select>

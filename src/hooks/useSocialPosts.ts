@@ -20,6 +20,8 @@ export interface SocialPost {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  campaign_id: string | null;
+  core_content: string | null;
   // joined
   account?: { id: string; account_name: string; platform: string } | null;
 }
@@ -32,6 +34,8 @@ export interface CreateSocialPostInput {
   platform: SocialPlatform;
   status?: SocialPostStatus;
   scheduled_for?: string | null;
+  campaign_id?: string | null;
+  core_content?: string | null;
 }
 
 export function useSocialPosts(filters?: { platform?: SocialPlatform; status?: SocialPostStatus }) {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Plus, Instagram, Linkedin, Globe, Trash2, Edit, Send } from 'lucide-react';
+import { Plus, Instagram, Linkedin, Globe, Trash2, Edit, Send, Facebook, Twitter, Layers } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
@@ -18,6 +19,10 @@ const platformIcons: Record<SocialPlatform, React.ComponentType<{ className?: st
   linkedin: Linkedin,
   tiktok: Globe,
   google_business: Globe,
+  twitter: Twitter,
+  reddit: Globe,
+  pinterest: Globe,
+  facebook: Facebook,
 };
 
 const statusBadge = (status: string) => {
@@ -38,6 +43,7 @@ export default function AdminSocialPosts() {
   const updateMutation = useUpdateSocialPost();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<SocialPost | null>(null);
+  const navigate = useNavigate();
 
   const handleEdit = (post: SocialPost) => {
     setEditingPost(post);
@@ -64,9 +70,14 @@ export default function AdminSocialPosts() {
               </h1>
               <p className="text-muted-foreground text-sm mt-1">Create, schedule, and manage social media posts.</p>
             </div>
-            <Button onClick={handleNew}>
-              <Plus className="h-4 w-4 mr-1" /> New Post
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => navigate('/admin/social-composer')}>
+                <Layers className="h-4 w-4 mr-1" /> New Campaign
+              </Button>
+              <Button onClick={handleNew}>
+                <Plus className="h-4 w-4 mr-1" /> Quick Post
+              </Button>
+            </div>
           </div>
 
           {isLoading ? (

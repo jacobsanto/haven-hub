@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export type SocialPlatform = 'instagram' | 'linkedin' | 'tiktok' | 'google_business';
+export type SocialPlatform = 'instagram' | 'linkedin' | 'tiktok' | 'google_business' | 'twitter' | 'reddit' | 'pinterest' | 'facebook';
 
 export interface SocialAccount {
   id: string;
@@ -30,6 +30,21 @@ const PLATFORM_LABELS: Record<SocialPlatform, string> = {
   linkedin: 'LinkedIn',
   tiktok: 'TikTok',
   google_business: 'Google Business',
+  twitter: 'Twitter / X',
+  reddit: 'Reddit',
+  pinterest: 'Pinterest',
+  facebook: 'Facebook',
+};
+
+export const PLATFORM_CHAR_LIMITS: Record<SocialPlatform, number> = {
+  instagram: 2200,
+  linkedin: 3000,
+  tiktok: 2200,
+  google_business: 1500,
+  twitter: 280,
+  reddit: 40000,
+  pinterest: 500,
+  facebook: 63206,
 };
 
 export const getPlatformLabel = (p: SocialPlatform) => PLATFORM_LABELS[p] || p;
