@@ -134,17 +134,17 @@ export interface GenerateResult {
 }
 
 export const contentTemplates = [
-  { value: 'destination_guide', label: 'Destination Guide', contentTypes: ['blog'] },
-  { value: 'experience_spotlight', label: 'Experience Spotlight', contentTypes: ['blog', 'experience'] },
-  { value: 'property_showcase', label: 'Property Showcase', contentTypes: ['blog', 'property'] },
-  { value: 'seasonal_promotion', label: 'Seasonal Promotion', contentTypes: ['blog'] },
-  { value: 'classic_list_post', label: 'The Classic List Post', contentTypes: ['blog'] },
-  { value: 'beginners_guide', label: "The Beginner's Guide", contentTypes: ['blog'] },
-  { value: 'things_to_do_after', label: 'Things To Do After X', contentTypes: ['blog'] },
-  { value: 'product_showdown', label: 'The Product Showdown', contentTypes: ['blog'] },
-  { value: 'detailed_case_study', label: 'The Detailed Case Study', contentTypes: ['blog'] },
-  { value: 'how_they_did_it', label: 'The How They Did It Post', contentTypes: ['blog'] },
-  { value: 'myth_debunker', label: 'The Myth Debunker', contentTypes: ['blog'] },
+  { value: 'destination_guide', label: 'Destination Guide', contentTypes: ['blog'], description: 'Immersive parallax hero, sticky table of contents, drop caps. Ideal for in-depth location guides.' },
+  { value: 'experience_spotlight', label: 'Experience Spotlight', contentTypes: ['blog', 'experience'], description: 'Highlights a single experience with rich media, includes list, and enquiry CTA.' },
+  { value: 'property_showcase', label: 'Property Showcase', contentTypes: ['blog', 'property'], description: 'Feature a property with amenity highlights, room breakdown, and neighborhood context.' },
+  { value: 'seasonal_promotion', label: 'Seasonal Promotion', contentTypes: ['blog'], description: 'Time-sensitive promotional content with urgency elements and special offer callouts.' },
+  { value: 'classic_list_post', label: 'The Classic List Post', contentTypes: ['blog'], description: 'Numbered tips with benefit-driven subheadings. Great for "Top 10" and listicle formats.' },
+  { value: 'beginners_guide', label: "The Beginner's Guide", contentTypes: ['blog'], description: 'Step-by-step walkthrough with progress tracker sidebar. Perfect for how-to content.' },
+  { value: 'things_to_do_after', label: 'Things To Do After X', contentTypes: ['blog'], description: 'Actionable checklist with visual steps. E.g. "Things to do after booking your villa".' },
+  { value: 'product_showdown', label: 'The Product Showdown', contentTypes: ['blog'], description: 'Side-by-side comparison layout with pros/cons and verdict cards.' },
+  { value: 'detailed_case_study', label: 'The Detailed Case Study', contentTypes: ['blog'], description: 'Data-driven narrative with results highlights, timeline, and key takeaways.' },
+  { value: 'how_they_did_it', label: 'The How They Did It Post', contentTypes: ['blog'], description: 'Strategy-focused with "apply it yourself" sections and expert insights.' },
+  { value: 'myth_debunker', label: 'The Myth Debunker', contentTypes: ['blog'], description: 'Myth vs reality cards with verdict badges. Engaging for opinion/fact pieces.' },
 ] as const;
 
 export function useAIContent() {
