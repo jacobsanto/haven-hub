@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowUpDown, ArrowUpRight, ArrowDownRight, TrendingUp,
   Megaphone, Calendar, AlertTriangle, ChevronRight,
-  Building2, DollarSign, BarChart3, Target,
+  Building2, DollarSign, BarChart3, Target, Send,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { SocialAnalyticsTab } from '@/components/admin/SocialAnalyticsTab';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import {
   useAnalyticsPropertyPerformance,
@@ -90,11 +91,12 @@ export default function AdminAnalytics() {
           </div>
 
           <Tabs defaultValue="performance" className="space-y-4">
-            <TabsList className="grid w-full max-w-2xl grid-cols-4">
+            <TabsList className="grid w-full max-w-3xl grid-cols-5">
               <TabsTrigger value="performance" className="text-xs gap-1"><Building2 className="h-3.5 w-3.5" /> Performance</TabsTrigger>
               <TabsTrigger value="revenue" className="text-xs gap-1"><DollarSign className="h-3.5 w-3.5" /> Revenue</TabsTrigger>
               <TabsTrigger value="campaigns" className="text-xs gap-1"><Megaphone className="h-3.5 w-3.5" /> Campaigns</TabsTrigger>
               <TabsTrigger value="pricing" className="text-xs gap-1"><Target className="h-3.5 w-3.5" /> Pricing</TabsTrigger>
+              <TabsTrigger value="social" className="text-xs gap-1"><Send className="h-3.5 w-3.5" /> Social</TabsTrigger>
             </TabsList>
 
             {/* ═══ TAB 1: PROPERTY PERFORMANCE ═══ */}
@@ -339,6 +341,11 @@ export default function AdminAnalytics() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* ═══ TAB 5: SOCIAL MEDIA ═══ */}
+            <TabsContent value="social">
+              <SocialAnalyticsTab />
             </TabsContent>
           </Tabs>
         </div>

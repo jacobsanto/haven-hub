@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FileText, Users, FolderOpen, Sparkles, CalendarDays } from 'lucide-react';
+import { FileText, Users, FolderOpen, Sparkles, CalendarDays, Send } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,6 +26,7 @@ export default function AdminContentHub() {
     { value: 'blog', label: 'Blog Posts', icon: FileText, href: '/admin/blog' },
     { value: 'authors', label: 'Authors', icon: Users, href: '/admin/blog/authors' },
     { value: 'categories', label: 'Categories', icon: FolderOpen, href: '/admin/blog/categories' },
+    { value: 'social', label: 'Social Media', icon: Send, href: '/admin/social-posts' },
     { value: 'ai', label: 'AI Generator', icon: Sparkles, href: '/admin/ai-content' },
     { value: 'calendar', label: 'Calendar', icon: CalendarDays, href: '/admin/content-calendar' },
   ];

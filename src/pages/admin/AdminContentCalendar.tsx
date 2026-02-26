@@ -31,6 +31,13 @@ export default function AdminContentCalendar() {
       status: p.status,
       channel: 'Blog',
     })) || []),
+    ...(calendarData?.socialPosts?.map(p => ({
+      id: `social-${p.id}`,
+      title: p.content_text.slice(0, 60) || `${p.platform} post`,
+      date: p.scheduled_for || p.published_at || '',
+      status: p.status,
+      channel: p.platform === 'instagram' ? 'Instagram' : p.platform === 'linkedin' ? 'LinkedIn' : p.platform === 'tiktok' ? 'TikTok' : 'GMB',
+    })) || []),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const getStatusBadge = (status: string) => {

@@ -193,7 +193,7 @@ export function useDeleteScheduledPost() {
   });
 }
 
-// Get calendar data combining scheduled and published posts
+// Get calendar data combining scheduled and published posts + social posts
 export function useContentCalendarData(year: number, month: number) {
   return useQuery({
     queryKey: ['content-calendar', year, month],
@@ -229,6 +229,16 @@ export function useContentCalendarData(year: number, month: number) {
         .order('published_at', { ascending: true });
       
       if (publishedError) throw publishedError;
+
+      // Fetch social posts for this month
+      const { data: socialPosts, error: socialError } = await supabase
+        .from('social_posts')
+        .select('id, content_text, platform, status, scheduled_for, published_at')
+        .or(`scheduled_for.gte.${startDate.toISOString()},published_at.gte.${startDate.toISOString()}`)
+        .or(`scheduled_for.lte.${endDate.toISOString()},published_at.lte.${endDate.toISOString()}`)
+        .order('scheduled_for', { ascending: true });
+      
+      if (socialError) throw socialError;
       
       return {
         scheduledPosts: (scheduledPosts || []).map(post => ({
@@ -236,6 +246,14 @@ export function useContentCalendarData(year: number, month: number) {
           generation_settings: (post.generation_settings || {}) as GenerationSettings,
         })) as ScheduledPost[],
         publishedPosts: publishedPosts || [],
+        socialPosts: (socialPosts || []) as Array<{
+          id: string;
+          content_text: string;
+          platform: string;
+          status: string;
+          scheduled_for: string | null;
+          published_at: string | null;
+        }>,
       };
     },
   });
