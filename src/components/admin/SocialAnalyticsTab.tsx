@@ -1,4 +1,4 @@
-import { Instagram, Linkedin, Globe, Eye, Heart, MessageSquare, Share2, TrendingUp } from 'lucide-react';
+import { Instagram, Linkedin, Globe, Eye, Heart, MessageSquare, Share2, TrendingUp, Facebook, Twitter } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +11,10 @@ const platformIcons: Record<SocialPlatform, React.ComponentType<{ className?: st
   linkedin: Linkedin,
   tiktok: Globe,
   google_business: Globe,
+  twitter: Twitter,
+  reddit: Globe,
+  pinterest: Globe,
+  facebook: Facebook,
 };
 
 export function SocialAnalyticsTab() {

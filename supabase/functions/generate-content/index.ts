@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type ContentType = "blog" | "destination" | "experience" | "property";
+type ContentType = "blog" | "destination" | "experience" | "property" | "social_variants";
 type ToneType = "luxury" | "warm" | "professional";
 type LengthType = "short" | "medium" | "long";
 type PersonaType = "honeymoon_couples" | "luxury_families" | "solo_adventurers" | "wellness_seekers" | "celebration_groups" | "business_travelers" | "retirees";
@@ -346,6 +346,98 @@ serve(async (req) => {
           contentType,
           humanized: true,
         }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Handle social_variants mode
+    if (contentType === "social_variants" && existingData) {
+      const { core_text, core_hashtags, platforms } = existingData as {
+        core_text: string;
+        core_hashtags: string[];
+        platforms: string[];
+      };
+
+      const socialSystemPrompt = `You are an expert social media content strategist for a luxury travel and villa rental company.
+Given a core message and target platforms, create optimized variants for EACH platform following these rules:
+
+| Platform | Char Limit | Hashtag Style | Tone |
+|----------|-----------|---------------|------|
+| instagram | 2200 | 15-30 hashtags in separate block | Visual, lifestyle, emoji-friendly |
+| linkedin | 3000 | 3-5 hashtags inline | Professional, thought-leadership |
+| twitter | 280 | 1-3 hashtags inline | Concise, punchy |
+| tiktok | 2200 | 5-10 trending tags | Casual, Gen-Z |
+| reddit | 40000 | No hashtags | Conversational, value-first |
+| pinterest | 500 | Keywords as tags | Aspirational, SEO-focused |
+| facebook | 63206 | 1-3 hashtags | Warm, community |
+| google_business | 1500 | No hashtags | Informative, local update format |
+
+Tone preference: ${tone || "warm"}`;
+
+      const socialTool = {
+        type: "function",
+        function: {
+          name: "generate_social_variants",
+          description: "Generate platform-optimized social media post variants",
+          parameters: {
+            type: "object",
+            properties: {
+              variants: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    platform: { type: "string" },
+                    content_text: { type: "string" },
+                    hashtags: { type: "array", items: { type: "string" } },
+                  },
+                  required: ["platform", "content_text", "hashtags"],
+                },
+              },
+            },
+            required: ["variants"],
+            additionalProperties: false,
+          },
+        },
+      };
+
+      const socialResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: socialSystemPrompt },
+            {
+              role: "user",
+              content: `Core message: "${core_text}"\nSeed hashtags: ${(core_hashtags || []).join(", ")}\nTarget platforms: ${platforms.join(", ")}\n\nGenerate an optimized variant for each platform.`,
+            },
+          ],
+          tools: [socialTool],
+          tool_choice: { type: "function", function: { name: "generate_social_variants" } },
+        }),
+      });
+
+      if (!socialResponse.ok) {
+        if (socialResponse.status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const errorText = await socialResponse.text();
+        console.error("AI gateway error:", socialResponse.status, errorText);
+        throw new Error(`AI gateway error: ${socialResponse.status}`);
+      }
+
+      const socialData = await socialResponse.json();
+      const socialToolCall = socialData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!socialToolCall) throw new Error("No tool call in response");
+
+      const socialContent = JSON.parse(socialToolCall.function.arguments);
+
+      return new Response(
+        JSON.stringify({ success: true, content: socialContent, contentType }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday, parseISO } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, Clock, FileText, AlertCircle, CheckCircle2, Loader2, Trash2, Edit, Instagram, Linkedin, Globe } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Clock, FileText, AlertCircle, CheckCircle2, Loader2, Trash2, Edit, Instagram, Linkedin, Globe, Facebook, Twitter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -65,6 +65,10 @@ export function ContentCalendar({ onNewPost }: ContentCalendarProps) {
     linkedin: 'bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-300',
     tiktok: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
     google_business: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300',
+    twitter: 'bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-300',
+    reddit: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+    pinterest: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    facebook: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
   };
 
   // Build calendar events from data
@@ -210,7 +214,7 @@ export function ContentCalendar({ onNewPost }: ContentCalendarProps) {
                       {dayEvents.slice(0, 3).map(event => {
                         const isSocial = event.type === 'social';
                         const StatusIcon = isSocial
-                          ? (event.platform === 'instagram' ? Instagram : event.platform === 'linkedin' ? Linkedin : Globe)
+                          ? (event.platform === 'instagram' ? Instagram : event.platform === 'linkedin' ? Linkedin : event.platform === 'twitter' ? Twitter : event.platform === 'facebook' ? Facebook : Globe)
                           : (statusIcons[event.status as keyof typeof statusIcons] || Clock);
                         const colorClass = isSocial
                           ? (platformColors[event.platform || 'instagram'] || platformColors.instagram)
@@ -304,6 +308,18 @@ export function ContentCalendar({ onNewPost }: ContentCalendarProps) {
                 <Badge className={platformColors.linkedin}>
                   <Linkedin className="h-3 w-3 mr-1" />
                   LinkedIn
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Badge className={platformColors.twitter}>
+                  <Twitter className="h-3 w-3 mr-1" />
+                  Twitter/X
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Badge className={platformColors.facebook}>
+                  <Facebook className="h-3 w-3 mr-1" />
+                  Facebook
                 </Badge>
               </div>
               <div className="flex items-center gap-2 text-sm">

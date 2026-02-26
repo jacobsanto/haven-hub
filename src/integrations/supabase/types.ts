@@ -2182,6 +2182,51 @@ export type Database = {
         }
         Relationships: []
       }
+      social_campaigns: {
+        Row: {
+          core_hashtags: string[]
+          core_text: string
+          created_at: string
+          created_by: string | null
+          id: string
+          media_urls: Json
+          persona: string | null
+          scheduled_for: string | null
+          status: string
+          target_platforms: string[]
+          tone: string | null
+          updated_at: string
+        }
+        Insert: {
+          core_hashtags?: string[]
+          core_text?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          media_urls?: Json
+          persona?: string | null
+          scheduled_for?: string | null
+          status?: string
+          target_platforms?: string[]
+          tone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          core_hashtags?: string[]
+          core_text?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          media_urls?: Json
+          persona?: string | null
+          scheduled_for?: string | null
+          status?: string
+          target_platforms?: string[]
+          tone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       social_post_analytics: {
         Row: {
           clicks: number
@@ -2235,7 +2280,9 @@ export type Database = {
       social_posts: {
         Row: {
           account_id: string | null
+          campaign_id: string | null
           content_text: string
+          core_content: string | null
           created_at: string
           created_by: string | null
           error_message: string | null
@@ -2251,7 +2298,9 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          campaign_id?: string | null
           content_text?: string
+          core_content?: string | null
           created_at?: string
           created_by?: string | null
           error_message?: string | null
@@ -2267,7 +2316,9 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          campaign_id?: string | null
           content_text?: string
+          core_content?: string | null
           created_at?: string
           created_by?: string | null
           error_message?: string | null
@@ -2287,6 +2338,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "social_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "social_campaigns"
             referencedColumns: ["id"]
           },
         ]

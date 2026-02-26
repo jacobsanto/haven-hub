@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Instagram, Linkedin, Globe, Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Instagram, Linkedin, Globe, Plus, Trash2, ToggleLeft, ToggleRight, Facebook, Twitter } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { AdminEmptyState } from '@/components/admin/AdminEmptyState';
@@ -25,8 +25,12 @@ import {
 const platformIcons: Record<SocialPlatform, React.ComponentType<{ className?: string }>> = {
   instagram: Instagram,
   linkedin: Linkedin,
-  tiktok: Globe, // No native TikTok icon in lucide
+  tiktok: Globe,
   google_business: Globe,
+  twitter: Twitter,
+  reddit: Globe,
+  pinterest: Globe,
+  facebook: Facebook,
 };
 
 const platformColors: Record<SocialPlatform, string> = {
@@ -34,6 +38,10 @@ const platformColors: Record<SocialPlatform, string> = {
   linkedin: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   tiktok: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
   google_business: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  twitter: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+  reddit: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  pinterest: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+  facebook: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
 };
 
 export default function AdminSocialAccounts() {
@@ -157,10 +165,14 @@ export default function AdminSocialAccounts() {
                 <Label>Platform</Label>
                 <Select value={form.platform} onValueChange={(v) => setForm({ ...form, platform: v as SocialPlatform })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                   <SelectContent>
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="linkedin">LinkedIn</SelectItem>
+                    <SelectItem value="twitter">Twitter / X</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
                     <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="pinterest">Pinterest</SelectItem>
+                    <SelectItem value="reddit">Reddit</SelectItem>
                     <SelectItem value="google_business">Google Business</SelectItem>
                   </SelectContent>
                 </Select>
