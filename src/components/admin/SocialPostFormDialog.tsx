@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Instagram, Linkedin, Globe, Hash, Sparkles } from 'lucide-react';
+import { Instagram, Linkedin, Globe, Hash, Sparkles, Loader2, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,10 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSocialAccounts, type SocialPlatform, getPlatformLabel } from '@/hooks/useSocialAccounts';
 import { useCreateSocialPost, useUpdateSocialPost, type SocialPost, type CreateSocialPostInput } from '@/hooks/useSocialPosts';
-
 import { PLATFORM_CHAR_LIMITS } from '@/hooks/useSocialAccounts';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SocialPostFormDialogProps {
   open: boolean;
@@ -25,6 +27,7 @@ export function SocialPostFormDialog({ open, onOpenChange, editingPost, defaultP
   const { data: accounts } = useSocialAccounts();
   const createMutation = useCreateSocialPost();
   const updateMutation = useUpdateSocialPost();
+  const { toast } = useToast();
 
   const [platform, setPlatform] = useState<SocialPlatform>(defaultPlatform || 'instagram');
   const [contentText, setContentText] = useState('');
@@ -32,6 +35,35 @@ export function SocialPostFormDialog({ open, onOpenChange, editingPost, defaultP
   const [accountId, setAccountId] = useState<string>('');
   const [scheduledFor, setScheduledFor] = useState('');
   const [status, setStatus] = useState<'draft' | 'scheduled'>('draft');
+  const [aiTopic, setAiTopic] = useState('');
+  const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+
+  const handleAIAssist = async () => {
+    if (!aiTopic.trim()) return;
+    setIsAIGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          contentType: 'social_rewrite',
+          existingData: { platform, content_text: aiTopic },
+          tone: 'warm',
+        },
+      });
+      if (error) throw error;
+      if (data?.content) {
+        setContentText(data.content.content_text || '');
+        if (data.content.hashtags?.length) {
+          setHashtags(data.content.hashtags.join(', '));
+        }
+        toast({ title: 'Content generated!' });
+      }
+    } catch (err: any) {
+      toast({ title: 'AI generation failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsAIGenerating(false);
+    }
+  };
 
   useEffect(() => {
     if (editingPost) {
@@ -125,6 +157,33 @@ export function SocialPostFormDialog({ open, onOpenChange, editingPost, defaultP
               </Select>
             </div>
           )}
+
+          {/* AI Assist */}
+          <Collapsible open={aiOpen} onOpenChange={setAiOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  AI Assist
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${aiOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3 space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  value={aiTopic}
+                  onChange={e => setAiTopic(e.target.value)}
+                  placeholder={`Describe what to write for ${getPlatformLabel(platform)}...`}
+                  className="flex-1"
+                />
+                <Button size="sm" onClick={handleAIAssist} disabled={isAIGenerating || !aiTopic.trim()}>
+                  {isAIGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">AI will generate content optimized for {getPlatformLabel(platform)}.</p>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Content */}
           <div>
