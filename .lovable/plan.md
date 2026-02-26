@@ -1,128 +1,70 @@
 
 
-# Unified Social Media Post Creator
+# AI Copywriter for Social Media Campaigns & Posts
 
 ## Overview
-Replace the current per-platform post creation flow with a **unified multi-step composer**. The admin writes core content once, then the system auto-generates optimized variants for all selected platforms using AI. An approval/edit step lets the admin review and tweak each variant before scheduling.
+Add an AI-powered copywriting assistant directly into the Social Media Composer (campaign flow) and the individual Social Post Form Dialog. The AI can generate core content from a topic/prompt in Step 1 of the composer, and can also generate or rewrite content for individual posts in the single-post dialog.
 
-## New Platforms
-Expand from 4 to 8 platforms, adding travel-friendly channels:
-- **Existing**: Instagram, LinkedIn, TikTok, Google Business
-- **New**: Twitter/X, Reddit, Pinterest, Facebook
+## What Gets Built
 
-## How It Works (User Flow)
+### 1. AI Generate in Campaign Composer (Step 1)
 
-```text
-Step 1: COMPOSE CORE           Step 2: SELECT PLATFORMS         Step 3: REVIEW VARIANTS
-+----------------------+       +----------------------+        +----------------------+
-| Topic / Theme        |       | [x] Instagram        |        | Instagram  [2200 ch] |
-| Core Message (text)  | --->  | [x] LinkedIn         | --->   | LinkedIn   [3000 ch] |
-| Media uploads        |       | [x] Twitter/X        |        | Twitter/X  [280 ch]  |
-| Hashtag seeds        |       | [ ] Reddit           |        | Reddit     [editable]|
-| Tone / Persona       |       | [ ] Pinterest        |        |                      |
-| AI Generate button   |       | [x] Facebook         |        | [Approve All]        |
-+----------------------+       +----------------------+        | [Schedule]  [Save]   |
-                                                               +----------------------+
-```
+Add an "AI Write" panel to the core content step of `AdminSocialComposer.tsx`:
+- A text input for a **topic/prompt** (e.g., "Promote our new Bali villa for summer season")
+- An "AI Generate" button with sparkles icon
+- When clicked, calls `generate-content` with a new `social_core` content type
+- AI returns a polished core message + suggested hashtags
+- Content fills into the existing core text and hashtag fields
+- Admin can then edit before proceeding to platform selection
 
-1. **Step 1 -- Core Content**: Write a single message, upload media, set tone/persona, optionally click "AI Generate" to draft the core text.
-2. **Step 2 -- Platform Selection**: Pick which platforms to publish to. Each shows connected accounts (if any).
-3. **Step 3 -- Review Variants**: AI auto-optimizes the core content for each selected platform (character limits, hashtag style, tone adjustments). Admin can edit each variant individually, approve all, and schedule.
+### 2. AI Rewrite per Variant (Step 3)
 
-## Database Changes
+Add a small "Rewrite with AI" button on each platform variant card in Step 3:
+- Sends just that variant's text back to AI with platform-specific instructions
+- Returns a refreshed version optimized for that specific platform
+- Replaces the variant text in place (admin can undo by going back)
 
-**Modify `social_posts` table** -- Add two columns:
-- `campaign_id` (uuid, nullable) -- Groups posts that originated from the same core content
-- `core_content` (text, nullable) -- Stores the original unoptimized text
+### 3. AI Generate in Single Post Dialog
 
-**New `social_campaigns` table** -- Represents a unified content creation session:
-- `id` (uuid, PK)
-- `core_text` (text) -- Original message
-- `core_hashtags` (text[]) -- Seed hashtags
-- `media_urls` (jsonb) -- Shared media
-- `tone` (text, nullable) -- Tone setting used
-- `persona` (text, nullable) -- Target persona
-- `target_platforms` (text[]) -- Which platforms were selected
-- `status` (text, default 'draft') -- draft, ready, scheduled, published
-- `scheduled_for` (timestamptz, nullable)
-- `created_by` (uuid, nullable)
-- `created_at`, `updated_at` (timestamptz)
-- Admin-only RLS
+Add an "AI Assist" section to `SocialPostFormDialog.tsx`:
+- A collapsible panel with a topic input and "Generate" button
+- Generates platform-specific content based on the selected platform
+- Fills the content textarea and suggests hashtags
 
-**Modify `social_accounts` platform column** -- Allow new platform values: `twitter`, `reddit`, `pinterest`, `facebook`
+### 4. Edge Function Update
 
-## File Changes
+Extend `generate-content/index.ts` with two new modes:
+- **`social_core`**: Generates a core social media message + hashtags from a topic. Returns `{ core_text, hashtags }`.
+- **`social_rewrite`**: Takes existing text + platform and rewrites it optimized for that specific platform. Returns `{ content_text, hashtags }`.
 
-### New Files
-
-**`src/pages/admin/AdminSocialComposer.tsx`** -- Full-page multi-step composer
-- Step 1: Core content editor with AI generation
-- Step 2: Platform selector with account linking
-- Step 3: Per-platform variant review with inline editing
-- Save creates one `social_campaigns` row + one `social_posts` row per platform
-
-**`src/hooks/useSocialCampaigns.ts`** -- CRUD for social_campaigns table
-
-**`src/hooks/useSocialOptimize.ts`** -- Calls AI to generate platform-specific variants from core content. Uses `generate-content` edge function with a new `social_variants` content type.
+## Technical Details
 
 ### Modified Files
 
-**`src/hooks/useSocialAccounts.ts`**
-- Expand `SocialPlatform` type to include `twitter`, `reddit`, `pinterest`, `facebook`
-- Add labels and platform metadata for all 8 platforms
+**`supabase/functions/generate-content/index.ts`**
+- Add `social_core` and `social_rewrite` to the ContentType union
+- Add handler blocks for each:
+  - `social_core`: System prompt for luxury travel social media copywriting. Tool returns `{ core_text: string, hashtags: string[] }`.
+  - `social_rewrite`: Takes `platform` and `content_text` from `existingData`, rewrites with platform-specific rules. Tool returns `{ content_text: string, hashtags: string[] }`.
 
-**`src/hooks/useSocialPosts.ts`**
-- Add `campaign_id` and `core_content` to `SocialPost` interface
-- Add `CreateSocialPostInput` fields for campaign linking
-
-**`src/pages/admin/AdminSocialPosts.tsx`**
-- Update platform icons map for new platforms
-- Add "New Campaign" button that navigates to the composer page
-- Group posts by campaign_id in the table view (expandable rows)
+**`src/pages/admin/AdminSocialComposer.tsx`**
+- Add state: `aiTopic`, `isAIGenerating`
+- Add an AI panel in Step 1 with topic input and generate button
+- On generate: call `supabase.functions.invoke('generate-content', { body: { contentType: 'social_core', targetName: aiTopic, tone } })`
+- Fill `coreText` and `coreHashtags` from response
+- In Step 3: add a small "Rewrite" button per variant card that calls `generate-content` with `social_rewrite` mode
 
 **`src/components/admin/SocialPostFormDialog.tsx`**
-- Add new platform options to the dropdown
-- Keep as single-post quick-edit for individual variant tweaks
+- Add a collapsible AI assist section above the content textarea
+- Topic input + "Generate" button
+- Calls `generate-content` with `social_rewrite` mode using current platform
+- Fills `contentText` and `hashtags` fields
 
-**`src/App.tsx`**
-- Add route `/admin/social-composer` for the new composer page
-
-**`src/components/admin/AdminLayout.tsx`**
-- Add "Create Post" nav item under Social Media section
-
-**`src/components/admin/ContentCalendar.tsx`**
-- Add icons for new platforms (Twitter, Reddit, Pinterest, Facebook)
-- Color-code new platforms in calendar
-
-**`src/components/admin/SocialAnalyticsTab.tsx`**
-- Add new platforms to analytics breakdown
-
-**`supabase/functions/generate-content/index.ts`**
-- Add `social_variants` content type that takes core text + list of platforms and returns optimized text per platform with:
-  - Platform-specific character limits
-  - Hashtag formatting (e.g., Twitter uses fewer, Reddit uses none)
-  - Tone adjustments (LinkedIn more professional, Reddit more conversational)
-  - CTA style differences
-
-### Platform Optimization Rules (Built into AI Prompt)
-
-| Platform | Char Limit | Hashtag Style | Tone | Notes |
-|----------|-----------|---------------|------|-------|
-| Instagram | 2,200 | 15-30 hashtags, separate block | Visual, lifestyle | Emoji-friendly |
-| LinkedIn | 3,000 | 3-5 hashtags inline | Professional | Thought-leadership |
-| Twitter/X | 280 | 1-3 hashtags inline | Concise, punchy | Thread-ready |
-| TikTok | 2,200 | 5-10 trending tags | Casual, Gen-Z | Video-first caption |
-| Reddit | 40,000 | No hashtags | Conversational, value-first | Subreddit context |
-| Pinterest | 500 | Keywords as tags | Aspirational, searchable | SEO-focused |
-| Facebook | 63,206 | 1-3 hashtags | Warm, community | Engagement-focused |
-| Google Business | 1,500 | No hashtags | Informative, local | Update/offer format |
+### No Database Changes Required
+All changes are UI and edge function logic only.
 
 ## Sequencing
-1. Database migration (social_campaigns table + new columns on social_posts + platform expansion)
-2. Update hooks (useSocialAccounts platform expansion, useSocialCampaigns, useSocialOptimize)
-3. Update generate-content edge function with social_variants type
-4. Build AdminSocialComposer page (3-step flow)
-5. Update AdminSocialPosts to show campaigns + new platforms
-6. Update calendar and analytics for new platforms
-7. Wire up routing and navigation
+1. Update `generate-content` edge function with `social_core` and `social_rewrite` handlers
+2. Add AI copywriter panel to `AdminSocialComposer.tsx` (Step 1 + Step 3 rewrite buttons)
+3. Add AI assist to `SocialPostFormDialog.tsx`
 
