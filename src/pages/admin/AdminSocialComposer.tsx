@@ -2,8 +2,9 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Instagram, Linkedin, Globe, Facebook, Twitter,
-  ArrowLeft, ArrowRight, Check, Sparkles, Loader2, Clock, Save,
+  ArrowLeft, ArrowRight, Check, Sparkles, Loader2, Clock, Save, RefreshCw,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,9 @@ export default function AdminSocialComposer() {
   const [coreText, setCoreText] = useState('');
   const [coreHashtags, setCoreHashtags] = useState('');
   const [tone, setTone] = useState('warm');
+  const [aiTopic, setAiTopic] = useState('');
+  const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [rewritingPlatform, setRewritingPlatform] = useState<SocialPlatform | null>(null);
 
   // Step 2 state
   const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatform[]>([]);
@@ -82,6 +86,58 @@ export default function AdminSocialComposer() {
     .split(/[,\s]+/)
     .map(h => h.replace(/^#/, '').trim())
     .filter(Boolean);
+
+  const handleAIGenerate = async () => {
+    if (!aiTopic.trim()) {
+      toast({ title: 'Enter a topic first', variant: 'destructive' });
+      return;
+    }
+    setIsAIGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: { contentType: 'social_core', targetName: aiTopic, tone },
+      });
+      if (error) throw error;
+      if (data?.content) {
+        setCoreText(data.content.core_text || '');
+        if (data.content.hashtags?.length) {
+          setCoreHashtags(data.content.hashtags.join(', '));
+        }
+        toast({ title: 'Content generated!' });
+      }
+    } catch (err: any) {
+      toast({ title: 'AI generation failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsAIGenerating(false);
+    }
+  };
+
+  const handleRewriteVariant = async (platform: SocialPlatform) => {
+    const variant = variants.find(v => v.platform === platform);
+    if (!variant) return;
+    setRewritingPlatform(platform);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          contentType: 'social_rewrite',
+          existingData: { platform, content_text: variant.content_text },
+          tone,
+        },
+      });
+      if (error) throw error;
+      if (data?.content) {
+        updateVariant(platform, 'content_text', data.content.content_text);
+        if (data.content.hashtags?.length) {
+          updateVariant(platform, 'hashtags', data.content.hashtags);
+        }
+        toast({ title: `${getPlatformLabel(platform)} variant rewritten` });
+      }
+    } catch (err: any) {
+      toast({ title: 'Rewrite failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setRewritingPlatform(null);
+    }
+  };
 
   const togglePlatform = (p: SocialPlatform) => {
     setSelectedPlatforms(prev =>
@@ -203,6 +259,37 @@ export default function AdminSocialComposer() {
                 <CardTitle className="text-lg">Write your core message</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* AI Write Panel */}
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    AI Copywriter
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={aiTopic}
+                      onChange={e => setAiTopic(e.target.value)}
+                      placeholder="e.g. Promote our new Bali villa for summer season"
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleAIGenerate}
+                      disabled={isAIGenerating || !aiTopic.trim()}
+                    >
+                      {isAIGenerating ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 mr-1" />
+                      )}
+                      Generate
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Describe your topic and AI will draft the core message and suggest hashtags.
+                  </p>
+                </div>
+
                 <div>
                   <Label>Core Message</Label>
                   <Textarea
@@ -298,14 +385,30 @@ export default function AdminSocialComposer() {
                     return (
                       <Card key={variant.platform} className={cn('border-l-4', platformColorClasses[variant.platform])}>
                         <CardContent className="p-4 space-y-3">
-                          <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Icon className="h-4 w-4" />
                               <span className="font-medium text-sm">{getPlatformLabel(variant.platform)}</span>
                             </div>
-                            <span className={cn('text-xs', over ? 'text-destructive font-medium' : 'text-muted-foreground')}>
-                              {count} / {limit.toLocaleString()}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleRewriteVariant(variant.platform)}
+                                disabled={rewritingPlatform === variant.platform}
+                                className="h-7 text-xs"
+                              >
+                                {rewritingPlatform === variant.platform ? (
+                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                ) : (
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                )}
+                                Rewrite
+                              </Button>
+                              <span className={cn('text-xs', over ? 'text-destructive font-medium' : 'text-muted-foreground')}>
+                                {count} / {limit.toLocaleString()}
+                              </span>
+                            </div>
                           </div>
                           <Textarea
                             value={variant.content_text}

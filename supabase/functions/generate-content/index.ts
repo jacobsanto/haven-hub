@@ -350,6 +350,141 @@ serve(async (req) => {
       );
     }
 
+    // Handle social_core mode — generate core message + hashtags from a topic
+    if (contentType === "social_core" as string) {
+      const socialCoreSystemPrompt = `You are an expert social media copywriter for a luxury travel and villa rental company.
+Given a topic or prompt, generate a compelling core social media message and relevant hashtag seeds.
+The message should be versatile enough to be adapted to any platform later.
+Tone: ${toneDescriptions[tone]}.
+Length: Write 2-4 sentences that capture the essence of the topic.`;
+
+      const socialCoreTool = {
+        type: "function",
+        function: {
+          name: "generate_social_core",
+          description: "Generate a core social media message and hashtags from a topic",
+          parameters: {
+            type: "object",
+            properties: {
+              core_text: { type: "string", description: "The core social media message (2-4 sentences)" },
+              hashtags: { type: "array", items: { type: "string" }, description: "8-15 relevant hashtag seeds without # prefix" },
+            },
+            required: ["core_text", "hashtags"],
+            additionalProperties: false,
+          },
+        },
+      };
+
+      const coreResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: socialCoreSystemPrompt },
+            { role: "user", content: `Topic: "${targetName || "luxury travel"}"${customInstructions ? `\nAdditional context: ${customInstructions}` : ""}` },
+          ],
+          tools: [socialCoreTool],
+          tool_choice: { type: "function", function: { name: "generate_social_core" } },
+        }),
+      });
+
+      if (!coreResponse.ok) {
+        if (coreResponse.status === 429) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (coreResponse.status === 402) return new Response(JSON.stringify({ error: "AI usage limit reached." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const errText = await coreResponse.text();
+        console.error("AI gateway error:", coreResponse.status, errText);
+        throw new Error(`AI gateway error: ${coreResponse.status}`);
+      }
+
+      const coreData = await coreResponse.json();
+      const coreToolCall = coreData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!coreToolCall) throw new Error("No tool call in response");
+
+      const coreContent = JSON.parse(coreToolCall.function.arguments);
+      return new Response(
+        JSON.stringify({ success: true, content: coreContent, contentType: "social_core" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Handle social_rewrite mode — rewrite text optimized for a specific platform
+    if ((contentType as string) === "social_rewrite" && existingData) {
+      const { platform: targetPlatform, content_text: sourceText } = existingData as { platform: string; content_text: string };
+
+      const platformRules: Record<string, string> = {
+        instagram: "Max 2200 chars. Visual, lifestyle tone. Emoji-friendly. Add 15-30 hashtags in a separate block.",
+        linkedin: "Max 3000 chars. Professional, thought-leadership tone. 3-5 hashtags inline.",
+        twitter: "Max 280 chars. Concise, punchy. 1-3 hashtags inline. Thread-ready.",
+        tiktok: "Max 2200 chars. Casual, Gen-Z tone. 5-10 trending hashtags.",
+        reddit: "Max 40000 chars. Conversational, value-first. NO hashtags.",
+        pinterest: "Max 500 chars. Aspirational, SEO-focused. Use keyword tags.",
+        facebook: "Max 63206 chars. Warm, community tone. 1-3 hashtags.",
+        google_business: "Max 1500 chars. Informative, local update format. NO hashtags.",
+      };
+
+      const rewriteSystemPrompt = `You are an expert social media copywriter for luxury travel.
+Rewrite the given text optimized specifically for ${targetPlatform}.
+Rules: ${platformRules[targetPlatform] || "Adapt appropriately."}
+Tone: ${toneDescriptions[tone]}.
+Keep the core message but optimize format, length, and style for the platform.`;
+
+      const rewriteTool = {
+        type: "function",
+        function: {
+          name: "rewrite_social_content",
+          description: "Rewrite social media content optimized for a specific platform",
+          parameters: {
+            type: "object",
+            properties: {
+              content_text: { type: "string", description: "The rewritten content optimized for the platform" },
+              hashtags: { type: "array", items: { type: "string" }, description: "Platform-appropriate hashtags without # prefix" },
+            },
+            required: ["content_text", "hashtags"],
+            additionalProperties: false,
+          },
+        },
+      };
+
+      const rewriteResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: rewriteSystemPrompt },
+            { role: "user", content: `Rewrite this for ${targetPlatform}:\n\n${sourceText}` },
+          ],
+          tools: [rewriteTool],
+          tool_choice: { type: "function", function: { name: "rewrite_social_content" } },
+        }),
+      });
+
+      if (!rewriteResponse.ok) {
+        if (rewriteResponse.status === 429) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (rewriteResponse.status === 402) return new Response(JSON.stringify({ error: "AI usage limit reached." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const errText = await rewriteResponse.text();
+        console.error("AI gateway error:", rewriteResponse.status, errText);
+        throw new Error(`AI gateway error: ${rewriteResponse.status}`);
+      }
+
+      const rewriteData = await rewriteResponse.json();
+      const rewriteToolCall = rewriteData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!rewriteToolCall) throw new Error("No tool call in response");
+
+      const rewriteContent = JSON.parse(rewriteToolCall.function.arguments);
+      return new Response(
+        JSON.stringify({ success: true, content: rewriteContent, contentType: "social_rewrite" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Handle social_variants mode
     if (contentType === "social_variants" && existingData) {
       const { core_text, core_hashtags, platforms } = existingData as {
