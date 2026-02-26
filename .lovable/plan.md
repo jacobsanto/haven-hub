@@ -1,101 +1,36 @@
 
 
-## Sprint: AI Generator Integration -- In-Form Generation + Create New from Content Hub
+# Blog Post Structure Templates
 
-### Problem
-1. **Blog Post Form**: No AI generation inside the create/edit form -- users must leave the form to use the AI Content Hub separately.
-2. **AI Content Hub**: Only allows updating existing entities. Cannot create new blog posts, destinations, experiences, or properties from generated content.
-3. **Humanize** button needs to be present in both contexts.
+## What We're Adding
+Seven proven blog post structure templates based on the provided reference designs. These will be selectable when generating AI blog content, guiding the AI to produce structured posts following each template's specific pattern.
 
-### Solution Overview
+## Templates
 
-Two changes across 3 files. No schema changes. No backend changes.
+1. **The Classic List Post** -- Numbered tips/strategies with benefit-driven title, intro (problem + benefit), subheadings per item, action items, conclusion with CTA
+2. **The Beginner's Guide** -- Comprehensive intro with promise statement, topic overview with definitions/examples, detailed steps with transitions, conclusion with recap + CTA
+3. **Things To Do After X** -- Visualization of scenario, raise "now what?" question, numbered steps with specific instructions, conclusion highlighting importance + best tips + CTA
+4. **The Product Showdown** -- Name products being compared, intro with evaluation criteria, product overview with feature-by-feature comparison, conclusion with recommendation
+5. **The Detailed Case Study** -- Specific benefit + timeframe in title, intro with relatable hero, hero background + problem story, results with data, detailed steps, conclusion with motivational CTA
+6. **The How They Did It Post** -- Successful people/organizations focus, intro with opportunity overview, strategies section with approach + why it works + how to apply, conclusion encouraging action
+7. **The Myth Debunker** -- Highlight myths in title, intro with attention grabber + promise, myths section with background + data + why it's wrong + what to do instead, conclusion with recap + CTA
 
----
+## Technical Changes
 
-### Change 1: Add AI Generator to BlogPostFormDialog
+### File 1: `src/hooks/useAIContent.ts`
+- Expand the `contentTemplates` array from 4 to 11 entries
+- All 7 new templates tagged with `contentTypes: ['blog']`
 
-**File**: `src/components/admin/BlogPostFormDialog.tsx`
+### File 2: `supabase/functions/generate-content/index.ts`
+- Add 7 new entries to the `templatePrompts` object with detailed structural instructions matching each template pattern
 
-Add a collapsible "AI Assist" section inside the blog post form (between the excerpt and content fields). This will:
+### File 3: `src/components/admin/BlogPostFormDialog.tsx`
+- Add a template selector dropdown inside the AI Content Assistant collapsible panel (between the Tone selector and Custom Instructions)
+- Pass the selected template to `generateContent()` call
 
-- Use the `useAIContent` hook directly (not the full `AIContentGenerator` component, which is too heavy for inline use)
-- Provide a compact inline panel with:
-  - Tone selector (Luxury / Warm / Professional)
-  - Custom instructions textarea (collapsible)
-  - "Generate" button that uses the current form title + excerpt as context
-  - Once generated: show preview of title, excerpt, content, tags with "Apply to Form" buttons per field or "Apply All"
-  - "Humanize" button appears after generation
-- On "Apply", it populates the form fields directly via `form.setValue()`
-- Works for both new posts (uses title as seed) and existing posts (uses all existing data as context)
-
-This keeps the form self-contained -- no need to navigate to Content Hub.
-
----
-
-### Change 2: Add "Create New" to AIContentGenerator
-
-**File**: `src/components/admin/AIContentGenerator.tsx`
-
-Add a special "Create New" option in the item selector dropdown:
-
-- Add a synthetic item with `id: '__new__'` and `name: 'Create New [Entity]'` at the top of the items list
-- When "Create New" is selected, show an input field for the entity name (e.g., blog post title, destination name)
-- The user types a name/title, then generates content as usual
-- The "Apply" button changes label to "Create & Save"
-
-**File**: `src/pages/admin/AdminAIContent.tsx`
-
-Update `handleApply` to detect when `itemId === '__new__'`:
-
-- For blog: INSERT a new `blog_posts` row (status: draft) with the generated content
-- For destinations: INSERT a new `destinations` row (status: draft)
-- For experiences: INSERT a new `experiences` row (status: draft)
-- For properties: INSERT a new `properties` row (status: draft)
-- Show success toast with the new entity name
-- Invalidate relevant query caches
-
-The AIContentGenerator component needs a new prop `onCreateNew` or the existing `onApplyContent` handles both update and create based on the `__new__` sentinel ID. The parent page (AdminAIContent) will handle the branching logic.
-
----
-
-### Change 3: Humanize Available Everywhere
-
-The `useAIContent` hook already exposes `humanizeContent`. The AIContentGenerator already has the Humanize button. The only gap is the new inline generator in BlogPostFormDialog, which will also include the Humanize button after generation.
-
----
-
-### Technical Details
-
-**BlogPostFormDialog inline AI panel**:
-- Uses `useAIContent()` hook for `generateContent`, `humanizeContent`, `generatedContent`, `isGenerating`, `isHumanizing`
-- Passes `contentType: 'blog'`, `targetName: form.watch('title')`, `existingData: { title, excerpt, tags }`
-- "Apply All" sets `form.setValue('title', content.title)`, etc.
-- Collapsible via `Collapsible` component, labeled "AI Content Assistant"
-
-**AIContentGenerator "Create New" flow**:
-- New state: `newEntityName` (string)
-- When `selectedItemId === '__new__'`, render an `Input` for the name
-- Pass `newEntityName` as `targetName` to `generateContent`
-- New prop: `allowCreateNew?: boolean` (default true)
-- New callback prop: `onCreateContent?: (name: string, content: GeneratedContent) => void`
-
-**AdminAIContent create logic** (in `handleApply`):
-- When `itemId === '__new__'`, call INSERT instead of UPDATE
-- Generate a slug from the name using the same `generateSlug` pattern
-- All new entities created as draft status
-
-### Files Modified
-- `src/components/admin/BlogPostFormDialog.tsx` -- add inline AI generation panel
-- `src/components/admin/AIContentGenerator.tsx` -- add "Create New" option + name input
-- `src/pages/admin/AdminAIContent.tsx` -- handle INSERT for new entities
-
-### Validation
-- Existing blog post editing still works
-- AI generation in Content Hub still updates existing items correctly
-- New "Create New" inserts with draft status
-- Inline AI in blog form populates fields correctly
-- Humanize works in both inline form and Content Hub
-- No frontend rendering changes
-- No schema changes
+## No Changes To
+- Database schema
+- Blog post types
+- Existing templates (destination_guide, experience_spotlight, property_showcase, seasonal_promotion)
+- Blog rendering/layout components
 
