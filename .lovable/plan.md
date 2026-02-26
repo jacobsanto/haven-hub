@@ -1,138 +1,128 @@
 
 
-# Social Media Content Manager
+# Unified Social Media Post Creator
 
 ## Overview
-Add a social media content creation, scheduling, and analytics system to the Content Hub. This enables creating and scheduling posts for Instagram, LinkedIn, TikTok, and Google My Business -- integrated with the existing Content Calendar and Analytics page.
+Replace the current per-platform post creation flow with a **unified multi-step composer**. The admin writes core content once, then the system auto-generates optimized variants for all selected platforms using AI. An approval/edit step lets the admin review and tweak each variant before scheduling.
 
-## What Gets Built
+## New Platforms
+Expand from 4 to 8 platforms, adding travel-friendly channels:
+- **Existing**: Instagram, LinkedIn, TikTok, Google Business
+- **New**: Twitter/X, Reddit, Pinterest, Facebook
 
-### 1. Database Tables
+## How It Works (User Flow)
 
-**`social_accounts`** -- Stores connected social media account credentials and metadata
-- id, platform (instagram, linkedin, tiktok, google_business), account_name, account_id, access_token (encrypted), refresh_token, token_expires_at, is_active, avatar_url, created_at, updated_at
+```text
+Step 1: COMPOSE CORE           Step 2: SELECT PLATFORMS         Step 3: REVIEW VARIANTS
++----------------------+       +----------------------+        +----------------------+
+| Topic / Theme        |       | [x] Instagram        |        | Instagram  [2200 ch] |
+| Core Message (text)  | --->  | [x] LinkedIn         | --->   | LinkedIn   [3000 ch] |
+| Media uploads        |       | [x] Twitter/X        |        | Twitter/X  [280 ch]  |
+| Hashtag seeds        |       | [ ] Reddit           |        | Reddit     [editable]|
+| Tone / Persona       |       | [ ] Pinterest        |        |                      |
+| AI Generate button   |       | [x] Facebook         |        | [Approve All]        |
++----------------------+       +----------------------+        | [Schedule]  [Save]   |
+                                                               +----------------------+
+```
+
+1. **Step 1 -- Core Content**: Write a single message, upload media, set tone/persona, optionally click "AI Generate" to draft the core text.
+2. **Step 2 -- Platform Selection**: Pick which platforms to publish to. Each shows connected accounts (if any).
+3. **Step 3 -- Review Variants**: AI auto-optimizes the core content for each selected platform (character limits, hashtag style, tone adjustments). Admin can edit each variant individually, approve all, and schedule.
+
+## Database Changes
+
+**Modify `social_posts` table** -- Add two columns:
+- `campaign_id` (uuid, nullable) -- Groups posts that originated from the same core content
+- `core_content` (text, nullable) -- Stores the original unoptimized text
+
+**New `social_campaigns` table** -- Represents a unified content creation session:
+- `id` (uuid, PK)
+- `core_text` (text) -- Original message
+- `core_hashtags` (text[]) -- Seed hashtags
+- `media_urls` (jsonb) -- Shared media
+- `tone` (text, nullable) -- Tone setting used
+- `persona` (text, nullable) -- Target persona
+- `target_platforms` (text[]) -- Which platforms were selected
+- `status` (text, default 'draft') -- draft, ready, scheduled, published
+- `scheduled_for` (timestamptz, nullable)
+- `created_by` (uuid, nullable)
+- `created_at`, `updated_at` (timestamptz)
 - Admin-only RLS
 
-**`social_posts`** -- Individual social media posts (draft, scheduled, published, failed)
-- id, account_id (FK to social_accounts), content_text, media_urls (jsonb array), hashtags (text[]), platform, status (draft/scheduled/publishing/published/failed), scheduled_for, published_at, external_post_id, error_message, created_by, created_at, updated_at
-- Admin-only RLS
+**Modify `social_accounts` platform column** -- Allow new platform values: `twitter`, `reddit`, `pinterest`, `facebook`
 
-**`social_post_analytics`** -- Performance metrics per published post
-- id, social_post_id (FK to social_posts), impressions, reach, likes, comments, shares, saves, clicks, engagement_rate, fetched_at
-- Admin-only RLS
-
-### 2. New Admin Pages & Components
-
-**Social Accounts Manager** (`src/pages/admin/AdminSocialAccounts.tsx`)
-- List connected accounts with platform icons, status badges
-- "Connect Account" dialog per platform with instructions on obtaining API credentials
-- Each account shows last sync status, follower count
-
-**Social Post Composer** (`src/components/admin/SocialPostComposer.tsx`)
-- Multi-platform post creation dialog
-- Text editor with character count per platform (Instagram 2200, LinkedIn 3000, TikTok 2200, GMB 1500)
-- Media upload area (images/video thumbnails)
-- Hashtag suggestions
-- Platform preview tabs showing how the post will look
-- AI content generation button (reuses existing AI content system with a new `social` content type)
-- Schedule date/time picker or "Post Now" option
-- Multi-select which connected accounts to post to
-
-**Social Post Form Dialog** (`src/components/admin/SocialPostFormDialog.tsx`)
-- Create/edit dialog for social posts with all composer fields
-- Platform-specific validation (character limits, media requirements)
-
-### 3. Content Calendar Integration
-
-Extend the existing `ContentCalendar` component and `useContentCalendarData` hook:
-- Add social posts to the calendar grid alongside blog posts
-- Color-code by platform (Instagram purple, LinkedIn blue, TikTok dark, GMB blue-green)
-- New legend entries for each platform
-- Calendar day click can create either blog or social post
-
-### 4. Analytics Integration
-
-Add a **"Social Media"** tab (5th tab) to `AdminAnalytics.tsx`:
-- Overview cards: total posts, total reach, total engagement, avg engagement rate
-- Per-platform breakdown table with sortable columns
-- Top performing posts list with engagement metrics
-- Trend chart showing engagement over time
-
-### 5. Content Hub Tab
-
-Add a "Social Media" tab to the Content Hub navigation alongside Blog Posts, Authors, Categories, AI Generator, and Calendar.
-
-### 6. AI Content Generation for Social
-
-Extend `useAIContent.ts`:
-- Add `social` as a new ContentType
-- Add `SocialContent` interface (caption, hashtags, platform_variants)
-- Update the `generate-content` edge function with social media prompt templates
-
-### 7. Edge Function for Social Posting
-
-**`supabase/functions/social-publish/index.ts`**
-- Receives post ID, fetches content and account credentials
-- Publishes to the appropriate platform API
-- Updates post status to published/failed
-- Stores external_post_id for analytics fetching
-
-**`supabase/functions/social-analytics-sync/index.ts`**
-- Fetches engagement metrics for published posts
-- Updates social_post_analytics table
-
-### 8. Hooks
-
-- `useSocialAccounts()` -- CRUD for connected accounts
-- `useSocialPosts()` -- CRUD + scheduling for posts
-- `useSocialAnalytics()` -- Fetch aggregated social analytics
-
-## Technical Details
-
-### File Changes (Existing)
-- `src/App.tsx` -- Add route for `/admin/social-accounts`
-- `src/pages/admin/AdminContentHub.tsx` -- Add "Social Media" tab
-- `src/pages/admin/AdminAnalytics.tsx` -- Add 5th "Social" tab
-- `src/components/admin/ContentCalendar.tsx` -- Include social posts in calendar grid
-- `src/hooks/useScheduledPosts.ts` -- Extend `useContentCalendarData` to also fetch social_posts
-- `src/hooks/useAIContent.ts` -- Add `social` content type and `SocialContent` interface
-- `supabase/functions/generate-content/index.ts` -- Add social media prompt templates
-- `src/components/admin/AdminLayout.tsx` -- Add Social Media nav item under Content section
+## File Changes
 
 ### New Files
-- `supabase/migrations/xxx_social_media_tables.sql`
-- `src/pages/admin/AdminSocialAccounts.tsx`
-- `src/components/admin/SocialPostComposer.tsx`
-- `src/components/admin/SocialPostFormDialog.tsx`
-- `src/hooks/useSocialAccounts.ts`
-- `src/hooks/useSocialPosts.ts`
-- `src/hooks/useSocialAnalytics.ts`
-- `supabase/functions/social-publish/index.ts`
-- `supabase/functions/social-analytics-sync/index.ts`
 
-### Account Connection Flow
-Since each social platform has its own OAuth flow that requires redirect URIs and app registration, the initial implementation will use a **manual API token** approach:
-1. Admin enters platform API credentials (access token, account ID) via the Social Accounts manager
-2. Tokens are stored securely in the database (admin-only RLS)
-3. Edge functions use these tokens to publish and fetch analytics
-4. Future enhancement: Add OAuth flows per platform
+**`src/pages/admin/AdminSocialComposer.tsx`** -- Full-page multi-step composer
+- Step 1: Core content editor with AI generation
+- Step 2: Platform selector with account linking
+- Step 3: Per-platform variant review with inline editing
+- Save creates one `social_campaigns` row + one `social_posts` row per platform
 
-### Platform API Requirements
-Each platform will need API keys/tokens configured as secrets:
-- **Instagram**: Meta Graph API (requires Facebook App + Instagram Business Account)
-- **LinkedIn**: LinkedIn Marketing API (requires LinkedIn App)
-- **TikTok**: TikTok for Business API
-- **Google My Business**: Google Business Profile API
+**`src/hooks/useSocialCampaigns.ts`** -- CRUD for social_campaigns table
 
-The system will be built API-ready but will initially work in "draft/schedule" mode without requiring live API connections -- admins can use it as a planning tool and manually post, then mark as published.
+**`src/hooks/useSocialOptimize.ts`** -- Calls AI to generate platform-specific variants from core content. Uses `generate-content` edge function with a new `social_variants` content type.
+
+### Modified Files
+
+**`src/hooks/useSocialAccounts.ts`**
+- Expand `SocialPlatform` type to include `twitter`, `reddit`, `pinterest`, `facebook`
+- Add labels and platform metadata for all 8 platforms
+
+**`src/hooks/useSocialPosts.ts`**
+- Add `campaign_id` and `core_content` to `SocialPost` interface
+- Add `CreateSocialPostInput` fields for campaign linking
+
+**`src/pages/admin/AdminSocialPosts.tsx`**
+- Update platform icons map for new platforms
+- Add "New Campaign" button that navigates to the composer page
+- Group posts by campaign_id in the table view (expandable rows)
+
+**`src/components/admin/SocialPostFormDialog.tsx`**
+- Add new platform options to the dropdown
+- Keep as single-post quick-edit for individual variant tweaks
+
+**`src/App.tsx`**
+- Add route `/admin/social-composer` for the new composer page
+
+**`src/components/admin/AdminLayout.tsx`**
+- Add "Create Post" nav item under Social Media section
+
+**`src/components/admin/ContentCalendar.tsx`**
+- Add icons for new platforms (Twitter, Reddit, Pinterest, Facebook)
+- Color-code new platforms in calendar
+
+**`src/components/admin/SocialAnalyticsTab.tsx`**
+- Add new platforms to analytics breakdown
+
+**`supabase/functions/generate-content/index.ts`**
+- Add `social_variants` content type that takes core text + list of platforms and returns optimized text per platform with:
+  - Platform-specific character limits
+  - Hashtag formatting (e.g., Twitter uses fewer, Reddit uses none)
+  - Tone adjustments (LinkedIn more professional, Reddit more conversational)
+  - CTA style differences
+
+### Platform Optimization Rules (Built into AI Prompt)
+
+| Platform | Char Limit | Hashtag Style | Tone | Notes |
+|----------|-----------|---------------|------|-------|
+| Instagram | 2,200 | 15-30 hashtags, separate block | Visual, lifestyle | Emoji-friendly |
+| LinkedIn | 3,000 | 3-5 hashtags inline | Professional | Thought-leadership |
+| Twitter/X | 280 | 1-3 hashtags inline | Concise, punchy | Thread-ready |
+| TikTok | 2,200 | 5-10 trending tags | Casual, Gen-Z | Video-first caption |
+| Reddit | 40,000 | No hashtags | Conversational, value-first | Subreddit context |
+| Pinterest | 500 | Keywords as tags | Aspirational, searchable | SEO-focused |
+| Facebook | 63,206 | 1-3 hashtags | Warm, community | Engagement-focused |
+| Google Business | 1,500 | No hashtags | Informative, local | Update/offer format |
 
 ## Sequencing
-1. Database migration (tables + RLS)
-2. Hooks (useSocialAccounts, useSocialPosts, useSocialAnalytics)
-3. Social Accounts page + Social Post Composer
-4. Content Calendar integration
-5. Analytics tab integration
-6. Content Hub tab addition
-7. AI content generation extension
-8. Edge functions for publishing (API-ready, manual mode first)
+1. Database migration (social_campaigns table + new columns on social_posts + platform expansion)
+2. Update hooks (useSocialAccounts platform expansion, useSocialCampaigns, useSocialOptimize)
+3. Update generate-content edge function with social_variants type
+4. Build AdminSocialComposer page (3-step flow)
+5. Update AdminSocialPosts to show campaigns + new platforms
+6. Update calendar and analytics for new platforms
+7. Wire up routing and navigation
 
