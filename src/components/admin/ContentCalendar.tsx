@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday, parseISO } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, Clock, FileText, AlertCircle, CheckCircle2, Loader2, Trash2, Edit } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Clock, FileText, AlertCircle, CheckCircle2, Loader2, Trash2, Edit, Instagram, Linkedin, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,9 +14,10 @@ interface CalendarPost {
   id: string;
   title: string;
   date: Date;
-  type: 'scheduled' | 'published' | 'draft' | 'failed' | 'generating';
+  type: 'scheduled' | 'published' | 'draft' | 'failed' | 'generating' | 'social';
   category?: string;
   status?: string;
+  platform?: string;
 }
 
 const statusIcons = {
@@ -59,6 +60,13 @@ export function ContentCalendar({ onNewPost }: ContentCalendarProps) {
   const monthEnd = endOfMonth(currentDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
+  const platformColors: Record<string, string> = {
+    instagram: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300',
+    linkedin: 'bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-300',
+    tiktok: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+    google_business: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300',
+  };
+
   // Build calendar events from data
   const calendarEvents = useMemo(() => {
     const events: CalendarPost[] = [];
@@ -86,6 +94,21 @@ export function ContentCalendar({ onNewPost }: ContentCalendarProps) {
           type: post.status === 'published' ? 'published' : 'draft',
           category: post.category?.name,
           status: post.status,
+        });
+      }
+    });
+
+    // Add social posts
+    calendarData?.socialPosts?.forEach(post => {
+      const postDate = post.scheduled_for || post.published_at;
+      if (postDate) {
+        events.push({
+          id: `social-${post.id}`,
+          title: post.content_text.slice(0, 50) || `${post.platform} post`,
+          date: parseISO(postDate),
+          type: 'social',
+          status: post.status,
+          platform: post.platform,
         });
       }
     });
@@ -185,8 +208,13 @@ export function ContentCalendar({ onNewPost }: ContentCalendarProps) {
                     
                     <div className="mt-1 space-y-1">
                       {dayEvents.slice(0, 3).map(event => {
-                        const StatusIcon = statusIcons[event.status as keyof typeof statusIcons] || Clock;
-                        const colorClass = statusColors[event.status as keyof typeof statusColors] || statusColors.scheduled;
+                        const isSocial = event.type === 'social';
+                        const StatusIcon = isSocial
+                          ? (event.platform === 'instagram' ? Instagram : event.platform === 'linkedin' ? Linkedin : Globe)
+                          : (statusIcons[event.status as keyof typeof statusIcons] || Clock);
+                        const colorClass = isSocial
+                          ? (platformColors[event.platform || 'instagram'] || platformColors.instagram)
+                          : (statusColors[event.status as keyof typeof statusColors] || statusColors.scheduled);
                         
                         return (
                           <TooltipProvider key={event.id}>
@@ -264,6 +292,24 @@ export function ContentCalendar({ onNewPost }: ContentCalendarProps) {
                 <Badge className={statusColors.failed}>
                   <AlertCircle className="h-3 w-3 mr-1" />
                   Failed
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Badge className={platformColors.instagram}>
+                  <Instagram className="h-3 w-3 mr-1" />
+                  Instagram
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Badge className={platformColors.linkedin}>
+                  <Linkedin className="h-3 w-3 mr-1" />
+                  LinkedIn
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Badge className={platformColors.tiktok}>
+                  <Globe className="h-3 w-3 mr-1" />
+                  TikTok
                 </Badge>
               </div>
             </div>

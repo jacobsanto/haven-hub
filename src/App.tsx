@@ -65,6 +65,8 @@ const AdminExitIntent = React.lazy(() => import("./pages/admin/AdminExitIntent")
 const AdminUserRoles = React.lazy(() => import("./pages/admin/AdminUserRoles"));
 const AdminPageContent = React.lazy(() => import("./pages/admin/AdminPageContent"));
 const AdminNavigation = React.lazy(() => import("./pages/admin/AdminNavigation"));
+const AdminSocialAccounts = React.lazy(() => import("./pages/admin/AdminSocialAccounts"));
+const AdminSocialPosts = React.lazy(() => import("./pages/admin/AdminSocialPosts"));
 
 const queryClient = new QueryClient();
 
@@ -139,6 +141,8 @@ const App = () => (
                 <Route path="/admin/user-roles" element={<AdminUserRoles />} />
                 <Route path="/admin/content" element={<AdminPageContent />} />
                 <Route path="/admin/navigation" element={<AdminNavigation />} />
+                <Route path="/admin/social-accounts" element={<AdminSocialAccounts />} />
+                <Route path="/admin/social-posts" element={<AdminSocialPosts />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
