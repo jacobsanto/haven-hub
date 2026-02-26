@@ -34,7 +34,7 @@ const Index = () => {
   const { brandName } = useBrand();
   const { format } = useFormatCurrency();
   const { data: quickNavItems = [] } = useNavigationItems('hero_quicknav');
-  const { showSearchBar, showFeaturedVilla, showQuickNav, featuredPropertyId } = useHeroSettings();
+  const { showSearchBar, showFeaturedVilla, showQuickNav, featuredPropertyId, heroBackgroundImage } = useHeroSettings();
   const propertiesDisplay = useSectionDisplay('home', 'properties');
   const destinationsDisplay = useSectionDisplay('home', 'destinations');
   const experiencesDisplay = useSectionDisplay('home', 'experiences');
@@ -96,7 +96,7 @@ const Index = () => {
   const heroProperty = featuredPropertyId === 'auto'
     ? properties?.[0]
     : properties?.find(p => p.id === featuredPropertyId) || properties?.[0];
-  const heroImageUrl = heroProperty?.hero_image_url;
+  const heroImageUrl = heroBackgroundImage || heroProperty?.hero_image_url;
   const featuredDestinations = destinations?.slice(0, 3);
   const featuredExperiences = experiences?.filter(e => e.is_featured).slice(0, 4) || experiences?.slice(0, 4);
   const latestBlogPosts = blogPosts?.slice(0, 3);

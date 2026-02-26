@@ -13,6 +13,7 @@ const DEFAULTS: Record<string, string> = {
   show_featured_villa: 'true',
   featured_property_id: 'auto',
   show_quick_nav: 'true',
+  hero_background_image: '',
 };
 
 export function useHeroSettings() {
@@ -41,6 +42,7 @@ export function useHeroSettings() {
     showFeaturedVilla: settings.show_featured_villa === 'true',
     featuredPropertyId: settings.featured_property_id,
     showQuickNav: settings.show_quick_nav === 'true',
+    heroBackgroundImage: settings.hero_background_image || '',
   };
 }
 

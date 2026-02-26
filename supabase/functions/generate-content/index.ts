@@ -235,6 +235,97 @@ Your task is to refine the provided content while keeping the same meaning, stru
 
 Return the EXACT same JSON structure with the same field names, just with humanized text in each field.`;
 
+// Format entity data into structured, human-readable context for the AI
+function formatEntityContext(contentType: string, name: string, data: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const add = (label: string, value: unknown) => {
+    if (value === null || value === undefined || value === '') return;
+    if (Array.isArray(value)) {
+      if (value.length === 0) return;
+      // Handle complex arrays (rooms, nearby_attractions)
+      if (typeof value[0] === 'object') {
+        lines.push(`- ${label}:`);
+        value.forEach((item: any) => {
+          if (item.name && item.type) {
+            lines.push(`  • ${item.name} (${item.type}${item.distance ? ', ' + item.distance : ''})`);
+          } else if (item.name && item.beds) {
+            const beds = item.beds.map((b: any) => `${b.count}× ${b.type}`).join(', ');
+            lines.push(`  • ${item.name}: ${beds}`);
+          } else {
+            lines.push(`  • ${JSON.stringify(item)}`);
+          }
+        });
+      } else {
+        lines.push(`- ${label}: ${value.join(', ')}`);
+      }
+    } else {
+      lines.push(`- ${label}: ${value}`);
+    }
+  };
+
+  if (contentType === 'property') {
+    lines.push(`PROPERTY CONTEXT:`);
+    add('Name', name);
+    add('Type', data.property_type);
+    add('Location', [data.city, data.region, data.country].filter(Boolean).join(', '));
+    add('Address', data.address);
+    if (data.latitude && data.longitude) add('Coordinates', `${data.latitude}, ${data.longitude}`);
+    const sizeparts: string[] = [];
+    if (data.area_sqm) sizeparts.push(`${data.area_sqm} m²`);
+    if (data.bedrooms) sizeparts.push(`${data.bedrooms} Bedrooms`);
+    if (data.bathrooms) sizeparts.push(`${data.bathrooms} Bathrooms`);
+    if (data.max_guests) sizeparts.push(`Up to ${data.max_guests} Guests`);
+    if (sizeparts.length) add('Size', sizeparts.join(' | '));
+    if (data.base_price) add('Base Price', `${data.base_price}/night`);
+    add('Short Description', data.short_description);
+    add('Description', data.description);
+    add('Amenities', data.amenities);
+    add('Highlights', data.highlights);
+    add('Rooms', data.rooms);
+    add('Nearby Attractions', data.nearby_attractions);
+    add('Neighborhood', data.neighborhood_description);
+    add('House Rules', data.house_rules);
+  } else if (contentType === 'destination') {
+    lines.push(`DESTINATION CONTEXT:`);
+    add('Name', name);
+    add('Country', data.country);
+    if (data.latitude && data.longitude) add('Coordinates', `${data.latitude}, ${data.longitude}`);
+    add('Description', data.description);
+    add('Long Description', data.long_description);
+    add('Highlights', data.highlights);
+    add('Best Time to Visit', data.best_time_to_visit);
+    add('Climate', data.climate);
+  } else if (contentType === 'experience') {
+    lines.push(`EXPERIENCE CONTEXT:`);
+    add('Name', name);
+    add('Category', data.category);
+    add('Duration', data.duration);
+    if (data.price_from) add('Price From', data.price_from);
+    add('Description', data.description);
+    add('Long Description', data.long_description);
+    add('Includes', data.includes);
+    add('Featured', data.is_featured);
+  } else if (contentType === 'blog') {
+    lines.push(`BLOG POST CONTEXT:`);
+    add('Title', data.title);
+    add('Excerpt', data.excerpt);
+    add('Tags', data.tags);
+    add('Article Style', data.article_style);
+    if (data.content) add('Existing Content (for reference)', (data.content as string).substring(0, 500));
+  } else {
+    // Fallback for any other content type
+    lines.push(`ENTITY CONTEXT:`);
+    add('Name', name);
+    for (const [key, value] of Object.entries(data)) {
+      add(key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), value);
+    }
+  }
+
+  lines.push('');
+  lines.push('Use this context as background knowledge to write accurate, specific content. Do not simply list these facts — weave them naturally into compelling marketing copy.');
+  return lines.join('\n');
+}
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 serve(async (req) => {
@@ -685,7 +776,7 @@ Tone preference: ${tone || "warm"}`;
     let userPrompt = `Generate content for: "${targetName}"`;
     
     if (existingData && Object.keys(existingData).length > 0) {
-      userPrompt += `\n\nExisting information to incorporate:\n${JSON.stringify(existingData, null, 2)}`;
+      userPrompt += `\n\n${formatEntityContext(contentType, targetName, existingData)}`;
     }
 
     if (customInstructions) {
