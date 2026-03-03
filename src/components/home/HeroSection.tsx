@@ -30,6 +30,7 @@ export function HeroSection() {
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
 
   const count = properties.length || 1;
 
@@ -100,6 +101,14 @@ export function HeroSection() {
     <section
       ref={containerRef}
       className="relative h-screen w-full overflow-hidden select-none"
+      onTouchStart={(e) => { touchStartX.current = e.targetTouches[0].clientX; }}
+      onTouchEnd={(e) => {
+        if (touchStartX.current === null) return;
+        const diff = touchStartX.current - e.changedTouches[0].clientX;
+        touchStartX.current = null;
+        if (diff > 50) goNext();
+        else if (diff < -50) goPrev();
+      }}
     >
       {/* ── Background layers (cross-fade) ── */}
       {prevIndex !== null && (
@@ -145,7 +154,7 @@ export function HeroSection() {
       <div className="relative z-10 h-full flex flex-col justify-between">
         {/* Main area */}
         <div className="flex-1 flex items-center">
-          <div className="container mx-auto px-4 md:px-8 flex flex-col md:flex-row items-end md:items-center justify-between gap-8 w-full">
+          <div className="container mx-auto px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-8 w-full">
             {/* Left: Active property info */}
             <AnimatePresence mode="wait">
               <motion.div
@@ -184,9 +193,9 @@ export function HeroSection() {
             </AnimatePresence>
 
             {/* Right: Portrait card slider with clipping window */}
-            {!isMobile && cards.length > 0 && (
-              <div className="overflow-hidden rounded-xl" style={{ maxWidth: '600px' }}>
-                <div className="flex gap-4">
+            {cards.length > 0 && (
+              <div className="overflow-hidden rounded-xl" style={{ maxWidth: isMobile ? '100%' : '600px' }}>
+                <div className="flex gap-2 md:gap-4">
                   <AnimatePresence mode="popLayout" initial={false}>
                     {cards.map((prop, i) => (
                       <motion.div
@@ -196,7 +205,7 @@ export function HeroSection() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={prefersReduced ? {} : { opacity: 0, x: direction === 'next' ? -80 : 80 }}
                         transition={{ duration: 0.5, delay: i * 0.06 }}
-                        className="relative w-[175px] lg:w-[190px] h-[300px] lg:h-[340px] rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
+                        className="relative w-[110px] h-[160px] md:w-[175px] md:h-[300px] lg:w-[190px] lg:h-[340px] rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
                         onClick={() => {
                           if (isTransitioning) return;
                           setDirection('next');
