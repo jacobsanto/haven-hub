@@ -14,6 +14,8 @@ const DEFAULTS: Record<string, string> = {
   featured_property_id: 'auto',
   show_quick_nav: 'true',
   hero_background_image: '',
+  hero_heading_line1: '',
+  hero_heading_line2: '',
 };
 
 export function useHeroSettings() {
