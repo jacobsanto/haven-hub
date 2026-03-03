@@ -147,14 +147,14 @@ export function HeroSection() {
       {/* Subtle dark overlay for contrast */}
       <div className="absolute inset-0 bg-black/25" style={{ zIndex: 3 }} />
       {/* Gradient overlays for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" style={{ zIndex: 4 }} />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" style={{ zIndex: 4 }} />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/70 md:from-black/60 via-black/25 to-transparent" style={{ zIndex: 4 }} />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 md:from-black/50 via-transparent to-transparent" style={{ zIndex: 4 }} />
 
       {/* ── Content ── */}
       <div className="relative z-10 h-full flex flex-col justify-between">
         {/* Main area */}
-        <div className="flex-1 flex items-center">
-          <div className="container mx-auto px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-8 w-full">
+        <div className="flex-1 flex items-end md:items-center pb-4 md:pb-0">
+          <div className="container mx-auto px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-8 w-full">
             {/* Left: Active property info */}
             <AnimatePresence mode="wait">
               <motion.div
@@ -194,8 +194,8 @@ export function HeroSection() {
 
             {/* Right: Portrait card slider with clipping window */}
             {cards.length > 0 && (
-              <div className="overflow-hidden rounded-xl" style={{ maxWidth: isMobile ? '100%' : '600px' }}>
-                <div className="flex gap-2 md:gap-4">
+              <div className="overflow-hidden rounded-xl w-full md:w-auto" style={{ maxWidth: isMobile ? '100%' : '600px' }}>
+                <div className="flex gap-2 md:gap-4 justify-center md:justify-start">
                   <AnimatePresence mode="popLayout" initial={false}>
                     {cards.map((prop, i) => (
                       <motion.div
@@ -205,7 +205,7 @@ export function HeroSection() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={prefersReduced ? {} : { opacity: 0, x: direction === 'next' ? -80 : 80 }}
                         transition={{ duration: 0.5, delay: i * 0.06 }}
-                        className="relative w-[110px] h-[160px] md:w-[175px] md:h-[300px] lg:w-[190px] lg:h-[340px] rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
+                        className="relative w-[100px] h-[130px] md:w-[175px] md:h-[300px] lg:w-[190px] lg:h-[340px] rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
                         onClick={() => {
                           if (isTransitioning) return;
                           setDirection('next');
