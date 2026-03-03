@@ -27,6 +27,7 @@ export function HeroSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [direction, setDirection] = useState<'next' | 'prev'>('next');
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -34,6 +35,7 @@ export function HeroSection() {
 
   const goNext = useCallback(() => {
     if (isTransitioning || properties.length < 2) return;
+    setDirection('next');
     setIsTransitioning(true);
     setPrevIndex(activeIndex);
     setActiveIndex((prev) => (prev + 1) % count);
@@ -41,6 +43,7 @@ export function HeroSection() {
 
   const goPrev = useCallback(() => {
     if (isTransitioning || properties.length < 2) return;
+    setDirection('prev');
     setIsTransitioning(true);
     setPrevIndex(activeIndex);
     setActiveIndex((prev) => (prev - 1 + count) % count);
@@ -122,7 +125,6 @@ export function HeroSection() {
           }
         }}
       />
-      {/* Make new bg fade in */}
       {prevIndex !== null && !prefersReduced && (
         <div
           className="absolute inset-0 bg-cover bg-center animate-[heroFadeIn_0.8s_ease-in-out_forwards]"
@@ -133,8 +135,11 @@ export function HeroSection() {
         />
       )}
 
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-black/20" style={{ zIndex: 3 }} />
+      {/* Subtle dark overlay for contrast */}
+      <div className="absolute inset-0 bg-black/25" style={{ zIndex: 3 }} />
+      {/* Gradient overlays for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" style={{ zIndex: 4 }} />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" style={{ zIndex: 4 }} />
 
       {/* ── Content ── */}
       <div className="relative z-10 h-full flex flex-col justify-between">
@@ -151,7 +156,10 @@ export function HeroSection() {
                 transition={{ duration: 0.5 }}
                 className="max-w-lg"
               >
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white uppercase tracking-wider leading-tight">
+                <h1
+                  className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white uppercase tracking-wider leading-tight"
+                  style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}
+                >
                   {line1}
                   {line2 && (
                     <>
@@ -160,55 +168,65 @@ export function HeroSection() {
                     </>
                   )}
                 </h1>
-                <p className="mt-4 text-white/80 text-sm md:text-base max-w-md leading-relaxed line-clamp-2">
+                <p
+                  className="mt-4 text-white/90 text-sm md:text-base max-w-md leading-relaxed line-clamp-2"
+                  style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}
+                >
                   {active.short_description || `Discover the beauty of ${active.city}, ${active.country}`}
                 </p>
                 <Link
                   to={`/properties/${active.slug}`}
-                  className="mt-6 inline-block px-8 py-3 rounded-full text-white font-semibold text-sm uppercase tracking-wider bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 transition-all shadow-lg"
+                  className="mt-6 inline-block px-8 py-3 rounded-full text-white font-semibold text-sm uppercase tracking-wider bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 transition-all shadow-[0_4px_20px_rgba(220,50,20,0.4)] hover:shadow-[0_6px_28px_rgba(220,50,20,0.55)]"
                 >
                   Explore
                 </Link>
               </motion.div>
             </AnimatePresence>
 
-            {/* Right: Portrait card slider */}
+            {/* Right: Portrait card slider with clipping window */}
             {!isMobile && cards.length > 0 && (
-              <div className="flex gap-4">
-                <AnimatePresence mode="popLayout">
-                  {cards.map((prop, i) => (
-                    <motion.div
-                      key={prop.id}
-                      layout
-                      initial={prefersReduced ? {} : { opacity: 0, x: 60 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={prefersReduced ? {} : { opacity: 0, x: -60 }}
-                      transition={{ duration: 0.5, delay: i * 0.08 }}
-                      className="relative w-[160px] lg:w-[180px] h-[260px] lg:h-[300px] rounded-xl overflow-hidden cursor-pointer group"
-                      onClick={() => {
-                        if (isTransitioning) return;
-                        setIsTransitioning(true);
-                        setPrevIndex(activeIndex);
-                        setActiveIndex((activeIndex + i + 1) % count);
-                      }}
-                    >
-                      <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                        style={{ backgroundImage: `url(${prop.hero_image_url})` }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      <div className="absolute bottom-3 left-3 right-3">
-                        <p className="text-white font-serif font-semibold text-sm leading-snug">
-                          {prop.display_name || prop.name}
-                        </p>
-                        <span className="flex items-center gap-1 text-white/80 text-xs mt-1">
-                          <MapPin className="w-3 h-3 text-red-500" />
-                          {prop.city}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+              <div className="overflow-hidden rounded-xl" style={{ maxWidth: '600px' }}>
+                <div className="flex gap-4">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {cards.map((prop, i) => (
+                      <motion.div
+                        key={prop.id}
+                        layout
+                        initial={prefersReduced ? {} : { opacity: 0, x: direction === 'next' ? 80 : -80 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={prefersReduced ? {} : { opacity: 0, x: direction === 'next' ? -80 : 80 }}
+                        transition={{ duration: 0.5, delay: i * 0.06 }}
+                        className="relative w-[175px] lg:w-[190px] h-[300px] lg:h-[340px] rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
+                        onClick={() => {
+                          if (isTransitioning) return;
+                          setDirection('next');
+                          setIsTransitioning(true);
+                          setPrevIndex(activeIndex);
+                          setActiveIndex((activeIndex + i + 1) % count);
+                        }}
+                      >
+                        <div
+                          className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                          style={{ backgroundImage: `url(${prop.hero_image_url})` }}
+                        />
+                        {/* Dark gradient overlay at bottom for text readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <p
+                            className="text-white font-serif font-semibold text-sm leading-snug"
+                            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}
+                          >
+                            {prop.display_name || prop.name}
+                          </p>
+                          <span className="flex items-center gap-1 text-white/90 text-xs mt-1">
+                            <MapPin className="w-3 h-3 text-red-500" />
+                            {prop.city}
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
               </div>
             )}
           </div>
@@ -265,7 +283,6 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Keyframe for cross-fade */}
       <style>{`
         @keyframes heroFadeIn {
           from { opacity: 0; }
