@@ -1,39 +1,39 @@
 
 
-# Mobile Hero: Show Cards & Transitions
+# Mobile Hero Section Fix
 
-## Problem
-The card slider is entirely hidden on mobile (`!isMobile` guard on line 187). Users only see a static background with text — no cards, no sliding effects, no visual sense of property rotation.
+## Current Issues (visible in screenshot)
+- Heading text ("BLE VILLA") is very faint and hard to read against the background
+- Cards sit in the middle of the screen, overlapping the background image awkwardly
+- Large empty gap between navbar and content
+- Cards are too tall relative to mobile viewport, pushing content below fold
+- Footer pagination area has too much empty space above it
 
 ## Solution
-Show a horizontal card strip on mobile below the heading content, with smaller cards and swipe-friendly layout. Keep all transitions working.
 
 ### Changes to `src/components/home/HeroSection.tsx`
 
-1. **Remove the `!isMobile` gate** on the card slider block (line 187)
-2. **Responsive card sizing**: Use smaller cards on mobile (`w-[120px] h-[180px]` vs desktop `w-[190px] h-[340px]`)
-3. **Reposition for mobile**: On mobile, move cards below the text content (stacked vertically: heading → cards → footer). Use flex-col on mobile, flex-row on desktop for the main content area
-4. **Show navigation arrows on mobile**: Currently the footer arrows are visible, but also add touch-swipe support via `onTouchStart`/`onTouchEnd` handlers on the container for left/right swiping
-5. **Adjust text sizing**: The heading is already responsive (`text-4xl md:text-5xl`), keep as-is
-6. **Footer on mobile**: Show pagination + arrows (already visible), hide social icons (already `hidden md:flex`), hide center label (already `hidden md:block`) — no changes needed
+**Mobile layout restructure** — keep `flex-col` but position content better:
 
-### Layout on mobile:
-```text
-┌─────────────────────┐
-│   Background image   │
-│                      │
-│  PROPERTY NAME       │
-│  Description text    │
-│  [Explore]           │
-│                      │
-│  ┌────┐┌────┐┌────┐ │
-│  │Card││Card││Card│  │
-│  └────┘└────┘└────┘  │
-│                      │
-│      01/04  ◀ ▶      │
-└──────────────────────┘
-```
+1. **Text area**: Center-vertically in the upper ~60% of the screen. Increase mobile heading size slightly (`text-3xl` → keep `text-4xl`). The gradient overlays already exist but on mobile we need a stronger left gradient since text sits at the left edge of a smaller screen. Add `from-black/70` on mobile instead of `from-black/60`.
 
-### Touch swipe
-Add simple touch detection (track `touchStartX`, compare with `touchEndX` on end, threshold ~50px) to trigger `goNext`/`goPrev`.
+2. **Cards**: Position at the bottom of the screen, above the footer. Reduce card height to `h-[130px]` on mobile (from `h-[160px]`) so they don't dominate. Keep `w-[110px]`. Cards should sit in a row that's visually anchored to the bottom, not floating in the middle.
+
+3. **Layout flow**: Change from current `flex-1 flex items-center` (which centers everything vertically) to a structure where:
+   - On mobile: text sits at ~40% from top (using `pt-[30vh]` or similar), cards sit near bottom with small gap before footer
+   - On desktop: keep current side-by-side centered layout
+
+4. **Footer**: On mobile, center the pagination and arrows. Already mostly works.
+
+### Specific CSS changes:
+- Main content wrapper: On mobile use `flex-col justify-end pb-20` instead of `items-center`, so text + cards stack from the bottom up
+- Or alternatively: split into two zones — text zone (absolute, centered vertically at ~35-40% from top) and card zone (absolute, anchored ~120px from bottom)
+- Mobile gradient: slightly stronger `from-black/70` on the left gradient for mobile text readability
+- Card container on mobile: add `justify-center` to center the 3 cards horizontally
+
+### Best practice alignment:
+- Touch swipe already implemented ✓
+- Arrows already visible on mobile ✓  
+- Social icons hidden on mobile ✓ (correct — saves space)
+- Auto-play works on mobile ✓
 
