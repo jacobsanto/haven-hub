@@ -192,10 +192,30 @@ export function HeroSection() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Right: Portrait card slider with clipping window */}
+            {/* Mobile dot indicators */}
+            {properties.length > 1 && (
+              <div className="flex md:hidden items-center justify-center gap-3 mt-4">
+                {properties.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      if (isTransitioning) return;
+                      setDirection(i > activeIndex ? 'next' : 'prev');
+                      setIsTransitioning(true);
+                      setPrevIndex(activeIndex);
+                      setActiveIndex(i);
+                    }}
+                    className={`rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-white' : 'w-2 h-2 bg-white/40'}`}
+                    aria-label={`Go to property ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Right: Portrait card slider with clipping window (desktop only) */}
             {cards.length > 0 && (
-              <div className="overflow-hidden rounded-xl w-full md:w-auto" style={{ maxWidth: isMobile ? '100%' : '600px' }}>
-                <div className="flex gap-2 md:gap-4 justify-center md:justify-start">
+              <div className="hidden md:block overflow-hidden rounded-xl" style={{ maxWidth: '600px' }}>
+                <div className="flex gap-4">
                   <AnimatePresence mode="popLayout" initial={false}>
                     {cards.map((prop, i) => (
                       <motion.div
