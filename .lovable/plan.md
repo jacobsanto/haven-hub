@@ -1,62 +1,66 @@
-# Enrich AI Content Generator with Full Entity Knowledge
 
-## Problem
 
-When generating AI content for a property (or destination/experience), the system only passes a small subset of data to the AI. For example, properties only send `city, country, bedrooms, bathrooms, short_description, description, amenities` -- completely missing the **property type** (villa, apartment, estate), **max guests**, **area size**, **exact address/coordinates**, **highlights**, **room breakdown**, **nearby attractions**, **house rules**, **neighborhood description**, **region**, and **base price**.
+# Hero Section Redesign: 4-Property Rotating Slider
 
-This means the AI writes generic content without knowing whether it's writing about a beachfront villa or a city apartment, how many guests it accommodates, what the neighborhood is like, or what attractions are nearby.
+## Overview
+Replace the current static hero with an interactive full-screen hero that cycles through 4 properties. One property fills the background (landscape), while the other 3 appear as portrait cards on the right. Clicking "Next" smoothly transitions the first card into the new background.
 
-## Solution
-
-Two changes:
-
-### 1. Pass complete entity data from `AdminAIContent.tsx`
-
-Expand the `existingData` payload in the `items` useMemo to include all available fields per entity type:
-
-**Properties** -- add: `property_type`, `region`, `max_guests`, `base_price`, `area_sqm`, `highlights`, `rooms`, `nearby_attractions`, `neighborhood_description`, `house_rules`, `address`, `latitude`, `longitude`
-
-**Destinations** -- add: `long_description`, `best_time_to_visit`, `climate`, `latitude`, `longitude`
-
-**Experiences** -- add: `long_description`, `includes`, `destination_id`, `is_featured`
-
-**Blog Posts** -- add: `content`, `article_style`
-
-### 2. Structure the context clearly in the edge function prompt
-
-Instead of dumping raw JSON (`JSON.stringify(existingData)`), format it into labeled, human-readable sections so the AI understands the context properly. For example:
+## Architecture
 
 ```text
-PROPERTY CONTEXT:
-- Name: Villa Amalfi
-- Type: Villa
-- Location: Positano, Campania, Italy
-- Address: Via Roma 12
-- Coordinates: 40.6281, 14.4849
-- Size: 350 m2 | 4 Bedrooms | 3 Bathrooms | Up to 8 Guests
-- Base Price: EUR 450/night
-- Amenities: infinity pool, private chef, sea view, WiFi, air conditioning
-- Highlights: Panoramic Amalfi Coast views, Private beach access
-- Rooms: Master Suite, Guest Bedroom x2, Living Room, Chef's Kitchen
-- Nearby: Path of the Gods (2km), Positano Beach (500m)
-- Neighborhood: Perched on a cliff overlooking the Mediterranean...
-- House Rules: No smoking indoors, No pets
+┌─────────────────────────────────────────────────────────┐
+│  [Navbar - transparent, as-is]                          │
+│                                                         │
+│  ┌──────────────────┐          ┌─────┐ ┌─────┐ ┌─────┐ │
+│  │  ACTIVE PROPERTY │          │Card1│ │Card2│ │Card3│ │
+│  │  ─────────────── │          │     │ │     │ │     │ │
+│  │  Heading (2 lines)│         │     │ │     │ │     │ │
+│  │  Subtitle         │         │     │ │     │ │     │ │
+│  │  [Explore Button] │         │📍Loc│ │📍Loc│ │📍Loc│ │
+│  └──────────────────┘          └─────┘ └─────┘ └─────┘ │
+│                                                         │
+│  Social Icons    UNIQUE LOCATIONS    01/04  ◀ ▶         │
+└─────────────────────────────────────────────────────────┘
 ```
 
-This gives the AI rich, structured knowledge about the exact property so it can write accurate, specific, compelling content -- not generic filler.
+## Data Source
+- Uses `useFeaturedProperties()` — first 4 active properties from the database
+- Each property already has `hero_image_url`, `name`, `city`, `country`, `short_description`, `slug`
+- The hero_image_url serves as both background (landscape) and card image (portrait crop via CSS)
+- No new database tables or columns needed
 
-## Files Modified
+## Admin Configurability
+- Already editable: property images, names, descriptions via existing admin property forms
+- Hero settings (search bar visibility, etc.) remain in `hero_settings` table
+- Add new hero_settings keys: `hero_heading_line1`, `hero_heading_line2` for the active property's decorative heading override (optional, falls back to property name split)
 
-### `src/pages/admin/AdminAIContent.tsx` (lines 45-57)
+## Component Changes
 
-Expand each case in the `items` useMemo to spread all available entity fields into `existingData`.
+### `src/components/home/HeroSection.tsx` — Full rewrite
+- **State**: `activeIndex` (0-3) tracks which property is the background
+- **Background layer**: Two stacked `<div>`s with cross-fade CSS transition (opacity) for smooth background swap. Previous bg fades out while new one fades in over ~800ms
+- **Left content**: Active property's heading (split into 2 lines from `display_name || name`), `short_description`, and a gradient "Explore" button linking to `/properties/{slug}`
+- **Right card slider**: 3 portrait cards (the other 3 properties) displayed vertically or horizontally, each showing the property image cropped portrait, name, and `📍 {city}` at bottom
+- **Footer bar**: Social icons (left), "UNIQUE LOCATIONS" label (center), pagination `01 / 04` + prev/next circular arrows (right)
+- **Transition logic**: On "Next" click, increment `activeIndex` (mod 4). The card array is derived by filtering out the active property and ordering cyclically. CSS transitions handle the cross-fade (~800ms) and card slide animation
+- **Reduced motion**: Skip cross-fade, use instant swap
 
-### `supabase/functions/generate-content/index.ts` (lines 684-689)
+### `src/hooks/useHeroSettings.ts` — Minor addition
+- Add defaults for `hero_heading_line1`, `hero_heading_line2` (empty = auto-derive from property name)
 
-Replace the raw JSON dump with a formatter that structures `existingData` into clearly labeled sections based on `contentType` (property, destination, experience, blog).
+### No changes to
+- `Index.tsx` (still renders `<HeroSection />`)
+- `Header.tsx` (already transparent on homepage)
+- Database schema (all data exists)
 
-## No Database Changes
+## Animation Details
+- Background cross-fade: CSS `transition: opacity 0.8s ease`; two absolute layers, toggling opacity
+- Card entry: `framer-motion` `AnimatePresence` with slide-left for cards entering/exiting
+- Text content: fade-in with slight Y translate on property change
+- Auto-play: Optional interval (e.g., 6s) that pauses on hover, configurable via hero_settings
 
-All fields already exist in the database. This is purely about passing and formatting existing data.
+## Mobile Behavior
+- Cards stack below the heading or hide entirely on small screens
+- Footer simplifies to pagination arrows only
+- Background and text remain full-width
 
-Also add the change of uploading hero image or video in homepage and not taking the photo from the featured property 
