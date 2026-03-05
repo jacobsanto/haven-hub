@@ -7,6 +7,9 @@ import { useHeroSettings } from '@/hooks/useHeroSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { HeroSearchForm } from './HeroSearchForm';
 
+const TRANSITION_MS = 700;
+const AUTOPLAY_MS = 6000;
+
 export function HeroSection() {
   const { data: allProperties } = useFeaturedProperties();
   const { socialFacebook, socialYoutube, socialInstagram } = useBrand();
@@ -15,58 +18,85 @@ export function HeroSection() {
   const isMobile = useIsMobile();
 
   const properties = (allProperties || []).slice(0, 4);
+  const count = properties.length || 1;
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [prevIndex, setPrevIndex] = useState<number | null>(null);
+  const [displayIndex, setDisplayIndex] = useState(0); // what's currently shown as "base" layer
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [direction, setDirection] = useState<'next' | 'prev'>('next');
+
+  // Refs for stable autoplay
+  const activeIndexRef = useRef(activeIndex);
+  const isTransitioningRef = useRef(isTransitioning);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
 
-  const count = properties.length || 1;
+  activeIndexRef.current = activeIndex;
+  isTransitioningRef.current = isTransitioning;
 
-  const goNext = useCallback(() => {
-    if (isTransitioning || properties.length < 2) return;
-    setDirection('next');
+  const navigate = useCallback((dir: 'next' | 'prev') => {
+    if (isTransitioningRef.current || properties.length < 2) return;
+    const current = activeIndexRef.current;
+    const next = dir === 'next'
+      ? (current + 1) % count
+      : (current - 1 + count) % count;
+    setDisplayIndex(current); // freeze current as base layer
+    setActiveIndex(next);
     setIsTransitioning(true);
-    setPrevIndex(activeIndex);
-    setActiveIndex((prev) => (prev + 1) % count);
-  }, [activeIndex, count, isTransitioning, properties.length]);
+  }, [count, properties.length]);
 
-  const goPrev = useCallback(() => {
-    if (isTransitioning || properties.length < 2) return;
-    setDirection('prev');
-    setIsTransitioning(true);
-    setPrevIndex(activeIndex);
-    setActiveIndex((prev) => (prev - 1 + count) % count);
-  }, [activeIndex, count, isTransitioning, properties.length]);
+  const goNext = useCallback(() => navigate('next'), [navigate]);
+  const goPrev = useCallback(() => navigate('prev'), [navigate]);
 
+  const handleTransitionEnd = useCallback(() => {
+    setDisplayIndex(activeIndexRef.current);
+    setIsTransitioning(false);
+  }, []);
+
+  // For reduced motion: instantly complete
   useEffect(() => {
-    if (prevIndex === null) return;
-    const t = setTimeout(() => {
-      setPrevIndex(null);
+    if (isTransitioning && prefersReduced) {
+      setDisplayIndex(activeIndex);
       setIsTransitioning(false);
-    }, prefersReduced ? 50 : 800);
-    return () => clearTimeout(t);
-  }, [prevIndex, prefersReduced]);
+    }
+  }, [isTransitioning, prefersReduced, activeIndex]);
 
+  // Stable autoplay using refs
   useEffect(() => {
     if (properties.length < 2) return;
-    const start = () => {
-      autoPlayRef.current = setInterval(goNext, 6000);
+
+    const startAutoplay = () => {
+      stopAutoplay();
+      autoPlayRef.current = setInterval(() => {
+        if (!isTransitioningRef.current) {
+          const current = activeIndexRef.current;
+          const next = (current + 1) % count;
+          setDisplayIndex(current);
+          setActiveIndex(next);
+          setIsTransitioning(true);
+        }
+      }, AUTOPLAY_MS);
     };
-    start();
+
+    const stopAutoplay = () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+        autoPlayRef.current = null;
+      }
+    };
+
+    startAutoplay();
+
     const el = containerRef.current;
-    const pause = () => { if (autoPlayRef.current) clearInterval(autoPlayRef.current); };
-    el?.addEventListener('mouseenter', pause);
-    el?.addEventListener('mouseleave', start);
+    el?.addEventListener('mouseenter', stopAutoplay);
+    el?.addEventListener('mouseleave', startAutoplay);
+
     return () => {
-      pause();
-      el?.removeEventListener('mouseenter', pause);
-      el?.removeEventListener('mouseleave', start);
+      stopAutoplay();
+      el?.removeEventListener('mouseenter', stopAutoplay);
+      el?.removeEventListener('mouseleave', startAutoplay);
     };
-  }, [goNext, properties.length]);
+  }, [properties.length, count]);
 
   if (!properties.length) {
     return (
@@ -92,31 +122,27 @@ export function HeroSection() {
         else if (diff < -50) goPrev();
       }}
     >
-      {/* Background layers (cross-fade) */}
-      {prevIndex !== null && (
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${properties[prevIndex].hero_image_url})`, zIndex: 0 }}
-        />
-      )}
+      {/* Background: 2-layer cross-fade system */}
+      {/* Base layer — always visible */}
       <div
-        className="absolute inset-0 bg-cover bg-center transition-opacity duration-[800ms] ease-in-out"
+        className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url(${active.hero_image_url})`,
-          opacity: prevIndex !== null && !prefersReduced ? 0 : 1,
-          zIndex: 1,
-        }}
-        onTransitionEnd={() => {
-          if (prevIndex !== null) {
-            setPrevIndex(null);
-            setIsTransitioning(false);
-          }
+          backgroundImage: `url(${properties[displayIndex]?.hero_image_url})`,
+          zIndex: 0,
         }}
       />
-      {prevIndex !== null && !prefersReduced && (
+
+      {/* Incoming layer — fades in on top, removed after transition */}
+      {isTransitioning && (
         <div
-          className="absolute inset-0 bg-cover bg-center animate-[heroFadeIn_0.8s_ease-in-out_forwards]"
-          style={{ backgroundImage: `url(${active.hero_image_url})`, zIndex: 2 }}
+          key={`transition-${activeIndex}`}
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${active.hero_image_url})`,
+            zIndex: 1,
+            animation: `heroSliderFadeIn ${TRANSITION_MS}ms ease-in-out forwards`,
+          }}
+          onAnimationEnd={handleTransitionEnd}
         />
       )}
 
@@ -127,18 +153,16 @@ export function HeroSection() {
 
       {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-between">
-        {/* Main content area */}
         <div className="flex-1 flex items-center">
           <div className="container mx-auto px-4 md:px-8">
             <div className="max-w-3xl">
-              {/* Heading */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeIndex}
                   initial={prefersReduced ? {} : { opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={prefersReduced ? {} : { opacity: 0, y: -30 }}
-                  transition={{ duration: 0.6 }}
+                  transition={{ duration: TRANSITION_MS / 1000 }}
                 >
                   <h1
                     className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-white leading-[1.1] tracking-tight"
@@ -165,10 +189,9 @@ export function HeroSection() {
                       key={i}
                       onClick={() => {
                         if (isTransitioning) return;
-                        setDirection(i > activeIndex ? 'next' : 'prev');
-                        setIsTransitioning(true);
-                        setPrevIndex(activeIndex);
+                        setDisplayIndex(activeIndex);
                         setActiveIndex(i);
+                        setIsTransitioning(true);
                       }}
                       className={`rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-white' : 'w-2 h-2 bg-white/40'}`}
                       aria-label={`Go to property ${i + 1}`}
@@ -187,7 +210,6 @@ export function HeroSection() {
 
         {/* Footer bar */}
         <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-white">
-          {/* Social icons */}
           <div className="hidden md:flex items-center gap-4">
             {socialFacebook && (
               <a href={socialFacebook} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
@@ -210,7 +232,6 @@ export function HeroSection() {
             Unique Locations
           </p>
 
-          {/* Pagination + arrows */}
           <div className="flex items-center gap-4 ml-auto md:ml-0">
             <span className="text-sm font-sans tracking-wider text-white/70">
               {padIndex(activeIndex)} / {padIndex(count - 1)}
@@ -226,7 +247,7 @@ export function HeroSection() {
       </div>
 
       <style>{`
-        @keyframes heroFadeIn {
+        @keyframes heroSliderFadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
