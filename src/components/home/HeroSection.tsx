@@ -115,13 +115,15 @@ export function HeroSection() {
         else if (diff < -50) goPrev();
       }}
     >
-      {/* Mobile: faded property image bg */}
-      {isMobile && active.hero_image_url && (
+      {/* Full-bleed property image backdrop */}
+      {active.hero_image_url && (
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-15"
+          className="absolute inset-0 bg-cover bg-center opacity-25 transition-[background-image] duration-1000 ease-in-out"
           style={{ backgroundImage: `url(${active.hero_image_url})` }}
         />
       )}
+      {/* Dark gradient overlay for text contrast */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1A1A1A]/70 via-[#1A1A1A]/50 to-[#2A2A2A]/80" />
 
       {/* Cursor-reactive spotlight */}
       {!prefersReduced && (
