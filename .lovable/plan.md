@@ -1,37 +1,50 @@
 
 
-# Hero Slider — Trendy Enhancement Proposals
+# Hero Slider — 2026 Radical Upgrade
 
-## Current State Assessment
-The two-layer cross-fade system is working correctly. The autoplay is stable, timing is synchronized at 700ms, and the race conditions are resolved. The slider is functionally solid.
+## What's Currently There
+Ken Burns zoom, horizontal clip-path wipe, staggered text, parallax scroll, progress bars. Solid but conventional — these are 2024-era techniques now standard on most luxury sites.
 
-## Proposed Enhancements
+## Proposed 2026 Enhancements
 
-### 1. Ken Burns (Slow Zoom + Pan) Effect
-Add a subtle CSS scale animation on the background images — each slide slowly zooms in from `scale(1.0)` to `scale(1.08)` over the 6s autoplay duration. This is the signature luxury travel hero technique used by Four Seasons, Aman Resorts, and Airbnb Luxe. It makes static images feel cinematic without any performance cost (GPU-composited `transform: scale`).
+### 1. Diagonal Polygon Clip-Path Morph (replaces horizontal wipe)
+Instead of a flat left-to-right curtain, the incoming image reveals through an **animated diagonal polygon** that sweeps across at an angle. The clip-path morphs from a thin sliver to full coverage:
 
-### 2. Clip-Path Reveal Transition (instead of fade)
-Replace the simple opacity fade with a modern `clip-path` wipe transition. The incoming image reveals via `clip-path: inset(0 100% 0 0)` animating to `clip-path: inset(0 0 0 0)` — a horizontal curtain reveal. This is the 2025/2026 trend replacing fades on premium sites (used by Awwwards winners). Falls back gracefully to opacity fade on older browsers.
+```text
+Before:          During:           After:
+┌──────────┐   ┌──────────┐    ┌──────────┐
+│ old image│   │old /████ │    │ new image│
+│          │   │  / █new██│    │          │
+│          │   │ / ███████│    │          │
+└──────────┘   └──────────┘    └──────────┘
+```
 
-### 3. Parallax Text Offset on Scroll
-Add a subtle parallax effect where the hero text translates upward at 0.3x scroll speed as the user scrolls down, creating depth separation between the background and content. Uses `transform: translateY()` driven by a scroll listener with `requestAnimationFrame` — fully GPU-composited.
+CSS: `clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%)` → `polygon(0 0, 100% 0, 100% 100%, -15% 100%)`. The `-15%` creates that signature diagonal overshoot.
 
-### 4. Animated Progress Bar on Navigation Dots
-Replace the static dot indicators with a thin progress bar or animated ring that fills over the 6s autoplay interval, giving users a visual cue of when the next slide arrives. Resets on manual navigation.
+### 2. Split-Text Character Stagger with Blur Reveal
+Instead of fading the heading as a block, **split each word** and animate them individually with a blur-to-sharp + translateY effect. Each word starts at `filter: blur(8px); opacity: 0; translateY(20px)` and resolves to sharp focus with 60ms stagger per word. This is the dominant 2026 Awwwards pattern — text appears to "materialize" from fog.
 
-### 5. Staggered Text Entrance
-Instead of the entire text block fading in as one unit, stagger the heading and description with a 150ms delay between them — the heading slides up first, then the description follows. Uses Framer Motion's `staggerChildren`.
+### 3. Micro-Grain Texture Overlay
+Add a subtle animated film grain texture using a CSS pseudo-element with a tiny noise SVG pattern at very low opacity (3-5%). This gives the hero a tactile, editorial film quality that flat digital gradients lack. Uses a small inline SVG `<filter>` with `feTurbulence` — zero performance cost, pure GPU compositor.
 
-## Recommended Combination
-Apply enhancements 1, 2, and 5 together for maximum impact with minimal complexity. Enhancement 3 is optional (adds a scroll listener). Enhancement 4 is a nice-to-have for UX polish.
+### 4. Slide Counter with Morphing Number Transition
+The `01 / 04` counter currently snaps. Replace with a **vertical number scroll** where the digit slides up/down to the next number — like a mechanical odometer. Uses `overflow: hidden` + `translateY` on a stack of number spans.
+
+### 5. Cursor-Reactive Gradient Shift
+Track mouse position on the hero and subtly shift the dark overlay gradient based on cursor location. As the mouse moves right, the gradient follows, creating a "spotlight" effect. Uses a CSS radial-gradient positioned via CSS custom properties updated on `mousemove`. Lightweight — just updating two CSS variables.
+
+## Implementation Approach
+
+All pure CSS + vanilla JS (no new dependencies). Changes only to `src/components/home/HeroSection.tsx`:
+
+- Replace `heroClipReveal` keyframes with diagonal polygon morph
+- Add `WordReveal` inline component that splits heading text into `<span>` per word with blur+translate animation
+- Add `::after` pseudo-element on the hero container with `feTurbulence` SVG filter for grain
+- Refactor the counter `<span>` into a vertical scroll digit component
+- Add `onMouseMove` handler that sets `--mouse-x` and `--mouse-y` CSS variables, overlay gradient reads from those
+
+Reduced motion: all effects degrade to instant display (no blur, no polygon animation, no grain, static gradient).
 
 ## Files to Modify
-- **`src/components/home/HeroSection.tsx`** — Add Ken Burns keyframes, replace fade with clip-path reveal, implement staggered text entrance
-
-## What Stays
-- Two-layer cross-fade architecture (just changing the animation type)
-- Ref-based autoplay system
-- Touch swipe, mobile dots, footer bar
-- All data hooks and brand context
-- Reduced motion fallbacks
+- **`src/components/home/HeroSection.tsx`** — All changes contained here
 
