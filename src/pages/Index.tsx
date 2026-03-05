@@ -1,8 +1,11 @@
 import { PageLayout } from '@/components/layout/PageLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { HeroSection } from '@/components/home/HeroSection';
-import { EnjoySection } from '@/components/home/EnjoySection';
+import { TrustSection } from '@/components/home/TrustSection';
+import { DestinationsShowcase } from '@/components/home/DestinationsShowcase';
 import { DiscoverVillasSection } from '@/components/home/DiscoverVillasSection';
+import { FeaturesSection } from '@/components/home/FeaturesSection';
+import { FeaturedVacationSection } from '@/components/home/FeaturedVacationSection';
 import { LiveExperiencesSection } from '@/components/home/LiveExperiencesSection';
 import { TestimonialsSection } from '@/components/home/TestimonialsSection';
 
@@ -18,19 +21,13 @@ const Index = () => {
         }}
       />
 
-      {/* Full-screen hero with background image, headline, and search */}
       <HeroSection />
-
-      {/* "ENJOY" - Benefits / value propositions */}
-      <EnjoySection />
-
-      {/* "DISCOVER" - Properties carousel */}
+      <TrustSection />
+      <DestinationsShowcase />
       <DiscoverVillasSection />
-
-      {/* "LIVE" - Experiences carousel */}
+      <FeaturesSection />
+      <FeaturedVacationSection />
       <LiveExperiencesSection />
-
-      {/* Testimonials with organic blob shapes */}
       <TestimonialsSection />
     </PageLayout>
   );

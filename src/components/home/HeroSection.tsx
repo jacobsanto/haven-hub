@@ -1,18 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useBrand } from '@/contexts/BrandContext';
 import { useHeroSettings } from '@/hooks/useHeroSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
-
-function splitName(name: string): [string, string] {
-  const words = name.split(/\s+/);
-  if (words.length <= 1) return [name, ''];
-  const mid = Math.ceil(words.length / 2);
-  return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
-}
+import { HeroSearchForm } from './HeroSearchForm';
 
 export function HeroSection() {
   const { data: allProperties } = useFeaturedProperties();
@@ -21,7 +14,6 @@ export function HeroSection() {
   const prefersReduced = useReducedMotion();
   const isMobile = useIsMobile();
 
-  // Take exactly 4 properties for the loop
   const properties = (allProperties || []).slice(0, 4);
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -50,7 +42,6 @@ export function HeroSection() {
     setActiveIndex((prev) => (prev - 1 + count) % count);
   }, [activeIndex, count, isTransitioning, properties.length]);
 
-  // End transition after cross-fade duration
   useEffect(() => {
     if (prevIndex === null) return;
     const t = setTimeout(() => {
@@ -60,7 +51,6 @@ export function HeroSection() {
     return () => clearTimeout(t);
   }, [prevIndex, prefersReduced]);
 
-  // Auto-play: 6s interval, pause on hover
   useEffect(() => {
     if (properties.length < 2) return;
     const start = () => {
@@ -87,14 +77,6 @@ export function HeroSection() {
   }
 
   const active = properties[activeIndex];
-  const [line1, line2] = splitName(active.display_name || active.name);
-
-  // Build the 3 inactive cards in cyclic order
-  const cards: typeof properties = [];
-  for (let i = 1; i <= 3 && i < count; i++) {
-    cards.push(properties[(activeIndex + i) % count]);
-  }
-
   const padIndex = (n: number) => String(n + 1).padStart(2, '0');
 
   return (
@@ -110,14 +92,11 @@ export function HeroSection() {
         else if (diff < -50) goPrev();
       }}
     >
-      {/* ── Background layers (cross-fade) ── */}
+      {/* Background layers (cross-fade) */}
       {prevIndex !== null && (
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${properties[prevIndex].hero_image_url})`,
-            zIndex: 0,
-          }}
+          style={{ backgroundImage: `url(${properties[prevIndex].hero_image_url})`, zIndex: 0 }}
         />
       )}
       <div
@@ -137,131 +116,76 @@ export function HeroSection() {
       {prevIndex !== null && !prefersReduced && (
         <div
           className="absolute inset-0 bg-cover bg-center animate-[heroFadeIn_0.8s_ease-in-out_forwards]"
-          style={{
-            backgroundImage: `url(${active.hero_image_url})`,
-            zIndex: 2,
-          }}
+          style={{ backgroundImage: `url(${active.hero_image_url})`, zIndex: 2 }}
         />
       )}
 
-      {/* Subtle dark overlay for contrast */}
-      <div className="absolute inset-0 bg-black/25" style={{ zIndex: 3 }} />
-      {/* Gradient overlays for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 md:from-black/60 via-black/25 to-transparent" style={{ zIndex: 4 }} />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 md:from-black/50 via-transparent to-transparent" style={{ zIndex: 4 }} />
+      {/* Overlays */}
+      <div className="absolute inset-0 bg-black/30" style={{ zIndex: 3 }} />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" style={{ zIndex: 4 }} />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" style={{ zIndex: 4 }} />
 
-      {/* ── Content ── */}
+      {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-between">
-        {/* Main area */}
-        <div className="flex-1 flex items-end md:items-center pb-4 md:pb-0">
-          <div className="container mx-auto px-4 md:px-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-8 w-full">
-            {/* Left: Active property info */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeIndex}
-                initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={prefersReduced ? {} : { opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                className="max-w-lg"
-              >
-                <h1
-                  className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white uppercase tracking-wider leading-tight"
-                  style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5)' }}
+        {/* Main content area */}
+        <div className="flex-1 flex items-center">
+          <div className="container mx-auto px-4 md:px-8">
+            <div className="max-w-3xl">
+              {/* Heading */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeIndex}
+                  initial={prefersReduced ? {} : { opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={prefersReduced ? {} : { opacity: 0, y: -30 }}
+                  transition={{ duration: 0.6 }}
                 >
-                  {line1}
-                  {line2 && (
-                    <>
-                      <br />
-                      {line2}
-                    </>
-                  )}
-                </h1>
-                <p
-                  className="mt-4 text-white/90 text-sm md:text-base max-w-md leading-relaxed line-clamp-2"
-                  style={{ textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}
-                >
-                  {active.short_description || `Discover the beauty of ${active.city}, ${active.country}`}
-                </p>
-                <Link
-                  to={`/properties/${active.slug}`}
-                  className="mt-6 inline-block px-8 py-3 rounded-full text-white font-semibold text-sm uppercase tracking-wider bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 transition-all shadow-[0_4px_20px_rgba(220,50,20,0.4)] hover:shadow-[0_6px_28px_rgba(220,50,20,0.55)]"
-                >
-                  Explore
-                </Link>
-              </motion.div>
-            </AnimatePresence>
+                  <h1
+                    className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-white leading-[1.1] tracking-tight"
+                    style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
+                  >
+                    Discover Your Perfect{' '}
+                    <span className="text-accent">Getaway</span>{' '}
+                    with Ease
+                  </h1>
+                  <p
+                    className="mt-5 text-white/80 text-base md:text-lg max-w-xl leading-relaxed"
+                    style={{ textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}
+                  >
+                    {active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
 
-            {/* Mobile dot indicators */}
-            {properties.length > 1 && (
-              <div className="flex md:hidden items-center justify-center gap-3 mt-4">
-                {properties.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      if (isTransitioning) return;
-                      setDirection(i > activeIndex ? 'next' : 'prev');
-                      setIsTransitioning(true);
-                      setPrevIndex(activeIndex);
-                      setActiveIndex(i);
-                    }}
-                    className={`rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-white' : 'w-2 h-2 bg-white/40'}`}
-                    aria-label={`Go to property ${i + 1}`}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Right: Portrait card slider with clipping window (desktop only) */}
-            {cards.length > 0 && (
-              <div className="hidden md:block overflow-hidden rounded-xl" style={{ maxWidth: '600px' }}>
-                <div className="flex gap-4">
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    {cards.map((prop, i) => (
-                      <motion.div
-                        key={prop.id}
-                        layout
-                        initial={prefersReduced ? {} : { opacity: 0, x: direction === 'next' ? 80 : -80 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={prefersReduced ? {} : { opacity: 0, x: direction === 'next' ? -80 : 80 }}
-                        transition={{ duration: 0.5, delay: i * 0.06 }}
-                        className="relative w-[100px] h-[130px] md:w-[175px] md:h-[300px] lg:w-[190px] lg:h-[340px] rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
-                        onClick={() => {
-                          if (isTransitioning) return;
-                          setDirection('next');
-                          setIsTransitioning(true);
-                          setPrevIndex(activeIndex);
-                          setActiveIndex((activeIndex + i + 1) % count);
-                        }}
-                      >
-                        <div
-                          className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                          style={{ backgroundImage: `url(${prop.hero_image_url})` }}
-                        />
-                        {/* Dark gradient overlay at bottom for text readability */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <p
-                            className="text-white font-serif font-semibold text-sm leading-snug"
-                            style={{ textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}
-                          >
-                            {prop.display_name || prop.name}
-                          </p>
-                          <span className="flex items-center gap-1 text-white/90 text-xs mt-1">
-                            <MapPin className="w-3 h-3 text-red-500" />
-                            {prop.city}
-                          </span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+              {/* Mobile dot indicators */}
+              {properties.length > 1 && (
+                <div className="flex md:hidden items-center gap-3 mt-6">
+                  {properties.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        if (isTransitioning) return;
+                        setDirection(i > activeIndex ? 'next' : 'prev');
+                        setIsTransitioning(true);
+                        setPrevIndex(activeIndex);
+                        setActiveIndex(i);
+                      }}
+                      className={`rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-white' : 'w-2 h-2 bg-white/40'}`}
+                      aria-label={`Go to property ${i + 1}`}
+                    />
+                  ))}
                 </div>
+              )}
+
+              {/* Search form - desktop */}
+              <div className="hidden md:block mt-10">
+                <HeroSearchForm />
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* ── Footer bar ── */}
+        {/* Footer bar */}
         <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-white">
           {/* Social icons */}
           <div className="hidden md:flex items-center gap-4">
@@ -282,30 +206,19 @@ export function HeroSection() {
             )}
           </div>
 
-          {/* Center label */}
           <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-white/60 font-sans">
             Unique Locations
           </p>
 
-          {/* Pagination + nav arrows */}
+          {/* Pagination + arrows */}
           <div className="flex items-center gap-4 ml-auto md:ml-0">
             <span className="text-sm font-sans tracking-wider text-white/70">
               {padIndex(activeIndex)} / {padIndex(count - 1)}
             </span>
-            <button
-              onClick={goPrev}
-              disabled={isTransitioning}
-              className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-40"
-              aria-label="Previous property"
-            >
+            <button onClick={goPrev} disabled={isTransitioning} className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-40" aria-label="Previous property">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button
-              onClick={goNext}
-              disabled={isTransitioning}
-              className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-40"
-              aria-label="Next property"
-            >
+            <button onClick={goNext} disabled={isTransitioning} className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-40" aria-label="Next property">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
