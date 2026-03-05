@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import type { BezierDefinition } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useBrand } from '@/contexts/BrandContext';
@@ -9,6 +10,23 @@ import { HeroSearchForm } from './HeroSearchForm';
 
 const TRANSITION_MS = 700;
 const AUTOPLAY_MS = 6000;
+const EASE_PREMIUM: BezierDefinition = [0.22, 1, 0.36, 1];
+
+const staggerContainer = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.15, delayChildren: 0.05 },
+  },
+  exit: {
+    transition: { staggerChildren: 0.08, staggerDirection: -1 },
+  },
+};
+
+const staggerChild = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: TRANSITION_MS / 1000, ease: EASE_PREMIUM } },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.3, ease: EASE_PREMIUM } },
+};
 
 export function HeroSection() {
   const { data: allProperties } = useFeaturedProperties();
@@ -21,8 +39,9 @@ export function HeroSection() {
   const count = properties.length || 1;
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [displayIndex, setDisplayIndex] = useState(0); // what's currently shown as "base" layer
+  const [displayIndex, setDisplayIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [progressKey, setProgressKey] = useState(0); // resets progress bar animation
 
   // Refs for stable autoplay
   const activeIndexRef = useRef(activeIndex);
@@ -30,6 +49,8 @@ export function HeroSection() {
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
+  const scrollY = useRef(0);
+  const textRef = useRef<HTMLDivElement>(null);
 
   activeIndexRef.current = activeIndex;
   isTransitioningRef.current = isTransitioning;
@@ -40,9 +61,10 @@ export function HeroSection() {
     const next = dir === 'next'
       ? (current + 1) % count
       : (current - 1 + count) % count;
-    setDisplayIndex(current); // freeze current as base layer
+    setDisplayIndex(current);
     setActiveIndex(next);
     setIsTransitioning(true);
+    setProgressKey(k => k + 1); // reset progress bar
   }, [count, properties.length]);
 
   const goNext = useCallback(() => navigate('next'), [navigate]);
@@ -53,7 +75,7 @@ export function HeroSection() {
     setIsTransitioning(false);
   }, []);
 
-  // For reduced motion: instantly complete
+  // Reduced motion: instantly complete
   useEffect(() => {
     if (isTransitioning && prefersReduced) {
       setDisplayIndex(activeIndex);
@@ -61,7 +83,7 @@ export function HeroSection() {
     }
   }, [isTransitioning, prefersReduced, activeIndex]);
 
-  // Stable autoplay using refs
+  // Stable autoplay
   useEffect(() => {
     if (properties.length < 2) return;
 
@@ -74,6 +96,7 @@ export function HeroSection() {
           setDisplayIndex(current);
           setActiveIndex(next);
           setIsTransitioning(true);
+          setProgressKey(k => k + 1);
         }
       }, AUTOPLAY_MS);
     };
@@ -97,6 +120,25 @@ export function HeroSection() {
       el?.removeEventListener('mouseleave', startAutoplay);
     };
   }, [properties.length, count]);
+
+  // Parallax on scroll
+  useEffect(() => {
+    if (prefersReduced) return;
+    let raf: number;
+    const onScroll = () => {
+      raf = requestAnimationFrame(() => {
+        scrollY.current = window.scrollY;
+        if (textRef.current) {
+          textRef.current.style.transform = `translateY(${scrollY.current * 0.3}px)`;
+        }
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [prefersReduced]);
 
   if (!properties.length) {
     return (
@@ -122,17 +164,20 @@ export function HeroSection() {
         else if (diff < -50) goPrev();
       }}
     >
-      {/* Background: 2-layer cross-fade system */}
-      {/* Base layer — always visible */}
+      {/* Background: 2-layer system with Ken Burns + Clip-Path Reveal */}
+
+      {/* Base layer — always visible, Ken Burns zoom */}
       <div
+        key={`base-${displayIndex}`}
         className="absolute inset-0 bg-cover bg-center"
         style={{
           backgroundImage: `url(${properties[displayIndex]?.hero_image_url})`,
           zIndex: 0,
+          animation: prefersReduced ? 'none' : `heroKenBurns ${AUTOPLAY_MS}ms ease-out forwards`,
         }}
       />
 
-      {/* Incoming layer — fades in on top, removed after transition */}
+      {/* Incoming layer — clip-path reveal with Ken Burns */}
       {isTransitioning && (
         <div
           key={`transition-${activeIndex}`}
@@ -140,9 +185,16 @@ export function HeroSection() {
           style={{
             backgroundImage: `url(${active.hero_image_url})`,
             zIndex: 1,
-            animation: `heroSliderFadeIn ${TRANSITION_MS}ms ease-in-out forwards`,
+            animation: prefersReduced
+              ? 'none'
+              : `heroClipReveal ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1) forwards, heroKenBurns ${AUTOPLAY_MS}ms ease-out forwards`,
           }}
-          onAnimationEnd={handleTransitionEnd}
+          onAnimationEnd={(e) => {
+            // Only fire on clip-path reveal completing, not Ken Burns
+            if (e.animationName === 'heroClipReveal') {
+              handleTransitionEnd();
+            }
+          }}
         />
       )}
 
@@ -151,37 +203,40 @@ export function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" style={{ zIndex: 4 }} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" style={{ zIndex: 4 }} />
 
-      {/* Content */}
+      {/* Content with parallax */}
       <div className="relative z-10 h-full flex flex-col justify-between">
         <div className="flex-1 flex items-center">
           <div className="container mx-auto px-4 md:px-8">
-            <div className="max-w-3xl">
+            <div className="max-w-3xl" ref={textRef}>
+              {/* Staggered text entrance */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeIndex}
-                  initial={prefersReduced ? {} : { opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={prefersReduced ? {} : { opacity: 0, y: -30 }}
-                  transition={{ duration: TRANSITION_MS / 1000 }}
+                  variants={prefersReduced ? undefined : staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
                 >
-                  <h1
+                  <motion.h1
+                    variants={prefersReduced ? undefined : staggerChild}
                     className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-white leading-[1.1] tracking-tight"
                     style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
                   >
                     Discover Your Perfect{' '}
                     <span className="text-accent">Getaway</span>{' '}
                     with Ease
-                  </h1>
-                  <p
+                  </motion.h1>
+                  <motion.p
+                    variants={prefersReduced ? undefined : staggerChild}
                     className="mt-5 text-white/80 text-base md:text-lg max-w-xl leading-relaxed"
                     style={{ textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}
                   >
                     {active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
-                  </p>
+                  </motion.p>
                 </motion.div>
               </AnimatePresence>
 
-              {/* Mobile dot indicators */}
+              {/* Mobile progress dots */}
               {properties.length > 1 && (
                 <div className="flex md:hidden items-center gap-3 mt-6">
                   {properties.map((_, i) => (
@@ -192,10 +247,22 @@ export function HeroSection() {
                         setDisplayIndex(activeIndex);
                         setActiveIndex(i);
                         setIsTransitioning(true);
+                        setProgressKey(k => k + 1);
                       }}
-                      className={`rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-white' : 'w-2 h-2 bg-white/40'}`}
+                      className="relative rounded-full overflow-hidden"
                       aria-label={`Go to property ${i + 1}`}
-                    />
+                    >
+                      <span className={`block rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-white' : 'w-2 h-2 bg-white/40'}`} />
+                      {i === activeIndex && !prefersReduced && (
+                        <span
+                          key={progressKey}
+                          className="absolute inset-0 rounded-full border border-white/60"
+                          style={{
+                            animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards`,
+                          }}
+                        />
+                      )}
+                    </button>
                   ))}
                 </div>
               )}
@@ -232,7 +299,27 @@ export function HeroSection() {
             Unique Locations
           </p>
 
+          {/* Desktop progress + nav */}
           <div className="flex items-center gap-4 ml-auto md:ml-0">
+            {/* Progress bar */}
+            {properties.length > 1 && !prefersReduced && (
+              <div className="hidden md:flex items-center gap-1.5">
+                {properties.map((_, i) => (
+                  <div key={i} className="w-8 h-0.5 rounded-full bg-white/20 overflow-hidden">
+                    {i === activeIndex && (
+                      <div
+                        key={progressKey}
+                        className="h-full bg-white rounded-full"
+                        style={{
+                          animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards`,
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <span className="text-sm font-sans tracking-wider text-white/70">
               {padIndex(activeIndex)} / {padIndex(count - 1)}
             </span>
@@ -247,9 +334,21 @@ export function HeroSection() {
       </div>
 
       <style>{`
-        @keyframes heroSliderFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        @keyframes heroKenBurns {
+          from { transform: scale(1); }
+          to { transform: scale(1.08); }
+        }
+        @keyframes heroClipReveal {
+          from { clip-path: inset(0 100% 0 0); }
+          to { clip-path: inset(0 0 0 0); }
+        }
+        @keyframes heroProgressFill {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+        @keyframes heroProgressRing {
+          from { opacity: 1; transform: scale(1); }
+          to { opacity: 0; transform: scale(2); }
         }
       `}</style>
     </section>
