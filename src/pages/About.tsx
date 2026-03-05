@@ -1,174 +1,229 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Heart, Shield, Sparkles, Users, ArrowRight } from 'lucide-react';
+import { Heart, Shield, Sparkles, ArrowRight, Star, Mail, Phone, Headphones, MapPin } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useBrand } from '@/contexts/BrandContext';
 import { usePageContent } from '@/hooks/usePageContent';
-import { useSectionDisplay } from '@/hooks/useSectionDisplay';
-import { SectionRenderer } from '@/components/ui/SectionRenderer';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Button } from '@/components/ui/button';
-import { TrustBadges } from '@/components/booking/TrustBadges';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
+import { InlineContactForm } from '@/components/contact/InlineContactForm';
 import { resolveIcon } from '@/utils/icon-resolver';
 import { fadeUp, viewportOnce, getReducedMotionVariants } from '@/lib/motion';
 
-const defaultValueIcons = [Heart, Shield, Sparkles, Users];
+const defaultValueIcons = [Heart, Shield, Sparkles];
+
+const teamMembers = [
+  { name: 'Sofia Laurent', role: 'Co-Founder & CEO', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80' },
+  { name: 'Marco Vitale', role: 'Head of Operations', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
+  { name: 'Amara Chen', role: 'Guest Experience Lead', image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80' },
+  { name: 'James Okafor', role: 'Property Curator', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80' },
+  { name: 'Elena Petrova', role: 'Marketing Director', image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80' },
+  { name: 'David Moreno', role: 'Tech Lead', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80' },
+];
+
+const testimonials = [
+  { name: 'Sarah & Tom', location: 'London, UK', text: 'An absolutely magical experience. The villa was even better than the photos.', stars: 5 },
+  { name: 'Yuki Tanaka', location: 'Tokyo, Japan', text: 'The concierge service made everything seamless. We felt truly cared for.', stars: 5 },
+  { name: 'Pierre Dubois', location: 'Paris, France', text: 'Best vacation rental experience we have ever had. Will definitely return.', stars: 5 },
+];
 
 const About = () => {
-  const { brandName, brandTagline } = useBrand();
+  const { brandName, contactEmail, contactPhone } = useBrand();
   const prefersReduced = useReducedMotion();
-  const sectionVariants = getReducedMotionVariants(fadeUp, prefersReduced);
+  const v = getReducedMotionVariants(fadeUp, prefersReduced);
 
   const heroContent = usePageContent('about', 'hero', {
-    heading: 'About {brandName}',
-    subtitle: "Crafting extraordinary vacation experiences in the world's most beautiful destinations.",
+    heading: 'Our Story: Bridging the World, One Unforgettable Stay at a Time.',
     hero_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80',
   });
   const storyContent = usePageContent('about', 'our_story', {
-    heading: 'Our Story',
-    paragraph_1: '{brandName} was born from a simple belief: that the right vacation home can transform an ordinary trip into an extraordinary memory. What began as a passion project curating exceptional properties has grown into a trusted name in luxury villa rentals.',
-    paragraph_2: 'Our founders, avid travelers themselves, noticed a gap in the market—stunning properties often came with impersonal service, while personalized attention was reserved for only the most exclusive bookings. We set out to change that.',
-    paragraph_3: "Today, we offer a carefully curated collection of villas across the world's most desirable destinations. Each property is personally inspected, each host relationship nurtured, and each guest treated as if they're our only one.",
+    heading: 'Meet the Global Explorers Behind {brandName}',
+    paragraph_1: '{brandName} was born from a simple belief: that the right vacation home can transform an ordinary trip into an extraordinary memory.',
+    paragraph_2: 'Our founders, avid travelers themselves, noticed a gap in the market—stunning properties often came with impersonal service, while personalized attention was reserved for only the most exclusive bookings.',
+    paragraph_3: "Today, we offer a carefully curated collection of villas across the world's most desirable destinations.",
   });
   const valuesContent = usePageContent('about', 'values', {
     heading: 'Our Values',
-    subtitle: 'The principles that guide everything we do',
-    value_1_icon: 'Heart',
-    value_1_title: 'Passion for Excellence',
-    value_1_description: 'Every property in our collection is chosen with care, ensuring exceptional quality and unforgettable experiences.',
-    value_2_icon: 'Shield',
-    value_2_title: 'Trust & Transparency',
-    value_2_description: 'We believe in honest communication and straightforward booking, with no hidden fees or surprises.',
-    value_3_icon: 'Sparkles',
-    value_3_title: 'Curated Luxury',
-    value_3_description: 'Our team personally vets each villa to guarantee it meets our exacting standards for comfort and style.',
-    value_4_icon: 'Users',
-    value_4_title: 'Personal Service',
-    value_4_description: 'From your first inquiry to checkout, our dedicated concierge team is here to make your stay seamless.',
+    value_1_icon: 'Heart', value_1_title: 'Passion for Excellence', value_1_description: 'Every property is chosen with care, ensuring exceptional quality.',
+    value_2_icon: 'Shield', value_2_title: 'Trust & Transparency', value_2_description: 'Honest communication and straightforward booking, always.',
+    value_3_icon: 'Sparkles', value_3_title: 'Curated Luxury', value_3_description: 'Each villa personally vetted to meet our exacting standards.',
   });
-  const statsContent = usePageContent('about', 'stats', {
-    stat_1_value: '10+', stat_1_label: 'Years of Excellence',
-    stat_2_value: '25+', stat_2_label: 'Luxury Properties',
-    stat_3_value: '5000+', stat_3_label: 'Happy Guests',
-    stat_4_value: '15+', stat_4_label: 'Destinations',
-  });
-  const ctaContent = usePageContent('about', 'cta', {
-    heading: 'Ready to Book Your Escape?',
-    subtitle: 'Browse our collection of handpicked luxury villas and secure the best rates.',
+  const missionContent = usePageContent('about', 'mission', {
+    heading: 'Our Mission',
+    paragraph_1: 'We believe travel should be transformative. Our mission is to connect discerning travelers with exceptional homes in the most inspiring destinations worldwide.',
+    paragraph_2: 'Every stay we curate is designed to create lasting memories — blending local culture, stunning architecture, and personalized service into one seamless experience.',
   });
 
   const r = (text: string) => text.replace(/{brandName}/g, brandName);
-  const valuesDisplay = useSectionDisplay('about', 'values');
 
-  const values = [1, 2, 3, 4].map((i) => ({
-    icon: resolveIcon(
-      valuesContent[`value_${i}_icon` as keyof typeof valuesContent] as string,
-      defaultValueIcons[i - 1]
-    ),
+  const values = [1, 2, 3].map((i) => ({
+    icon: resolveIcon(valuesContent[`value_${i}_icon` as keyof typeof valuesContent] as string, defaultValueIcons[i - 1]),
     title: valuesContent[`value_${i}_title` as keyof typeof valuesContent] as string,
     description: valuesContent[`value_${i}_description` as keyof typeof valuesContent] as string,
   }));
 
-  const stats = [1, 2, 3, 4].map((i) => ({
-    value: statsContent[`stat_${i}_value` as keyof typeof statsContent] as string,
-    label: statsContent[`stat_${i}_label` as keyof typeof statsContent] as string,
-  }));
-
   return (
     <PageLayout>
-      <PageSEO pageSlug="about" defaults={{ meta_title: 'About Us | Haven Hub', meta_description: "Learn about Haven Hub's story, values, and commitment to extraordinary luxury vacation experiences.", og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
-      {/* Hero */}
-      <section className="relative py-32 md:py-40 overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30" />
-        <div className="container mx-auto px-4 relative z-10">
-          <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-serif font-medium text-white mb-6">{r(heroContent.heading)}</h1>
-            <p className="text-lg md:text-xl text-white/80 leading-relaxed">{brandTagline || r(heroContent.subtitle)}</p>
-          </motion.div>
+      <PageSEO pageSlug="about" defaults={{ meta_title: `About Us | ${brandName}`, meta_description: `Learn about ${brandName}'s story, values, and commitment to extraordinary luxury vacation experiences.`, og_image: heroContent.hero_image }} />
+
+      {/* ─── Hero ─── */}
+      <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        <div className="container mx-auto px-4 relative z-10 h-full flex items-end pb-16 md:pb-20">
+          <motion.h1
+            initial={prefersReduced ? {} : { opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif italic text-white max-w-3xl leading-tight"
+          >
+            {r(heroContent.heading)}
+          </motion.h1>
         </div>
       </section>
 
-      {/* Our Story */}
-      <section className="py-16 md:py-28 bg-background">
+      {/* ─── Story + Values ─── */}
+      <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-6">{storyContent.heading}</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+            {/* Story */}
+            <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-6 leading-snug">
+                {r(storyContent.heading)}
+              </h2>
+              <div className="space-y-4 text-muted-foreground leading-relaxed">
+                <p>{r(storyContent.paragraph_1)}</p>
+                <p>{r(storyContent.paragraph_2)}</p>
+                <p>{r(storyContent.paragraph_3)}</p>
+              </div>
             </motion.div>
-            <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="prose prose-lg max-w-none text-muted-foreground text-center">
-              <p className="mb-6 leading-relaxed">{r(storyContent.paragraph_1)}</p>
-              <p className="mb-6 leading-relaxed">{r(storyContent.paragraph_2)}</p>
-              <p className="leading-relaxed">{r(storyContent.paragraph_3)}</p>
+
+            {/* Values */}
+            <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-6">
+                {valuesContent.heading}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {values.map((value, i) => (
+                  <div key={i} className="text-center">
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <value.icon className="h-6 w-6 text-accent" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-foreground mb-1">{value.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{value.description}</p>
+                  </div>
+                ))}
+              </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Values */}
-      <section className="py-16 md:py-28 bg-section-alt">
+      {/* ─── Team + Mission ─── */}
+      <section className="py-16 md:py-24 bg-section-alt">
         <div className="container mx-auto px-4">
-          <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-4">{valuesContent.heading}</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{valuesContent.subtitle}</p>
-          </motion.div>
-          <SectionRenderer settings={valuesDisplay} className="max-w-6xl mx-auto">
-            {values.map((value, index) => (
-              <motion.div key={value.title} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} transition={{ delay: index * 0.1 }} className="card-organic p-6 text-center">
-                <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-accent/10 flex items-center justify-center">
-                  <value.icon className="h-7 w-7 text-accent" />
-                </div>
-                <h3 className="text-lg font-serif font-medium mb-3">{value.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{value.description}</p>
-              </motion.div>
-            ))}
-          </SectionRenderer>
-        </div>
-      </section>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+            {/* Team */}
+            <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-8">
+                Meet the Team
+              </h2>
+              <div className="grid grid-cols-3 gap-6">
+                {teamMembers.map((member) => (
+                  <div key={member.name} className="text-center">
+                    <Avatar className="w-20 h-20 mx-auto mb-3">
+                      <AvatarImage src={member.image} alt={member.name} />
+                      <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                    </Avatar>
+                    <p className="text-sm font-medium text-foreground leading-tight">{member.name}</p>
+                    <p className="text-xs text-muted-foreground">{member.role}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
 
-      {/* Statistics */}
-      <section className="py-16 md:py-28 bg-foreground text-background">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            {stats.map((stat, index) => (
-              <motion.div key={stat.label} variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} transition={{ delay: index * 0.1 }} className="text-center">
-                <div className="text-4xl md:text-5xl font-serif font-medium text-accent mb-2">{stat.value}</div>
-                <div className="text-sm md:text-base opacity-80">{stat.label}</div>
-              </motion.div>
-            ))}
+            {/* Mission + CTAs */}
+            <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-6">
+                {missionContent.heading}
+              </h2>
+              <div className="space-y-4 text-muted-foreground leading-relaxed mb-8">
+                <p>{r(missionContent.paragraph_1)}</p>
+                <p>{r(missionContent.paragraph_2)}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card className="p-5 bg-accent/10 border-accent/20 hover:bg-accent/15 transition-colors cursor-pointer group">
+                  <Headphones className="h-6 w-6 text-accent mb-3" />
+                  <h3 className="font-semibold text-foreground text-sm mb-1">Customer Service</h3>
+                  <p className="text-xs text-muted-foreground mb-3">24/7 dedicated concierge support</p>
+                  <ArrowRight className="h-4 w-4 text-accent group-hover:translate-x-1 transition-transform" />
+                </Card>
+                <Card className="p-5 border-border hover:bg-muted/50 transition-colors cursor-pointer group">
+                  <MapPin className="h-6 w-6 text-foreground mb-3" />
+                  <h3 className="font-semibold text-foreground text-sm mb-1">Local Guides</h3>
+                  <p className="text-xs text-muted-foreground mb-3">Expert tips for every destination</p>
+                  <ArrowRight className="h-4 w-4 text-foreground group-hover:translate-x-1 transition-transform" />
+                </Card>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Direct Booking Benefits */}
-      <section className="py-16 md:py-28 bg-section-alt">
+      {/* ─── Testimonials + Contact ─── */}
+      <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif font-medium text-foreground mb-4">Why Book Direct with {brandName}</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">When you book directly, you get the best rates and exclusive benefits</p>
-          </motion.div>
-          <div className="max-w-3xl mx-auto mb-12">
-            <TrustBadges variant="grid" badges={['price', 'cancellation', 'support', 'verified']} />
-          </div>
-          <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center">
-            <Link to="/properties">
-              <Button variant="gold" size="lg" className="rounded-full gap-2 px-8">Start Booking Now <ArrowRight className="h-4 w-4" /></Button>
-            </Link>
-          </motion.div>
-        </div>
-      </section>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+            {/* Testimonials */}
+            <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-8">
+                What Our Guests Say
+              </h2>
+              <div className="space-y-4">
+                {testimonials.map((t, i) => (
+                  <Card key={i} className="p-5">
+                    <div className="flex gap-0.5 mb-3">
+                      {Array.from({ length: t.stars }).map((_, s) => (
+                        <Star key={s} className="h-4 w-4 fill-accent text-accent" />
+                      ))}
+                    </div>
+                    <p className="text-sm text-foreground italic mb-3">"{t.text}"</p>
+                    <p className="text-xs font-medium text-foreground">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.location}</p>
+                  </Card>
+                ))}
+              </div>
+            </motion.div>
 
-      {/* CTA */}
-      <section className="py-16 md:py-28 bg-background">
-        <div className="container mx-auto px-4 text-center">
-          <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={viewportOnce} className="max-w-2xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-serif font-medium mb-6">{ctaContent.heading}</h2>
-            <p className="text-muted-foreground text-lg mb-8">{ctaContent.subtitle}</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/properties"><Button variant="gold" size="lg" className="rounded-full px-8 gap-2">Browse & Book Properties <ArrowRight className="h-4 w-4" /></Button></Link>
-              <Link to="/contact"><Button variant="outline" size="lg" className="rounded-full px-8">Talk to Concierge</Button></Link>
-            </div>
-          </motion.div>
+            {/* Contact */}
+            <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
+              <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-6">
+                Get in Touch
+              </h2>
+              <div className="space-y-3 mb-8">
+                {contactEmail && (
+                  <a href={`mailto:${contactEmail}`} className="flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <Mail className="h-4 w-4 text-accent" /> {contactEmail}
+                  </a>
+                )}
+                {contactPhone && (
+                  <a href={`tel:${contactPhone}`} className="flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <Phone className="h-4 w-4 text-accent" /> {contactPhone}
+                  </a>
+                )}
+              </div>
+              <InlineContactForm />
+              <div className="mt-8 pt-6 border-t border-border">
+                <Link to="/properties">
+                  <Button variant="gold" size="lg" className="w-full rounded-full gap-2">
+                    Browse Properties <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
     </PageLayout>
