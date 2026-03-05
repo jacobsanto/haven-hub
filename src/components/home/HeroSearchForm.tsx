@@ -26,102 +26,80 @@ export function HeroSearchForm() {
   };
 
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full max-w-4xl">
       {/* Search card */}
-      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-        <h3 className="text-white font-serif text-lg mb-4">Find Your Dream Destination</h3>
-        <form onSubmit={handleSearch} className="space-y-3">
-          {/* Destination */}
-          <div className="relative">
-            
-            
+      <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
+        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row items-stretch gap-3">
+          {/* Check In */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  "flex-1 flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-sm text-left focus:outline-none focus:ring-2 focus:ring-white/30",
+                  checkIn ? "text-white" : "text-white/50"
+                )}>
+                <Calendar className="w-4 h-4 text-white/60 shrink-0" />
+                {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Check In'}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarPicker
+                mode="single"
+                selected={checkIn}
+                onSelect={(date) => {
+                  setCheckIn(date);
+                  if (date && checkOut && date >= checkOut) setCheckOut(undefined);
+                }}
+                disabled={(date) => date < new Date()}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")} />
+            </PopoverContent>
+          </Popover>
 
+          {/* Check Out */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  "flex-1 flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-sm text-left focus:outline-none focus:ring-2 focus:ring-white/30",
+                  checkOut ? "text-white" : "text-white/50"
+                )}>
+                <Calendar className="w-4 h-4 text-white/60 shrink-0" />
+                {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Check Out'}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarPicker
+                mode="single"
+                selected={checkOut}
+                onSelect={setCheckOut}
+                disabled={(date) => date < (checkIn || new Date())}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")} />
+            </PopoverContent>
+          </Popover>
 
-
-
-
-            
-          </div>
-
-          {/* Check In / Check Out / Guests row */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Check In */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    "flex-1 flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-sm text-left focus:outline-none focus:ring-2 focus:ring-white/30",
-                    checkIn ? "text-white" : "text-white/50"
-                  )}>
-                  
-                  <Calendar className="w-4 h-4 text-white/60 shrink-0" />
-                  {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Check In'}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarPicker
-                  mode="single"
-                  selected={checkIn}
-                  onSelect={(date) => {
-                    setCheckIn(date);
-                    if (date && checkOut && date >= checkOut) setCheckOut(undefined);
-                  }}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")} />
-                
-              </PopoverContent>
-            </Popover>
-
-            {/* Check Out */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    "flex-1 flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-sm text-left focus:outline-none focus:ring-2 focus:ring-white/30",
-                    checkOut ? "text-white" : "text-white/50"
-                  )}>
-                  
-                  <Calendar className="w-4 h-4 text-white/60 shrink-0" />
-                  {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Check Out'}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarPicker
-                  mode="single"
-                  selected={checkOut}
-                  onSelect={setCheckOut}
-                  disabled={(date) => date < (checkIn || new Date())}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")} />
-                
-              </PopoverContent>
-            </Popover>
-
-            {/* Guests */}
-            <div className="flex-1 relative">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
-              <select
-                value={guests}
-                onChange={(e) => setGuests(Number(e.target.value))}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/30 appearance-none">
-                
-                {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((n) =>
+          {/* Guests */}
+          <div className="flex-1 relative">
+            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+            <select
+              value={guests}
+              onChange={(e) => setGuests(Number(e.target.value))}
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/30 appearance-none">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((n) =>
                 <option key={n} value={n} className="text-foreground bg-card">{n} Guest{n > 1 ? 's' : ''}</option>
-                )}
-              </select>
-            </div>
+              )}
+            </select>
           </div>
 
           {/* Search button */}
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent text-accent-foreground font-medium text-sm hover:bg-accent/90 transition-colors">
-            
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent text-accent-foreground font-medium text-sm hover:bg-accent/90 transition-colors whitespace-nowrap">
             <Search className="w-4 h-4" />
-            Search Properties
+            Search
           </button>
         </form>
       </div>
