@@ -1,15 +1,13 @@
-export const TRANSITION_MS = 700;
-export const AUTOPLAY_MS = 6000;
+export const TRANSITION_MS = 800;
+export const AUTOPLAY_MS = 5500;
+
+// Card deck constants
+export const CARD_SPACING = 30;
+export const CARD_ROTATION = 2;
+export const CARD_SCALE_BASE = 0.85;
+export const CARD_SCALE_STEP = 0.05;
 
 export const heroKeyframes = `
-  @keyframes heroKenBurns {
-    from { transform: scale(1); }
-    to { transform: scale(1.08); }
-  }
-  @keyframes heroDiagonalReveal {
-    from { clip-path: polygon(100% 0, 100% 0, 100% 100%, 100% 100%); }
-    to { clip-path: polygon(0 0, 100% 0, 100% 100%, -15% 100%); }
-  }
   @keyframes heroProgressFill {
     from { width: 0%; }
     to { width: 100%; }

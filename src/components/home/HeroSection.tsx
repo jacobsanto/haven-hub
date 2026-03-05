@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, useReducedMotion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useBrand } from '@/contexts/BrandContext';
 import { useHeroSettings } from '@/hooks/useHeroSettings';
@@ -9,7 +10,8 @@ import { HeroSearchForm } from './HeroSearchForm';
 import { WordReveal } from './hero/WordReveal';
 import { OdometerCounter } from './hero/OdometerCounter';
 import { GrainOverlay } from './hero/GrainOverlay';
-import { TRANSITION_MS, AUTOPLAY_MS, heroKeyframes } from './hero/heroStyles';
+import { CardDeck } from './hero/CardDeck';
+import { AUTOPLAY_MS, heroKeyframes } from './hero/heroStyles';
 
 export function HeroSection() {
   const { data: allProperties } = useFeaturedProperties();
@@ -22,12 +24,10 @@ export function HeroSection() {
   const count = properties.length || 1;
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [displayIndex, setDisplayIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [progressKey, setProgressKey] = useState(0);
 
   const activeIndexRef = useRef(activeIndex);
-  const isTransitioningRef = useRef(isTransitioning);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
@@ -35,58 +35,35 @@ export function HeroSection() {
   const textRef = useRef<HTMLDivElement>(null);
 
   activeIndexRef.current = activeIndex;
-  isTransitioningRef.current = isTransitioning;
 
-  // --- Navigation ---
-  const navigate = useCallback((dir: 'next' | 'prev') => {
-    if (isTransitioningRef.current || properties.length < 2) return;
-    const current = activeIndexRef.current;
-    const next = dir === 'next' ? (current + 1) % count : (current - 1 + count) % count;
-    setDisplayIndex(current);
-    setActiveIndex(next);
-    setIsTransitioning(true);
+  // --- Navigate ---
+  const goTo = useCallback((idx: number) => {
+    setActiveIndex(idx);
     setProgressKey(k => k + 1);
-  }, [count, properties.length]);
-
-  const goNext = useCallback(() => navigate('next'), [navigate]);
-  const goPrev = useCallback(() => navigate('prev'), [navigate]);
-
-  const handleTransitionEnd = useCallback(() => {
-    setDisplayIndex(activeIndexRef.current);
-    setIsTransitioning(false);
   }, []);
 
-  // Reduced motion: instant
-  useEffect(() => {
-    if (isTransitioning && prefersReduced) {
-      setDisplayIndex(activeIndex);
-      setIsTransitioning(false);
-    }
-  }, [isTransitioning, prefersReduced, activeIndex]);
+  const goNext = useCallback(() => goTo((activeIndexRef.current + 1) % count), [count, goTo]);
+  const goPrev = useCallback(() => goTo((activeIndexRef.current - 1 + count) % count), [count, goTo]);
 
   // --- Autoplay ---
   useEffect(() => {
     if (properties.length < 2) return;
-    const startAutoplay = () => {
-      stopAutoplay();
+    const start = () => {
+      stop();
       autoPlayRef.current = setInterval(() => {
-        if (!isTransitioningRef.current) {
-          const current = activeIndexRef.current;
-          setDisplayIndex(current);
-          setActiveIndex((current + 1) % count);
-          setIsTransitioning(true);
-          setProgressKey(k => k + 1);
-        }
+        const next = (activeIndexRef.current + 1) % count;
+        setActiveIndex(next);
+        setProgressKey(k => k + 1);
       }, AUTOPLAY_MS);
     };
-    const stopAutoplay = () => {
+    const stop = () => {
       if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
     };
-    startAutoplay();
+    start();
     const el = containerRef.current;
-    el?.addEventListener('mouseenter', stopAutoplay);
-    el?.addEventListener('mouseleave', startAutoplay);
-    return () => { stopAutoplay(); el?.removeEventListener('mouseenter', stopAutoplay); el?.removeEventListener('mouseleave', startAutoplay); };
+    el?.addEventListener('mouseenter', stop);
+    el?.addEventListener('mouseleave', start);
+    return () => { stop(); el?.removeEventListener('mouseenter', stop); el?.removeEventListener('mouseleave', start); };
   }, [properties.length, count]);
 
   // --- Parallax ---
@@ -103,7 +80,7 @@ export function HeroSection() {
     return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
   }, [prefersReduced]);
 
-  // --- Cursor-reactive spotlight ---
+  // --- Cursor spotlight ---
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
     if (prefersReduced) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -115,8 +92,8 @@ export function HeroSection() {
 
   if (!properties.length) {
     return (
-      <section className="relative h-screen flex items-center justify-center bg-primary">
-        <p className="text-primary-foreground text-lg">Loading properties…</p>
+      <section className="relative h-screen flex items-center justify-center bg-[#1A1A1A]">
+        <p className="text-white/60 text-lg">Loading properties…</p>
       </section>
     );
   }
@@ -126,7 +103,7 @@ export function HeroSection() {
   return (
     <section
       ref={containerRef}
-      className="relative h-screen w-full overflow-hidden select-none"
+      className="relative h-screen w-full overflow-hidden select-none bg-gradient-to-b from-[#1A1A1A] to-[#2A2A2A]"
       style={{ '--mouse-x': '50%', '--mouse-y': '50%' } as React.CSSProperties}
       onMouseMove={handleMouseMove}
       onTouchStart={(e) => { touchStartX.current = e.targetTouches[0].clientX; }}
@@ -138,45 +115,20 @@ export function HeroSection() {
         else if (diff < -50) goPrev();
       }}
     >
-      {/* Base layer — Ken Burns */}
-      <div
-        key={`base-${displayIndex}`}
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: `url(${properties[displayIndex]?.hero_image_url})`,
-          zIndex: 0,
-          animation: prefersReduced ? 'none' : `heroKenBurns ${AUTOPLAY_MS}ms ease-out forwards`,
-        }}
-      />
-
-      {/* Incoming layer — diagonal polygon reveal + Ken Burns */}
-      {isTransitioning && (
+      {/* Mobile: faded property image bg */}
+      {isMobile && active.hero_image_url && (
         <div
-          key={`transition-${activeIndex}`}
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${active.hero_image_url})`,
-            zIndex: 1,
-            animation: prefersReduced ? 'none'
-              : `heroDiagonalReveal ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1) forwards, heroKenBurns ${AUTOPLAY_MS}ms ease-out forwards`,
-          }}
-          onAnimationEnd={(e) => {
-            if (e.animationName === 'heroDiagonalReveal') handleTransitionEnd();
-          }}
+          className="absolute inset-0 bg-cover bg-center opacity-15"
+          style={{ backgroundImage: `url(${active.hero_image_url})` }}
         />
       )}
-
-      {/* Dark overlays */}
-      <div className="absolute inset-0 bg-black/30" style={{ zIndex: 3 }} />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" style={{ zIndex: 4 }} />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" style={{ zIndex: 4 }} />
 
       {/* Cursor-reactive spotlight */}
       {!prefersReduced && (
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            zIndex: 4,
+            zIndex: 2,
             background: 'radial-gradient(ellipse 60% 50% at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.04) 0%, transparent 70%)',
           }}
         />
@@ -185,73 +137,104 @@ export function HeroSection() {
       {/* Grain overlay */}
       {!prefersReduced && <GrainOverlay />}
 
-      {/* Content */}
+      {/* Main content */}
       <div className="relative z-10 h-full flex flex-col justify-between">
+        {/* Split panel area */}
         <div className="flex-1 flex items-center">
           <div className="container mx-auto px-4 md:px-8">
-            <div className="max-w-3xl" ref={textRef}>
-              <AnimatePresence mode="wait">
-                <div key={activeIndex}>
-                  <h1
-                    className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-white leading-[1.1] tracking-tight"
-                    style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
-                  >
-                    <WordReveal
-                      text="Discover Your Perfect Getaway with Ease"
-                      accentWord="Getaway"
-                      reduced={!!prefersReduced}
-                    />
-                  </h1>
-                  <p
-                    className="mt-5 text-white/80 text-base md:text-lg max-w-xl leading-relaxed"
-                    style={{ textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}
-                  >
-                    <WordReveal
-                      text={active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
-                      reduced={!!prefersReduced}
-                    />
-                  </p>
-                </div>
-              </AnimatePresence>
+            <div className="flex flex-col md:flex-row md:items-center md:gap-12 lg:gap-20">
+              {/* LEFT: Typography panel */}
+              <div className="flex-1 max-w-xl" ref={textRef}>
+                <AnimatePresence mode="wait">
+                  <div key={activeIndex}>
+                    {/* Index label */}
+                    <p className="text-white/40 text-xs uppercase tracking-[3px] font-sans mb-4">
+                      0{activeIndex + 1} — {(active.display_name || active.name).toUpperCase()}
+                    </p>
 
-              {/* Mobile dots */}
-              {properties.length > 1 && (
-                <div className="flex md:hidden items-center gap-3 mt-6">
-                  {properties.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        if (isTransitioning) return;
-                        setDisplayIndex(activeIndex);
-                        setActiveIndex(i);
-                        setIsTransitioning(true);
-                        setProgressKey(k => k + 1);
-                      }}
-                      className="relative rounded-full overflow-hidden"
-                      aria-label={`Go to property ${i + 1}`}
+                    {/* Property name */}
+                    <h1
+                      className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-white leading-[1.1] tracking-tight"
+                      style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
                     >
-                      <span className={`block rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-white' : 'w-2 h-2 bg-white/40'}`} />
-                      {i === activeIndex && !prefersReduced && (
-                        <span
-                          key={progressKey}
-                          className="absolute inset-0 rounded-full border border-white/60"
-                          style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }}
-                        />
-                      )}
-                    </button>
-                  ))}
+                      <WordReveal
+                        text={active.display_name || active.name}
+                        reduced={!!prefersReduced}
+                      />
+                    </h1>
+
+                    {/* Description */}
+                    <p className="mt-5 text-white/60 text-base md:text-lg max-w-md leading-relaxed font-sans font-light">
+                      <WordReveal
+                        text={active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
+                        reduced={!!prefersReduced}
+                      />
+                    </p>
+
+                    {/* Accent line */}
+                    <div className="w-14 h-px bg-accent/70 mt-6" />
+
+                    {/* CTA */}
+                    <Link
+                      to={`/properties/${active.slug}`}
+                      className="inline-flex items-center gap-2 mt-6 text-white/80 text-sm uppercase tracking-[2px] font-sans hover:text-white transition-colors group"
+                    >
+                      Explore Stay
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </div>
+                </AnimatePresence>
+
+                {/* Search form (desktop) */}
+                {showSearchBar && (
+                  <div className="hidden md:block mt-10">
+                    <HeroSearchForm />
+                  </div>
+                )}
+
+                {/* Mobile dots */}
+                {isMobile && properties.length > 1 && (
+                  <div className="flex items-center gap-3 mt-6">
+                    {properties.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => goTo(i)}
+                        className="relative rounded-full overflow-hidden"
+                        aria-label={`Go to property ${i + 1}`}
+                      >
+                        <span className={`block rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-white' : 'w-2 h-2 bg-white/40'}`} />
+                        {i === activeIndex && !prefersReduced && (
+                          <span
+                            key={progressKey}
+                            className="absolute inset-0 rounded-full border border-white/60"
+                            style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }}
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* RIGHT: Card deck (desktop only) */}
+              {!isMobile && properties.length > 0 && (
+                <div className="hidden md:flex flex-1 items-center justify-end">
+                  <CardDeck
+                    properties={properties}
+                    activeIndex={activeIndex}
+                    onSelect={goTo}
+                    hoveredIndex={hoveredCard}
+                    onHover={setHoveredCard}
+                  />
                 </div>
               )}
-
-              <div className="hidden md:block mt-10">
-                <HeroSearchForm />
-              </div>
             </div>
           </div>
         </div>
 
         {/* Footer bar */}
         <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-white">
+          {/* Social icons */}
           <div className="hidden md:flex items-center gap-4">
             {socialFacebook && (
               <a href={socialFacebook} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
@@ -270,33 +253,48 @@ export function HeroSection() {
             )}
           </div>
 
-          <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-white/60 font-sans">
+          <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-white/40 font-sans">
             Unique Locations
           </p>
 
           <div className="flex items-center gap-4 ml-auto md:ml-0">
+            {/* Elongated dot indicators (desktop) */}
             {properties.length > 1 && !prefersReduced && (
               <div className="hidden md:flex items-center gap-1.5">
                 {properties.map((_, i) => (
-                  <div key={i} className="w-8 h-0.5 rounded-full bg-white/20 overflow-hidden">
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    className="relative overflow-hidden rounded-full"
+                    aria-label={`Go to slide ${i + 1}`}
+                  >
+                    <span
+                      className={`block h-1 rounded-full transition-all duration-300 ${
+                        i === activeIndex ? 'w-6 bg-white' : 'w-2 bg-white/20'
+                      }`}
+                    />
                     {i === activeIndex && (
-                      <div
+                      <span
                         key={progressKey}
-                        className="h-full bg-white rounded-full"
-                        style={{ animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards` }}
+                        className="absolute inset-0 rounded-full"
+                        style={{
+                          background: 'hsl(var(--accent))',
+                          opacity: 0.5,
+                          animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards`,
+                        }}
                       />
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
 
             <OdometerCounter value={activeIndex} total={count} reduced={!!prefersReduced} />
 
-            <button onClick={goPrev} disabled={isTransitioning} className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-40" aria-label="Previous property">
+            <button onClick={goPrev} className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Previous property">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button onClick={goNext} disabled={isTransitioning} className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-40" aria-label="Next property">
+            <button onClick={goNext} className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Next property">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
