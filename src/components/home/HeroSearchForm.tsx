@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, MapPin, Calendar, Users } from 'lucide-react';
+import { Search, Calendar, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useFeaturedDestinations } from '@/hooks/useDestinations';
@@ -33,7 +33,7 @@ export function HeroSearchForm() {
         <form onSubmit={handleSearch} className="space-y-3">
           {/* Destination */}
           <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+            
             
 
 
