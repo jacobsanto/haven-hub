@@ -9,42 +9,41 @@ interface Property {
   country: string;
   hero_image_url?: string | null;
   slug: string;
+  originalIndex: number;
 }
 
 interface CardDeckProps {
   properties: Property[];
-  activeIndex: number;
-  onSelect: (index: number) => void;
+  onSelect: (originalIndex: number) => void;
   hoveredIndex: number | null;
   onHover: (index: number | null) => void;
 }
 
-export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHover }: CardDeckProps) {
+export function CardDeck({ properties, onSelect, hoveredIndex, onHover }: CardDeckProps) {
   const prefersReduced = useReducedMotion();
 
   return (
     <div className="relative w-[380px] h-[480px] lg:w-[420px] lg:h-[530px]">
       {properties.map((property, idx) => {
-        const offset = idx - activeIndex;
-        const isActive = idx === activeIndex;
+        const isTop = idx === 0;
         const isHovered = hoveredIndex === idx;
 
-        const translateY = isActive ? 0 : offset * CARD_SPACING;
-        const rotateZ = isActive ? 0 : offset * CARD_ROTATION;
-        const scale = isActive ? 1 : CARD_SCALE_BASE + Math.abs(offset) * CARD_SCALE_STEP;
-        const zIndex = isActive ? 10 : 5 - Math.abs(offset);
+        const translateY = idx * CARD_SPACING;
+        const rotateZ = idx * CARD_ROTATION;
+        const scale = idx === 0 ? 1 : CARD_SCALE_BASE + idx * CARD_SCALE_STEP;
+        const zIndex = 10 - idx;
 
         return (
           <div
             key={property.id}
-            onClick={() => onSelect(idx)}
+            onClick={() => onSelect(property.originalIndex)}
             onMouseEnter={() => onHover(idx)}
             onMouseLeave={() => onHover(null)}
             className="absolute inset-0 rounded-lg overflow-hidden cursor-pointer border border-accent/20"
             style={{
               transform: `translateY(${translateY}px) scale(${scale}) rotateZ(${rotateZ}deg)`,
               zIndex,
-              opacity: isActive ? 1 : isHovered ? 0.85 : 0.5,
+              opacity: isTop ? 1 : isHovered ? 0.85 : 0.5,
               transition: prefersReduced
                 ? 'none'
                 : `all ${TRANSITION_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
@@ -66,8 +65,8 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
             <div
               className="absolute bottom-0 left-0 right-0 p-5 lg:p-6"
               style={{
-                opacity: isActive ? 1 : 0,
-                transform: isActive ? 'translateY(0)' : 'translateY(16px)',
+                opacity: isTop ? 1 : 0,
+                transform: isTop ? 'translateY(0)' : 'translateY(16px)',
                 transition: prefersReduced
                   ? 'none'
                   : `all ${TRANSITION_MS}ms ease-out 0.15s`,
