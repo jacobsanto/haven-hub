@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, DollarSign } from 'lucide-react';
+import { Clock, DollarSign, MapPin } from 'lucide-react';
 import { Experience } from '@/types/experiences';
-import { Badge } from '@/components/ui/badge';
 
 interface ExperienceCardProps {
   experience: Experience;
@@ -19,7 +18,7 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
     >
       <Link 
         to={`/experiences/${experience.slug}`}
-        className="group block card-organic overflow-hidden"
+        className="group block overflow-hidden rounded-2xl bg-card border border-border hover:shadow-lg transition-shadow"
       >
         {/* Image */}
         <div className="aspect-[4/3] relative overflow-hidden">
@@ -30,27 +29,26 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+            <div className="w-full h-full bg-muted flex items-center justify-center">
               <span className="text-4xl">✨</span>
             </div>
           )}
           
-          {/* Category badge */}
-          <Badge className="absolute top-4 left-4">
+          {/* Category pill */}
+          <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur-sm text-xs font-medium text-foreground">
             {experience.category}
-          </Badge>
+          </span>
           
-          {/* Featured badge */}
           {experience.is_featured && (
-            <div className="absolute top-4 right-4 bg-accent/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full">
+            <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-accent/90 backdrop-blur-sm text-xs font-medium text-accent-foreground">
               Featured
-            </div>
+            </span>
           )}
         </div>
 
         {/* Content */}
         <div className="p-5">
-          <h3 className="text-xl font-serif font-medium text-foreground mb-2 group-hover:text-primary transition-colors">
+          <h3 className="text-lg font-serif font-medium text-foreground mb-2 group-hover:text-primary transition-colors">
             {experience.name}
           </h3>
           
@@ -60,9 +58,9 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
             </p>
           )}
 
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-sm pt-3 border-t border-border">
             {experience.duration && (
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span>{experience.duration}</span>
               </div>
@@ -70,7 +68,6 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
             
             {experience.price_from && (
               <div className="flex items-center gap-1 text-accent font-medium">
-                <DollarSign className="h-4 w-4" />
                 <span>From €{experience.price_from}</span>
                 {experience.price_type && (
                   <span className="text-muted-foreground font-normal text-xs">
