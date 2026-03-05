@@ -1,60 +1,37 @@
 
 
-# Hero Slider Analysis & Fix Report
+# Hero Slider — Trendy Enhancement Proposals
 
-## Issues Found
+## Current State Assessment
+The two-layer cross-fade system is working correctly. The autoplay is stable, timing is synchronized at 700ms, and the race conditions are resolved. The slider is functionally solid.
 
-### 1. Triple Background Layer Conflict (Primary Glitch Source)
-The slider renders **3 overlapping background divs** during every transition (lines 96-121):
-- Layer 0: Previous image (static)
-- Layer 1: Active image with `transition-opacity` CSS (starts at opacity 0)
-- Layer 2: Active image **again** with a `@keyframes heroFadeIn` CSS animation
+## Proposed Enhancements
 
-Layers 1 and 2 both fade in the same image simultaneously using two different animation systems (CSS transition vs CSS keyframe). This creates a double-composite flicker — the browser composites two semi-transparent copies of the same image on top of each other, producing visible banding/ghosting artifacts.
+### 1. Ken Burns (Slow Zoom + Pan) Effect
+Add a subtle CSS scale animation on the background images — each slide slowly zooms in from `scale(1.0)` to `scale(1.08)` over the 6s autoplay duration. This is the signature luxury travel hero technique used by Four Seasons, Aman Resorts, and Airbnb Luxe. It makes static images feel cinematic without any performance cost (GPU-composited `transform: scale`).
 
-### 2. Dual Transition-End Race Condition
-The transition end is handled by **two competing mechanisms**:
-- A `setTimeout` at 800ms (line 47-51) that clears `prevIndex`
-- An `onTransitionEnd` handler on layer 1 (line 109-114) that also clears `prevIndex`
+### 2. Clip-Path Reveal Transition (instead of fade)
+Replace the simple opacity fade with a modern `clip-path` wipe transition. The incoming image reveals via `clip-path: inset(0 100% 0 0)` animating to `clip-path: inset(0 0 0 0)` — a horizontal curtain reveal. This is the 2025/2026 trend replacing fades on premium sites (used by Awwwards winners). Falls back gracefully to opacity fade on older browsers.
 
-Whichever fires first wins, but the other still runs. If the timeout fires first, it removes the DOM elements mid-CSS-transition, causing a visual pop. If `onTransitionEnd` fires first, the timeout is a no-op but still runs unnecessarily.
+### 3. Parallax Text Offset on Scroll
+Add a subtle parallax effect where the hero text translates upward at 0.3x scroll speed as the user scrolls down, creating depth separation between the background and content. Uses `transform: translateY()` driven by a scroll listener with `requestAnimationFrame` — fully GPU-composited.
 
-### 3. AnimatePresence + Background Cross-Fade Are Unsynchronized
-The text uses Framer Motion `AnimatePresence mode="wait"` (600ms), but the background uses CSS transitions (800ms). The text exits and enters at a different pace than the background, creating a disjointed feel — text appears to "jump ahead" of the image.
+### 4. Animated Progress Bar on Navigation Dots
+Replace the static dot indicators with a thin progress bar or animated ring that fills over the 6s autoplay interval, giving users a visual cue of when the next slide arrives. Resets on manual navigation.
 
-### 4. Autoplay Timer Recreated on Every goNext Change
-`goNext` is a dependency of the autoplay `useEffect` (line 69). Since `goNext` depends on `activeIndex` and `isTransitioning`, the effect tears down and recreates the interval on every slide change. This can cause:
-- Double-fire if the old interval hasn't cleared before the new one starts
-- Missed pause/resume events if event listeners are re-attached during transition
+### 5. Staggered Text Entrance
+Instead of the entire text block fading in as one unit, stagger the heading and description with a 150ms delay between them — the heading slides up first, then the description follows. Uses Framer Motion's `staggerChildren`.
 
-### 5. Opacity Inversion Logic
-Line 106: `opacity: prevIndex !== null && !prefersReduced ? 0 : 1` — the active image starts at opacity 0 and is supposed to fade in via CSS `transition-opacity`. But layer 2 (the keyframe layer) also fades in on top. The result: the user sees layer 2's animation, then when `prevIndex` clears, layer 1 snaps to opacity 1 — a subtle but visible "double flash."
+## Recommended Combination
+Apply enhancements 1, 2, and 5 together for maximum impact with minimal complexity. Enhancement 3 is optional (adds a scroll listener). Enhancement 4 is a nice-to-have for UX polish.
 
-## Recommended Fix
+## Files to Modify
+- **`src/components/home/HeroSection.tsx`** — Add Ken Burns keyframes, replace fade with clip-path reveal, implement staggered text entrance
 
-### Simplify to a Single Cross-Fade System
-Replace the 3-layer approach with **2 layers only** using pure CSS transitions:
-
-```
-Layer 0 (z-index 0): Always shows the PREVIOUS image (or current if no transition)
-Layer 1 (z-index 1): Shows the NEW image, transitions opacity from 0→1 over 800ms
-```
-
-When `onTransitionEnd` fires on Layer 1, promote its image to Layer 0 and remove Layer 1. No keyframe animation, no timeout race.
-
-### Sync Text and Background Timing
-Set both Framer Motion text transition and CSS background transition to the same duration (700ms) so they move in lockstep.
-
-### Stabilize Autoplay
-Move the interval to a `useRef`-based approach that doesn't depend on `goNext` in the effect dependency array. Instead, read `activeIndex` from a ref inside the interval callback to avoid effect churn.
-
-### Files to Modify
-- **`src/components/home/HeroSection.tsx`** — Rewrite the background layer system (remove layer 2 + keyframe, remove setTimeout, keep only `onTransitionEnd`), align text animation timing, stabilize autoplay effect
-
-### What Stays
-- Touch swipe logic
-- Mobile dot indicators
-- Footer bar with social icons and nav arrows
-- `HeroSearchForm` integration
+## What Stays
+- Two-layer cross-fade architecture (just changing the animation type)
+- Ref-based autoplay system
+- Touch swipe, mobile dots, footer bar
 - All data hooks and brand context
+- Reduced motion fallbacks
 
