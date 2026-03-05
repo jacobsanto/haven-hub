@@ -101,4 +101,3 @@ const scale = idx === current ? 1 : CARD_SCALE_BASE + Math.abs(offset) * CARD_SC
 - Ken Burns zoom → Removed (no full-bleed images on desktop)
 - Cursor spotlight → Kept (works great on dark backgrounds)
 - Parallax scroll → Kept for text offset
-
