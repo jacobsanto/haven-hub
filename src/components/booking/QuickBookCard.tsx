@@ -1,10 +1,8 @@
-import { useState, forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Users, Bed, Bath, Zap, Calendar, ArrowRight, Percent } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MapPin, Users, Bed, Bath, Star, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { InstantBookingBadge } from '@/components/properties/InstantBookingBadge';
 import { useBooking } from '@/contexts/BookingContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useActiveSpecialOffer } from '@/hooks/useSpecialOffers';
@@ -16,7 +14,6 @@ interface QuickBookCardProps {
 }
 
 export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(function QuickBookCard({ property, index = 0 }, ref) {
-  const [isHovered, setIsHovered] = useState(false);
   const { openBooking } = useBooking();
   const { formatPrice } = useCurrency();
   const { data: specialOffer } = useActiveSpecialOffer(property.id);
@@ -26,7 +23,6 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
   const handleBookNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Open unified booking dialog with this property pre-selected (direct booking mode)
     openBooking({ mode: 'direct', property });
   };
 
@@ -35,125 +31,72 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
       ref={ref}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="group relative"
+      transition={{ delay: index * 0.08 }}
+      className="group"
     >
       <Link to={`/properties/${property.slug}`}>
-        <div className="card-organic overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-          {/* Image Container */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+          {/* Image */}
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
               src={property.hero_image_url || '/placeholder.svg'}
               alt={property.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-            
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-            {/* Badges */}
-            <div className="absolute top-3 left-3 flex flex-col gap-2">
-              {property.instant_booking && <InstantBookingBadge size="sm" />}
-              {specialOffer && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-accent-foreground rounded-full text-sm font-medium">
-                  <Percent className="h-4 w-4" />
-                  <span>{specialOffer.discount_percent}% off</span>
-                </div>
-              )}
-            </div>
-
-            {/* Property Type Badge */}
-            <Badge 
-              variant="secondary" 
-              className="absolute top-3 right-3 text-xs capitalize bg-background/80 backdrop-blur-sm"
-            >
-              {property.property_type}
-            </Badge>
-
-            {/* Price on Image */}
-            <div className="absolute bottom-3 left-3 text-white">
-              <span className="text-2xl font-bold">{priceInfo.display}</span>
-              <span className="text-sm opacity-80">/night</span>
-            </div>
-
-            {/* Quick Action Overlay */}
-            <AnimatePresence>
-              {isHovered && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3"
-                >
-                   <Button
-                    onClick={handleBookNow}
-                    variant="gold"
-                    size="lg"
-                    className="rounded-full gap-2"
-                  >
-                    {property.instant_booking ? (
-                      <>
-                        <Zap className="h-4 w-4" />
-                        Instant Book
-                      </>
-                    ) : (
-                      <>
-                        <Calendar className="h-4 w-4" />
-                        Book Now
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {specialOffer && (
+              <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-medium">
+                {specialOffer.discount_percent}% off
+              </span>
+            )}
           </div>
 
           {/* Content */}
           <div className="p-4">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h3 className="font-serif text-lg font-medium line-clamp-1 group-hover:text-primary transition-colors">
-                {property.name}
-              </h3>
+            {/* Rating + Price Row */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-accent text-accent" />
+                ))}
+              </div>
+              <span className="text-accent font-bold text-lg">{priceInfo.display}<span className="text-xs font-normal text-muted-foreground">/night</span></span>
             </div>
 
-            <div className="flex items-center gap-1 text-accent text-sm mb-3">
-              <MapPin className="h-3.5 w-3.5" />
+            {/* Location */}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+              <MapPin className="h-3 w-3 text-destructive" />
               <span>{property.city}, {property.country}</span>
             </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-4 text-sm text-accent mb-4">
-              <div className="flex items-center gap-1">
-                <Bed className="h-4 w-4" />
-                <span>{property.bedrooms}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Bath className="h-4 w-4" />
-                <span>{property.bathrooms}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                <span>{property.max_guests}</span>
-              </div>
-            </div>
+            {/* Name */}
+            <h3 className="font-serif text-lg font-medium text-foreground mb-1.5 line-clamp-1 group-hover:text-primary transition-colors">
+              {property.name}
+            </h3>
 
-            {/* CTA */}
+            {/* Description */}
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+              {property.description || `A beautiful ${property.property_type} in ${property.city} with ${property.bedrooms} bedrooms and stunning views.`}
+            </p>
+
+            {/* Bottom Row: Amenity Icons + CTA */}
             <div className="flex items-center justify-between pt-3 border-t border-border">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted" title={`${property.bedrooms} Bedrooms`}>
+                  <Bed className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted" title={`${property.bathrooms} Bathrooms`}>
+                  <Bath className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted" title={`${property.max_guests} Guests`}>
+                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+              </div>
               <Button
+                onClick={handleBookNow}
                 size="sm"
-                variant={property.instant_booking ? "default" : "outline"}
-                className="rounded-full text-xs gap-1.5"
+                className="rounded-full text-xs gap-1.5 px-4"
               >
-                {property.instant_booking ? (
-                  <><Zap className="h-3 w-3 fill-current" /> Instant Book</>
-                ) : (
-                  'Book Direct & Save'
-                )}
-              </Button>
-              <Button size="sm" variant="outline" className="rounded-full text-xs gap-1.5">
-                View Details
+                Start Date
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </div>
