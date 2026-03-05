@@ -1,32 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import type { BezierDefinition } from 'framer-motion';
+import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useBrand } from '@/contexts/BrandContext';
 import { useHeroSettings } from '@/hooks/useHeroSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { HeroSearchForm } from './HeroSearchForm';
-
-const TRANSITION_MS = 700;
-const AUTOPLAY_MS = 6000;
-const EASE_PREMIUM: BezierDefinition = [0.22, 1, 0.36, 1];
-
-const staggerContainer = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.15, delayChildren: 0.05 },
-  },
-  exit: {
-    transition: { staggerChildren: 0.08, staggerDirection: -1 },
-  },
-};
-
-const staggerChild = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: TRANSITION_MS / 1000, ease: EASE_PREMIUM } },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.3, ease: EASE_PREMIUM } },
-};
+import { WordReveal } from './hero/WordReveal';
+import { OdometerCounter } from './hero/OdometerCounter';
+import { GrainOverlay } from './hero/GrainOverlay';
+import { TRANSITION_MS, AUTOPLAY_MS, heroKeyframes } from './hero/heroStyles';
 
 export function HeroSection() {
   const { data: allProperties } = useFeaturedProperties();
@@ -41,9 +24,8 @@ export function HeroSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [displayIndex, setDisplayIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [progressKey, setProgressKey] = useState(0); // resets progress bar animation
+  const [progressKey, setProgressKey] = useState(0);
 
-  // Refs for stable autoplay
   const activeIndexRef = useRef(activeIndex);
   const isTransitioningRef = useRef(isTransitioning);
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -55,16 +37,15 @@ export function HeroSection() {
   activeIndexRef.current = activeIndex;
   isTransitioningRef.current = isTransitioning;
 
+  // --- Navigation ---
   const navigate = useCallback((dir: 'next' | 'prev') => {
     if (isTransitioningRef.current || properties.length < 2) return;
     const current = activeIndexRef.current;
-    const next = dir === 'next'
-      ? (current + 1) % count
-      : (current - 1 + count) % count;
+    const next = dir === 'next' ? (current + 1) % count : (current - 1 + count) % count;
     setDisplayIndex(current);
     setActiveIndex(next);
     setIsTransitioning(true);
-    setProgressKey(k => k + 1); // reset progress bar
+    setProgressKey(k => k + 1);
   }, [count, properties.length]);
 
   const goNext = useCallback(() => navigate('next'), [navigate]);
@@ -75,7 +56,7 @@ export function HeroSection() {
     setIsTransitioning(false);
   }, []);
 
-  // Reduced motion: instantly complete
+  // Reduced motion: instant
   useEffect(() => {
     if (isTransitioning && prefersReduced) {
       setDisplayIndex(activeIndex);
@@ -83,61 +64,53 @@ export function HeroSection() {
     }
   }, [isTransitioning, prefersReduced, activeIndex]);
 
-  // Stable autoplay
+  // --- Autoplay ---
   useEffect(() => {
     if (properties.length < 2) return;
-
     const startAutoplay = () => {
       stopAutoplay();
       autoPlayRef.current = setInterval(() => {
         if (!isTransitioningRef.current) {
           const current = activeIndexRef.current;
-          const next = (current + 1) % count;
           setDisplayIndex(current);
-          setActiveIndex(next);
+          setActiveIndex((current + 1) % count);
           setIsTransitioning(true);
           setProgressKey(k => k + 1);
         }
       }, AUTOPLAY_MS);
     };
-
     const stopAutoplay = () => {
-      if (autoPlayRef.current) {
-        clearInterval(autoPlayRef.current);
-        autoPlayRef.current = null;
-      }
+      if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
     };
-
     startAutoplay();
-
     const el = containerRef.current;
     el?.addEventListener('mouseenter', stopAutoplay);
     el?.addEventListener('mouseleave', startAutoplay);
-
-    return () => {
-      stopAutoplay();
-      el?.removeEventListener('mouseenter', stopAutoplay);
-      el?.removeEventListener('mouseleave', startAutoplay);
-    };
+    return () => { stopAutoplay(); el?.removeEventListener('mouseenter', stopAutoplay); el?.removeEventListener('mouseleave', startAutoplay); };
   }, [properties.length, count]);
 
-  // Parallax on scroll
+  // --- Parallax ---
   useEffect(() => {
     if (prefersReduced) return;
     let raf: number;
     const onScroll = () => {
       raf = requestAnimationFrame(() => {
         scrollY.current = window.scrollY;
-        if (textRef.current) {
-          textRef.current.style.transform = `translateY(${scrollY.current * 0.3}px)`;
-        }
+        if (textRef.current) textRef.current.style.transform = `translateY(${scrollY.current * 0.3}px)`;
       });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      cancelAnimationFrame(raf);
-    };
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
+  }, [prefersReduced]);
+
+  // --- Cursor-reactive spotlight ---
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    if (prefersReduced) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+    const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+    e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
+    e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
   }, [prefersReduced]);
 
   if (!properties.length) {
@@ -149,12 +122,13 @@ export function HeroSection() {
   }
 
   const active = properties[activeIndex];
-  const padIndex = (n: number) => String(n + 1).padStart(2, '0');
 
   return (
     <section
       ref={containerRef}
       className="relative h-screen w-full overflow-hidden select-none"
+      style={{ '--mouse-x': '50%', '--mouse-y': '50%' } as React.CSSProperties}
+      onMouseMove={handleMouseMove}
       onTouchStart={(e) => { touchStartX.current = e.targetTouches[0].clientX; }}
       onTouchEnd={(e) => {
         if (touchStartX.current === null) return;
@@ -164,9 +138,7 @@ export function HeroSection() {
         else if (diff < -50) goPrev();
       }}
     >
-      {/* Background: 2-layer system with Ken Burns + Clip-Path Reveal */}
-
-      {/* Base layer — always visible, Ken Burns zoom */}
+      {/* Base layer — Ken Burns */}
       <div
         key={`base-${displayIndex}`}
         className="absolute inset-0 bg-cover bg-center"
@@ -177,7 +149,7 @@ export function HeroSection() {
         }}
       />
 
-      {/* Incoming layer — clip-path reveal with Ken Burns */}
+      {/* Incoming layer — diagonal polygon reveal + Ken Burns */}
       {isTransitioning && (
         <div
           key={`transition-${activeIndex}`}
@@ -185,58 +157,64 @@ export function HeroSection() {
           style={{
             backgroundImage: `url(${active.hero_image_url})`,
             zIndex: 1,
-            animation: prefersReduced
-              ? 'none'
-              : `heroClipReveal ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1) forwards, heroKenBurns ${AUTOPLAY_MS}ms ease-out forwards`,
+            animation: prefersReduced ? 'none'
+              : `heroDiagonalReveal ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1) forwards, heroKenBurns ${AUTOPLAY_MS}ms ease-out forwards`,
           }}
           onAnimationEnd={(e) => {
-            // Only fire on clip-path reveal completing, not Ken Burns
-            if (e.animationName === 'heroClipReveal') {
-              handleTransitionEnd();
-            }
+            if (e.animationName === 'heroDiagonalReveal') handleTransitionEnd();
           }}
         />
       )}
 
-      {/* Overlays */}
+      {/* Dark overlays */}
       <div className="absolute inset-0 bg-black/30" style={{ zIndex: 3 }} />
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" style={{ zIndex: 4 }} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" style={{ zIndex: 4 }} />
 
-      {/* Content with parallax */}
+      {/* Cursor-reactive spotlight */}
+      {!prefersReduced && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            zIndex: 4,
+            background: 'radial-gradient(ellipse 60% 50% at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.04) 0%, transparent 70%)',
+          }}
+        />
+      )}
+
+      {/* Grain overlay */}
+      {!prefersReduced && <GrainOverlay />}
+
+      {/* Content */}
       <div className="relative z-10 h-full flex flex-col justify-between">
         <div className="flex-1 flex items-center">
           <div className="container mx-auto px-4 md:px-8">
             <div className="max-w-3xl" ref={textRef}>
-              {/* Staggered text entrance */}
               <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeIndex}
-                  variants={prefersReduced ? undefined : staggerContainer}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  <motion.h1
-                    variants={prefersReduced ? undefined : staggerChild}
+                <div key={activeIndex}>
+                  <h1
                     className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-white leading-[1.1] tracking-tight"
                     style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
                   >
-                    Discover Your Perfect{' '}
-                    <span className="text-accent">Getaway</span>{' '}
-                    with Ease
-                  </motion.h1>
-                  <motion.p
-                    variants={prefersReduced ? undefined : staggerChild}
+                    <WordReveal
+                      text="Discover Your Perfect Getaway with Ease"
+                      accentWord="Getaway"
+                      reduced={!!prefersReduced}
+                    />
+                  </h1>
+                  <p
                     className="mt-5 text-white/80 text-base md:text-lg max-w-xl leading-relaxed"
                     style={{ textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}
                   >
-                    {active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
-                  </motion.p>
-                </motion.div>
+                    <WordReveal
+                      text={active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
+                      reduced={!!prefersReduced}
+                    />
+                  </p>
+                </div>
               </AnimatePresence>
 
-              {/* Mobile progress dots */}
+              {/* Mobile dots */}
               {properties.length > 1 && (
                 <div className="flex md:hidden items-center gap-3 mt-6">
                   {properties.map((_, i) => (
@@ -257,9 +235,7 @@ export function HeroSection() {
                         <span
                           key={progressKey}
                           className="absolute inset-0 rounded-full border border-white/60"
-                          style={{
-                            animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards`,
-                          }}
+                          style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }}
                         />
                       )}
                     </button>
@@ -267,7 +243,6 @@ export function HeroSection() {
                 </div>
               )}
 
-              {/* Search form - desktop */}
               <div className="hidden md:block mt-10">
                 <HeroSearchForm />
               </div>
@@ -299,9 +274,7 @@ export function HeroSection() {
             Unique Locations
           </p>
 
-          {/* Desktop progress + nav */}
           <div className="flex items-center gap-4 ml-auto md:ml-0">
-            {/* Progress bar */}
             {properties.length > 1 && !prefersReduced && (
               <div className="hidden md:flex items-center gap-1.5">
                 {properties.map((_, i) => (
@@ -310,9 +283,7 @@ export function HeroSection() {
                       <div
                         key={progressKey}
                         className="h-full bg-white rounded-full"
-                        style={{
-                          animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards`,
-                        }}
+                        style={{ animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards` }}
                       />
                     )}
                   </div>
@@ -320,9 +291,8 @@ export function HeroSection() {
               </div>
             )}
 
-            <span className="text-sm font-sans tracking-wider text-white/70">
-              {padIndex(activeIndex)} / {padIndex(count - 1)}
-            </span>
+            <OdometerCounter value={activeIndex} total={count} reduced={!!prefersReduced} />
+
             <button onClick={goPrev} disabled={isTransitioning} className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors disabled:opacity-40" aria-label="Previous property">
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -333,24 +303,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      <style>{`
-        @keyframes heroKenBurns {
-          from { transform: scale(1); }
-          to { transform: scale(1.08); }
-        }
-        @keyframes heroClipReveal {
-          from { clip-path: inset(0 100% 0 0); }
-          to { clip-path: inset(0 0 0 0); }
-        }
-        @keyframes heroProgressFill {
-          from { width: 0%; }
-          to { width: 100%; }
-        }
-        @keyframes heroProgressRing {
-          from { opacity: 1; transform: scale(1); }
-          to { opacity: 0; transform: scale(2); }
-        }
-      `}</style>
+      <style>{heroKeyframes}</style>
     </section>
   );
 }
