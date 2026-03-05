@@ -185,12 +185,7 @@ export function HeroSection() {
                   </div>
                 </AnimatePresence>
 
-                {/* Search form (desktop) */}
-                {showSearchBar && (
-                  <div className="hidden md:block mt-10">
-                    <HeroSearchForm />
-                  </div>
-                )}
+                {/* Search form moved to bottom center */}
 
                 {/* Mobile dots */}
                 {isMobile && properties.length > 1 && (
@@ -231,6 +226,13 @@ export function HeroSection() {
             </div>
           </div>
         </div>
+
+        {/* Search form — pinned center bottom */}
+        {showSearchBar && (
+          <div className="hidden md:block absolute bottom-20 left-1/2 -translate-x-1/2 z-20 w-full max-w-3xl px-4">
+            <HeroSearchForm />
+          </div>
+        )}
 
         {/* Footer bar */}
         <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-white">
