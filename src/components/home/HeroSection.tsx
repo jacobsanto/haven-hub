@@ -99,6 +99,7 @@ export function HeroSection() {
   }
 
   const active = properties[activeIndex];
+  const bgProperty = properties[(activeIndex + 1) % count];
 
   return (
     <section
@@ -116,10 +117,10 @@ export function HeroSection() {
       }}
     >
       {/* Full-bleed property image backdrop */}
-      {active.hero_image_url && (
+      {bgProperty.hero_image_url && (
         <div
           className="absolute inset-0 bg-cover bg-center opacity-30 transition-[background-image] duration-1000 ease-in-out"
-          style={{ backgroundImage: `url(${active.hero_image_url})` }}
+          style={{ backgroundImage: `url(${bgProperty.hero_image_url})` }}
         />
       )}
       {/* Dark gradient overlay for text contrast */}
