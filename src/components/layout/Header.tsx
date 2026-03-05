@@ -166,7 +166,7 @@ export function Header() {
                 isTransparent && "border-white/40 text-white hover:bg-white/10 hover:text-white"
               )}
             >
-              Book Now
+              Log In
             </Button>
           )}
         </div>
