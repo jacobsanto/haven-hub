@@ -34,13 +34,13 @@ export function HeroSearchForm() {
           {/* Destination */}
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
-            <input
-              type="text"
-              placeholder="Where to?"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-white/30"
-            />
+            
+
+
+
+
+
+            
           </div>
 
           {/* Check In / Check Out / Guests row */}
@@ -53,8 +53,8 @@ export function HeroSearchForm() {
                   className={cn(
                     "flex-1 flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-sm text-left focus:outline-none focus:ring-2 focus:ring-white/30",
                     checkIn ? "text-white" : "text-white/50"
-                  )}
-                >
+                  )}>
+                  
                   <Calendar className="w-4 h-4 text-white/60 shrink-0" />
                   {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Check In'}
                 </button>
@@ -69,8 +69,8 @@ export function HeroSearchForm() {
                   }}
                   disabled={(date) => date < new Date()}
                   initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
+                  className={cn("p-3 pointer-events-auto")} />
+                
               </PopoverContent>
             </Popover>
 
@@ -82,8 +82,8 @@ export function HeroSearchForm() {
                   className={cn(
                     "flex-1 flex items-center gap-2 px-3 py-3 rounded-xl bg-white/10 border border-white/20 text-sm text-left focus:outline-none focus:ring-2 focus:ring-white/30",
                     checkOut ? "text-white" : "text-white/50"
-                  )}
-                >
+                  )}>
+                  
                   <Calendar className="w-4 h-4 text-white/60 shrink-0" />
                   {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Check Out'}
                 </button>
@@ -95,8 +95,8 @@ export function HeroSearchForm() {
                   onSelect={setCheckOut}
                   disabled={(date) => date < (checkIn || new Date())}
                   initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
+                  className={cn("p-3 pointer-events-auto")} />
+                
               </PopoverContent>
             </Popover>
 
@@ -106,11 +106,11 @@ export function HeroSearchForm() {
               <select
                 value={guests}
                 onChange={(e) => setGuests(Number(e.target.value))}
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/30 appearance-none"
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map(n => (
-                  <option key={n} value={n} className="text-foreground bg-card">{n} Guest{n > 1 ? 's' : ''}</option>
-                ))}
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/30 appearance-none">
+                
+                {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((n) =>
+                <option key={n} value={n} className="text-foreground bg-card">{n} Guest{n > 1 ? 's' : ''}</option>
+                )}
               </select>
             </div>
           </div>
@@ -118,8 +118,8 @@ export function HeroSearchForm() {
           {/* Search button */}
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent text-accent-foreground font-medium text-sm hover:bg-accent/90 transition-colors"
-          >
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-accent text-accent-foreground font-medium text-sm hover:bg-accent/90 transition-colors">
+            
             <Search className="w-4 h-4" />
             Search Properties
           </button>
@@ -127,20 +127,20 @@ export function HeroSearchForm() {
       </div>
 
       {/* Popular destinations pills */}
-      {destinations && destinations.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
+      {destinations && destinations.length > 0 &&
+      <div className="mt-4 flex flex-wrap gap-2">
           <span className="text-white/60 text-xs uppercase tracking-wider self-center mr-1">Popular:</span>
-          {destinations.slice(0, 5).map((dest) => (
-            <button
-              key={dest.id}
-              onClick={() => navigate(`/destinations/${dest.slug}`)}
-              className="px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-xs hover:bg-white/20 transition-colors backdrop-blur-sm"
-            >
+          {destinations.slice(0, 5).map((dest) =>
+        <button
+          key={dest.id}
+          onClick={() => navigate(`/destinations/${dest.slug}`)}
+          className="px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-xs hover:bg-white/20 transition-colors backdrop-blur-sm">
+          
               {dest.name}
             </button>
-          ))}
+        )}
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
