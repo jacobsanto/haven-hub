@@ -214,13 +214,12 @@ export function HeroSection() {
               </div>
 
               {/* RIGHT: Card deck (desktop only) */}
-              {!isMobile && properties.length > 1 && (
+              {!isMobile && properties.length > 0 && (
                 <div className="hidden md:flex flex-1 items-center justify-end">
                   <CardDeck
-                    properties={properties
-                      .map((p, i) => ({ ...p, originalIndex: i }))
-                      .filter((_, i) => i !== activeIndex)}
-                    onSelect={(originalIndex) => goTo(originalIndex)}
+                    properties={properties}
+                    activeIndex={activeIndex}
+                    onSelect={goTo}
                     hoveredIndex={hoveredCard}
                     onHover={setHoveredCard}
                   />

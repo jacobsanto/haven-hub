@@ -1,31 +1,21 @@
 
 
-# Fix: Card Deck Should Not Duplicate the Featured Property
+# Add Villa Background Image Behind Effects
 
-## Problem
-The left panel displays the active property's name, description, and CTA. The card deck on the right shows **all properties including the active one** — so the front card is always a duplicate of what's already featured on the left. This is redundant.
+## Change
+Show the active property's hero image as a full-bleed background on both desktop and mobile, behind all the dark overlays, grain, and spotlight effects. Currently only mobile shows a faded image at 15% opacity — this will extend to all viewports with a dark gradient overlay on top to maintain readability.
 
-## Solution
-Filter the active property out of the card deck. The deck becomes a "peek at the other villas" element — clicking a card in the deck switches the featured property.
+## Implementation
 
 ### `src/components/home/HeroSection.tsx`
-- Pass a filtered list to `CardDeck` that excludes the current `activeIndex` property
-- Pass a mapping callback so clicking a deck card sets the correct `activeIndex` in the parent
 
-### `src/components/home/hero/CardDeck.tsx`
-- Receives the non-active properties only
-- When a card is clicked, calls `onSelect` with the **original index** (not the filtered index)
-- All cards now stack naturally without one being "active/front" — the first card in the filtered list is the top card, others fan behind it
+1. **Remove the mobile-only condition** on the background image (lines 118-124). Make it always render for all viewports.
 
-### Mapping Logic
-```typescript
-// In HeroSection:
-const otherProperties = properties
-  .map((p, i) => ({ ...p, originalIndex: i }))
-  .filter((_, i) => i !== activeIndex);
+2. **Increase opacity slightly** from `opacity-15` to around `opacity-25` or `opacity-30` so the villa image is more visible but still behind the dark treatment.
 
-// CardDeck receives these and uses originalIndex for onSelect
-```
+3. **Add a dark gradient overlay div** on top of the image (before the spotlight) to preserve text contrast — something like `bg-gradient-to-b from-[#1A1A1A]/70 via-[#1A1A1A]/50 to-[#2A2A2A]/80`.
 
-The deck will show 3 cards (if 4 total), all slightly offset/rotated. The top card is the "next up" property. Clicking any card promotes it to the featured slot on the left.
+4. **Add a CSS transition** on the background image so it cross-fades smoothly when the active property changes.
+
+Result: The villa photo becomes a cinematic backdrop visible through the dark gradient, grain, and spotlight layers — giving depth while keeping the minimalist dark aesthetic.
 
