@@ -27,7 +27,7 @@ export function DestinationsShowcase() {
       title: dest.name,
       subtitle: dest.description || undefined,
       location: dest.country,
-      badge: dest.is_featured ? 'Featured' : undefined,
+      badge: undefined,
       link: `/destinations`,
     })),
     [destinations]
