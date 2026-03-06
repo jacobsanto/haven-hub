@@ -95,6 +95,8 @@ export default function AdminPropertyForm() {
     longitude: null as number | null,
     postal_code: null as string | null,
     area_sqm: null as number | null,
+    is_featured: false,
+    featured_sort_order: 0,
   });
 
   const [uploading, setUploading] = useState(false);

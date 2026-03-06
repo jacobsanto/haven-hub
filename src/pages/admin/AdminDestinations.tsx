@@ -98,6 +98,7 @@ const AdminDestinations = () => {
                   <TableHead className="hidden lg:table-cell text-center">Properties</TableHead>
                   <TableHead className="hidden lg:table-cell text-center">Experiences</TableHead>
                   <TableHead className="hidden md:table-cell">Featured</TableHead>
+                  <TableHead className="hidden md:table-cell text-center w-20">Sort</TableHead>
                   <TableHead className="hidden md:table-cell">Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
