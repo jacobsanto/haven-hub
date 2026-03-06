@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Clock, Users, ArrowRight } from 'lucide-react';
 import { Experience } from '@/types/experiences';
 
 interface ExperienceCardProps {
@@ -15,67 +14,70 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ delay: index * 0.08 }}
+      transition={{ delay: index * 0.07, duration: 0.5 }}
     >
       <Link
         to={`/experiences/${experience.slug}`}
-        className="group flex flex-col md:flex-row gap-0 bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-shadow"
+        className="group block bg-card border border-border rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
       >
-        {/* Image — Left Side */}
-        <div className="w-full md:w-[200px] shrink-0 aspect-square md:aspect-auto overflow-hidden">
+        {/* Image */}
+        <div className="relative aspect-[16/10] overflow-hidden">
           {experience.hero_image_url ? (
             <img
               src={experience.hero_image_url}
               alt={experience.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center min-h-[200px]">
               <span className="text-4xl">✨</span>
             </div>
           )}
-        </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
 
-        {/* Content — Right Side */}
-        <div className="flex-1 p-5 flex flex-col justify-between">
-          <div>
-            {/* Category */}
-            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-primary mb-1 block">
+          {/* Category badge */}
+          <div className="absolute top-3.5 left-3.5">
+            <span className="text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent backdrop-blur-sm">
               {experience.category}
             </span>
-
-            {/* Name */}
-            <h3 className="text-base font-bold uppercase tracking-wide text-foreground mb-1 group-hover:text-primary transition-colors">
-              {experience.name}
-            </h3>
-
-            {/* Price */}
-            {experience.price_from && (
-              <p className="text-accent font-bold text-sm mb-2">
-                From €{experience.price_from}
-                {experience.price_type && (
-                  <span className="text-muted-foreground font-normal text-xs ml-1">/{experience.price_type}</span>
-                )}
-              </p>
-            )}
-
-            {/* Description */}
-            {experience.description && (
-              <p className="text-muted-foreground text-sm line-clamp-3 leading-relaxed mb-4">
-                {experience.description}
-              </p>
-            )}
           </div>
 
-          {/* CTA */}
-          <div className="flex items-center gap-3">
-            <Button size="sm" className="rounded-full gap-1.5 text-xs px-4">
-              <Calendar className="h-3.5 w-3.5" />
-              Book Now
-            </Button>
-            {experience.duration && (
-              <span className="text-xs text-muted-foreground">{experience.duration}</span>
-            )}
+          {/* Price tag */}
+          {experience.price_from && (
+            <div className="absolute bottom-3.5 right-3.5 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-border/50">
+              <span className="font-bold text-accent">€{experience.price_from}</span>
+              {experience.price_type && (
+                <span className="text-muted-foreground text-xs ml-1">/{experience.price_type}</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-5">
+          <h3 className="font-serif text-lg font-semibold text-foreground mb-2 group-hover:text-accent transition-colors line-clamp-1">
+            {experience.name}
+          </h3>
+
+          {experience.description && (
+            <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed mb-4">
+              {experience.description}
+            </p>
+          )}
+
+          {/* Meta row */}
+          <div className="flex items-center justify-between pt-3 border-t border-border">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              {experience.duration && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {experience.duration}
+                </span>
+              )}
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-accent text-sm font-semibold group-hover:gap-2.5 transition-all">
+              Details <ArrowRight className="h-3.5 w-3.5" />
+            </span>
           </div>
         </div>
       </Link>
