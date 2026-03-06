@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Users, Bed, Bath, Star, ArrowRight } from 'lucide-react';
+import { MapPin, Users, Bed, Bath, Star, ArrowRight, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/contexts/BookingContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
