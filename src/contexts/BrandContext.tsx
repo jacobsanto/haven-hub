@@ -204,6 +204,13 @@ function applyTheme(settings: BrandSettings) {
     loadGoogleFont(settings.body_font);
     root.style.setProperty('--font-sans', `"${settings.body_font}", sans-serif`);
   }
+
+  // Typography weight & spacing
+  root.style.setProperty('--heading-weight', String(settings.heading_weight ?? 500));
+  root.style.setProperty('--body-weight', String(settings.body_weight ?? 400));
+
+  const spacingMap: Record<string, string> = { normal: '-0.025em', wide: '0em', wider: '0.05em' };
+  root.style.setProperty('--heading-tracking', spacingMap[settings.heading_letter_spacing] ?? '-0.025em');
 }
 
 export function BrandProvider({ children }: { children: ReactNode }) {
