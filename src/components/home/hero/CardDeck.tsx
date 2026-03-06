@@ -79,7 +79,8 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
               <h3 className="text-primary-foreground font-serif text-xl lg:text-2xl leading-tight">
                 {property.display_name || property.name}
               </h3>
-              <p className="text-primary-foreground/50 text-xs uppercase tracking-[3px] mt-1.5 font-sans">
+              <p className="text-primary-foreground/50 text-xs uppercase tracking-[3px] mt-1.5 font-sans flex items-center gap-1.5">
+                <MapPin className="w-3 h-3" />
                 {property.city}, {property.country}
               </p>
             </div>
