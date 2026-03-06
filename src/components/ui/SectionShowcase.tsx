@@ -262,7 +262,7 @@ function CinematicSection({ items, activeIndex }: VariantProps) {
             }}>
               {item.location && <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-4">{item.location}</p>}
               <h3 className="font-serif text-[clamp(32px,5vw,60px)] font-bold text-primary-foreground leading-[1.05] mb-2.5">{item.title}</h3>
-              {item.subtitle && <p className="font-serif text-lg italic text-muted-foreground mb-5">{item.subtitle}</p>}
+              {item.subtitle && <p className="font-serif text-lg italic text-accent mb-5 drop-shadow-[0_2px_4px_hsl(var(--accent)/0.4)]">{item.subtitle}</p>}
               <div className="w-[60px] h-px bg-accent mb-5" />
             </Link>
           </div>
