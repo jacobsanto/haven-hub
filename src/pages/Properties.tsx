@@ -66,8 +66,11 @@ export default function Properties() {
     checkOut: undefined,
   });
   const { data: destinations } = useActiveDestinations();
-
-  const properties = hasDateSearch ? availableProperties : allProperties;
+  const headerContent = usePageContent('properties', 'header', {
+    heading: 'Find & Book Your Perfect Stay',
+    subtitle: 'Best rates guaranteed when you book direct. Instant confirmation available.',
+    hero_image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1400&q=50',
+  });
   const isLoading = hasDateSearch ? availLoading : allLoading;
 
   // Client-side destination filter + sort
