@@ -251,7 +251,7 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
         );
       })}
 
-      <SectionDisplayEditor pageSlug={schema.pageSlug} />
+      
     </div>
   );
 }
