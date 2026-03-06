@@ -339,7 +339,7 @@ export function VerticalCurtainHero({ properties, activeIndex, onSelect }: Slide
             style={{
               width: 3,
               height: i === activeIndex ? 40 : 20,
-              background: i === activeIndex ? 'hsl(var(--accent))' : 'rgba(255,255,255,0.2)',
+              background: i === activeIndex ? 'hsl(var(--accent))' : 'hsl(var(--foreground) / 0.2)',
             }}
           />
         ))}
