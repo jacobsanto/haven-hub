@@ -5,8 +5,8 @@
 @layer base {
   :root {
     /* Typography - default fonts (overridden by BrandContext) */
-    --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: "Fira Serif", ui-serif, Georgia, serif;
+    --font-sans: "Fira Sans", ui-sans-serif, system-ui, sans-serif;
 
     /* White background */
     --background: 0 0% 100%;

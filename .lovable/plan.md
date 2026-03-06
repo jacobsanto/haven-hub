@@ -1,34 +1,33 @@
 
 
-## Clean Up Font Defaults — Use Only Fira Serif / Fira Sans Everywhere
+## Improving hero text and search bar legibility
 
-### Problem
-Your chosen fonts are **Fira Serif** (headings) and **Fira Sans** (body), set in the database. But the codebase has mismatched defaults in two places that cause wrong fonts to flash before brand settings load:
+Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
 
-1. **`src/hooks/useBrandSettings.ts`** — `defaultBrandSettings` hardcodes `Playfair Display` / `Lato`
-2. **`src/index.css`** — CSS variable defaults use generic system font stacks (`ui-serif, Georgia` / `system-ui, Roboto, Helvetica`)
-3. **`tailwind.config.ts`** — Font family fallbacks include `ui-serif, Georgia` / `ui-sans-serif, system-ui`
+### Recommended approach: Layered depth
 
-### Changes
+Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
 
-#### 1. `src/hooks/useBrandSettings.ts`
-Update `defaultBrandSettings` to match your actual chosen fonts:
-- `heading_font: 'Fira Serif'` (was `Playfair Display`)
-- `body_font: 'Fira Sans'` (was `Lato`)
+1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
 
-#### 2. `src/index.css`
-Update CSS variable defaults to use Fira fonts as primary, with clean fallbacks:
-- `--font-serif: "Fira Serif", ui-serif, Georgia, serif`
-- `--font-sans: "Fira Sans", ui-sans-serif, system-ui, sans-serif`
+2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
+   ```
+   bg-gradient-to-r from-black/50 via-black/20 to-transparent
+   ```
+   This keeps the right side (card deck) more vibrant while making the left text area very readable.
 
-#### 3. `tailwind.config.ts`
-No change needed — already uses `var(--font-serif)` and `var(--font-sans)`, so it inherits correctly.
+3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
 
-#### 4. `index.html`
-Add a preload `<link>` for Fira Serif and Fira Sans so the fonts start downloading immediately, before BrandContext even runs:
-```html
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Serif:wght@300;400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" />
-```
+4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
 
-This eliminates the flash of wrong fonts entirely — the correct fonts are loaded from the start, and all defaults match what's in your database.
+### Summary of changes
+
+| File | What |
+|------|------|
+| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
+| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
+| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
+| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
+
+These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
 
