@@ -29,7 +29,7 @@ export function FeaturedVacationSection() {
       location: `${p.city}, ${p.country}`,
       meta: `Starting from ${format(p.base_price)}`,
       extra: `${p.bedrooms || 3} beds · ${p.max_guests || 6} guests`,
-      link: `/properties/${p.slug}`,
+      link: `/properties`,
     })),
     [featured, format]
   );

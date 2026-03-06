@@ -28,7 +28,7 @@ export function DestinationsShowcase() {
       subtitle: dest.description || undefined,
       location: dest.country,
       badge: dest.is_featured ? 'Featured' : undefined,
-      link: `/destinations/${dest.slug}`,
+      link: `/destinations`,
     })),
     [destinations]
   );
