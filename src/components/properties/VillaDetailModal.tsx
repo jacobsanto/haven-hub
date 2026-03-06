@@ -30,6 +30,7 @@ interface VillaDetailModalProps {
 
 export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavorite }: VillaDetailModalProps) {
   const [imgIdx, setImgIdx] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
   const [tab, setTab] = useState<'overview' | 'amenities' | 'highlights'>('overview');
   const { openBooking } = useBooking();
   const { format: formatCurrency } = useFormatCurrency();
