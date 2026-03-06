@@ -1,37 +1,47 @@
 
 
-# Replace Hardcoded Dark Colors with Semantic Brand Tokens
+# Replace Hardcoded Hex Colors in Hero Components
 
-## Problem
-All homepage sections use hardcoded hex colors (`#0a0a0f`, `#111118`, `#15151f`, `#f0ece4`, `#6b6560`, `#a8a29e`) instead of the semantic CSS variables managed by the admin brand settings. This means changing brand colors in the dashboard has no effect on the homepage.
+## Scope
+Two files still contain hardcoded hex colors: `HeroSection.tsx` and `HeroSliderVariants.tsx`. All other homepage sections were already converted.
 
-## Solution
-Replace all hardcoded colors with Tailwind semantic classes that map to CSS variables from the brand system:
+## Color Mapping Applied
 
-### Color Mapping
-| Hardcoded | Semantic Replacement |
+| Hardcoded | Semantic |
 |---|---|
 | `bg-[#0a0a0f]` | `bg-background` |
-| `bg-[#111118]` | `bg-muted` |
-| `bg-[#15151f]` | `bg-card` |
 | `text-[#f0ece4]` | `text-foreground` |
-| `text-[#6b6560]` | `text-muted-foreground` |
 | `text-[#a8a29e]` | `text-muted-foreground` |
-| `border-white/[0.06]` | `border-border` |
-| `text-[#0a0a0f]` (on accent buttons) | `text-accent-foreground` |
-| `from-[#0a0a0f]/85` (gradients) | `from-background/85` |
+| `text-[#6b6560]` | `text-muted-foreground` |
+| `from-[#0a0a0f]` (gradients) | `from-background` |
+| `bg-[#f0ece4]` (dots) | `bg-foreground` |
+| `hover:text-[#f0ece4]` | `hover:text-foreground` |
+| `hover:text-[#0a0a0f]` | `hover:text-accent-foreground` |
+| Inline `rgba(10,10,15,...)` | `hsl(var(--background) / opacity)` |
 
-### Files to Update (8 files)
-1. **`src/pages/Index.tsx`** — wrapper `bg-[#0a0a0f]` → `bg-background`
-2. **`src/components/home/TrustSection.tsx`** — bg, text colors
-3. **`src/components/home/DestinationsShowcase.tsx`** — bg, text, gradient, skeleton, badge colors
-4. **`src/components/home/DiscoverVillasSection.tsx`** — bg, text, skeleton, button colors
-5. **`src/components/home/FeaturedVacationSection.tsx`** — bg, text, gradient colors
-6. **`src/components/home/LiveExperiencesSection.tsx`** — bg, text, card bg, skeleton colors
-7. **`src/components/home/TestimonialsSection.tsx`** — bg, text, card bg, nav colors
-8. **`src/components/home/WhyDirectSection.tsx`** — bg, text, card bg colors
-9. **`src/components/home/CTASection.tsx`** — bg, text, button colors
-10. **`src/components/home/SearchBarOverlay.tsx`** — bg, text, card bg, input colors
+## Files Changed
 
-No database or hook changes needed — this is purely a Tailwind class swap in 10 component files.
+### 1. `src/components/home/HeroSection.tsx`
+- Line 109: `bg-[#0a0a0f]` → `bg-background`
+- Line 110: `text-[#a8a29e]` → `text-muted-foreground`
+- Line 122: `bg-[#0a0a0f]` → `bg-background`
+- Line 150: gradient hex → `from-background`
+- Line 171: `text-[#6b6560]` → `text-muted-foreground`
+- Line 175: `text-[#f0ece4]` → `text-foreground`
+- Line 180: `text-[#a8a29e]` → `text-muted-foreground`
+- Line 189: `text-[#a8a29e]` + hover → `text-muted-foreground hover:text-foreground`
+- Line 201: `bg-[#f0ece4]` → `bg-foreground`
+- Line 228: `text-[#f0ece4]` → `text-foreground`
+- Line 248: `text-[#6b6560]` → `text-muted-foreground`
+- Line 257: `bg-[#f0ece4]` → `bg-foreground`
+
+### 2. `src/components/home/hero/HeroSliderVariants.tsx`
+All 5 slider variants get the same treatment:
+- **ParallaxDepthHero**: gradient, heading, subtitle, price subtext (lines 55, 67, 70, 75)
+- **SplitRevealHero**: gradient, bg, heading, subtitle, meta text, price, hover button (lines 112, 115, 124, 127, 130, 136, 140)
+- **MorphTilesHero**: gradient, heading, subtitle, price subtext (lines 184, 204, 207, 212)
+- **CinematicHero**: inline rgba gradient, heading, subtitle, price subtext (line 254, 264, 267, 273)
+- **VerticalCurtainHero**: gradient, heading, subtitle, price subtext (lines 308, 318, 321, 326)
+
+Total: ~30 replacements across both files. No logic changes, purely class swaps.
 
