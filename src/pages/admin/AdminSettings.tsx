@@ -11,7 +11,7 @@ import { FontSelector } from '@/components/admin/FontSelector';
 import { CurrencySettingsCard } from '@/components/admin/CurrencySettingsCard';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X, CreditCard, Settings2, ChevronDown, Clock, Image, LayoutGrid, GalleryHorizontal, List, Star } from 'lucide-react';
+import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X, CreditCard, Settings2, ChevronDown, Clock, Image, LayoutGrid, GalleryHorizontal, List, Star, Layers, Split, Grid2x2, Film, ArrowUpDown, CreditCard as CardIcon, Sparkles } from 'lucide-react';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { SupportedCurrency } from '@/types/currency';
