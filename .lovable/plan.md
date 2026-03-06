@@ -1,38 +1,33 @@
 
 
-## Add Hero Image to Properties Page via CMS
+## Improving hero text and search bar legibility
 
-### Problem
-The Properties page hero banner has no admin-controllable hero image. It falls back to the first property's `hero_image_url` or a hardcoded Unsplash URL — neither is reliable or intentional.
+Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
 
-### Changes
+### Recommended approach: Layered depth
 
-#### 1. Add `hero_image` field to Properties page content schema
+Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
 
-**`src/hooks/usePageContent.ts`** — In the `properties` page schema, add a `hero_image` field to the existing `header` section:
+1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
 
-```typescript
-{
-  sectionKey: 'header',
-  title: 'Page Header',
-  fields: [
-    { key: 'heading', label: 'Default Heading', type: 'text', defaultValue: 'Find & Book Your Perfect Stay' },
-    { key: 'subtitle', label: 'Subtitle', type: 'text', defaultValue: 'Best rates guaranteed when you book direct.' },
-    { key: 'hero_image', label: 'Hero Background Image', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1400&q=50' },
-  ],
-}
-```
+2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
+   ```
+   bg-gradient-to-r from-black/50 via-black/20 to-transparent
+   ```
+   This keeps the right side (card deck) more vibrant while making the left text area very readable.
 
-#### 2. Wire the CMS value into the Properties page
+3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
 
-**`src/pages/Properties.tsx`** — Use `usePageContent` to fetch the `header` section and pass `hero_image` to the banner:
+4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
 
-```typescript
-const headerContent = usePageContent('properties', 'header', {
-  heading: '...', subtitle: '...', hero_image: '...'
-});
-// Pass headerContent.hero_image to <PropertiesHeroBanner heroImageUrl={...} />
-```
+### Summary of changes
 
-This means the hero image becomes editable from the admin CMS page content editor — no code changes needed after this to update it.
+| File | What |
+|------|------|
+| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
+| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
+| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
+| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
+
+These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
 

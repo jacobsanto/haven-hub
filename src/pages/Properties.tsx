@@ -14,6 +14,7 @@ import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidg
 import { useProperties } from '@/hooks/useProperties';
 import { useAvailableProperties } from '@/hooks/useAvailableProperties';
 import { useActiveDestinations } from '@/hooks/useDestinations';
+import { usePageContent } from '@/hooks/usePageContent';
 import { Button } from '@/components/ui/button';
 import { Property, PropertyType } from '@/types/database';
 
@@ -65,6 +66,11 @@ export default function Properties() {
     checkOut: undefined,
   });
   const { data: destinations } = useActiveDestinations();
+  const headerContent = usePageContent('properties', 'header', {
+    heading: 'Find & Book Your Perfect Stay',
+    subtitle: 'Best rates guaranteed when you book direct. Instant confirmation available.',
+    hero_image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1400&q=50',
+  });
 
   const properties = hasDateSearch ? availableProperties : allProperties;
   const isLoading = hasDateSearch ? availLoading : allLoading;
@@ -121,7 +127,7 @@ export default function Properties() {
   const totalVillas = properties?.length || 0;
   const destCount = destinationNames.length;
   const avgRating = 4.8;
-  const heroImage = properties?.[0]?.hero_image_url || undefined;
+  const heroImage = headerContent.hero_image;
 
   return (
     <PageLayout>

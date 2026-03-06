@@ -367,6 +367,7 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
         fields: [
           { key: 'heading', label: 'Default Heading', type: 'text', defaultValue: 'Find & Book Your Perfect Stay' },
           { key: 'subtitle', label: 'Subtitle', type: 'text', defaultValue: 'Best rates guaranteed when you book direct. Instant confirmation available.' },
+          { key: 'hero_image', label: 'Hero Background Image', type: 'image', defaultValue: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1400&q=50' },
         ],
       },
     ],
