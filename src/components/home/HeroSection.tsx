@@ -16,8 +16,8 @@ import {
   SplitRevealHero,
   MorphTilesHero,
   CinematicHero,
-  VerticalCurtainHero,
-} from './hero/HeroSliderVariants';
+  VerticalCurtainHero } from
+'./hero/HeroSliderVariants';
 import { AUTOPLAY_MS, heroKeyframes } from './hero/heroStyles';
 
 const SLIDER_MAP: Record<string, React.ComponentType<any>> = {
@@ -25,7 +25,7 @@ const SLIDER_MAP: Record<string, React.ComponentType<any>> = {
   'split-reveal': SplitRevealHero,
   'morph-tiles': MorphTilesHero,
   'cinematic': CinematicHero,
-  'vertical-curtain': VerticalCurtainHero,
+  'vertical-curtain': VerticalCurtainHero
 };
 
 export function HeroSection() {
@@ -53,7 +53,7 @@ export function HeroSection() {
 
   const goTo = useCallback((idx: number) => {
     setActiveIndex(idx);
-    setProgressKey(k => k + 1);
+    setProgressKey((k) => k + 1);
   }, []);
 
   const goNext = useCallback(() => goTo((activeIndexRef.current + 1) % count), [count, goTo]);
@@ -67,17 +67,17 @@ export function HeroSection() {
       autoPlayRef.current = setInterval(() => {
         const next = (activeIndexRef.current + 1) % count;
         setActiveIndex(next);
-        setProgressKey(k => k + 1);
+        setProgressKey((k) => k + 1);
       }, AUTOPLAY_MS);
     };
     const stop = () => {
-      if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
+      if (autoPlayRef.current) {clearInterval(autoPlayRef.current);autoPlayRef.current = null;}
     };
     start();
     const el = containerRef.current;
     el?.addEventListener('mouseenter', stop);
     el?.addEventListener('mouseleave', start);
-    return () => { stop(); el?.removeEventListener('mouseenter', stop); el?.removeEventListener('mouseleave', start); };
+    return () => {stop();el?.removeEventListener('mouseenter', stop);el?.removeEventListener('mouseleave', start);};
   }, [properties.length, count]);
 
   // Parallax (only for card-deck)
@@ -91,7 +91,7 @@ export function HeroSection() {
       });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
+    return () => {window.removeEventListener('scroll', onScroll);cancelAnimationFrame(raf);};
   }, [prefersReduced, heroStyle]);
 
   // Cursor spotlight
@@ -108,8 +108,8 @@ export function HeroSection() {
     return (
       <section className="relative h-screen flex items-center justify-center bg-background">
         <p className="text-muted-foreground text-lg">Loading properties…</p>
-      </section>
-    );
+      </section>);
+
   }
 
   const active = properties[activeIndex];
@@ -122,48 +122,48 @@ export function HeroSection() {
       className="relative h-screen w-full overflow-hidden select-none bg-background"
       style={{ '--mouse-x': '50%', '--mouse-y': '50%' } as React.CSSProperties}
       onMouseMove={handleMouseMove}
-      onTouchStart={(e) => { touchStartX.current = e.targetTouches[0].clientX; }}
+      onTouchStart={(e) => {touchStartX.current = e.targetTouches[0].clientX;}}
       onTouchEnd={(e) => {
         if (touchStartX.current === null) return;
         const diff = touchStartX.current - e.changedTouches[0].clientX;
         touchStartX.current = null;
-        if (diff > 50) goNext();
-        else if (diff < -50) goPrev();
-      }}
-    >
+        if (diff > 50) goNext();else
+        if (diff < -50) goPrev();
+      }}>
+      
       {/* Render selected slider variant OR default card-deck */}
-      {SliderVariant ? (
-        <SliderVariant
-          properties={properties}
-          activeIndex={activeIndex}
-          onSelect={goTo}
-        />
-      ) : (
-        <>
+      {SliderVariant ?
+      <SliderVariant
+        properties={properties}
+        activeIndex={activeIndex}
+        onSelect={goTo} /> :
+
+
+      <>
           {/* Card deck default: background + text panel */}
-          {active.hero_image_url && (
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-50 transition-[background-image] duration-1000 ease-in-out"
-              style={{ backgroundImage: `url(${active.hero_image_url})` }}
-            />
-          )}
+          {active.hero_image_url &&
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-50 transition-[background-image] duration-1000 ease-in-out"
+          style={{ backgroundImage: `url(${active.hero_image_url})` }} />
+
+        }
           <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/20 to-background/50" />
           <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-transparent" />
 
-          {!prefersReduced && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                zIndex: 2,
-                background: 'radial-gradient(ellipse 60% 50% at var(--mouse-x) var(--mouse-y), hsl(var(--background) / 0.04) 0%, transparent 70%)',
-              }}
-            />
-          )}
+          {!prefersReduced &&
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            zIndex: 2,
+            background: 'radial-gradient(ellipse 60% 50% at var(--mouse-x) var(--mouse-y), hsl(var(--background) / 0.04) 0%, transparent 70%)'
+          }} />
+
+        }
 
           {!prefersReduced && <GrainOverlay />}
 
           <div className="relative z-10 h-full flex flex-col justify-between">
-            <div className="flex-1 flex items-center">
+            <div className="flex-1 flex items-center shadow-none">
               <div className="container mx-auto px-4 md:px-8">
                 <div className="flex flex-col md:flex-row md:items-center md:gap-12 lg:gap-20">
                   <div className="flex-1 max-w-xl" ref={textRef}>
@@ -173,53 +173,53 @@ export function HeroSection() {
                           0{activeIndex + 1} — {(active.display_name || active.name).toUpperCase()}
                         </p>
                         <h1
-                          className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-foreground leading-[1.1] tracking-tight"
-                          style={{ textShadow: '0 2px 20px hsl(var(--foreground) / 0.4)' }}
-                        >
+                        className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-foreground leading-[1.1] tracking-tight"
+                        style={{ textShadow: '0 2px 20px hsl(var(--foreground) / 0.4)' }}>
+                        
                           <WordReveal text={active.display_name || active.name} reduced={!!prefersReduced} />
                         </h1>
                         <p className="mt-5 text-muted-foreground text-base md:text-lg max-w-md leading-relaxed font-sans font-light">
                           <WordReveal
-                            text={active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
-                            reduced={!!prefersReduced}
-                          />
+                          text={active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
+                          reduced={!!prefersReduced} />
+                        
                         </p>
                         <div className="w-14 h-px bg-accent/70 mt-6" />
                         <Link
-                          to={`/properties/${active.slug}`}
-                          className="inline-flex items-center gap-2 mt-6 text-muted-foreground text-sm uppercase tracking-[2px] font-sans hover:text-foreground transition-colors group"
-                        >
+                        to={`/properties/${active.slug}`}
+                        className="inline-flex items-center gap-2 mt-6 text-muted-foreground text-sm uppercase tracking-[2px] font-sans hover:text-foreground transition-colors group">
+                        
                           Explore Stay
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </Link>
                       </div>
                     </AnimatePresence>
 
-                    {isMobile && properties.length > 1 && (
-                      <div className="flex items-center gap-3 mt-6">
-                        {properties.map((_, i) => (
-                          <button key={i} onClick={() => goTo(i)} className="relative rounded-full overflow-hidden" aria-label={`Go to property ${i + 1}`}>
+                    {isMobile && properties.length > 1 &&
+                  <div className="flex items-center gap-3 mt-6">
+                        {properties.map((_, i) =>
+                    <button key={i} onClick={() => goTo(i)} className="relative rounded-full overflow-hidden" aria-label={`Go to property ${i + 1}`}>
                             <span className={`block rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-foreground' : 'w-2 h-2 bg-foreground/40'}`} />
-                            {i === activeIndex && !prefersReduced && (
-                              <span key={progressKey} className="absolute inset-0 rounded-full border border-foreground/60" style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }} />
-                            )}
+                            {i === activeIndex && !prefersReduced &&
+                      <span key={progressKey} className="absolute inset-0 rounded-full border border-foreground/60" style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }} />
+                      }
                           </button>
-                        ))}
-                      </div>
                     )}
+                      </div>
+                  }
                   </div>
 
-                  {!isMobile && properties.length > 0 && (
-                    <div className="hidden md:flex flex-1 items-center justify-end">
+                  {!isMobile && properties.length > 0 &&
+                <div className="hidden md:flex flex-1 items-center justify-end">
                       <CardDeck properties={properties} activeIndex={activeIndex} onSelect={goTo} hoveredIndex={hoveredCard} onHover={setHoveredCard} />
                     </div>
-                  )}
+                }
                 </div>
               </div>
             </div>
           </div>
         </>
-      )}
+      }
 
       {/* Grain overlay for all variants */}
       {SliderVariant && !prefersReduced && <GrainOverlay />}
@@ -229,21 +229,21 @@ export function HeroSection() {
         <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-foreground">
           {/* Social icons */}
           <div className="hidden md:flex items-center gap-4">
-            {socialFacebook && (
-              <a href={socialFacebook} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
+            {socialFacebook &&
+            <a href={socialFacebook} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" /></svg>
               </a>
-            )}
-            {socialYoutube && (
-              <a href={socialYoutube} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
+            }
+            {socialYoutube &&
+            <a href={socialYoutube} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
               </a>
-            )}
-            {socialInstagram && (
-              <a href={socialInstagram} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
+            }
+            {socialInstagram &&
+            <a href={socialInstagram} target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" /></svg>
               </a>
-            )}
+            }
           </div>
 
           <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-sans">
@@ -251,18 +251,18 @@ export function HeroSection() {
           </p>
 
           <div className="flex items-center gap-4 ml-auto md:ml-0">
-            {properties.length > 1 && !prefersReduced && (
-              <div className="hidden md:flex items-center gap-1.5">
-                {properties.map((_, i) => (
-                  <button key={i} onClick={() => goTo(i)} className="relative overflow-hidden rounded-full" aria-label={`Go to slide ${i + 1}`}>
+            {properties.length > 1 && !prefersReduced &&
+            <div className="hidden md:flex items-center gap-1.5">
+                {properties.map((_, i) =>
+              <button key={i} onClick={() => goTo(i)} className="relative overflow-hidden rounded-full" aria-label={`Go to slide ${i + 1}`}>
                     <span className={`block h-1 rounded-full transition-all duration-300 ${i === activeIndex ? 'w-6 bg-foreground' : 'w-2 bg-foreground/20'}`} />
-                    {i === activeIndex && (
-                      <span key={progressKey} className="absolute inset-0 rounded-full" style={{ background: 'hsl(var(--accent))', opacity: 0.5, animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards` }} />
-                    )}
+                    {i === activeIndex &&
+                <span key={progressKey} className="absolute inset-0 rounded-full" style={{ background: 'hsl(var(--accent))', opacity: 0.5, animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards` }} />
+                }
                   </button>
-                ))}
+              )}
               </div>
-            )}
+            }
             <OdometerCounter value={activeIndex} total={count} reduced={!!prefersReduced} />
             <button onClick={goPrev} className="w-10 h-10 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground/10 transition-colors" aria-label="Previous property">
               <ChevronLeft className="w-5 h-5" />
@@ -275,13 +275,13 @@ export function HeroSection() {
       </div>
 
       {/* Search bar for card-deck in hero */}
-      {isCardDeck && showSearchBar && (
-        <div className="hidden md:block absolute bottom-20 left-1/2 -translate-x-1/2 z-20 w-full max-w-3xl px-4">
+      {isCardDeck && showSearchBar &&
+      <div className="hidden md:block absolute bottom-20 left-1/2 -translate-x-1/2 z-20 w-full max-w-3xl px-4">
           <HeroSearchForm />
         </div>
-      )}
+      }
 
       <style>{heroKeyframes}</style>
-    </section>
-  );
+    </section>);
+
 }
