@@ -11,27 +11,12 @@ import { WordReveal } from './hero/WordReveal';
 import { OdometerCounter } from './hero/OdometerCounter';
 import { GrainOverlay } from './hero/GrainOverlay';
 import { CardDeck } from './hero/CardDeck';
-import {
-  ParallaxDepthHero,
-  SplitRevealHero,
-  MorphTilesHero,
-  CinematicHero,
-  VerticalCurtainHero,
-} from './hero/HeroSliderVariants';
 import { AUTOPLAY_MS, heroKeyframes } from './hero/heroStyles';
-
-const SLIDER_MAP: Record<string, React.ComponentType<any>> = {
-  'parallax-depth': ParallaxDepthHero,
-  'split-reveal': SplitRevealHero,
-  'morph-tiles': MorphTilesHero,
-  'cinematic': CinematicHero,
-  'vertical-curtain': VerticalCurtainHero,
-};
 
 export function HeroSection() {
   const { data: allProperties } = useFeaturedProperties();
   const { socialFacebook, socialYoutube, socialInstagram } = useBrand();
-  const { showSearchBar, heroStyle } = useHeroSettings();
+  const { showSearchBar } = useHeroSettings();
   const prefersReduced = useReducedMotion();
   const isMobile = useIsMobile();
 
@@ -51,6 +36,7 @@ export function HeroSection() {
 
   activeIndexRef.current = activeIndex;
 
+  // --- Navigate ---
   const goTo = useCallback((idx: number) => {
     setActiveIndex(idx);
     setProgressKey(k => k + 1);
@@ -59,7 +45,7 @@ export function HeroSection() {
   const goNext = useCallback(() => goTo((activeIndexRef.current + 1) % count), [count, goTo]);
   const goPrev = useCallback(() => goTo((activeIndexRef.current - 1 + count) % count), [count, goTo]);
 
-  // Autoplay
+  // --- Autoplay ---
   useEffect(() => {
     if (properties.length < 2) return;
     const start = () => {
@@ -80,9 +66,9 @@ export function HeroSection() {
     return () => { stop(); el?.removeEventListener('mouseenter', stop); el?.removeEventListener('mouseleave', start); };
   }, [properties.length, count]);
 
-  // Parallax (only for card-deck)
+  // --- Parallax ---
   useEffect(() => {
-    if (prefersReduced || heroStyle !== 'card-deck') return;
+    if (prefersReduced) return;
     let raf: number;
     const onScroll = () => {
       raf = requestAnimationFrame(() => {
@@ -92,9 +78,9 @@ export function HeroSection() {
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
-  }, [prefersReduced, heroStyle]);
+  }, [prefersReduced]);
 
-  // Cursor spotlight
+  // --- Cursor spotlight ---
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
     if (prefersReduced) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -106,20 +92,18 @@ export function HeroSection() {
 
   if (!properties.length) {
     return (
-      <section className="relative h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground text-lg">Loading properties…</p>
+      <section className="relative h-screen flex items-center justify-center bg-[#1A1A1A]">
+        <p className="text-white/60 text-lg">Loading properties…</p>
       </section>
     );
   }
 
   const active = properties[activeIndex];
-  const isCardDeck = heroStyle === 'card-deck';
-  const SliderVariant = SLIDER_MAP[heroStyle];
 
   return (
     <section
       ref={containerRef}
-      className="relative h-screen w-full overflow-hidden select-none bg-background"
+      className="relative h-screen w-full overflow-hidden select-none bg-gradient-to-b from-[#1A1A1A] to-[#2A2A2A]"
       style={{ '--mouse-x': '50%', '--mouse-y': '50%' } as React.CSSProperties}
       onMouseMove={handleMouseMove}
       onTouchStart={(e) => { touchStartX.current = e.targetTouches[0].clientX; }}
@@ -131,102 +115,129 @@ export function HeroSection() {
         else if (diff < -50) goPrev();
       }}
     >
-      {/* Render selected slider variant OR default card-deck */}
-      {SliderVariant ? (
-        <SliderVariant
-          properties={properties}
-          activeIndex={activeIndex}
-          onSelect={goTo}
+      {/* Full-bleed property image backdrop */}
+      {active.hero_image_url && (
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-30 transition-[background-image] duration-1000 ease-in-out"
+          style={{ backgroundImage: `url(${active.hero_image_url})` }}
         />
-      ) : (
-        <>
-          {/* Card deck default: background + text panel */}
-          {active.hero_image_url && (
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-50 transition-[background-image] duration-1000 ease-in-out"
-              style={{ backgroundImage: `url(${active.hero_image_url})` }}
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/20 to-background/50" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-transparent" />
+      )}
+      {/* Dark gradient overlay for text contrast */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1A1A1A]/70 via-[#1A1A1A]/50 to-[#2A2A2A]/80" />
 
-          {!prefersReduced && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                zIndex: 2,
-                background: 'radial-gradient(ellipse 60% 50% at var(--mouse-x) var(--mouse-y), hsl(var(--background) / 0.04) 0%, transparent 70%)',
-              }}
-            />
-          )}
-
-          {!prefersReduced && <GrainOverlay />}
-
-          <div className="relative z-10 h-full flex flex-col justify-between">
-            <div className="flex-1 flex items-center">
-              <div className="container mx-auto px-4 md:px-8">
-                <div className="flex flex-col md:flex-row md:items-center md:gap-12 lg:gap-20">
-                  <div className="flex-1 max-w-xl" ref={textRef}>
-                    <AnimatePresence mode="wait">
-                      <div key={activeIndex}>
-                        <p className="text-muted-foreground text-xs uppercase tracking-[3px] font-sans mb-4">
-                          0{activeIndex + 1} — {(active.display_name || active.name).toUpperCase()}
-                        </p>
-                        <h1
-                          className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-foreground leading-[1.1] tracking-tight"
-                          style={{ textShadow: '0 2px 20px hsl(var(--foreground) / 0.4)' }}
-                        >
-                          <WordReveal text={active.display_name || active.name} reduced={!!prefersReduced} />
-                        </h1>
-                        <p className="mt-5 text-muted-foreground text-base md:text-lg max-w-md leading-relaxed font-sans font-light">
-                          <WordReveal
-                            text={active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
-                            reduced={!!prefersReduced}
-                          />
-                        </p>
-                        <div className="w-14 h-px bg-accent/70 mt-6" />
-                        <Link
-                          to={`/properties/${active.slug}`}
-                          className="inline-flex items-center gap-2 mt-6 text-muted-foreground text-sm uppercase tracking-[2px] font-sans hover:text-foreground transition-colors group"
-                        >
-                          Explore Stay
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                      </div>
-                    </AnimatePresence>
-
-                    {isMobile && properties.length > 1 && (
-                      <div className="flex items-center gap-3 mt-6">
-                        {properties.map((_, i) => (
-                          <button key={i} onClick={() => goTo(i)} className="relative rounded-full overflow-hidden" aria-label={`Go to property ${i + 1}`}>
-                            <span className={`block rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-foreground' : 'w-2 h-2 bg-foreground/40'}`} />
-                            {i === activeIndex && !prefersReduced && (
-                              <span key={progressKey} className="absolute inset-0 rounded-full border border-foreground/60" style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }} />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {!isMobile && properties.length > 0 && (
-                    <div className="hidden md:flex flex-1 items-center justify-end">
-                      <CardDeck properties={properties} activeIndex={activeIndex} onSelect={goTo} hoveredIndex={hoveredCard} onHover={setHoveredCard} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
+      {/* Cursor-reactive spotlight */}
+      {!prefersReduced && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            zIndex: 2,
+            background: 'radial-gradient(ellipse 60% 50% at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.04) 0%, transparent 70%)',
+          }}
+        />
       )}
 
-      {/* Grain overlay for all variants */}
-      {SliderVariant && !prefersReduced && <GrainOverlay />}
+      {/* Grain overlay */}
+      {!prefersReduced && <GrainOverlay />}
 
-      {/* Footer bar — shared across all variants */}
-      <div className="absolute bottom-0 left-0 right-0 z-20">
-        <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-foreground">
+      {/* Main content */}
+      <div className="relative z-10 h-full flex flex-col justify-between">
+        {/* Split panel area */}
+        <div className="flex-1 flex items-center">
+          <div className="container mx-auto px-4 md:px-8">
+            <div className="flex flex-col md:flex-row md:items-center md:gap-12 lg:gap-20">
+              {/* LEFT: Typography panel */}
+              <div className="flex-1 max-w-xl" ref={textRef}>
+                <AnimatePresence mode="wait">
+                  <div key={activeIndex}>
+                    {/* Index label */}
+                    <p className="text-white/40 text-xs uppercase tracking-[3px] font-sans mb-4">
+                      0{activeIndex + 1} — {(active.display_name || active.name).toUpperCase()}
+                    </p>
+
+                    {/* Property name */}
+                    <h1
+                      className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-white leading-[1.1] tracking-tight"
+                      style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
+                    >
+                      <WordReveal
+                        text={active.display_name || active.name}
+                        reduced={!!prefersReduced}
+                      />
+                    </h1>
+
+                    {/* Description */}
+                    <p className="mt-5 text-white/60 text-base md:text-lg max-w-md leading-relaxed font-sans font-light">
+                      <WordReveal
+                        text={active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
+                        reduced={!!prefersReduced}
+                      />
+                    </p>
+
+                    {/* Accent line */}
+                    <div className="w-14 h-px bg-accent/70 mt-6" />
+
+                    {/* CTA */}
+                    <Link
+                      to={`/properties/${active.slug}`}
+                      className="inline-flex items-center gap-2 mt-6 text-white/80 text-sm uppercase tracking-[2px] font-sans hover:text-white transition-colors group"
+                    >
+                      Explore Stay
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </div>
+                </AnimatePresence>
+
+                {/* Search form moved to bottom center */}
+
+                {/* Mobile dots */}
+                {isMobile && properties.length > 1 && (
+                  <div className="flex items-center gap-3 mt-6">
+                    {properties.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => goTo(i)}
+                        className="relative rounded-full overflow-hidden"
+                        aria-label={`Go to property ${i + 1}`}
+                      >
+                        <span className={`block rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-white' : 'w-2 h-2 bg-white/40'}`} />
+                        {i === activeIndex && !prefersReduced && (
+                          <span
+                            key={progressKey}
+                            className="absolute inset-0 rounded-full border border-white/60"
+                            style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }}
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* RIGHT: Card deck (desktop only) */}
+              {!isMobile && properties.length > 0 && (
+                <div className="hidden md:flex flex-1 items-center justify-end">
+                  <CardDeck
+                    properties={properties}
+                    activeIndex={activeIndex}
+                    onSelect={goTo}
+                    hoveredIndex={hoveredCard}
+                    onHover={setHoveredCard}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Search form — pinned center bottom */}
+        {showSearchBar && (
+          <div className="hidden md:block absolute bottom-20 left-1/2 -translate-x-1/2 z-20 w-full max-w-3xl px-4">
+            <HeroSearchForm />
+          </div>
+        )}
+
+        {/* Footer bar */}
+        <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-white">
           {/* Social icons */}
           <div className="hidden md:flex items-center gap-4">
             {socialFacebook && (
@@ -246,40 +257,53 @@ export function HeroSection() {
             )}
           </div>
 
-          <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-sans">
+          <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-white/40 font-sans">
             Unique Locations
           </p>
 
           <div className="flex items-center gap-4 ml-auto md:ml-0">
+            {/* Elongated dot indicators (desktop) */}
             {properties.length > 1 && !prefersReduced && (
               <div className="hidden md:flex items-center gap-1.5">
                 {properties.map((_, i) => (
-                  <button key={i} onClick={() => goTo(i)} className="relative overflow-hidden rounded-full" aria-label={`Go to slide ${i + 1}`}>
-                    <span className={`block h-1 rounded-full transition-all duration-300 ${i === activeIndex ? 'w-6 bg-foreground' : 'w-2 bg-foreground/20'}`} />
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    className="relative overflow-hidden rounded-full"
+                    aria-label={`Go to slide ${i + 1}`}
+                  >
+                    <span
+                      className={`block h-1 rounded-full transition-all duration-300 ${
+                        i === activeIndex ? 'w-6 bg-white' : 'w-2 bg-white/20'
+                      }`}
+                    />
                     {i === activeIndex && (
-                      <span key={progressKey} className="absolute inset-0 rounded-full" style={{ background: 'hsl(var(--accent))', opacity: 0.5, animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards` }} />
+                      <span
+                        key={progressKey}
+                        className="absolute inset-0 rounded-full"
+                        style={{
+                          background: 'hsl(var(--accent))',
+                          opacity: 0.5,
+                          animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards`,
+                        }}
+                      />
                     )}
                   </button>
                 ))}
               </div>
             )}
+
             <OdometerCounter value={activeIndex} total={count} reduced={!!prefersReduced} />
-            <button onClick={goPrev} className="w-10 h-10 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground/10 transition-colors" aria-label="Previous property">
+
+            <button onClick={goPrev} className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Previous property">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button onClick={goNext} className="w-10 h-10 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground/10 transition-colors" aria-label="Next property">
+            <button onClick={goNext} className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Next property">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         </div>
       </div>
-
-      {/* Search bar for card-deck in hero */}
-      {isCardDeck && showSearchBar && (
-        <div className="hidden md:block absolute bottom-20 left-1/2 -translate-x-1/2 z-20 w-full max-w-3xl px-4">
-          <HeroSearchForm />
-        </div>
-      )}
 
       <style>{heroKeyframes}</style>
     </section>

@@ -1,1 +1,0 @@
-INSERT INTO public.hero_settings (key, value) VALUES ('hero_style', 'card-deck') ON CONFLICT (key) DO NOTHING;

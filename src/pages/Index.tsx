@@ -1,16 +1,13 @@
 import { PageLayout } from '@/components/layout/PageLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { HeroSection } from '@/components/home/HeroSection';
-import { SearchBarOverlay } from '@/components/home/SearchBarOverlay';
 import { TrustSection } from '@/components/home/TrustSection';
 import { DestinationsShowcase } from '@/components/home/DestinationsShowcase';
 import { DiscoverVillasSection } from '@/components/home/DiscoverVillasSection';
+import { FeaturesSection } from '@/components/home/FeaturesSection';
 import { FeaturedVacationSection } from '@/components/home/FeaturedVacationSection';
 import { LiveExperiencesSection } from '@/components/home/LiveExperiencesSection';
 import { TestimonialsSection } from '@/components/home/TestimonialsSection';
-import { WhyDirectSection } from '@/components/home/WhyDirectSection';
-import { CTASection } from '@/components/home/CTASection';
-import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 
 const Index = () => {
   return (
@@ -24,25 +21,14 @@ const Index = () => {
         }}
       />
 
-      <div className="relative bg-background">
-        {/* Global grain for entire homepage */}
-        <div className="fixed inset-0 pointer-events-none z-[9999]">
-          <GrainOverlay />
-        </div>
-
-        <HeroSection />
-        <SearchBarOverlay />
-        <div className="pt-12">
-          <TrustSection />
-          <DestinationsShowcase />
-          <DiscoverVillasSection />
-          <FeaturedVacationSection />
-          <LiveExperiencesSection />
-          <TestimonialsSection />
-          <WhyDirectSection />
-          <CTASection />
-        </div>
-      </div>
+      <HeroSection />
+      <TrustSection />
+      <DestinationsShowcase />
+      <DiscoverVillasSection />
+      <FeaturesSection />
+      <FeaturedVacationSection />
+      <LiveExperiencesSection />
+      <TestimonialsSection />
     </PageLayout>
   );
 };

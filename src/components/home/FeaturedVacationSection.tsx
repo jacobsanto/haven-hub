@@ -15,7 +15,7 @@ export function FeaturedVacationSection() {
   if (!isLoading && (!featured || featured.length === 0)) return null;
 
   return (
-    <section className="bg-background py-20 md:py-24">
+    <section className="py-20 md:py-28 bg-background">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <motion.div
@@ -25,15 +25,15 @@ export function FeaturedVacationSection() {
           >
             <div className="flex items-center gap-2 mb-3">
               <Palmtree className="w-5 h-5 text-accent" />
-              <span className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase">Featured Vacations</span>
+              <span className="text-accent text-sm font-medium uppercase tracking-widest">Featured Vacations</span>
             </div>
-            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-foreground leading-tight max-w-md">
+            <h2 className="text-3xl md:text-4xl font-serif text-foreground leading-tight max-w-md">
               Exceptional Properties for Your Next Escape
             </h2>
           </motion.div>
           <Link
             to="/properties"
-            className="mt-4 md:mt-0 inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+            className="mt-4 md:mt-0 inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent-foreground transition-colors"
           >
             See All Vacations
             <ArrowRight className="w-4 h-4" />
@@ -43,7 +43,7 @@ export function FeaturedVacationSection() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="aspect-[4/5] rounded-[14px] bg-card" />
+              <Skeleton key={i} className="aspect-[4/5] rounded-2xl" />
             ))}
           </div>
         ) : (
@@ -57,23 +57,23 @@ export function FeaturedVacationSection() {
                 transition={{ delay: index * 0.1 }}
               >
                 <Link to={`/properties/${property.slug}`} className="block group">
-                  <div className="relative overflow-hidden rounded-[14px] aspect-[4/5]">
+                  <div className="relative overflow-hidden rounded-2xl aspect-[4/5]">
                     <img
                       src={property.hero_image_url || '/placeholder.svg'}
                       alt={property.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                     <div className="absolute bottom-5 left-5 right-5">
-                      <div className="flex items-center gap-1.5 text-foreground/80 text-xs mb-2">
-                        <MapPin className="w-3 h-3 text-accent" />
+                      <div className="flex items-center gap-1.5 text-white/80 text-xs mb-2">
+                        <MapPin className="w-3 h-3" />
                         {property.city}, {property.country}
                       </div>
-                      <h3 className="text-foreground font-serif text-xl font-medium mb-2">
+                      <h3 className="text-white font-serif text-xl font-medium mb-2">
                         {property.display_name || property.name}
                       </h3>
-                      <span className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-foreground text-sm">
+                      <span className="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm">
                         Starting from {format(property.base_price)}
                       </span>
                     </div>

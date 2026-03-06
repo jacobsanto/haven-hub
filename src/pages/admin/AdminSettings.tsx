@@ -207,17 +207,8 @@ function SettingsSection({ title, icon, description, children, defaultOpen = fal
   );
 }
 
-const HERO_STYLES = [
-  { id: 'card-deck', name: 'Card Deck', desc: 'Dark minimalist stacked cards' },
-  { id: 'parallax-depth', name: 'Parallax Depth', desc: 'Full-bleed image with parallax scroll' },
-  { id: 'split-reveal', name: 'Split Reveal', desc: '55/45 split with clip-path reveal' },
-  { id: 'morph-tiles', name: 'Morph Tiles', desc: '4-column grid that morphs active tile' },
-  { id: 'cinematic', name: 'Cinematic', desc: 'Ken Burns zoom with centered text' },
-  { id: 'vertical-curtain', name: 'Vertical Curtain', desc: 'Vertical clip-path wipe transition' },
-];
-
 function HeroImageSection() {
-  const { heroBackgroundImage, heroStyle } = useHeroSettings();
+  const { heroBackgroundImage } = useHeroSettings();
   const { updateSetting } = useHeroSettingsMutations();
   const { toast } = useToast();
 
@@ -234,60 +225,25 @@ function HeroImageSection() {
     });
   };
 
-  const handleStyleChange = (styleId: string) => {
-    updateSetting.mutate({ key: 'hero_style', value: styleId }, {
-      onSuccess: () => toast({ title: 'Hero style updated', description: `Switched to "${HERO_STYLES.find(s => s.id === styleId)?.name}". Refresh the homepage to see the change.` }),
-      onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
-    });
-  };
-
   return (
     <SettingsSection
       title="Homepage Hero"
       icon={<Image className="h-5 w-5 text-primary" />}
-      description="Hero slider style and custom background image"
+      description="Custom background image for the homepage hero section"
     >
-      <div className="space-y-6">
-        {/* Hero Style Selector */}
-        <div>
-          <Label className="mb-3 block">Hero Slider Style</Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {HERO_STYLES.map((style) => (
-              <button
-                key={style.id}
-                onClick={() => handleStyleChange(style.id)}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  heroStyle === style.id
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/30 hover:bg-muted/30'
-                }`}
-              >
-                <p className="text-sm font-medium text-foreground">{style.name}</p>
-                <p className="text-xs text-muted-foreground mt-1">{style.desc}</p>
-                {heroStyle === style.id && (
-                  <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Hero Background Image */}
-        <div>
-          <Label className="mb-3 block">Custom Background Image</Label>
-          <ImageUploadWithOptimizer
-            value={heroBackgroundImage || undefined}
-            onUpload={handleUpload}
-            onRemove={handleRemove}
-            preset={IMAGE_PRESETS.hero}
-            storagePath="hero"
-            label="Upload Hero Background"
-            aspectClass="aspect-[21/9] max-w-full"
-          />
-          <p className="text-xs text-muted-foreground mt-2">
-            Upload a custom hero background image. If left empty, the featured property's image will be used. Recommended size: 1920×800px or wider.
-          </p>
-        </div>
+      <div className="space-y-4">
+        <ImageUploadWithOptimizer
+          value={heroBackgroundImage || undefined}
+          onUpload={handleUpload}
+          onRemove={handleRemove}
+          preset={IMAGE_PRESETS.hero}
+          storagePath="hero"
+          label="Upload Hero Background"
+          aspectClass="aspect-[21/9] max-w-full"
+        />
+        <p className="text-xs text-muted-foreground">
+          Upload a custom hero background image. If left empty, the featured property's image will be used. Recommended size: 1920×800px or wider.
+        </p>
       </div>
     </SettingsSection>
   );
