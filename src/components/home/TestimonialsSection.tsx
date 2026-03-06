@@ -1,133 +1,115 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useFeaturedProperties } from '@/hooks/useProperties';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { viewportOnce } from '@/lib/motion';
 
 interface Testimonial {
   platform: 'booking' | 'tripadvisor';
   text: string;
   author: string;
+  location: string;
   rating: number;
 }
 
 const testimonials: Testimonial[] = [
   {
     platform: 'booking',
-    text: 'Absolutely stunning villa with breathtaking views. The concierge service was exceptional and made our stay truly memorable. Every detail was perfect.',
-    author: 'Sarah M.',
+    text: 'The villa was a dream — waking up to the caldera view, the private infinity pool catching the morning light. The team arranged a sunset sailing trip that became the highlight of our entire year.',
+    author: 'Elena & Marco',
+    location: 'Santorini, August 2025',
     rating: 5,
   },
   {
     platform: 'tripadvisor',
-    text: 'From the moment we arrived, everything was perfect. The villa exceeded our expectations in every way. Will definitely return next summer!',
-    author: 'James K.',
+    text: 'From the moment we arrived, everything was perfect. The villa exceeded our expectations in every way. The concierge service was exceptional and truly made our stay unforgettable.',
+    author: 'Sarah M.',
+    location: 'Tuscany, June 2025',
     rating: 5,
   },
   {
     platform: 'booking',
-    text: 'A truly luxurious experience. The attention to detail, the private pool, the location — everything was world-class. Highly recommended.',
-    author: 'Maria L.',
+    text: 'A truly luxurious experience. The attention to detail, the private pool, the location — everything was world-class. We\'ve already booked our return trip.',
+    author: 'James K.',
+    location: 'Bali, September 2025',
     rating: 5,
   },
 ];
 
 export function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const { data: properties } = useFeaturedProperties();
-  const photos = (properties || []).slice(0, 6).map(p => p.hero_image_url).filter(Boolean);
-
   const active = testimonials[activeIndex];
 
   return (
-    <section className="py-20 md:py-28 bg-section-alt">
+    <section className="bg-[#0a0a0f] py-20 md:py-24">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewportOnce}
-          className="text-center mb-14"
-        >
-          <span className="text-accent text-sm font-medium uppercase tracking-widest mb-3 block">Testimonials</span>
-          <h2 className="text-3xl md:text-4xl font-serif text-foreground leading-tight max-w-lg mx-auto">
-            Real Stories from <em className="text-accent not-italic">Happy</em> Travelers
-          </h2>
-        </motion.div>
+        <div className="max-w-[900px] mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewportOnce}
+            className="mb-12"
+          >
+            <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">Guest Stories</p>
+            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-[#f0ece4] leading-[1.2]">
+              What They <em className="font-normal text-accent not-italic">Remember</em>
+            </h2>
+          </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-center">
-          {/* Left: Testimonial */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={viewportOnce}
+            className="bg-[#15151f] border border-white/[0.06] rounded-2xl px-10 md:px-14 py-12 relative"
+          >
+            {/* Quote mark */}
+            <div className="font-serif text-[64px] text-accent/20 absolute top-4 left-8 leading-none">"</div>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeIndex}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
-                className="space-y-6"
               >
-                <span className="text-6xl text-accent/30 font-serif leading-none">"</span>
-                <div className="flex items-center gap-1">
-                  {[...Array(active.rating)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 fill-accent text-accent" />
-                  ))}
-                </div>
-                <p className="text-lg md:text-xl text-foreground leading-relaxed font-serif italic">
+                <p className="font-serif text-xl italic text-[#f0ece4] leading-[1.7] mb-7">
                   {active.text}
                 </p>
-                <div>
-                  <p className="font-medium text-foreground">{active.author}</p>
-                  <p className="text-sm text-muted-foreground capitalize">{active.platform === 'booking' ? 'Booking.com' : 'TripAdvisor'}</p>
-                </div>
+                <div className="w-10 h-px bg-accent mx-auto mb-5" />
+                <p className="font-sans text-sm font-bold text-[#f0ece4]">{active.author}</p>
+                <p className="font-sans text-xs text-[#6b6560]">{active.location}</p>
               </motion.div>
             </AnimatePresence>
 
             {/* Navigation */}
-            <div className="flex items-center gap-4 mt-8">
+            <div className="flex items-center justify-center gap-4 mt-8">
               <button
                 onClick={() => setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
-                className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-[#a8a29e] hover:border-accent hover:text-accent transition-colors"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4" />
               </button>
               <div className="flex gap-2">
                 {testimonials.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveIndex(i)}
-                    className={`rounded-full transition-all ${i === activeIndex ? 'w-8 h-2 bg-accent' : 'w-2 h-2 bg-border'}`}
+                    className="rounded-full transition-all border-none cursor-pointer"
+                    style={{
+                      width: i === activeIndex ? 28 : 8,
+                      height: 3,
+                      background: i === activeIndex ? 'hsl(var(--accent))' : 'rgba(255,255,255,0.15)',
+                    }}
                   />
                 ))}
               </div>
               <button
                 onClick={() => setActiveIndex((prev) => (prev + 1) % testimonials.length)}
-                className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors"
+                className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-[#a8a29e] hover:border-accent hover:text-accent transition-colors"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
-          </div>
-
-          {/* Right: Photo mosaic */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={viewportOnce}
-            className="hidden lg:grid grid-cols-3 grid-rows-2 gap-3 h-[400px]"
-          >
-            {photos.slice(0, 6).map((url, i) => (
-              <div
-                key={i}
-                className={`rounded-2xl overflow-hidden ${i === 0 ? 'col-span-2 row-span-2' : ''}`}
-              >
-                <img
-                  src={url!}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-            ))}
           </motion.div>
         </div>
       </div>
