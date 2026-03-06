@@ -1,33 +1,32 @@
 
 
-## Improving hero text and search bar legibility
+## Plan: Make Showcase Variants Full-Width & Remove Section Backgrounds
 
-Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
+### Problem
+When a showcase style is selected, the section still renders inside a constrained `max-w-[1200px] mx-auto` container with `rounded-2xl` and section background colors (`bg-background`, `bg-muted`). The user wants showcase variants to cover the **entire section width edge-to-edge** with no visible section background.
 
-### Recommended approach: Layered depth
+### Changes
 
-Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
+**1. `SectionShowcase.tsx` — Remove container constraints**
+- Line 62: Remove `rounded-2xl` from the inner container
+- Make height more impactful: `h-[500px] md:h-[600px]`
+- The showcase already uses `w-full`, so it will fill whatever parent it's in
 
-1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
+**2. All 4 homepage sections — Full-bleed when showcase mode is active**
+When `isShowcase` is true:
+- Remove the `container mx-auto px-4` wrapper
+- Remove section background classes (`bg-background`, `bg-muted`)
+- Remove `max-w-[1200px] mx-auto` wrapper around `SectionShowcase`
+- Move the section header **inside** a container div so text stays readable, but the showcase itself goes edge-to-edge
+- Remove `border-t`, `border-b` borders from the section
 
-2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
-   ```
-   bg-gradient-to-r from-black/50 via-black/20 to-transparent
-   ```
-   This keeps the right side (card deck) more vibrant while making the left text area very readable.
+Files affected:
+- `src/components/home/DestinationsShowcase.tsx`
+- `src/components/home/DiscoverVillasSection.tsx`
+- `src/components/home/FeaturedVacationSection.tsx`
+- `src/components/home/LiveExperiencesSection.tsx`
+- `src/components/ui/SectionShowcase.tsx`
 
-3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
-
-4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
-
-### Summary of changes
-
-| File | What |
-|------|------|
-| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
-| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
-| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
-| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
-
-These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
+### Result
+Showcase variants will span the full viewport width with no padding, rounded corners, or background colors — creating an immersive, edge-to-edge cinematic section. Card layouts (grid/carousel/list/featured) remain unchanged in their contained layout.
 
