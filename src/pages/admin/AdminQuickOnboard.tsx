@@ -202,6 +202,8 @@ export default function AdminQuickOnboard() {
         postal_code: form.postal_code || null,
         short_description: null,
         area_sqm: null,
+        is_featured: false,
+        featured_sort_order: 0,
       });
       toast({
         title: 'Property Created as Draft',

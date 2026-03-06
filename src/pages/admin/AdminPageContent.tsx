@@ -259,11 +259,14 @@ function PageEditor({ schema }: { schema: PageContentSchema }) {
 
 // ── Section Display Settings Editor ──
 const SECTION_LABELS: Record<string, Record<string, string>> = {
-  home: { properties: 'Properties Grid', destinations: 'Destinations Grid', experiences: 'Experiences Grid', blog: 'Blog Posts Grid' },
+  home: { properties: 'Properties Grid', destinations: 'Destinations Grid', experiences: 'Experiences Grid', blog: 'Blog Posts Grid', 'featured-vacations': 'Featured Vacations', 'discover-villas': 'Discover Villas' },
   properties: { grid: 'Property Listing' },
   destinations: { grid: 'Destinations Listing' },
   experiences: { grid: 'Experiences Listing' },
   about: { values: 'Values Grid' },
+  blog: { grid: 'Blog Posts Grid' },
+  faq: { grid: 'FAQ Listing' },
+  contact: { form: 'Contact Section' },
 };
 
 const LAYOUT_OPTIONS = [

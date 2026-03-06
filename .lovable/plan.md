@@ -1,77 +1,33 @@
 
 
-## Plan: Add Featured + Sort Order for Properties & Destinations + Display Layout Settings for All Pages
+## Improving hero text and search bar legibility
 
-### Problem
-1. **Properties** have no `is_featured` toggle or `featured_sort_order` — homepage just pulls latest 6 active properties
-2. **Destinations** have `is_featured` but no `featured_sort_order` — no control over display sequence
-3. **Section Display settings** only cover 5 pages (`home`, `properties`, `destinations`, `experiences`, `about`) — missing pages like `blog`, `contact`, `faq`, etc. have no layout controls
+Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
 
-### Changes
+### Recommended approach: Layered depth
 
-#### 1. Database Migration
+Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
 
-```sql
--- Properties: add featured toggle + sort order
-ALTER TABLE properties ADD COLUMN is_featured BOOLEAN DEFAULT false;
-ALTER TABLE properties ADD COLUMN featured_sort_order INTEGER DEFAULT 0;
+1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
 
--- Destinations: add sort order (is_featured already exists)
-ALTER TABLE destinations ADD COLUMN featured_sort_order INTEGER DEFAULT 0;
-```
+2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
+   ```
+   bg-gradient-to-r from-black/50 via-black/20 to-transparent
+   ```
+   This keeps the right side (card deck) more vibrant while making the left text area very readable.
 
-#### 2. Update TypeScript Types
+3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
 
-**`src/types/database.ts`** — Add `is_featured: boolean` and `featured_sort_order: number` to `Property` interface.
+4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
 
-**`src/types/destinations.ts`** — Add `featured_sort_order: number` to `Destination` interface.
+### Summary of changes
 
-#### 3. Update Hooks
+| File | What |
+|------|------|
+| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
+| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
+| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
+| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
 
-**`src/hooks/useProperties.ts`** — Change `useFeaturedProperties()` to filter `is_featured = true` and order by `featured_sort_order ASC` instead of `created_at DESC` with limit 6.
-
-**`src/hooks/useDestinations.ts`** — Update `useFeaturedDestinations()` to order by `featured_sort_order ASC`.
-
-#### 4. Admin UI — Properties Featured Toggle + Sort Order
-
-**`src/pages/admin/AdminProperties.tsx`** — Add a "Featured" `Switch` column and a numeric sort order `Input` in the table, wired to `useUpdateProperty`.
-
-#### 5. Admin UI — Destinations Sort Order
-
-**`src/pages/admin/AdminDestinations.tsx`** — Add a numeric sort order `Input` column next to the existing Featured switch.
-
-#### 6. Expand Section Display Settings to All Pages
-
-**`src/pages/admin/AdminPageContent.tsx`** — Expand `SECTION_LABELS` to include all remaining pages:
-
-```typescript
-const SECTION_LABELS: Record<string, Record<string, string>> = {
-  home: { properties: 'Properties Grid', destinations: 'Destinations Grid', experiences: 'Experiences Grid', blog: 'Blog Posts Grid', 'featured-vacations': 'Featured Vacations', 'discover-villas': 'Discover Villas' },
-  properties: { grid: 'Property Listing' },
-  destinations: { grid: 'Destinations Listing' },
-  experiences: { grid: 'Experiences Listing' },
-  about: { values: 'Values Grid' },
-  blog: { grid: 'Blog Posts Grid' },
-  faq: { grid: 'FAQ Listing' },
-  contact: { form: 'Contact Section' },
-};
-```
-
-This maps every homepage section that uses `useSectionDisplay` (including `featured-vacations` and `discover-villas` which are already wired but were missing from the admin labels), plus adds layout controls for blog, FAQ, and contact pages.
-
-#### 7. Homepage Sections — No Code Changes Needed
-
-`HeroSection.tsx`, `DiscoverVillasSection.tsx`, `FeaturedVacationSection.tsx`, `DestinationsShowcase.tsx` already use `useFeaturedProperties()` / `useFeaturedDestinations()`. Once hooks are updated, they will automatically respect the new filtering and ordering.
-
-### Summary
-
-| Area | Change |
-|------|--------|
-| DB migration | 2 cols on `properties`, 1 col on `destinations` |
-| Types | Update `Property` + `Destination` interfaces |
-| Hooks | Filter by `is_featured`, order by `featured_sort_order` |
-| Admin Properties | Add Featured switch + sort order input |
-| Admin Destinations | Add sort order input |
-| Admin Page Content | Expand `SECTION_LABELS` to cover all pages + missing homepage sections |
-| Homepage | No changes (hooks already wired) |
+These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
 

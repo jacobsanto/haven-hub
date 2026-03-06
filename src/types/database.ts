@@ -64,6 +64,8 @@ export interface Property {
   postal_code: string | null;
   short_description: string | null;
   area_sqm: number | null;
+  is_featured: boolean;
+  featured_sort_order: number;
 }
 
 export interface SeasonalRate {

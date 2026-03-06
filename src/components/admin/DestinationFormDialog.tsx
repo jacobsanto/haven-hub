@@ -100,7 +100,7 @@ export function DestinationFormDialog({ open, onOpenChange, destinationId }: Des
           hero_image_url: data.hero_image_url || null, description: data.description || null,
           long_description: data.long_description || null,
           best_time_to_visit: data.best_time_to_visit || null, climate: data.climate || null,
-          gallery: [], highlights: [], latitude: null, longitude: null,
+          gallery: [], highlights: [], latitude: null, longitude: null, featured_sort_order: 0,
         });
         toast.success('Destination created');
       }
