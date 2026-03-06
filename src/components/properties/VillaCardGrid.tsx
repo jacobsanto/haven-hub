@@ -11,6 +11,7 @@ interface VillaCardGridProps {
   onClick: (property: Property) => void;
   isFavorite: boolean;
   onToggleFavorite: (id: string) => void;
+  onInstantBook: (property: Property) => void;
 }
 
 export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFavorite }: VillaCardGridProps) {
