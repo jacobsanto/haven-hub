@@ -64,9 +64,9 @@ export function HeroSearchForm() {
                 type="button"
                 className={cn(
                   "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-foreground/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-foreground/20",
-                  checkOut ? "text-foreground" : "text-foreground/50"
+                  checkOut ? "text-primary-foreground" : "text-primary-foreground/70"
                 )}>
-                <Calendar className="w-4 h-4 shrink-0 text-destructive-foreground" />
+                <Calendar className="w-4 h-4 shrink-0 text-primary-foreground" />
                 {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Check Out'}
               </button>
             </PopoverTrigger>
