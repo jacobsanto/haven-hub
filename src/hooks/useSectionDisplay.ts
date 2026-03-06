@@ -5,7 +5,7 @@ export interface SectionDisplaySettings {
   id?: string;
   page_slug: string;
   section_key: string;
-  layout_mode: 'grid' | 'carousel' | 'list' | 'featured';
+  layout_mode: 'grid' | 'carousel' | 'list' | 'featured' | 'parallax-depth' | 'split-reveal' | 'morph-tiles' | 'cinematic' | 'vertical-curtain' | 'card-deck' | 'bright-minimalist';
   columns: number;
   animation: 'fade-up' | 'scale-in' | 'slide-in' | 'none';
   autoplay: boolean;
