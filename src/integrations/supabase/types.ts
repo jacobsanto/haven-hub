@@ -1105,6 +1105,36 @@ export type Database = {
           },
         ]
       }
+      faqs: {
+        Row: {
+          answer: string
+          category: string
+          created_at: string | null
+          id: string
+          is_popular: boolean | null
+          question: string
+          sort_order: number | null
+        }
+        Insert: {
+          answer: string
+          category?: string
+          created_at?: string | null
+          id?: string
+          is_popular?: boolean | null
+          question: string
+          sort_order?: number | null
+        }
+        Update: {
+          answer?: string
+          category?: string
+          created_at?: string | null
+          id?: string
+          is_popular?: boolean | null
+          question?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       fees_taxes: {
         Row: {
           amount: number

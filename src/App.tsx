@@ -32,6 +32,7 @@ const ExperienceDetail = React.lazy(() => import("./pages/ExperienceDetail"));
 const Blog = React.lazy(() => import("./pages/Blog"));
 const BlogPost = React.lazy(() => import("./pages/BlogPost"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
+const FAQ = React.lazy(() => import("./pages/FAQ"));
 
 // Lazy-loaded admin pages
 const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard"));
@@ -109,6 +110,7 @@ const App = () => (
                 <Route path="/experiences" element={<Experiences />} />
                 <Route path="/experiences/:slug" element={<ExperienceDetail />} />
                 <Route path="/blog" element={<Blog />} />
+                <Route path="/faq" element={<FAQ />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/properties" element={<AdminProperties />} />
