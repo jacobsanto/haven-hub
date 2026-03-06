@@ -14,7 +14,8 @@ import {
   Minus,
   Plus,
   X,
-  ChevronDown
+  ChevronDown,
+  Gift
 } from 'lucide-react';
 import {
   Dialog,
@@ -30,15 +31,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { AvailabilityCalendar } from '@/components/booking/AvailabilityCalendar';
+import { AddonsSelection } from '@/components/booking/AddonsSelection';
+import { GuestForm } from '@/components/booking/GuestForm';
 import { useProperties } from '@/hooks/useProperties';
 import { useActiveDestinations } from '@/hooks/useDestinations';
 import { useCheckAvailability } from '@/hooks/useAvailability';
 import { useBooking } from '@/contexts/BookingContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useRealtimeAvailability } from '@/hooks/useRealtimeAvailability';
+import { useCreateCheckoutHold, useReleaseCheckoutHold, generateSessionId } from '@/hooks/useCheckoutFlow';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Property } from '@/types/database';
+import { SelectedAddon, BookingGuestWithCounts } from '@/types/booking-engine';
+import { toast } from '@/hooks/use-toast';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 // Haptic feedback utility
 const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
@@ -48,11 +55,12 @@ const triggerHaptic = (pattern: 'light' | 'medium' | 'success' = 'light') => {
   }
 };
 
-type Step = 'search' | 'property' | 'dates' | 'guests';
+type Step = 'search' | 'property' | 'dates' | 'guests' | 'addons' | 'details';
 
 export function UnifiedBookingDialog() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { formatPrice } = useCurrency();
   const { 
     isOpen, 
     closeBooking, 
@@ -73,6 +81,16 @@ export function UnifiedBookingDialog() {
   // Real-time availability subscription for selected property
   useRealtimeAvailability(selectedProperty?.id);
   
+  // Add-ons and guest state
+  const [selectedAddons, setSelectedAddons] = useState<SelectedAddon[]>([]);
+  const [holdId, setHoldId] = useState<string | null>(null);
+  const [sessionId] = useState(generateSessionId);
+  const [adults, setAdults] = useState(2);
+  const [children, setChildren] = useState(0);
+
+  const createHold = useCreateCheckoutHold();
+  const releaseHold = useReleaseCheckoutHold();
+
   // Determine initial step based on mode
   const getInitialStep = (): Step => {
     if (mode === 'direct' && selectedProperty) return 'dates';
@@ -87,6 +105,10 @@ export function UnifiedBookingDialog() {
     if (isOpen) {
       setStep(getInitialStep());
       setSelectedDestinationName(searchLocation);
+      setSelectedAddons([]);
+      setHoldId(null);
+      setAdults(Math.min(guests, 2));
+      setChildren(0);
     }
   }, [isOpen, mode, selectedProperty, searchLocation]);
 
@@ -101,7 +123,7 @@ export function UnifiedBookingDialog() {
     );
   }, [properties, selectedDestinationName]);
 
-  // Check availability for selected property (optional enhancement)
+  // Check availability for selected property
   const checkInStr = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '';
   const checkOutStr = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : '';
   const { data: availability } = useCheckAvailability(
@@ -123,7 +145,12 @@ export function UnifiedBookingDialog() {
   const handleDateSelect = useCallback((range: DateRange | undefined) => {
     triggerHaptic('light');
     setDateRange(range);
-  }, [setDateRange]);
+    // Release old hold if dates change
+    if (holdId) {
+      releaseHold.mutate(holdId);
+      setHoldId(null);
+    }
+  }, [setDateRange, holdId, releaseHold]);
 
   const handleGuestChange = useCallback((delta: number) => {
     triggerHaptic('light');
@@ -139,42 +166,70 @@ export function UnifiedBookingDialog() {
       setStep('dates');
     } else if (step === 'dates' && dateRange?.from) {
       setStep('guests');
+    } else if (step === 'guests') {
+      setStep('addons');
+    } else if (step === 'addons') {
+      setStep('details');
     }
   }, [step, filteredProperties, selectedProperty, dateRange]);
 
   const handlePrevStep = useCallback(() => {
     triggerHaptic('light');
-    if (step === 'guests') {
+    if (step === 'details') {
+      setStep('addons');
+    } else if (step === 'addons') {
+      setStep('guests');
+    } else if (step === 'guests') {
       setStep('dates');
     } else if (step === 'dates') {
-      if (mode === 'direct') {
-        // Can't go back from dates in direct mode
-        return;
-      }
+      if (mode === 'direct') return;
       setStep('property');
     } else if (step === 'property') {
       setStep('search');
     }
   }, [step, mode]);
 
-  const handleProceed = useCallback(() => {
-    if (!selectedProperty) return;
+  const handleGuestFormSubmit = useCallback((data: BookingGuestWithCounts & { marketingConsent: boolean; termsAccepted: boolean }) => {
+    if (!selectedProperty || !dateRange?.from || !dateRange?.to) return;
     
     triggerHaptic('success');
-    const params = new URLSearchParams({ property: selectedProperty.slug });
-    params.set('guests', String(guests));
-    if (dateRange?.from) params.set('checkIn', format(dateRange.from, 'yyyy-MM-dd'));
-    if (dateRange?.to) params.set('checkOut', format(dateRange.to, 'yyyy-MM-dd'));
-    
+
+    // Store checkout state in sessionStorage
+    sessionStorage.setItem('haven-hub-checkout-state', JSON.stringify({
+      guestInfo: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        country: data.country,
+        specialRequests: data.specialRequests,
+      },
+      selectedAddons: selectedAddons.map(sa => ({
+        addon: sa.addon,
+        quantity: sa.quantity,
+        calculatedPrice: sa.calculatedPrice,
+      })),
+      adults: data.adults,
+      children: data.children,
+      holdId,
+      sessionId,
+    }));
+
+    const params = new URLSearchParams({
+      property: selectedProperty.slug,
+      checkIn: format(dateRange.from, 'yyyy-MM-dd'),
+      checkOut: format(dateRange.to, 'yyyy-MM-dd'),
+      guests: String(data.adults + data.children),
+    });
+
     closeBooking();
     navigate(`/checkout?${params.toString()}`);
-  }, [selectedProperty, guests, dateRange, closeBooking, navigate]);
+  }, [selectedProperty, dateRange, selectedAddons, holdId, sessionId, closeBooking, navigate]);
 
   const handleSearchProperties = useCallback(() => {
     triggerHaptic('light');
     setSearchLocation(selectedDestinationName);
     
-    // Navigate to properties page with search params
     const params = new URLSearchParams();
     if (selectedDestinationName) params.set('location', selectedDestinationName);
     params.set('guests', String(guests));
@@ -190,20 +245,50 @@ export function UnifiedBookingDialog() {
     setSelectedDestinationName(destinationName);
   }, []);
 
+  // Create hold when moving to addons step
+  useEffect(() => {
+    if (step === 'addons' && dateRange?.from && dateRange?.to && selectedProperty?.id && !holdId && !createHold.isPending) {
+      createHold.mutate(
+        {
+          propertyId: selectedProperty.id,
+          checkIn: format(dateRange.from, 'yyyy-MM-dd'),
+          checkOut: format(dateRange.to, 'yyyy-MM-dd'),
+          sessionId,
+          ttlMinutes: 10,
+        },
+        {
+          onSuccess: (data) => {
+            setHoldId(data.id);
+            toast({ title: 'Dates reserved', description: 'Your dates are held for 10 minutes.' });
+          },
+          onError: () => {
+            toast({ title: 'Could not reserve dates', description: 'These dates may no longer be available.', variant: 'destructive' });
+          },
+        }
+      );
+    }
+  }, [step, dateRange, selectedProperty?.id, holdId, sessionId, createHold.isPending]);
+
   // Get step info for progress indicator
   const getStepNumber = () => {
     if (mode === 'direct') {
       if (step === 'dates') return 1;
       if (step === 'guests') return 2;
+      if (step === 'addons') return 3;
+      if (step === 'details') return 4;
     }
     if (step === 'search') return 1;
     if (step === 'property') return 2;
     if (step === 'dates') return 3;
     if (step === 'guests') return 4;
+    if (step === 'addons') return 5;
+    if (step === 'details') return 6;
     return 1;
   };
 
-  const totalSteps = mode === 'direct' ? 2 : 4;
+  const totalSteps = mode === 'direct' ? 4 : 6;
+
+  const estimatedTotal = nights * (selectedProperty?.base_price || 0);
 
   const renderContent = () => (
     <>
@@ -552,14 +637,69 @@ export function UnifiedBookingDialog() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Estimated total</span>
                   <span className="text-xl font-bold">
-                    €{(selectedProperty.base_price * nights).toLocaleString()}
+                    {formatPrice(estimatedTotal).display}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  €{selectedProperty.base_price}/night × {nights} nights
+                  {formatPrice(selectedProperty.base_price).display}/night × {nights} nights
                 </p>
               </div>
             )}
+          </motion.div>
+        )}
+
+        {/* Add-ons Step */}
+        {step === 'addons' && selectedProperty && (
+          <motion.div
+            key="addons"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <div>
+              <h3 className="font-serif text-lg font-medium">Enhance Your Stay</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Add extras to make your trip unforgettable.
+              </p>
+            </div>
+
+            <AddonsSelection
+              propertyId={selectedProperty.id}
+              nights={nights}
+              guests={guests}
+              selectedAddons={selectedAddons}
+              onAddonsChange={setSelectedAddons}
+            />
+          </motion.div>
+        )}
+
+        {/* Guest Details Step */}
+        {step === 'details' && selectedProperty && (
+          <motion.div
+            key="details"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <div>
+              <h3 className="font-serif text-lg font-medium">Your Details</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Fill in your information to complete the booking.
+              </p>
+            </div>
+
+            <GuestForm
+              hidePreferences
+              onSubmit={handleGuestFormSubmit}
+              defaultValues={{
+                adults,
+                children,
+              }}
+              maxGuests={selectedProperty.max_guests}
+              initialGuests={guests}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -621,18 +761,32 @@ export function UnifiedBookingDialog() {
             )}
             <Button
               onClick={() => setStep('guests')}
-              disabled={!dateRange?.from}
+              disabled={!dateRange?.from || !dateRange?.to || nights < 2}
               className="flex-1 gap-2"
             >
-              {dateRange?.from && dateRange?.to ? 'Select Guests' : 'Skip Dates'}
+              Select Guests
               <ArrowRight className="h-4 w-4" />
             </Button>
           </>
         )}
 
         {step === 'guests' && (
-          <Button onClick={handleProceed} className="flex-1 gap-2">
-            Continue to Book
+          <Button onClick={() => setStep('addons')} className="flex-1 gap-2">
+            Add Extras
+            <Gift className="h-4 w-4" />
+          </Button>
+        )}
+
+        {step === 'addons' && (
+          <Button onClick={() => setStep('details')} className="flex-1 gap-2">
+            Continue
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
+
+        {step === 'details' && (
+          <Button className="flex-1 gap-2" type="submit" form="guest-form">
+            Continue to Payment
             <ArrowRight className="h-4 w-4" />
           </Button>
         )}
@@ -646,6 +800,8 @@ export function UnifiedBookingDialog() {
       case 'property': return 'Choose Your Property';
       case 'dates': return 'Select Your Dates';
       case 'guests': return 'Number of Guests';
+      case 'addons': return 'Enhance Your Stay';
+      case 'details': return 'Guest Details';
       default: return 'Book Your Stay';
     }
   };
