@@ -1,4 +1,5 @@
 import { useReducedMotion } from 'framer-motion';
+import { MapPin } from 'lucide-react';
 import { CARD_SPACING, CARD_ROTATION, CARD_SCALE_BASE, CARD_SCALE_STEP, TRANSITION_MS } from './heroStyles';
 
 interface Property {
