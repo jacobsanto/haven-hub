@@ -47,7 +47,7 @@ export function LiveExperiencesSection() {
   const headingAccent = words[words.length - 1];
 
   return (
-    <section className="bg-muted border-t border-b border-border py-20 md:py-24">
+    <section className={isShowcase ? 'py-12' : 'bg-muted border-t border-b border-border py-20 md:py-24'}>
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -60,56 +60,54 @@ export function LiveExperiencesSection() {
             {headingMain} <em className="font-normal text-accent not-italic">{headingAccent}</em>
           </h2>
         </motion.div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-64 rounded-[14px] bg-card" />
-            ))}
-          </div>
-        ) : isShowcase ? (
-          <div className="max-w-[1200px] mx-auto">
-            <SectionShowcase settings={settings} items={showcaseItems} />
-          </div>
-        ) : (
-          <div className="max-w-[1200px] mx-auto">
-            <SectionRenderer settings={settings}>
-              {featured!.map((exp) => (
-                <Link
-                  key={exp.id}
-                  to={`/experiences/${exp.slug}`}
-                  className="block group bg-card border border-border rounded-[14px] overflow-hidden hover:border-accent/40 hover:-translate-y-1 transition-all"
-                >
-                  <div className="p-7">
-                    <span className="inline-block font-sans text-[10px] tracking-[0.15em] text-accent uppercase px-2.5 py-1 bg-accent/10 rounded">
-                      {exp.category}
-                    </span>
-                    <h3 className="font-serif text-xl font-semibold text-foreground mt-4 mb-2">
-                      {exp.name}
-                    </h3>
-                    <p className="font-sans text-[13px] text-muted-foreground leading-relaxed mb-5 line-clamp-2">
-                      {exp.description}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      {exp.duration && (
-                        <span className="font-sans text-xs text-muted-foreground">
-                          <Clock size={12} className="inline mr-1 align-middle" />
-                          {exp.duration}
-                        </span>
-                      )}
-                      {exp.price_from && (
-                        <span className="font-sans text-base font-bold text-accent">
-                          {format(exp.price_from)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </SectionRenderer>
-          </div>
-        )}
       </div>
+
+      {isLoading ? (
+        <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-5">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-64 rounded-[14px] bg-card" />
+          ))}
+        </div>
+      ) : isShowcase ? (
+        <SectionShowcase settings={settings} items={showcaseItems} />
+      ) : (
+        <div className="container mx-auto px-4 max-w-[1200px]">
+          <SectionRenderer settings={settings}>
+            {featured!.map((exp) => (
+              <Link
+                key={exp.id}
+                to={`/experiences/${exp.slug}`}
+                className="block group bg-card border border-border rounded-[14px] overflow-hidden hover:border-accent/40 hover:-translate-y-1 transition-all"
+              >
+                <div className="p-7">
+                  <span className="inline-block font-sans text-[10px] tracking-[0.15em] text-accent uppercase px-2.5 py-1 bg-accent/10 rounded">
+                    {exp.category}
+                  </span>
+                  <h3 className="font-serif text-xl font-semibold text-foreground mt-4 mb-2">
+                    {exp.name}
+                  </h3>
+                  <p className="font-sans text-[13px] text-muted-foreground leading-relaxed mb-5 line-clamp-2">
+                    {exp.description}
+                  </p>
+                  <div className="flex justify-between items-center">
+                    {exp.duration && (
+                      <span className="font-sans text-xs text-muted-foreground">
+                        <Clock size={12} className="inline mr-1 align-middle" />
+                        {exp.duration}
+                      </span>
+                    )}
+                    {exp.price_from && (
+                      <span className="font-sans text-base font-bold text-accent">
+                        {format(exp.price_from)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </SectionRenderer>
+        </div>
+      )}
     </section>
   );
 }

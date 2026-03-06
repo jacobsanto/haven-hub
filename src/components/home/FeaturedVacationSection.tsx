@@ -37,7 +37,7 @@ export function FeaturedVacationSection() {
   if (!isLoading && (!featured || featured.length === 0)) return null;
 
   return (
-    <section className="bg-background py-20 md:py-24">
+    <section className={isShowcase ? 'py-12' : 'bg-background py-20 md:py-24'}>
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <motion.div
@@ -61,16 +61,18 @@ export function FeaturedVacationSection() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
+      </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="aspect-[4/5] rounded-[14px] bg-card" />
-            ))}
-          </div>
-        ) : isShowcase ? (
-          <SectionShowcase settings={settings} items={showcaseItems} />
-        ) : (
+      {isLoading ? (
+        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="aspect-[4/5] rounded-[14px] bg-card" />
+          ))}
+        </div>
+      ) : isShowcase ? (
+        <SectionShowcase settings={settings} items={showcaseItems} />
+      ) : (
+        <div className="container mx-auto px-4">
           <SectionRenderer settings={settings}>
             {featured!.map((property) => (
               <Link key={property.id} to={`/properties/${property.slug}`} className="block group">
@@ -98,8 +100,8 @@ export function FeaturedVacationSection() {
               </Link>
             ))}
           </SectionRenderer>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

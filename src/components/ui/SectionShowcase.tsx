@@ -59,7 +59,7 @@ function ShowcaseEngine({ settings, items, className }: { settings: SectionDispl
 
   return (
     <div className={cn('relative w-full', className)}>
-      <div className="relative w-full h-[500px] md:h-[560px] rounded-2xl overflow-hidden">
+      <div className="relative w-full h-[500px] md:h-[600px] overflow-hidden">
         <Variant items={items} activeIndex={activeIndex} onSelect={setActiveIndex} />
       </div>
       {/* Nav arrows */}
