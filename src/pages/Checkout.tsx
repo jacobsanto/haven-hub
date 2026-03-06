@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { format, parseISO, differenceInDays } from 'date-fns';
-import { ArrowLeft, MapPin, Users, Calendar, Loader2, Check } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Calendar, Loader2, Check, Star, Shield, Gift, CreditCard, Lock } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { PriceBreakdownDisplay } from '@/components/booking/PriceBreakdown';
@@ -18,10 +18,10 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const STEPS = [
-  { key: 'dates', label: 'Dates' },
-  { key: 'guests', label: 'Guests' },
-  { key: 'details', label: 'Details' },
-  { key: 'payment', label: 'Payment' },
+  { key: 'dates', label: 'Dates & Guests', icon: Calendar },
+  { key: 'addons', label: 'Add-ons', icon: Gift },
+  { key: 'details', label: 'Guest Details', icon: Users },
+  { key: 'payment', label: 'Payment', icon: CreditCard },
 ] as const;
 
 function StepIndicator() {
@@ -31,35 +31,39 @@ function StepIndicator() {
         {STEPS.map((step, index) => {
           const isPayment = index === 3;
           const isCompleted = index < 3;
+          const Icon = step.icon;
 
           return (
             <li key={step.key} className="flex items-center">
-              <div className="flex flex-col items-center gap-1.5 p-1">
+              <div className="flex flex-col items-center gap-2 p-1">
                 <div
                   className={cn(
-                    'w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors',
-                    isCompleted && 'bg-primary border-primary text-primary-foreground',
-                    isPayment && 'bg-primary border-primary text-primary-foreground',
+                    'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-400',
+                    isCompleted && 'bg-emerald-500 border-2 border-emerald-500 text-background',
+                    isPayment && 'bg-accent border-2 border-accent text-background shadow-[0_0_20px_hsl(var(--accent)/0.2)]',
                   )}
                 >
-                  {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
+                  {isCompleted ? <Check className="h-4 w-4" strokeWidth={3} /> : <Icon className="h-4 w-4" />}
                 </div>
                 <span
                   className={cn(
-                    'text-xs font-medium text-foreground'
+                    'text-[10px] uppercase tracking-[0.08em] font-medium whitespace-nowrap transition-colors',
+                    isCompleted && 'text-emerald-500',
+                    isPayment && 'text-accent font-bold',
                   )}
                 >
                   {step.label}
                 </span>
               </div>
               {index < STEPS.length - 1 && (
-                <div
-                  aria-hidden="true"
-                  className={cn(
-                    'w-12 sm:w-20 h-0.5 mx-1 mb-5',
-                    index < 3 ? 'bg-primary' : 'bg-muted-foreground/20'
-                  )}
-                />
+                <div className="relative w-12 sm:w-20 h-0.5 mx-1 mb-6 bg-muted rounded overflow-hidden">
+                  <div
+                    className={cn(
+                      'absolute inset-y-0 left-0 rounded transition-[width] duration-600',
+                      isCompleted ? 'w-full bg-emerald-500' : 'w-1/2 bg-accent'
+                    )}
+                  />
+                </div>
               )}
             </li>
           );
@@ -81,7 +85,6 @@ export default function Checkout() {
   const { data: property, isLoading: propertyLoading } = useProperty(propertySlug || '');
   const { data: feesTaxes } = useFeesTaxes(property?.id);
 
-  // Read checkout state from sessionStorage (set by BookingFlowDialog)
   const [selectedAddons, setSelectedAddons] = useState<SelectedAddon[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<CouponPromo | null>(null);
   const [guestInfo, setGuestInfo] = useState<BookingGuestWithCounts | null>(null);
@@ -119,24 +122,19 @@ export default function Checkout() {
             termsAccepted: false,
           });
         }
-        if (data.selectedAddons) {
-          setSelectedAddons(data.selectedAddons);
-        }
+        if (data.selectedAddons) setSelectedAddons(data.selectedAddons);
         if (data.adults != null) setAdults(data.adults);
         if (data.children != null) setChildren(data.children);
         if (data.holdId) setHoldId(data.holdId);
         if (data.sessionId) setSessionId(data.sessionId);
-        if (data.adults != null && data.children != null) {
-          setGuests(data.adults + data.children);
-        }
+        if (data.adults != null && data.children != null) setGuests(data.adults + data.children);
         sessionStorage.removeItem('haven-hub-checkout-state');
       }
     } catch (e) {
-      console.error('Failed to read checkout state from sessionStorage:', e);
+      console.error('Failed to read checkout state:', e);
     }
   }, []);
 
-  // Calculate nights and price
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 0;
     return differenceInDays(checkOut, checkIn);
@@ -147,17 +145,12 @@ export default function Checkout() {
   const priceBreakdown: PriceBreakdown | null = useMemo(() => {
     if (!nights || nights <= 0 || !feesTaxes) return null;
     return calculatePriceBreakdown(
-      nightlyRate,
-      nights,
-      guests,
-      selectedAddons,
-      feesTaxes,
+      nightlyRate, nights, guests, selectedAddons, feesTaxes,
       appliedCoupon || undefined,
       paymentType === 'deposit' ? 30 : undefined
     );
   }, [nightlyRate, nights, guests, selectedAddons, feesTaxes, appliedCoupon, paymentType]);
 
-  // Create hold if not already created by dialog
   const holdCreationPending = useRef(false);
   
   useEffect(() => {
@@ -175,18 +168,11 @@ export default function Checkout() {
           onSuccess: (data) => {
             setHoldId(data.id);
             holdCreationPending.current = false;
-            toast({
-              title: 'Dates reserved',
-              description: 'Your dates are held for 10 minutes while you complete checkout.',
-            });
+            toast({ title: 'Dates reserved', description: 'Your dates are held for 10 minutes while you complete checkout.' });
           },
           onError: () => {
             holdCreationPending.current = false;
-            toast({
-              title: 'Could not reserve dates',
-              description: 'These dates may no longer be available.',
-              variant: 'destructive',
-            });
+            toast({ title: 'Could not reserve dates', description: 'These dates may no longer be available.', variant: 'destructive' });
           },
         }
       );
@@ -196,8 +182,8 @@ export default function Checkout() {
   if (propertyLoading) {
     return (
       <PageLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
       </PageLayout>
     );
@@ -206,9 +192,9 @@ export default function Checkout() {
   if (!property) {
     return (
       <PageLayout>
-        <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-          <h1 className="font-serif text-2xl">Property not found</h1>
-          <Button asChild>
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+          <h1 className="font-serif text-2xl text-foreground">Property not found</h1>
+          <Button asChild variant="gold" className="rounded-full">
             <Link to="/properties">Browse Properties</Link>
           </Button>
         </div>
@@ -218,128 +204,149 @@ export default function Checkout() {
 
   return (
     <PageLayout>
-      <div className="min-h-screen bg-secondary/30">
+      <div className="min-h-screen bg-muted">
         {/* Header */}
-        <div className="bg-card border-b">
+        <div className="bg-card border-b border-border">
           <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="font-serif text-xl font-medium">{property.name}</h1>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-3 w-3" />
-                  <span>{property.city}, {property.country}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back" className="text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div>
+                  <h1 className="font-serif text-lg font-medium text-foreground">{property.name}</h1>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <MapPin className="h-3 w-3" />
+                    <span>{property.city}, {property.country}</span>
+                  </div>
                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Lock className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-xs text-muted-foreground">Secure Booking</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Progress steps - all completed except payment (current) */}
-        <div className="bg-card border-b">
-          <div className="container mx-auto px-4 py-4">
+        {/* Progress Stepper */}
+        <div className="bg-card border-b border-border">
+          <div className="container mx-auto px-4 py-5">
             <StepIndicator />
           </div>
         </div>
 
-        {/* Main content - Step 4: Review & Pay only */}
+        {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
           {checkIn && checkOut && guestInfo && priceBreakdown ? (
             <div className="grid lg:grid-cols-5 gap-8">
-              {/* Left column: Booking summary */}
+              {/* Sidebar */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Property card */}
-                <div className="bg-card rounded-xl border overflow-hidden">
+                {/* Villa Preview Card */}
+                <div className="bg-card border border-border rounded-2xl overflow-hidden sticky top-[180px]">
                   {property.hero_image_url && (
-                    <img
-                      src={property.hero_image_url}
-                      alt={property.name}
-                      className="w-full h-48 object-cover"
-                    />
+                    <div className="relative">
+                      <img src={property.hero_image_url} alt={property.name} className="w-full h-48 object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/30 to-transparent" />
+                    </div>
                   )}
-                  <div className="p-4">
-                    <h3 className="font-serif text-lg font-medium">{property.name}</h3>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      <span>{property.city}, {property.country}</span>
+                  <div className="p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-accent mb-1">
+                      <MapPin className="h-2.5 w-2.5 inline mr-1" />{property.city}
+                    </p>
+                    <h3 className="font-serif text-lg font-medium text-foreground">{property.name}</h3>
+                    {property.rating && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="h-3 w-3 fill-accent text-accent" />
+                        <span className="text-xs text-muted-foreground">{property.rating}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dates */}
+                  <div className="border-t border-border px-5 py-4 flex justify-between">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Check-in</p>
+                      <p className="text-sm font-semibold text-foreground">{format(checkIn, 'MMM d, yyyy')}</p>
+                    </div>
+                    <div className="w-px bg-border" />
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Check-out</p>
+                      <p className="text-sm font-semibold text-foreground">{format(checkOut, 'MMM d, yyyy')}</p>
                     </div>
                   </div>
-                </div>
 
-                {/* Booking details summary */}
-                <div className="bg-card rounded-xl border p-5 space-y-3">
-                  <h4 className="font-medium">Booking Summary</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{format(checkIn, 'MMM d')} – {format(checkOut, 'MMM d, yyyy')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {adults} adult{adults !== 1 ? 's' : ''}
-                        {children > 0 && `, ${children} child${children !== 1 ? 'ren' : ''}`}
-                        {' · '}{nights} night{nights > 1 ? 's' : ''}
-                      </span>
+                  {/* Guest summary */}
+                  <div className="border-t border-border px-5 py-3 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>
+                      {adults} adult{adults !== 1 ? 's' : ''}
+                      {children > 0 && `, ${children} child${children !== 1 ? 'ren' : ''}`}
+                      {' · '}{nights} night{nights > 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  {/* Price breakdown */}
+                  <div className="border-t border-border px-5 py-5">
+                    <CouponInput
+                      propertyId={property.id}
+                      nights={nights}
+                      bookingValue={priceBreakdown.subtotal}
+                      appliedCoupon={appliedCoupon}
+                      onCouponApply={setAppliedCoupon}
+                    />
+                    <div className="mt-4">
+                      <PriceBreakdownDisplay
+                        breakdown={priceBreakdown}
+                        showDeposit={paymentType === 'deposit'}
+                      />
                     </div>
                   </div>
+
+                  {/* Cancellation policy */}
+                  <div className="border-t border-border px-5 py-4">
+                    <CancellationPolicyDisplay policyKey="moderate" checkInDate={checkIn} />
+                  </div>
                 </div>
-
-                {/* Coupon + Price breakdown */}
-                <CouponInput
-                  propertyId={property.id}
-                  nights={nights}
-                  bookingValue={priceBreakdown.subtotal}
-                  appliedCoupon={appliedCoupon}
-                  onCouponApply={setAppliedCoupon}
-                />
-                <PriceBreakdownDisplay
-                  breakdown={priceBreakdown}
-                  showDeposit={paymentType === 'deposit'}
-                />
-
-                {/* Cancellation policy */}
-                <CancellationPolicyDisplay
-                  policyKey="moderate"
-                  checkInDate={checkIn}
-                />
               </div>
 
-              {/* Right column: Preferences, Terms & Pay CTA */}
+              {/* Right Column: Payment */}
               <div className="lg:col-span-3 space-y-6">
-                <StripeHealthBanner />
+                <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
+                  <h2 className="text-xl font-serif font-medium text-foreground mb-1">
+                    Review & <em className="italic text-accent">Pay</em>
+                  </h2>
+                  <p className="text-sm text-muted-foreground mb-6">Complete your booking securely</p>
 
-                <PaymentStep
-                  propertyId={property.id}
-                  propertySlug={property.slug}
-                  checkIn={checkIn}
-                  checkOut={checkOut}
-                  nights={nights}
-                  guests={guests}
-                  adults={adults}
-                  children={children}
-                  guestInfo={guestInfo}
-                  selectedAddons={selectedAddons}
-                  priceBreakdown={priceBreakdown}
-                  paymentType={paymentType}
-                  holdId={holdId}
-                  onPaymentSuccess={(result) => {
-                    navigate(`/booking/confirm?ref=${result.bookingReference}`);
-                  }}
-                  onBack={() => navigate(-1)}
-                />
+                  <StripeHealthBanner />
+
+                  <PaymentStep
+                    propertyId={property.id}
+                    propertySlug={property.slug}
+                    checkIn={checkIn}
+                    checkOut={checkOut}
+                    nights={nights}
+                    guests={guests}
+                    adults={adults}
+                    children={children}
+                    guestInfo={guestInfo}
+                    selectedAddons={selectedAddons}
+                    priceBreakdown={priceBreakdown}
+                    paymentType={paymentType}
+                    holdId={holdId}
+                    onPaymentSuccess={(result) => {
+                      navigate(`/booking/confirm?ref=${result.bookingReference}`);
+                    }}
+                    onBack={() => navigate(-1)}
+                  />
+                </div>
               </div>
             </div>
           ) : (
-            /* Missing data - redirect user back */
             <div className="text-center py-16 space-y-4">
-              <h2 className="font-serif text-xl">Missing booking details</h2>
-              <p className="text-muted-foreground">
-                Please start from a property page to begin your booking.
-              </p>
-              <Button asChild>
+              <h2 className="font-serif text-xl text-foreground">Missing booking details</h2>
+              <p className="text-muted-foreground">Please start from a property page to begin your booking.</p>
+              <Button asChild variant="gold" className="rounded-full">
                 <Link to="/properties">Browse Properties</Link>
               </Button>
             </div>
