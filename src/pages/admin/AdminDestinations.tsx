@@ -147,6 +147,22 @@ const AdminDestinations = () => {
                             }}
                           />
                         </TableCell>
+                        <TableCell className="hidden md:table-cell text-center">
+                          <Input
+                            type="number"
+                            min={0}
+                            className="w-16 h-7 text-xs text-center"
+                            value={dest.featured_sort_order}
+                            onChange={async (e) => {
+                              const val = parseInt(e.target.value) || 0;
+                              try {
+                                await updateDestination.mutateAsync({ id: dest.id, featured_sort_order: val });
+                              } catch {
+                                toast.error('Failed to update sort order');
+                              }
+                            }}
+                          />
+                        </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <Badge variant={dest.status === 'active' ? 'default' : 'secondary'} className="text-xs">
                             {dest.status}
