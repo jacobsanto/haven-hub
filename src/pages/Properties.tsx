@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useBooking } from '@/contexts/BookingContext';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
