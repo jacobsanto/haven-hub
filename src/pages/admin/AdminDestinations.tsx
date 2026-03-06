@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, MapPin, ExternalLink, Archive, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, ExternalLink, Archive } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { AdminLoadingSkeleton } from '@/components/admin/AdminLoadingSkeleton';
@@ -132,7 +133,17 @@ const AdminDestinations = () => {
                         <TableCell className="hidden lg:table-cell text-center text-sm">{counts.propCount}</TableCell>
                         <TableCell className="hidden lg:table-cell text-center text-sm">{counts.expCount}</TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {dest.is_featured && <Star className="h-4 w-4 text-primary fill-primary" />}
+                          <Switch
+                            checked={dest.is_featured}
+                            onCheckedChange={async (checked) => {
+                              try {
+                                await updateDestination.mutateAsync({ id: dest.id, is_featured: checked });
+                                toast.success(checked ? 'Marked as featured' : 'Removed from featured');
+                              } catch {
+                                toast.error('Failed to update');
+                              }
+                            }}
+                          />
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <Badge variant={dest.status === 'active' ? 'default' : 'secondary'} className="text-xs">
