@@ -148,7 +148,7 @@ export function HeroSection() {
           {/* Card deck default: background + text panel */}
           {active.hero_image_url && <>
           <div
-            className="absolute inset-0 bg-cover bg-center blur-md scale-110 transition-[background-image] duration-1000 ease-in-out"
+            className="absolute inset-0 bg-cover bg-center blur-sm scale-105 transition-[background-image] duration-1000 ease-in-out"
             style={{ backgroundImage: `url(${active.hero_image_url})` }} />
           <div className="absolute inset-0 bg-black/60" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent" />
