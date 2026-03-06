@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Compass, Calendar } from 'lucide-react';
+import { Calendar, CalendarCheck2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBooking } from '@/contexts/BookingContext';
 import { useProperties } from '@/hooks/useProperties';
@@ -38,62 +38,62 @@ export function FloatingBookButton() {
     <>
       {/* Desktop */}
       <AnimatePresence>
-        {isVisible && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 200 }}
-            className="fixed bottom-6 right-6 z-50 hidden lg:block"
-          >
+        {isVisible &&
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 200 }}
+          className="fixed bottom-6 right-6 z-50 hidden lg:block">
+          
             <Button
-              variant="gold"
-              size="lg"
-              onClick={handleClick}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-              className="h-14 rounded-full shadow-lg px-6 transition-all duration-300"
-            >
-              <Compass className="h-5 w-5 flex-shrink-0" />
+            variant="gold"
+            size="lg"
+            onClick={handleClick}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            className="h-14 rounded-full shadow-lg px-6 transition-all duration-300">
+            
+              <CalendarCheck2 className="h-5 w-5 flex-shrink-0" />
               <span className="ml-2 whitespace-nowrap">Find a Stay</span>
               <AnimatePresence>
-                {isHovered && propertyCount > 0 && (
-                  <motion.span
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: 'auto' }}
-                    exit={{ opacity: 0, width: 0 }}
-                    className="ml-1 whitespace-nowrap overflow-hidden text-primary-foreground/70 text-sm"
-                  >
+                {isHovered && propertyCount > 0 &&
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="ml-1 whitespace-nowrap overflow-hidden text-primary-foreground/70 text-sm">
+                
                     · {propertyCount} stays
                   </motion.span>
-                )}
+              }
               </AnimatePresence>
             </Button>
           </motion.div>
-        )}
+        }
       </AnimatePresence>
 
       {/* Mobile */}
       <AnimatePresence>
-        {isVisible && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 200 }}
-            className="fixed bottom-5 right-4 z-50 lg:hidden"
-          >
+        {isVisible &&
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 20, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 200 }}
+          className="fixed bottom-5 right-4 z-50 lg:hidden">
+          
             <Button
-              variant="gold"
-              size="icon"
-              className="h-12 w-12 rounded-full shadow-lg active:scale-95 transition-transform"
-              onClick={handleClick}
-            >
+            variant="gold"
+            size="icon"
+            className="h-12 w-12 rounded-full shadow-lg active:scale-95 transition-transform"
+            onClick={handleClick}>
+            
               <Calendar className="h-5 w-5" />
             </Button>
           </motion.div>
-        )}
+        }
       </AnimatePresence>
-    </>
-  );
+    </>);
+
 }
