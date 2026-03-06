@@ -65,13 +65,17 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
         onClick={(e) => e.stopPropagation()}
       >
         {/* Gallery */}
-        <div className="relative aspect-[21/9] overflow-hidden">
+        <div className="relative aspect-[21/9] overflow-hidden cursor-pointer" onDoubleClick={() => setFullscreen(true)}>
           <img
             src={displayImages[imgIdx]}
             alt={property.name}
             className="w-full h-full object-cover transition-opacity duration-400"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-muted via-transparent to-transparent" />
+          {/* Expand hint */}
+          <div className="absolute bottom-14 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/60 backdrop-blur-sm text-[10px] text-muted-foreground pointer-events-none">
+            <Expand size={12} /> Double-click to expand
+          </div>
 
           {/* Close */}
           <button
