@@ -205,7 +205,7 @@ function MorphTilesSection({ items, activeIndex, onSelect }: VariantProps) {
                 filter: isActive ? 'brightness(0.7)' : 'brightness(0.35) grayscale(0.5)',
                 transition: prefersReduced ? 'none' : 'filter 0.8s ease'
               }} />
-              {isActive && <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-transparent to-transparent" />}
+              {isActive && <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-transparent to-transparent opacity-40" />}
               <div className="absolute z-[5]" style={{
                 bottom: isActive ? '10%' : 16,
                 left: isActive ? '6%' : 16,
