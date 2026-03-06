@@ -45,14 +45,14 @@ export function WordReveal({ text, className, accentWord, reduced }: WordRevealP
       initial="hidden"
       animate="visible"
       exit="exit"
-      className={`text-primary-foreground ${className ?? ''}`}
+      className={className}
       style={{ display: 'flex', flexWrap: 'wrap', gap: '0 0.3em' }}
     >
       {words.map((word, i) => (
         <motion.span
           key={`${word}-${i}`}
           variants={wordVariants}
-          className={word === accentWord ? 'text-accent' : undefined}
+          className={i === 0 ? 'text-primary-foreground' : 'text-accent'}
           style={{ display: 'inline-block' }}
         >
           {word}
