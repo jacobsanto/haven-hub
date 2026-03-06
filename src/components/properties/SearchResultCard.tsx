@@ -42,6 +42,7 @@ export function SearchResultCard({ property, index = 0, nights, checkIn, checkOu
   const amenityMap = useAmenityMap();
   const { data: activeOffer } = useActiveSpecialOffer(property.id);
   const { formatPrice } = useCurrency();
+  const { openBooking } = useBooking();
 
   const getAmenityData = (slug: string) => {
     const dbAmenity = amenityMap[slug];
