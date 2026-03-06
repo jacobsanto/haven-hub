@@ -153,8 +153,8 @@ export function HeroSection() {
               backgroundImage: `url(${active.hero_image_url})`,
               transition: `background-image 1.2s cubic-bezier(0.22, 1, 0.36, 1)`,
             }} />
-          <div className="absolute inset-0 bg-black/60" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
         </>}
 
           {!prefersReduced &&
