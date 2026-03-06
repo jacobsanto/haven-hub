@@ -16,6 +16,7 @@ const DEFAULTS: Record<string, string> = {
   hero_background_image: '',
   hero_heading_line1: '',
   hero_heading_line2: '',
+  hero_style: 'card-deck',
 };
 
 export function useHeroSettings() {
@@ -45,6 +46,7 @@ export function useHeroSettings() {
     featuredPropertyId: settings.featured_property_id,
     showQuickNav: settings.show_quick_nav === 'true',
     heroBackgroundImage: settings.hero_background_image || '',
+    heroStyle: settings.hero_style || 'card-deck',
   };
 }
 
