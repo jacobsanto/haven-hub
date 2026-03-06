@@ -300,6 +300,128 @@ function HeroImageSection() {
   );
 }
 
+const LAYOUT_OPTIONS = [
+  { id: 'grid' as const, name: 'Grid', desc: 'Responsive column layout', icon: LayoutGrid },
+  { id: 'carousel' as const, name: 'Carousel', desc: 'Horizontal slider with navigation', icon: GalleryHorizontal },
+  { id: 'list' as const, name: 'List', desc: 'Vertical stacked cards', icon: List },
+  { id: 'featured' as const, name: 'Featured', desc: 'Hero card + supporting grid', icon: Star },
+];
+
+const HOMEPAGE_SECTIONS = [
+  { key: 'destinations', label: 'Destinations Showcase', desc: 'Destination cards on homepage' },
+  { key: 'discover-villas', label: 'Discover Villas', desc: 'Property cards carousel/grid' },
+  { key: 'featured-vacations', label: 'Featured Vacations', desc: 'Featured property highlights' },
+  { key: 'experiences', label: 'Live Experiences', desc: 'Experience cards section' },
+];
+
+function HomepageSectionsLayout() {
+  const { data: allSettings, isLoading } = useAllSectionDisplaySettings();
+  const upsert = useUpsertSectionDisplay();
+  const { toast } = useToast();
+
+  const getSettings = (sectionKey: string): Partial<SectionDisplaySettings> => {
+    const found = allSettings?.find(s => s.page_slug === 'home' && s.section_key === sectionKey);
+    return found || { layout_mode: 'grid', autoplay: false, items_per_view: 3, show_navigation: true, show_dots: false, columns: 3 };
+  };
+
+  const handleLayoutChange = (sectionKey: string, mode: SectionDisplaySettings['layout_mode']) => {
+    upsert.mutate({ page_slug: 'home', section_key: sectionKey, layout_mode: mode }, {
+      onSuccess: () => toast({ title: 'Layout updated', description: `Refresh the homepage to see the change.` }),
+      onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+    });
+  };
+
+  const handleOptionChange = (sectionKey: string, field: string, value: any) => {
+    upsert.mutate({ page_slug: 'home', section_key: sectionKey, [field]: value }, {
+      onSuccess: () => toast({ title: 'Setting updated' }),
+    });
+  };
+
+  return (
+    <SettingsSection
+      title="Homepage Section Layouts"
+      icon={<LayoutGrid className="h-5 w-5 text-primary" />}
+      description="Choose display layout for each homepage content section"
+    >
+      <div className="space-y-6">
+        {HOMEPAGE_SECTIONS.map((section) => {
+          const current = getSettings(section.key);
+          const activeMode = current.layout_mode || 'grid';
+
+          return (
+            <div key={section.key} className="space-y-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">{section.label}</p>
+                <p className="text-xs text-muted-foreground">{section.desc}</p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {LAYOUT_OPTIONS.map((layout) => {
+                  const Icon = layout.icon;
+                  const isActive = activeMode === layout.id;
+                  return (
+                    <button
+                      key={layout.id}
+                      onClick={() => handleLayoutChange(section.key, layout.id)}
+                      disabled={upsert.isPending}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        isActive
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                      }`}
+                    >
+                      <Icon className={`h-4 w-4 mb-1.5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <p className="text-sm font-medium text-foreground">{layout.name}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{layout.desc}</p>
+                      {isActive && <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Carousel-specific options */}
+              {activeMode === 'carousel' && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-lg border border-border bg-muted/30">
+                  <div className="flex items-center justify-between gap-2 col-span-1">
+                    <Label className="text-xs">Autoplay</Label>
+                    <Switch
+                      checked={current.autoplay ?? false}
+                      onCheckedChange={(v) => handleOptionChange(section.key, 'autoplay', v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2 col-span-1">
+                    <Label className="text-xs">Show Dots</Label>
+                    <Switch
+                      checked={current.show_dots ?? false}
+                      onCheckedChange={(v) => handleOptionChange(section.key, 'show_dots', v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2 col-span-1">
+                    <Label className="text-xs">Navigation</Label>
+                    <Switch
+                      checked={current.show_navigation ?? true}
+                      onCheckedChange={(v) => handleOptionChange(section.key, 'show_navigation', v)}
+                    />
+                  </div>
+                  <div className="space-y-1 col-span-1">
+                    <Label className="text-xs">Items per View</Label>
+                    <select
+                      value={current.items_per_view ?? 3}
+                      onChange={(e) => handleOptionChange(section.key, 'items_per_view', Number(e.target.value))}
+                      className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs"
+                    >
+                      {[2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </SettingsSection>
+  );
+}
+
 export default function AdminSettings() {
   const { data: settings, isLoading } = useBrandSettings();
   const updateSettings = useUpdateBrandSettings();

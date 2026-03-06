@@ -7,18 +7,14 @@ import { useBooking } from '@/contexts/BookingContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
 import { Button } from '@/components/ui/button';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from '@/components/ui/carousel';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 
 export function DiscoverVillasSection() {
   const { data: properties, isLoading } = useFeaturedProperties();
   const { format } = useFormatCurrency();
   const { openBooking } = useBooking();
+  const settings = useSectionDisplay('home', 'discover-villas');
 
   return (
     <section className="bg-muted border-t border-border py-20 md:py-24">
@@ -55,62 +51,47 @@ export function DiscoverVillasSection() {
             ))}
           </div>
         ) : properties && properties.length > 0 ? (
-          <Carousel opts={{ align: 'start', loop: true }} className="w-full">
-            <CarouselContent className="-ml-4">
-              {properties.map((property, index) => (
-                <CarouselItem key={property.id} className="pl-4 md:basis-1/4">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={viewportOnce}
-                    transition={{ delay: index * 0.08 }}
+          <SectionRenderer settings={settings}>
+            {properties.map((property) => (
+              <Link key={property.id} to={`/properties/${property.slug}`} className="block group">
+                <div className="overflow-hidden rounded-[14px] mb-4">
+                  <img
+                    src={property.hero_image_url || '/placeholder.svg'}
+                    alt={property.name}
+                    className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                  <MapPin className="w-3 h-3 text-accent" />
+                  {property.city}, {property.country}
+                </div>
+                <h3 className="text-base font-serif font-medium text-foreground group-hover:text-accent transition-colors mb-1">
+                  {property.display_name || property.name}
+                </h3>
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                  {property.short_description || property.description?.slice(0, 80)}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">
+                    {format(property.base_price)} <span className="text-muted-foreground font-normal text-xs">/ night</span>
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs gap-1 rounded-full border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openBooking({ mode: 'direct', property });
+                    }}
                   >
-                    <Link to={`/properties/${property.slug}`} className="block group">
-                      <div className="overflow-hidden rounded-[14px] mb-4">
-                        <img
-                          src={property.hero_image_url || '/placeholder.svg'}
-                          alt={property.name}
-                          className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
-                        <MapPin className="w-3 h-3 text-accent" />
-                        {property.city}, {property.country}
-                      </div>
-                      <h3 className="text-base font-serif font-medium text-foreground group-hover:text-accent transition-colors mb-1">
-                        {property.display_name || property.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                        {property.short_description || property.description?.slice(0, 80)}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">
-                          {format(property.base_price)} <span className="text-muted-foreground font-normal text-xs">/ night</span>
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs gap-1 rounded-full border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openBooking({ mode: 'direct', property });
-                          }}
-                        >
-                          Book Now
-                        </Button>
-                      </div>
-                    </Link>
-                  </motion.div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <div className="flex items-center justify-center gap-4 mt-10">
-              <CarouselPrevious className="static translate-y-0 h-10 w-10 rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent bg-transparent" />
-              <CarouselNext className="static translate-y-0 h-10 w-10 rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent bg-transparent" />
-            </div>
-          </Carousel>
+                    Book Now
+                  </Button>
+                </div>
+              </Link>
+            ))}
+          </SectionRenderer>
         ) : null}
       </div>
     </section>
