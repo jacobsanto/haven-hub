@@ -14,7 +14,7 @@ import Index from "./pages/Index";
 
 // Lazy-loaded public pages
 const Properties = React.lazy(() => import("./pages/Properties"));
-const PropertyDetail = React.lazy(() => import("./pages/PropertyDetail"));
+
 const BookingConfirm = React.lazy(() => import("./pages/BookingConfirm"));
 const Checkout = React.lazy(() => import("./pages/Checkout"));
 const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
