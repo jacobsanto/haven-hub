@@ -1,15 +1,39 @@
 import { motion } from 'framer-motion';
 import { Shield, Clock, Star, Calendar } from 'lucide-react';
 import { viewportOnce } from '@/lib/motion';
+import { usePageContent } from '@/hooks/usePageContent';
+import { resolveIcon } from '@/utils/icon-resolver';
+import { useBrand } from '@/contexts/BrandContext';
 
-const perks = [
-  { icon: Shield, title: 'Best Price', desc: 'Guaranteed lowest rate' },
-  { icon: Clock, title: 'Free Changes', desc: 'Flexible modifications' },
-  { icon: Star, title: 'VIP Perks', desc: 'Welcome gifts & upgrades' },
-  { icon: Calendar, title: 'Early Access', desc: 'First pick on new villas' },
-];
+const defaultIcons = [Shield, Clock, Star, Calendar];
 
 export function WhyDirectSection() {
+  const { brandName } = useBrand();
+  const content = usePageContent('home', 'why_book_direct', {
+    heading: 'Why Book Direct with {brandName}',
+    subtitle: 'Get the best rates and exclusive benefits when you book directly',
+    feature_1_icon: 'Shield',
+    feature_1_title: 'Best Price',
+    feature_1_description: 'Guaranteed lowest rate',
+    feature_2_icon: 'Clock',
+    feature_2_title: 'Free Changes',
+    feature_2_description: 'Flexible modifications',
+    feature_3_icon: 'Star',
+    feature_3_title: 'VIP Perks',
+    feature_3_description: 'Welcome gifts & upgrades',
+    feature_4_icon: 'Calendar',
+    feature_4_title: 'Early Access',
+    feature_4_description: 'First pick on new villas',
+  });
+
+  const r = (text: string) => text.replace(/{brandName}/g, brandName);
+
+  const perks = [1, 2, 3, 4].map((i) => ({
+    icon: resolveIcon(content[`feature_${i}_icon` as keyof typeof content] as string, defaultIcons[i - 1]),
+    title: content[`feature_${i}_title` as keyof typeof content] as string,
+    desc: content[`feature_${i}_description` as keyof typeof content] as string,
+  }));
+
   return (
     <section className="bg-muted border-t border-b border-border py-20 md:py-24">
       <div className="container mx-auto px-4">
@@ -25,7 +49,7 @@ export function WhyDirectSection() {
               Book Direct,<br />Live <em className="font-normal text-accent not-italic">Better</em>
             </h2>
             <p className="font-sans text-sm text-muted-foreground leading-[1.7]">
-              Skip the middlemen. When you book directly, you get the best rates, priority support, and exclusive perks that no aggregator can match.
+              {r(content.subtitle)}
             </p>
           </motion.div>
 

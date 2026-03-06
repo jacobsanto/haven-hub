@@ -76,13 +76,13 @@ export function PhotoGrid({ images, columns = 2 }: PhotoGridProps) {
 
       {/* Lightbox Dialog */}
       <Dialog open={selectedIndex !== null} onOpenChange={closeLightbox}>
-        <DialogContent className="max-w-5xl p-0 bg-black/95 border-none">
+        <DialogContent className="max-w-5xl p-0 bg-foreground/95 border-none">
           {selectedIndex !== null && (
             <div className="relative">
               {/* Close Button */}
               <button
                 onClick={closeLightbox}
-                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-background/10 text-background hover:bg-background/20 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -92,13 +92,13 @@ export function PhotoGrid({ images, columns = 2 }: PhotoGridProps) {
                 <>
                   <button
                     onClick={goPrev}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-background/10 text-background hover:bg-background/20 transition-colors"
                   >
                     <ChevronLeft className="h-6 w-6" />
                   </button>
                   <button
                     onClick={goNext}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-background/10 text-background hover:bg-background/20 transition-colors"
                   >
                     <ChevronRight className="h-6 w-6" />
                   </button>
@@ -116,7 +116,7 @@ export function PhotoGrid({ images, columns = 2 }: PhotoGridProps) {
 
               {/* Caption */}
               {images[selectedIndex].caption && (
-                <p className="text-center text-white/80 text-sm italic pb-4 px-4">
+                <p className="text-center text-background/80 text-sm italic pb-4 px-4">
                   {images[selectedIndex].caption}
                 </p>
               )}
@@ -129,7 +129,7 @@ export function PhotoGrid({ images, columns = 2 }: PhotoGridProps) {
                       key={idx}
                       onClick={() => setSelectedIndex(idx)}
                       className={`w-2 h-2 rounded-full transition-colors ${
-                        idx === selectedIndex ? 'bg-white' : 'bg-white/40'
+                        idx === selectedIndex ? 'bg-background' : 'bg-background/40'
                       }`}
                     />
                   ))}

@@ -247,11 +247,27 @@ export const PAGE_CONTENT_SCHEMAS: PageContentSchema[] = [
         ],
       },
       {
+        sectionKey: 'destinations',
+        title: 'Destinations Section',
+        fields: [
+          { key: 'label', label: 'Section Label', type: 'text', defaultValue: 'Explore' },
+          { key: 'heading', label: 'Heading', type: 'text', defaultValue: 'Sun-Kissed Destinations' },
+        ],
+      },
+      {
+        sectionKey: 'testimonials',
+        title: 'Testimonials Section',
+        fields: [
+          { key: 'label', label: 'Section Label', type: 'text', defaultValue: 'Guest Stories' },
+          { key: 'heading', label: 'Heading', type: 'text', defaultValue: 'What They Remember' },
+        ],
+      },
+      {
         sectionKey: 'cta',
         title: 'CTA Section',
         fields: [
-          { key: 'heading', label: 'Heading', type: 'text', defaultValue: 'Ready to Book Your Escape?' },
-          { key: 'subtitle', label: 'Subtitle', type: 'textarea', defaultValue: 'Start exploring our collection of extraordinary vacation homes. Best rates guaranteed when you book direct.' },
+          { key: 'heading', label: 'Heading', type: 'text', defaultValue: 'Your Dream Villa Awaits' },
+          { key: 'subtitle', label: 'Subtitle', type: 'textarea', defaultValue: "Handpicked luxury villas in the world's most beautiful destinations. Book direct for the best experience." },
         ],
       },
     ],

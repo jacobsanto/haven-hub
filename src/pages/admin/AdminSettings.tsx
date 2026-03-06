@@ -170,6 +170,9 @@ interface FormState {
   ring_color: string;
   heading_font: string;
   body_font: string;
+  heading_weight: number;
+  body_weight: number;
+  heading_letter_spacing: string;
   base_currency: SupportedCurrency;
 }
 
@@ -319,6 +322,9 @@ export default function AdminSettings() {
     ring_color: defaultBrandSettings.ring_color ?? '32 48% 66%',
     heading_font: defaultBrandSettings.heading_font,
     body_font: defaultBrandSettings.body_font,
+    heading_weight: defaultBrandSettings.heading_weight ?? 500,
+    body_weight: defaultBrandSettings.body_weight ?? 400,
+    heading_letter_spacing: defaultBrandSettings.heading_letter_spacing ?? 'normal',
     base_currency: defaultBrandSettings.base_currency,
   });
 
@@ -346,6 +352,9 @@ export default function AdminSettings() {
         ring_color: settings.ring_color ?? defaultBrandSettings.ring_color ?? '32 48% 66%',
         heading_font: settings.heading_font,
         body_font: settings.body_font,
+        heading_weight: settings.heading_weight ?? 500,
+        body_weight: settings.body_weight ?? 400,
+        heading_letter_spacing: settings.heading_letter_spacing ?? 'normal',
         base_currency: settings.base_currency,
       });
       setDarkPalette(settings.dark_palette ?? null);
@@ -408,6 +417,9 @@ export default function AdminSettings() {
       ring_color: defaultBrandSettings.ring_color ?? '32 48% 66%',
       heading_font: defaultBrandSettings.heading_font,
       body_font: defaultBrandSettings.body_font,
+      heading_weight: defaultBrandSettings.heading_weight ?? 500,
+      body_weight: defaultBrandSettings.body_weight ?? 400,
+      heading_letter_spacing: defaultBrandSettings.heading_letter_spacing ?? 'normal',
       base_currency: defaultBrandSettings.base_currency,
     });
     setDarkPalette(null);
@@ -718,7 +730,7 @@ export default function AdminSettings() {
           <SettingsSection
             title="Typography"
             icon={<Type className="h-5 w-5 text-primary" />}
-            description="Heading and body font selections"
+            description="Font families, weights, and letter spacing"
           >
             <div className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
@@ -733,10 +745,55 @@ export default function AdminSettings() {
                   <p className="text-xs text-muted-foreground">Used for paragraphs and general text</p>
                 </div>
               </div>
+
+              {/* Weight & Spacing Controls */}
+              <div className="grid gap-6 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>Heading Weight</Label>
+                  <select
+                    value={formState.heading_weight}
+                    onChange={(e) => handleInputChange('heading_weight', e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value={400}>400 — Regular</option>
+                    <option value={500}>500 — Medium</option>
+                    <option value={600}>600 — Semi Bold</option>
+                    <option value={700}>700 — Bold</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">Weight for all headings (h1–h6)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Body Weight</Label>
+                  <select
+                    value={formState.body_weight}
+                    onChange={(e) => handleInputChange('body_weight', e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value={300}>300 — Light</option>
+                    <option value={400}>400 — Regular</option>
+                    <option value={500}>500 — Medium</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">Weight for body/paragraph text</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Heading Letter Spacing</Label>
+                  <select
+                    value={formState.heading_letter_spacing}
+                    onChange={(e) => handleInputChange('heading_letter_spacing', e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="tight">Tight (-0.03em)</option>
+                    <option value="normal">Normal (-0.02em)</option>
+                    <option value="wide">Wide (0.02em)</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">Letter spacing for headings</p>
+                </div>
+              </div>
+
               <div className="p-6 rounded-xl border bg-card">
-                <h3 className="text-3xl mb-2" style={{ fontFamily: `"${formState.heading_font}", serif` }}>Heading Preview</h3>
-                <h4 className="text-xl mb-4" style={{ fontFamily: `"${formState.heading_font}", serif` }}>Subheading Example</h4>
-                <p className="text-base text-muted-foreground" style={{ fontFamily: `"${formState.body_font}", sans-serif` }}>
+                <h3 className="text-3xl mb-2" style={{ fontFamily: `"${formState.heading_font}", serif`, fontWeight: formState.heading_weight }}>Heading Preview</h3>
+                <h4 className="text-xl mb-4" style={{ fontFamily: `"${formState.heading_font}", serif`, fontWeight: formState.heading_weight }}>Subheading Example</h4>
+                <p className="text-base text-muted-foreground" style={{ fontFamily: `"${formState.body_font}", sans-serif`, fontWeight: formState.body_weight }}>
                   This is how your body text will appear throughout the website.
                 </p>
               </div>

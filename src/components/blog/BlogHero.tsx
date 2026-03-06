@@ -46,7 +46,7 @@ export function BlogHero({ post }: BlogHeroProps) {
           )}
           
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/50 to-foreground/10" />
           
           {/* Content positioned at bottom */}
           <div className="absolute inset-x-0 bottom-0 p-6 md:p-10 lg:p-16">
@@ -56,7 +56,7 @@ export function BlogHero({ post }: BlogHeroProps) {
                   {post.category && (
                     <Badge 
                       variant="secondary" 
-                      className="bg-white/20 text-white border-0 backdrop-blur-sm"
+                      className="bg-background/20 text-background border-0 backdrop-blur-sm"
                     >
                       {post.category.name}
                     </Badge>
@@ -64,16 +64,16 @@ export function BlogHero({ post }: BlogHeroProps) {
                   <ArticleStyleBadge 
                     categorySlug={post.category?.slug} 
                     variant="overlay"
-                    className="text-white/90"
+                    className="text-background/90"
                   />
                 </div>
                 
-                <h2 className="text-2xl md:text-4xl lg:text-5xl font-serif text-white mb-4 leading-tight group-hover:text-white/90 transition-colors">
+                <h2 className="text-2xl md:text-4xl lg:text-5xl font-serif text-background mb-4 leading-tight group-hover:text-background/90 transition-colors">
                   {post.title}
                 </h2>
                 
                 {post.excerpt && (
-                  <p className="text-white/80 text-base md:text-lg lg:text-xl mb-6 line-clamp-2 max-w-2xl leading-relaxed">
+                  <p className="text-background/80 text-base md:text-lg lg:text-xl mb-6 line-clamp-2 max-w-2xl leading-relaxed">
                     {post.excerpt}
                   </p>
                 )}
@@ -81,20 +81,20 @@ export function BlogHero({ post }: BlogHeroProps) {
                 <div className="flex flex-wrap items-center gap-4 md:gap-6">
                   {post.author && (
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 border-2 border-white/30">
+                      <Avatar className="h-10 w-10 border-2 border-background/30">
                         <AvatarImage src={post.author.avatar_url || undefined} alt={post.author.name} />
-                        <AvatarFallback className="text-xs bg-white/20 text-white">
+                        <AvatarFallback className="text-xs bg-background/20 text-background">
                           {post.author.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-white font-medium">{post.author.name}</span>
+                      <span className="text-background font-medium">{post.author.name}</span>
                     </div>
                   )}
-                  <span className="flex items-center gap-2 text-white/70 text-sm">
+                  <span className="flex items-center gap-2 text-background/70 text-sm">
                     <Calendar className="h-4 w-4" />
                     {format(publishedDate, 'MMM d, yyyy')}
                   </span>
-                  <span className="flex items-center gap-2 text-white/70 text-sm">
+                  <span className="flex items-center gap-2 text-background/70 text-sm">
                     <Clock className="h-4 w-4" />
                     {readTime} min read
                   </span>

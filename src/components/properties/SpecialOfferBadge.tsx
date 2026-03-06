@@ -67,7 +67,7 @@ export function SpecialOfferBadge({
             <h4 className="font-medium text-emerald-700 dark:text-emerald-400">
               {offer.title}
             </h4>
-            <span className="px-2 py-0.5 bg-emerald-600 text-white text-xs font-bold rounded">
+            <span className="px-2 py-0.5 bg-emerald-600 text-primary-foreground text-xs font-bold rounded">
               {offer.discount_percent}% OFF
             </span>
           </div>

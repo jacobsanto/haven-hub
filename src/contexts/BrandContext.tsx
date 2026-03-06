@@ -204,6 +204,19 @@ function applyTheme(settings: BrandSettings) {
     loadGoogleFont(settings.body_font);
     root.style.setProperty('--font-sans', `"${settings.body_font}", sans-serif`);
   }
+
+  // Typography granularity
+  const headingWeight = settings.heading_weight ?? 500;
+  const bodyWeight = settings.body_weight ?? 400;
+  const spacingMap: Record<string, string> = {
+    tight: '-0.03em',
+    normal: '-0.02em',
+    wide: '0.02em',
+  };
+  const tracking = spacingMap[settings.heading_letter_spacing ?? 'normal'] ?? '-0.02em';
+  root.style.setProperty('--heading-weight', String(headingWeight));
+  root.style.setProperty('--body-weight', String(bodyWeight));
+  root.style.setProperty('--heading-tracking', tracking);
 }
 
 export function BrandProvider({ children }: { children: ReactNode }) {

@@ -2,13 +2,23 @@ import { motion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useActiveDestinations } from '@/hooks/useDestinations';
+import { usePageContent } from '@/hooks/usePageContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
 
 export function DestinationsShowcase() {
   const { data: destinations, isLoading } = useActiveDestinations();
+  const content = usePageContent('home', 'destinations', {
+    label: 'Explore',
+    heading: 'Sun-Kissed Destinations',
+  });
 
   if (!isLoading && (!destinations || destinations.length === 0)) return null;
+
+  // Split heading for accent styling on last word
+  const words = content.heading.split(' ');
+  const headingMain = words.slice(0, -1).join(' ');
+  const headingAccent = words[words.length - 1];
 
   return (
     <section className="bg-background py-20 md:py-24">
@@ -19,9 +29,9 @@ export function DestinationsShowcase() {
           viewport={viewportOnce}
           className="text-center mb-14"
         >
-          <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">Explore</p>
+          <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">{content.label}</p>
           <h2 className="font-serif text-[clamp(32px,4vw,48px)] font-semibold text-foreground leading-[1.1]">
-            Sun-Kissed <em className="font-normal text-accent not-italic">Destinations</em>
+            {headingMain} <em className="font-normal text-accent not-italic">{headingAccent}</em>
           </h2>
         </motion.div>
 
