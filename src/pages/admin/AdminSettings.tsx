@@ -334,8 +334,8 @@ function HomepageSectionsLayout() {
     return found || { layout_mode: 'grid', autoplay: false, items_per_view: 3, show_navigation: true, show_dots: false, columns: 3 };
   };
 
-  const handleLayoutChange = (sectionKey: string, mode: SectionDisplaySettings['layout_mode']) => {
-    upsert.mutate({ page_slug: 'home', section_key: sectionKey, layout_mode: mode }, {
+  const handleLayoutChange = (sectionKey: string, mode: string) => {
+    upsert.mutate({ page_slug: 'home', section_key: sectionKey, layout_mode: mode as SectionDisplaySettings['layout_mode'] }, {
       onSuccess: () => toast({ title: 'Layout updated', description: `Refresh the homepage to see the change.` }),
       onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
     });
