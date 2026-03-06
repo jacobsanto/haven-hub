@@ -1,7 +1,7 @@
 import { useReducedMotion } from 'framer-motion';
 import { MapPin, Users, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 export { BrightMinimalistHero } from './BrightMinimalistHero';
-import { Link } from 'react-router-dom';
+
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 
 interface Property {
