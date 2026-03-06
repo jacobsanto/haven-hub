@@ -264,7 +264,6 @@ function CinematicSection({ items, activeIndex }: VariantProps) {
               <h3 className="font-serif text-[clamp(32px,5vw,60px)] font-bold text-primary-foreground leading-[1.05] mb-2.5">{item.title}</h3>
               {item.subtitle && <p className="font-serif text-lg italic text-muted-foreground mb-5">{item.subtitle}</p>}
               <div className="w-[60px] h-px bg-accent mb-5" />
-              {item.meta && <p className="font-sans text-2xl font-bold text-accent">{item.meta}</p>}
             </Link>
           </div>
         );
