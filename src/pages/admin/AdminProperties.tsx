@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
+import { Switch } from '@/components/ui/switch';
 import { PropertyStatus } from '@/types/database';
 
 const STATUS_OPTIONS: { label: string; value: string }[] = [
