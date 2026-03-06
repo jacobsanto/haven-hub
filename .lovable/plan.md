@@ -1,63 +1,151 @@
 
 
-# Fix Font & Typography Dashboard Connection
+# Implement Reference Design Across All Pages (Semantic Token Architecture)
 
-## Current State
+## What the user wants
+Apply the dark cinematic "Slider 6" design aesthetic from the 7 uploaded reference files (Homepage, Villas, Destinations, Experiences, Journal, About, FAQ, Booking) to the existing pages — without hardcoding any colors/fonts. Everything must remain connected to the admin dashboard's brand settings via semantic CSS tokens.
 
-The font pipeline is **architecturally correct**: `BrandContext` sets `--font-serif` and `--font-sans` CSS variables, Tailwind's `font-serif`/`font-sans` utilities reference them, and the CSS base layer applies them to headings and body. When you change fonts in the admin, they DO propagate.
+## Key constraint: NO hardcoded values
+The reference files use hardcoded CSS variables (`--bg: #0a0a0f`, `--sand: #d4a574`, `fontFamily:'var(--serif)'`). We will **not** copy these. Instead, every color/font maps to existing semantic tokens:
 
-However, two issues exist:
+```text
+Reference variable  →  Semantic token
+──────────────────────────────────────
+--bg / --bg2        →  bg-background / bg-muted
+--card              →  bg-card
+--line              →  border-border
+--text              →  text-foreground
+--text-mid          →  text-muted-foreground
+--text-dim          →  text-muted-foreground/60
+--sand              →  text-accent
+--warm              →  text-accent (italic emphasis)
+--coral             →  text-destructive (category badges)
+--serif             →  font-serif (from --font-serif)
+--sans              →  font-sans (from --font-sans)
+```
 
-### Issue 1: Hardcoded `text-white` bypasses the semantic system
-The Header (transparent state on homepage) and the Button `gold` variant still use hardcoded `text-white` / `bg-white` classes instead of semantic tokens. This means those elements won't adapt to theme changes.
+## Hero section: NOT touched
+The hero section mechanics, slider variants, and admin hero style selector remain exactly as-is. Only the surrounding page sections get redesigned.
 
-**Affected locations:**
-- `src/components/layout/Header.tsx` — ~15 instances of `text-white`, `bg-white/10` for transparent homepage state
-- `src/components/ui/button.tsx` — `gold` variant uses `text-white`
+## Scope: Pages to redesign
 
-### Issue 2: No granular typography controls in admin
-The admin only has heading font and body font selectors. There are no controls for:
-- Font weights (heading vs body)
-- Letter spacing
-- Button/CTA text style
-- Navigation text size
+### Phase 1: Homepage sections (already partially done)
+Current homepage sections already use semantic tokens and match the reference layout. Minor refinements only:
+- **SearchBarOverlay**: Already refactored — no changes needed
+- **TrustSection**: Already matches — no changes
+- **DestinationsShowcase**: Already matches — no changes
+- **DiscoverVillasSection**: Already matches — no changes
+- **LiveExperiencesSection**: Already matches — no changes
+- **TestimonialsSection**: Already matches — no changes
+- **WhyDirectSection**: Already matches — no changes
+- **CTASection**: Already matches — no changes
 
-## Plan
+### Phase 2: Properties/Villas page (`src/pages/Properties.tsx`)
+Redesign to match reference `Arivia_Villas.jsx`:
+- **Hero banner**: Ambient blurred background image, centered heading with stats counters (total villas, destinations, avg rating)
+- **Sticky filter bar**: Dark glass-morphism bar with search input, destination/price/guest selects, sort, grid/list toggle
+- **Villa cards (grid view)**: Image with gradient overlay, hover lift + scale, instant booking badge, heart favorite, tag pills
+- **Villa cards (list view)**: Horizontal layout with image left, details right
+- **Detail modal/expand**: Quick-view with image gallery, amenity grid, highlights, booking CTA
+- All using semantic tokens (`bg-card`, `border-border`, `text-foreground`, `text-accent`, etc.)
 
-### Fix 1: Replace hardcoded `text-white` in Header
-Replace all `text-white` / `bg-white/10` conditional classes with `text-primary-foreground` / `bg-primary-foreground/10` for the transparent hero state. This ensures the header adapts to whatever the brand's primary foreground color is.
+### Phase 3: Destinations page (`src/pages/Destinations.tsx` + `src/pages/DestinationDetail.tsx`)
+Redesign to match reference `Arivia_Destinations.jsx`:
+- **Hero**: Centered heading with subtitle, stat counters
+- **Destination cards**: Large hero image with gradient overlay, weather widget overlay, highlight icons, villa count badge
+- **Detail page**: Full-width hero with parallax, highlights grid, weather panel, featured villas carousel, map placeholder
 
-**File:** `src/components/layout/Header.tsx`
+### Phase 4: Experiences page (`src/pages/Experiences.tsx` + `src/pages/ExperienceDetail.tsx`)
+Redesign to match reference `Arivia_Experiences.jsx`:
+- **Category filter tabs**: Horizontal scrollable category pills with icons
+- **Experience cards**: Image top, category badge, duration/price/guests meta row, difficulty indicator
+- **Detail view**: Split layout — image gallery left, booking panel right, includes list, related experiences
 
-### Fix 2: Replace `text-white` in Button gold variant
-Change `text-white` to `text-primary-foreground` in the gold variant definition.
+### Phase 5: Blog/Journal page (`src/pages/Blog.tsx` + `src/pages/BlogPost.tsx`)
+Redesign to match reference `Arivia_Journal.jsx`:
+- **Featured post**: Large hero card with category badge, reading time, author avatar
+- **Post grid**: 3-column grid with image cards, hover lift
+- **Category filter**: Horizontal pill tabs
+- **Blog post detail**: Editorial layout with reading progress bar, author bio, share buttons
 
-**File:** `src/components/ui/button.tsx`
+### Phase 6: About page (`src/pages/About.tsx`)
+Redesign to match reference `Arivia_About.jsx`:
+- **Hero**: Full-width image with centered text overlay
+- **Story section**: Split layout — text left, image right
+- **Timeline**: Vertical timeline with milestone dots
+- **Team grid**: Photo cards with hover bio reveal
+- **Values section**: Icon cards in grid
+- **Stats bar**: Horizontal counters
 
-### Fix 3: Add typography granularity to admin settings (optional enhancement)
-Add three new fields to `brand_settings`:
-- `heading_weight` (400-700, default 500)
-- `body_weight` (300-500, default 400)  
-- `heading_letter_spacing` (normal, wide, wider)
+### Phase 7: FAQ page (new page or update existing)
+Based on reference `Arivia_FAQ.jsx`:
+- **Search bar**: Prominent search input
+- **Category tabs**: Horizontal filter pills
+- **Accordion FAQ items**: Expandable cards with category icons
+- **Popular questions**: Highlighted section
+- **Contact CTA**: Bottom section with contact options
 
-These get applied in `BrandContext.applyTheme()` as additional CSS variables (`--heading-weight`, `--body-weight`, `--heading-tracking`) and referenced in the CSS base layer.
+### Phase 8: Footer redesign (`src/components/layout/Footer.tsx`)
+Match reference footer style:
+- Dark background using `bg-foreground text-background` (already in place)
+- 4-column grid: Brand + newsletter, Explore links, Company links, Support links
+- Social icon circles with hover accent border
+- Bottom bar with copyright + tagline
+- Keep existing newsletter subscription logic and dynamic nav links from admin
 
-**Files:**
-- DB migration: add 3 columns to `brand_settings`
-- `src/contexts/BrandContext.tsx` — apply new vars
-- `src/index.css` — reference new vars in base layer
-- `src/pages/admin/AdminSettings.tsx` — add controls to typography section
-- `src/hooks/useBrandSettings.ts` — add new fields to interface
+## Technical approach
 
-### Summary
+### What stays the same
+- All data fetching hooks (useProperties, useDestinations, useExperiences, useBlogPosts, etc.)
+- All service layer code
+- Admin dashboard and settings
+- Hero section mechanics and slider variants
+- BrandContext theme pipeline
+- All semantic CSS tokens and their admin connectivity
 
-| File | Change |
+### What changes
+- Page component JSX/layout (visual structure)
+- Tailwind classes on page components
+- Some new reusable UI patterns (stat counters, category pills, hero banners)
+- Possible new shared components: `PageHeroBanner`, `CategoryFilterTabs`, `StatCounter`
+
+### Shared patterns to extract
+From the reference files, several UI patterns repeat across pages:
+1. **Page hero banner**: Blurred ambient background, centered title with accent `<em>`, subtitle, stat counters
+2. **Category filter tabs**: Horizontal scrollable pills with active state
+3. **Section header**: Uppercase tracking label + serif heading with italic accent word
+4. **Card hover**: translateY(-4px) + border-accent transition
+
+These will be created as reusable components in `src/components/ui/` to avoid duplication.
+
+## File changes summary
+
+| File | Action |
 |---|---|
-| `src/components/layout/Header.tsx` | Replace `text-white` → `text-primary-foreground` |
-| `src/components/ui/button.tsx` | Gold variant: `text-white` → `text-primary-foreground` |
-| DB migration | Add `heading_weight`, `body_weight`, `heading_letter_spacing` columns |
-| `src/hooks/useBrandSettings.ts` | Add new fields to interface + defaults |
-| `src/contexts/BrandContext.tsx` | Apply new CSS vars in `applyTheme` |
-| `src/index.css` | Use new CSS vars in base heading/body rules |
-| `src/pages/admin/AdminSettings.tsx` | Add weight/spacing controls to typography section |
+| `src/components/ui/PageHeroBanner.tsx` | Create — shared hero banner component |
+| `src/components/ui/CategoryFilterTabs.tsx` | Create — shared category filter |
+| `src/components/ui/StatCounter.tsx` | Create — stat counter row |
+| `src/pages/Properties.tsx` | Redesign — match Villas reference |
+| `src/pages/Destinations.tsx` | Redesign — match Destinations reference |
+| `src/pages/DestinationDetail.tsx` | Redesign — match detail reference |
+| `src/pages/Experiences.tsx` | Redesign — match Experiences reference |
+| `src/pages/ExperienceDetail.tsx` | Redesign — match detail reference |
+| `src/pages/Blog.tsx` | Redesign — match Journal reference |
+| `src/pages/BlogPost.tsx` | Redesign — match article reference |
+| `src/pages/About.tsx` | Redesign — match About reference |
+| `src/pages/Contact.tsx` | Redesign — match FAQ/Contact reference |
+| `src/components/layout/Footer.tsx` | Restyle to match reference footer |
+| `src/components/properties/PropertyCard.tsx` | Restyle card design |
+| `src/components/properties/SearchResultCard.tsx` | Restyle for list view |
+| `src/components/destinations/DestinationCard.tsx` | Restyle card design |
+| `src/components/experiences/ExperienceCard.tsx` | Restyle card design |
+| `src/components/blog/BlogPostCard.tsx` | Restyle card design |
+
+## Implementation order
+Due to the large scope, this should be done in phases. I recommend starting with:
+1. Shared components (PageHeroBanner, CategoryFilterTabs, StatCounter)
+2. Properties page (most complex, sets the pattern)
+3. Then remaining pages in order
+
+Total estimated: ~18 files modified/created. All using semantic tokens, zero hardcoded values.
 
