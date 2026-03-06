@@ -36,7 +36,7 @@ export function HeroSearchForm() {
               <button
                 type="button"
                 className={cn(
-                  "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-foreground/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-foreground/20",
+                  "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-primary-foreground/15 text-xs text-left focus:outline-none focus:ring-1 focus:ring-foreground/20",
                   checkIn ? "text-primary-foreground" : "text-primary-foreground/70"
                 )}>
                 <Calendar className="w-4 h-4 shrink-0 text-primary-foreground" />
@@ -63,7 +63,7 @@ export function HeroSearchForm() {
               <button
                 type="button"
                 className={cn(
-                  "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-foreground/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-foreground/20",
+                  "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-primary-foreground/15 text-xs text-left focus:outline-none focus:ring-1 focus:ring-foreground/20",
                   checkOut ? "text-primary-foreground" : "text-primary-foreground/70"
                 )}>
                 <Calendar className="w-4 h-4 shrink-0 text-primary-foreground" />
@@ -87,7 +87,7 @@ export function HeroSearchForm() {
             <select
               value={guests}
               onChange={(e) => setGuests(Number(e.target.value))}
-              className="w-full pl-10 pr-4 py-2 rounded-full bg-foreground/5 text-primary-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground/20 appearance-none">
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-primary-foreground/15 text-primary-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground/20 appearance-none">
               {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((n) =>
               <option key={n} value={n} className="text-foreground bg-card">{n} Guest{n > 1 ? 's' : ''}</option>
               )}
