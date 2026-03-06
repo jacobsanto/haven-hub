@@ -252,6 +252,50 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Lightbox */}
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center animate-fade-in"
+          onClick={() => setFullscreen(false)}
+        >
+          <button
+            onClick={() => setFullscreen(false)}
+            className="absolute top-5 right-5 w-11 h-11 rounded-full bg-background/20 backdrop-blur-lg flex items-center justify-center text-primary-foreground hover:bg-background/40 transition-colors z-10"
+          >
+            <X size={20} />
+          </button>
+
+          {displayImages.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i - 1 + displayImages.length) % displayImages.length); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-background/20 backdrop-blur-lg flex items-center justify-center text-primary-foreground hover:bg-background/40 transition-colors z-10"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i + 1) % displayImages.length); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-background/20 backdrop-blur-lg flex items-center justify-center text-primary-foreground hover:bg-background/40 transition-colors z-10"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+
+          <img
+            src={displayImages[imgIdx]}
+            alt={property.name}
+            className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Counter */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-primary-foreground/60 text-sm font-sans">
+            {imgIdx + 1} / {displayImages.length}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
