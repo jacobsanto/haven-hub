@@ -39,7 +39,7 @@ export function HeroSearchForm() {
 
                 checkIn ? "text-white" : "text-white/50"
                 )}>
-                <Calendar className="w-4 h-4 shrink-0 text-destructive-foreground" />
+                <Calendar className="w-4 h-4 shrink-0 text-primary" />
                 {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Check In'}
               </button>
             </PopoverTrigger>
