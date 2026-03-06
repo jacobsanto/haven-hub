@@ -171,7 +171,7 @@ function SplitRevealSection({ items, activeIndex }: VariantProps) {
                 <h3 className="font-serif text-[clamp(24px,3vw,40px)] font-semibold text-foreground leading-[1.15] mb-3">{item.title}</h3>
                 {item.subtitle && <p className="font-serif text-[15px] italic text-muted-foreground mb-5">{item.subtitle}</p>}
                 {item.extra && <p className="text-[13px] text-muted-foreground mb-5">{item.extra}</p>}
-                {item.meta && <p className="font-sans text-2xl font-bold text-accent">{item.meta}</p>}
+                
                 <span className="inline-block mt-5 px-7 py-3 border border-accent text-accent font-sans text-[12px] tracking-[0.15em] uppercase hover:bg-accent hover:text-accent-foreground transition-colors">
                   View Details
                 </span>
