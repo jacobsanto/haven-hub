@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useBooking } from '@/contexts/BookingContext';
 import {
   X, Heart, Share2, ChevronLeft, ChevronRight, MapPin,
   Users, Bed, Bath, Expand, Star, Calendar, ArrowRight, Check,
