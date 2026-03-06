@@ -14,7 +14,7 @@ interface VillaCardGridProps {
   onInstantBook: (property: Property) => void;
 }
 
-export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFavorite }: VillaCardGridProps) {
+export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFavorite, onInstantBook }: VillaCardGridProps) {
   const [hovered, setHovered] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
   const { format: formatCurrency } = useFormatCurrency();
