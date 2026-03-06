@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Palmtree, ArrowRight, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -7,13 +8,31 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
 import { useSectionDisplay } from '@/hooks/useSectionDisplay';
 import { SectionRenderer } from '@/components/ui/SectionRenderer';
+import { SectionShowcase, type ShowcaseItem } from '@/components/ui/SectionShowcase';
+
+const SHOWCASE_MODES = ['parallax-depth', 'split-reveal', 'morph-tiles', 'cinematic', 'vertical-curtain', 'card-deck', 'bright-minimalist'];
 
 export function FeaturedVacationSection() {
   const { data: properties, isLoading } = useFeaturedProperties();
   const { format } = useFormatCurrency();
   const settings = useSectionDisplay('home', 'featured-vacations');
+  const isShowcase = SHOWCASE_MODES.includes(settings.layout_mode);
 
   const featured = properties?.slice(0, 3);
+
+  const showcaseItems: ShowcaseItem[] = useMemo(() =>
+    (featured || []).map(p => ({
+      id: p.id,
+      image: p.hero_image_url || '/placeholder.svg',
+      title: p.display_name || p.name,
+      subtitle: p.short_description || undefined,
+      location: `${p.city}, ${p.country}`,
+      meta: `Starting from ${format(p.base_price)}`,
+      extra: `${p.bedrooms || 3} beds · ${p.max_guests || 6} guests`,
+      link: `/properties/${p.slug}`,
+    })),
+    [featured, format]
+  );
 
   if (!isLoading && (!featured || featured.length === 0)) return null;
 
@@ -49,6 +68,8 @@ export function FeaturedVacationSection() {
               <Skeleton key={i} className="aspect-[4/5] rounded-[14px] bg-card" />
             ))}
           </div>
+        ) : isShowcase ? (
+          <SectionShowcase settings={settings} items={showcaseItems} />
         ) : (
           <SectionRenderer settings={settings}>
             {featured!.map((property) => (

@@ -7,6 +7,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
 import { useSectionDisplay } from '@/hooks/useSectionDisplay';
 import { SectionRenderer } from '@/components/ui/SectionRenderer';
+import { SectionShowcase, type ShowcaseItem } from '@/components/ui/SectionShowcase';
+import { useMemo } from 'react';
+
+const SHOWCASE_MODES = ['parallax-depth', 'split-reveal', 'morph-tiles', 'cinematic', 'vertical-curtain', 'card-deck', 'bright-minimalist'];
 
 export function DestinationsShowcase() {
   const { data: destinations, isLoading } = useActiveDestinations();
@@ -16,8 +20,22 @@ export function DestinationsShowcase() {
     heading: 'Sun-Kissed Destinations',
   });
 
+  const showcaseItems: ShowcaseItem[] = useMemo(() =>
+    (destinations || []).slice(0, 8).map(dest => ({
+      id: dest.id,
+      image: dest.hero_image_url || '/placeholder.svg',
+      title: dest.name,
+      subtitle: dest.description || undefined,
+      location: dest.country,
+      badge: dest.is_featured ? 'Featured' : undefined,
+      link: `/destinations/${dest.slug}`,
+    })),
+    [destinations]
+  );
+
   if (!isLoading && (!destinations || destinations.length === 0)) return null;
 
+  const isShowcase = SHOWCASE_MODES.includes(settings.layout_mode);
   const words = content.heading.split(' ');
   const headingMain = words.slice(0, -1).join(' ');
   const headingAccent = words[words.length - 1];
@@ -42,6 +60,10 @@ export function DestinationsShowcase() {
             {[...Array(4)].map((_, i) => (
               <Skeleton key={i} className="aspect-[3/4] rounded-[14px] bg-card" />
             ))}
+          </div>
+        ) : isShowcase ? (
+          <div className="max-w-[1200px] mx-auto">
+            <SectionShowcase settings={settings} items={showcaseItems} />
           </div>
         ) : (
           <div className="max-w-[1200px] mx-auto">

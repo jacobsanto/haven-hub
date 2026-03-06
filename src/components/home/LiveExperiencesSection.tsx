@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -8,18 +9,36 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
 import { useSectionDisplay } from '@/hooks/useSectionDisplay';
 import { SectionRenderer } from '@/components/ui/SectionRenderer';
+import { SectionShowcase, type ShowcaseItem } from '@/components/ui/SectionShowcase';
+
+const SHOWCASE_MODES = ['parallax-depth', 'split-reveal', 'morph-tiles', 'cinematic', 'vertical-curtain', 'card-deck', 'bright-minimalist'];
 
 export function LiveExperiencesSection() {
   const { data: experiences, isLoading } = useActiveExperiences();
   const { format } = useFormatCurrency();
   const settings = useSectionDisplay('home', 'experiences');
   const featured = experiences?.filter(e => e.is_featured).slice(0, 8) || experiences?.slice(0, 8);
+  const isShowcase = SHOWCASE_MODES.includes(settings.layout_mode);
 
   const content = usePageContent('home', 'experiences', {
     label: 'Curated',
     heading: 'Beyond the Villa',
     subtitle: 'Elevate your stay with our hand-selected experiences.',
   });
+
+  const showcaseItems: ShowcaseItem[] = useMemo(() =>
+    (featured || []).map(exp => ({
+      id: exp.id,
+      image: exp.hero_image_url || '/placeholder.svg',
+      title: exp.name,
+      subtitle: exp.description || undefined,
+      badge: exp.category,
+      location: exp.duration || undefined,
+      meta: exp.price_from ? format(exp.price_from) : undefined,
+      link: `/experiences/${exp.slug}`,
+    })),
+    [featured, format]
+  );
 
   if (!isLoading && (!featured || featured.length === 0)) return null;
 
@@ -47,6 +66,10 @@ export function LiveExperiencesSection() {
             {[...Array(4)].map((_, i) => (
               <Skeleton key={i} className="h-64 rounded-[14px] bg-card" />
             ))}
+          </div>
+        ) : isShowcase ? (
+          <div className="max-w-[1200px] mx-auto">
+            <SectionShowcase settings={settings} items={showcaseItems} />
           </div>
         ) : (
           <div className="max-w-[1200px] mx-auto">
