@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useActiveDestinations } from '@/hooks/useDestinations';
+import { useFeaturedDestinations } from '@/hooks/useDestinations';
 import { usePageContent } from '@/hooks/usePageContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
