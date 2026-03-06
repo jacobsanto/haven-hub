@@ -34,8 +34,8 @@ const Index = () => {
         <SearchBarOverlay />
         <div className="pt-12">
           <TrustSection />
-          <DestinationsShowcase />
           <DiscoverVillasSection />
+          <DestinationsShowcase />
           <FeaturedVacationSection />
           <LiveExperiencesSection />
           <TestimonialsSection />
