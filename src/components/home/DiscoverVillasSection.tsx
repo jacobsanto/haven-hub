@@ -30,7 +30,7 @@ export function DiscoverVillasSection() {
       location: `${p.city}, ${p.country}`,
       meta: `${format(p.base_price)} / night`,
       extra: `${p.bedrooms || 3} beds · ${p.max_guests || 6} guests`,
-      link: `/properties/${p.slug}`,
+      link: `/properties`,
     })),
     [properties, format]
   );
