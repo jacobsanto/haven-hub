@@ -26,6 +26,7 @@ const HEADING_FONTS = [
   'Abril Fatface', 'Josefin Slab', 'EB Garamond', 'Sorts Mill Goudy', 'Bitter',
   'Vollkorn', 'Cardo', 'Neuton', 'Alegreya', 'Gentium Book Plus',
   'Source Serif Pro', 'PT Serif', 'Noto Serif', 'IBM Plex Serif', 'Zilla Slab',
+  'Fira Sans', 'Fira Serif',
 ];
 
 const BODY_FONTS = [
@@ -34,6 +35,7 @@ const BODY_FONTS = [
   'Karla', 'Cabin', 'Rubik', 'DM Sans', 'Plus Jakarta Sans',
   'Outfit', 'Mulish', 'Quicksand', 'Barlow', 'Manrope',
   'Sora', 'Space Grotesk', 'Albert Sans', 'Red Hat Display', 'Figtree',
+  'Fira Sans', 'Fira Code', 'Fira Sans Condensed',
 ];
 
 // --- HSL <-> Hex conversion helpers ---
