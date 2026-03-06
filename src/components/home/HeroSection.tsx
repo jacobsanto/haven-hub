@@ -150,7 +150,8 @@ export function HeroSection() {
           <div
             className="absolute inset-0 bg-cover bg-center blur-md scale-110 transition-[background-image] duration-1000 ease-in-out"
             style={{ backgroundImage: `url(${active.hero_image_url})` }} />
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent" />
         </>}
 
           {!prefersReduced &&
@@ -177,7 +178,7 @@ export function HeroSection() {
                         </p>
                         <h1
                         className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-foreground leading-[1.1] tracking-tight"
-                        style={{ textShadow: '0 2px 20px hsl(var(--foreground) / 0.4)' }}>
+                        style={{ textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}>
                         
                           <WordReveal text={active.display_name || active.name} reduced={!!prefersReduced} />
                         </h1>
