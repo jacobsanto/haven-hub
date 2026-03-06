@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Star, Users, Bed, Bath, Heart } from 'lucide-react';
+import { MapPin, Star, Users, Bed, Bath, Heart, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Property } from '@/types/database';
 import { PROPERTY_TYPE_LABELS } from '@/lib/constants';
