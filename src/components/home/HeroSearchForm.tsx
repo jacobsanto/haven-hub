@@ -35,7 +35,7 @@ export function HeroSearchForm() {
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className={cn("flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-white/20 text-accent",
+                className={cn("flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-white/20 text-primary-foreground",
 
                 checkIn ? "text-white" : "text-white/50"
                 )}>
