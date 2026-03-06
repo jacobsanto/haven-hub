@@ -118,7 +118,12 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-serif);
-    @apply font-medium tracking-tight;
+    font-weight: var(--heading-weight, 500);
+    letter-spacing: var(--heading-tracking, -0.025em);
+  }
+
+  body {
+    font-weight: var(--body-weight, 400);
   }
 }
 

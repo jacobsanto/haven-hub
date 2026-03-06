@@ -23,6 +23,9 @@ export interface BrandSettings {
   ring_color: string | null;
   heading_font: string;
   body_font: string;
+  heading_weight: number;
+  body_weight: number;
+  heading_letter_spacing: string;
   base_currency: SupportedCurrency;
   dark_palette: Record<string, string> | null;
   social_instagram: string | null;
@@ -51,6 +54,9 @@ export const defaultBrandSettings: Omit<BrandSettings, 'id' | 'updated_at'> = {
   ring_color: '32 48% 66%',
   heading_font: 'Playfair Display',
   body_font: 'Lato',
+  heading_weight: 500,
+  body_weight: 400,
+  heading_letter_spacing: 'normal',
   base_currency: 'EUR',
   dark_palette: null,
   social_instagram: null,

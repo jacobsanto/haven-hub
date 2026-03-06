@@ -610,6 +610,7 @@ export type Database = {
           background_color: string | null
           base_currency: string
           body_font: string | null
+          body_weight: number | null
           border_color: string | null
           brand_name: string
           brand_tagline: string | null
@@ -621,6 +622,8 @@ export type Database = {
           destructive_color: string | null
           foreground_color: string | null
           heading_font: string | null
+          heading_letter_spacing: string | null
+          heading_weight: number | null
           id: string
           logo_url: string | null
           muted_color: string | null
@@ -638,6 +641,7 @@ export type Database = {
           background_color?: string | null
           base_currency?: string
           body_font?: string | null
+          body_weight?: number | null
           border_color?: string | null
           brand_name?: string
           brand_tagline?: string | null
@@ -649,6 +653,8 @@ export type Database = {
           destructive_color?: string | null
           foreground_color?: string | null
           heading_font?: string | null
+          heading_letter_spacing?: string | null
+          heading_weight?: number | null
           id?: string
           logo_url?: string | null
           muted_color?: string | null
@@ -666,6 +672,7 @@ export type Database = {
           background_color?: string | null
           base_currency?: string
           body_font?: string | null
+          body_weight?: number | null
           border_color?: string | null
           brand_name?: string
           brand_tagline?: string | null
@@ -677,6 +684,8 @@ export type Database = {
           destructive_color?: string | null
           foreground_color?: string | null
           heading_font?: string | null
+          heading_letter_spacing?: string | null
+          heading_weight?: number | null
           id?: string
           logo_url?: string | null
           muted_color?: string | null
