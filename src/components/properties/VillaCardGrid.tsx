@@ -79,7 +79,7 @@ export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFa
         {/* Fav button */}
         <button
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(property.id); }}
-          className="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-background/50 backdrop-blur-lg border border-border/50 flex items-center justify-center cursor-pointer transition-all hover:bg-background/70"
+          className="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-background/50 backdrop-blur-lg border border-border/50 flex items-center justify-center cursor-pointer transition-all hover:bg-background/70 z-10"
         >
           <Heart
             size={16}
@@ -87,6 +87,19 @@ export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFa
             className={isFavorite ? 'text-destructive' : 'text-muted-foreground'}
           />
         </button>
+
+        {/* Instant Book overlay */}
+        {property.instant_booking && hovered && (
+          <div className="absolute inset-0 flex items-center justify-center z-[4]">
+            <button
+              onClick={(e) => { e.stopPropagation(); onInstantBook(property); }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
+            >
+              <Zap size={16} className="fill-current" />
+              Instant Book
+            </button>
+          </div>
+        )}
 
         {/* Price pill */}
         <div className="absolute bottom-3.5 right-3.5 bg-background/70 backdrop-blur-lg rounded-lg px-3 py-1.5 border border-border/30">
