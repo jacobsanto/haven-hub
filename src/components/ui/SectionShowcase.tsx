@@ -131,7 +131,7 @@ function ParallaxDepthSection({ items, activeIndex }: VariantProps) {
               {item.location && <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3">{item.location}</p>}
               <h3 className="font-serif text-[clamp(28px,4vw,48px)] font-semibold text-foreground leading-[1.1] mb-2">{item.title}</h3>
               {item.subtitle && <p className="font-serif text-base italic text-muted-foreground">{item.subtitle}</p>}
-              {item.meta && <p className="font-sans text-xl font-bold text-accent mt-4">{item.meta}</p>}
+              
               {item.badge && <span className="inline-block mt-3 px-3 py-1 rounded-full bg-accent/15 text-accent text-xs font-medium">{item.badge}</span>}
             </Link>
           </div>
