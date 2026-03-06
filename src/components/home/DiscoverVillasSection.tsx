@@ -36,7 +36,7 @@ export function DiscoverVillasSection() {
   );
 
   return (
-    <section className="bg-muted border-t border-border py-20 md:py-24">
+    <section className={isShowcase ? 'py-12' : 'bg-muted border-t border-border py-20 md:py-24'}>
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -58,20 +58,22 @@ export function DiscoverVillasSection() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
+      </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="aspect-[4/3] rounded-[14px] bg-card" />
-                <Skeleton className="h-6 w-3/4 bg-card" />
-              </div>
-            ))}
-          </div>
-        ) : properties && properties.length > 0 ? (
-          isShowcase ? (
-            <SectionShowcase settings={settings} items={showcaseItems} />
-          ) : (
+      {isLoading ? (
+        <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-5">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-4">
+              <Skeleton className="aspect-[4/3] rounded-[14px] bg-card" />
+              <Skeleton className="h-6 w-3/4 bg-card" />
+            </div>
+          ))}
+        </div>
+      ) : properties && properties.length > 0 ? (
+        isShowcase ? (
+          <SectionShowcase settings={settings} items={showcaseItems} />
+        ) : (
+          <div className="container mx-auto px-4">
             <SectionRenderer settings={settings}>
               {properties.map((property) => (
                 <Link key={property.id} to={`/properties/${property.slug}`} className="block group">
@@ -113,9 +115,9 @@ export function DiscoverVillasSection() {
                 </Link>
               ))}
             </SectionRenderer>
-          )
-        ) : null}
-      </div>
+          </div>
+        )
+      ) : null}
     </section>
   );
 }
