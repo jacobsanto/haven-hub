@@ -460,11 +460,6 @@ function BrightMinimalistSection({ items, activeIndex, onSelect }: VariantProps)
                     </div>
                     <div style={{ opacity: isActive ? 1 : 0, transform: isActive ? 'translateY(0)' : 'translateY(20px)', transition: prefersReduced ? 'none' : 'all 0.8s ease-out 0.2s' }}>
                       <h4 className="font-serif text-2xl font-normal text-foreground mb-1">{item.title}</h4>
-                      {item.meta && (
-                        <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${palette.color}30` }}>
-                          <p className="text-foreground font-sans font-semibold text-base">{item.meta}</p>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
