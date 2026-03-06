@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 const SHOWCASE_MODES = ['parallax-depth', 'split-reveal', 'morph-tiles', 'cinematic', 'vertical-curtain', 'card-deck', 'bright-minimalist'];
 
 export function DestinationsShowcase() {
-  const { data: destinations, isLoading } = useActiveDestinations();
+  const { data: destinations, isLoading } = useFeaturedDestinations();
   const settings = useSectionDisplay('home', 'destinations');
   const content = usePageContent('home', 'destinations', {
     label: 'Explore',
