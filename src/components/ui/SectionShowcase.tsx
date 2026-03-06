@@ -442,7 +442,6 @@ function BrightMinimalistSection({ items, activeIndex, onSelect }: VariantProps)
                 <div key={item.id} onClick={() => onSelect(idx)} onMouseEnter={() => setHovered(idx)} onMouseLeave={() => setHovered(null)}
                 className="absolute inset-0 rounded-xl cursor-pointer overflow-hidden"
                 style={{
-                  background: `hsl(${palette.lightBg})`,
                   border: `1px solid ${palette.color}30`,
                   transition: prefersReduced ? 'none' : 'all 0.8s cubic-bezier(0.16,1,0.3,1)',
                   transform: isActive ?
@@ -451,15 +450,26 @@ function BrightMinimalistSection({ items, activeIndex, onSelect }: VariantProps)
                   zIndex: isActive ? 10 : 5 - Math.abs(idx - activeIndex),
                   opacity: isActive || hovered === idx ? 1 : 0.6
                 }}>
-                  <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{ background: palette.color }} />
+                  {/* Hero image */}
+                  <div
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-[1200ms] ease-out"
+                    style={{
+                      backgroundImage: `url(${item.image || '/placeholder.svg'})`,
+                      transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                    }}
+                  />
+                  {/* Color tint blend */}
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${palette.color}30, ${palette.color}15)`, mixBlendMode: 'multiply' }} />
+                  {/* Bottom gradient for text */}
+                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                   <div className="absolute inset-0 flex flex-col justify-between p-6 z-[5]">
                     <div style={{ opacity: isActive ? 1 : 0, transition: 'opacity 0.6s ease' }}>
-                      {item.location && <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-[1.5px] uppercase" style={{ color: palette.color }}>
+                      {item.location && <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-[1.5px] uppercase text-white/80">
                         <MapPin size={10} />{item.location}
                       </span>}
                     </div>
                     <div style={{ opacity: isActive ? 1 : 0, transform: isActive ? 'translateY(0)' : 'translateY(20px)', transition: prefersReduced ? 'none' : 'all 0.8s ease-out 0.2s' }}>
-                      <h4 className="font-serif text-2xl font-normal text-foreground mb-1">{item.title}</h4>
+                      <h4 className="font-serif text-2xl font-normal text-white drop-shadow-md mb-1">{item.title}</h4>
                     </div>
                   </div>
                 </div>);
