@@ -40,6 +40,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
       document.body.style.overflow = 'hidden';
       setImgIdx(0);
       setTab('overview');
+      setFullscreen(false);
     }
     return () => { document.body.style.overflow = ''; };
   }, [property]);
