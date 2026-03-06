@@ -45,7 +45,7 @@ export function WordReveal({ text, className, accentWord, reduced }: WordRevealP
       initial="hidden"
       animate="visible"
       exit="exit"
-      className={className}
+      className={`text-primary-foreground ${className ?? ''}`}
       style={{ display: 'flex', flexWrap: 'wrap', gap: '0 0.3em' }}
     >
       {words.map((word, i) => (
