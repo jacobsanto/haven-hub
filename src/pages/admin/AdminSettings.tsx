@@ -300,11 +300,21 @@ function HeroImageSection() {
   );
 }
 
-const LAYOUT_OPTIONS = [
+const CARD_LAYOUT_OPTIONS = [
   { id: 'grid' as const, name: 'Grid', desc: 'Responsive column layout', icon: LayoutGrid },
   { id: 'carousel' as const, name: 'Carousel', desc: 'Horizontal slider with navigation', icon: GalleryHorizontal },
   { id: 'list' as const, name: 'List', desc: 'Vertical stacked cards', icon: List },
   { id: 'featured' as const, name: 'Featured', desc: 'Hero card + supporting grid', icon: Star },
+];
+
+const SHOWCASE_LAYOUT_OPTIONS = [
+  { id: 'parallax-depth' as const, name: 'Parallax Depth', desc: 'Full-bleed parallax with scale transitions', icon: Layers },
+  { id: 'split-reveal' as const, name: 'Split Reveal', desc: '55/45 split with clip-path reveal', icon: Split },
+  { id: 'morph-tiles' as const, name: 'Morph Tiles', desc: '4-tile grid that expands active tile', icon: Grid2x2 },
+  { id: 'cinematic' as const, name: 'Cinematic', desc: 'Centered text with Ken Burns zoom', icon: Film },
+  { id: 'vertical-curtain' as const, name: 'Vertical Curtain', desc: 'Vertical clip-path with side nav dots', icon: ArrowUpDown },
+  { id: 'card-deck' as const, name: 'Card Deck', desc: 'Stacked cards with ambient blur', icon: CardIcon },
+  { id: 'bright-minimalist' as const, name: 'Bright Minimalist', desc: 'Light split layout with color-tinted cards', icon: Sparkles },
 ];
 
 const HOMEPAGE_SECTIONS = [
