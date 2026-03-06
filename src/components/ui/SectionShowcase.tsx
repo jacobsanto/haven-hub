@@ -424,7 +424,7 @@ function BrightMinimalistSection({ items, activeIndex, onSelect }: VariantProps)
                   {item.location && <p className="text-muted-foreground text-xs tracking-[3px] font-sans font-light uppercase">{item.location}</p>}
                   <h3 className="font-serif text-[clamp(28px,5vw,52px)] font-normal text-foreground leading-[1.1]">{item.title}</h3>
                   {item.subtitle && <p className="text-muted-foreground text-sm leading-relaxed max-w-[360px] font-sans font-light">{item.subtitle}</p>}
-                  {item.meta && <p className="font-sans text-lg font-semibold text-foreground">{item.meta}</p>}
+                  
                   <div className="w-[50px] h-[2px] rounded-sm opacity-80" style={{ background: palette.color }} />
                   <span className="inline-flex items-center gap-2 text-foreground text-sm uppercase tracking-[2px] font-sans hover:opacity-70 transition-opacity">View Details →</span>
                 </div>
