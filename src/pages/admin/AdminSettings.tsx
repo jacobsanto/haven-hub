@@ -11,11 +11,14 @@ import { FontSelector } from '@/components/admin/FontSelector';
 import { CurrencySettingsCard } from '@/components/admin/CurrencySettingsCard';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X, CreditCard, Settings2, ChevronDown, Clock, Image } from 'lucide-react';
+import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X, CreditCard, Settings2, ChevronDown, Clock, Image, LayoutGrid, GalleryHorizontal, List, Star } from 'lucide-react';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { SupportedCurrency } from '@/types/currency';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useAllSectionDisplaySettings, useUpsertSectionDisplay } from '@/hooks/useSectionDisplay';
+import type { SectionDisplaySettings } from '@/hooks/useSectionDisplay';
+import { Switch } from '@/components/ui/switch';
 
 const HEADING_FONTS = [
   'Playfair Display', 'Cormorant Garamond', 'Lora', 'Merriweather', 'Crimson Text',
