@@ -73,10 +73,10 @@ export function Header() {
               ) : (
                 <span className={cn(
                   "text-xl font-serif font-semibold transition-colors duration-300",
-                  isTransparent ? "text-primary-foreground" : "text-foreground"
+                  isTransparent ? "text-white" : "text-foreground"
                 )}>
-                  <span className={isTransparent ? "text-primary-foreground" : "text-primary"}>{primaryPart}</span>
-                  {secondaryPart && <span className={isTransparent ? "text-primary-foreground/80" : "text-muted-foreground"}> {secondaryPart}</span>}
+                  <span className={isTransparent ? "text-white" : "text-primary"}>{primaryPart}</span>
+                  {secondaryPart && <span className={isTransparent ? "text-white/80" : "text-muted-foreground"}> {secondaryPart}</span>}
                 </span>
               )}
             </motion.div>
@@ -86,7 +86,7 @@ export function Header() {
               {index > 0 && (
                 <span className={cn(
                   "mx-2 text-xs select-none",
-                  isTransparent ? "text-primary-foreground/30" : "text-border"
+                  isTransparent ? "text-white/30" : "text-border"
                 )}>|</span>
               )}
               <Link
@@ -95,7 +95,7 @@ export function Header() {
                 className={cn(
                   "text-sm font-medium transition-colors whitespace-nowrap tracking-wide",
                   isTransparent
-                    ? isActive(item.path) ? "text-primary-foreground" : "text-primary-foreground/80 hover:text-primary-foreground"
+                    ? isActive(item.path) ? "text-white" : "text-white/80 hover:text-white"
                     : isActive(item.path) ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -114,13 +114,13 @@ export function Header() {
 
         {/* Right Section */}
         <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-          <CurrencySwitcher variant="icon" className={cn("rounded-full", isTransparent && "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10")} />
+          <CurrencySwitcher variant="icon" className={cn("rounded-full", isTransparent && "text-white/80 hover:text-white hover:bg-white/10")} />
           <Button
             variant="ghost"
             size="icon"
             className={cn(
               "rounded-full",
-              isTransparent && "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
+              isTransparent && "text-white/80 hover:text-white hover:bg-white/10"
             )}
             aria-label="Toggle dark mode"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -135,7 +135,7 @@ export function Header() {
                   size="icon"
                   className={cn(
                     "rounded-full",
-                    isTransparent && "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                    isTransparent && "text-white/80 hover:text-white hover:bg-white/10"
                   )}
                   aria-label="User menu"
                 >
@@ -163,7 +163,7 @@ export function Header() {
               onClick={() => navigate('/login')}
               className={cn(
                 "rounded-full",
-                isTransparent && "border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                isTransparent && "border-white/40 text-white hover:bg-white/10 hover:text-white"
               )}
             >
               Log In
@@ -179,10 +179,10 @@ export function Header() {
             ) : (
               <span className={cn(
                 "text-xl font-serif font-semibold transition-colors duration-300",
-                isTransparent ? "text-primary-foreground" : "text-foreground"
+                isTransparent ? "text-white" : "text-foreground"
               )}>
-                <span className={isTransparent ? "text-primary-foreground" : "text-primary"}>{primaryPart}</span>
-                {secondaryPart && <span className={isTransparent ? "text-primary-foreground/80" : "text-muted-foreground"}> {secondaryPart}</span>}
+                <span className={isTransparent ? "text-white" : "text-primary"}>{primaryPart}</span>
+                {secondaryPart && <span className={isTransparent ? "text-white/80" : "text-muted-foreground"}> {secondaryPart}</span>}
               </span>
             )}
           </motion.div>
@@ -190,7 +190,7 @@ export function Header() {
 
         {/* Mobile Menu Button */}
         <button
-          className={cn("md:hidden p-2", isTransparent && "text-primary-foreground")}
+          className={cn("md:hidden p-2", isTransparent && "text-white")}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileMenuOpen}
