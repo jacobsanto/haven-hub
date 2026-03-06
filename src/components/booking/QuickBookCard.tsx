@@ -44,12 +44,12 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
             />
             {/* Instant Book overlay */}
             {property.instant_booking && (
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[4]">
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[4]">
                 <button
                   onClick={handleBookNow}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
+                  className="flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold text-sm shadow-[0_8px_30px_-4px_hsl(var(--primary)/0.5)] backdrop-blur-sm scale-90 group-hover:scale-100 transition-all duration-300 hover:scale-110 hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.6)]"
                 >
-                  <Zap className="h-4 w-4 fill-current" />
+                  <Zap className="h-4 w-4 fill-current animate-[pulse_1.5s_ease-in-out_infinite]" />
                   Instant Book
                 </button>
               </div>

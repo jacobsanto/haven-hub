@@ -91,12 +91,12 @@ export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFa
 
         {/* Instant Book overlay */}
         {property.instant_booking && hovered && (
-          <div className="absolute inset-0 flex items-center justify-center z-[4]">
+          <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-[4] animate-fade-in">
             <button
               onClick={(e) => { e.stopPropagation(); onInstantBook(property); }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
+              className="flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold text-sm shadow-[0_8px_30px_-4px_hsl(var(--primary)/0.5)] backdrop-blur-sm animate-scale-in hover:scale-110 hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.6)] transition-all duration-300"
             >
-              <Zap size={16} className="fill-current" />
+              <Zap size={16} className="fill-current animate-[pulse_1.5s_ease-in-out_infinite]" />
               Instant Book
             </button>
           </div>
