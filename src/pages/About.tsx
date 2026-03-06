@@ -71,13 +71,13 @@ const About = () => {
       {/* ─── Hero ─── */}
       <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-foreground/70 via-foreground/40 to-transparent" />
         <div className="container mx-auto px-4 relative z-10 h-full flex items-end pb-16 md:pb-20">
           <motion.h1
             initial={prefersReduced ? {} : { opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif italic text-white max-w-3xl leading-tight">
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif italic text-background max-w-3xl leading-tight">
             
             {r(heroContent.heading)}
           </motion.h1>

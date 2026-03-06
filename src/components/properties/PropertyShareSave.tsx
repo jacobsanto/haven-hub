@@ -86,7 +86,7 @@ export function PropertyShareSave({ propertyName, propertyUrl }: PropertyShareSa
         >
           <Heart 
             className={`h-5 w-5 transition-colors ${
-              isSaved ? 'text-white fill-current' : 'text-foreground'
+              isSaved ? 'text-destructive-foreground fill-current' : 'text-foreground'
             }`} 
           />
         </motion.button>
@@ -128,7 +128,7 @@ export function PropertyShareSave({ propertyName, propertyUrl }: PropertyShareSa
         >
           <Heart 
             className={`h-5 w-5 transition-colors ${
-              isSaved ? 'text-white fill-current' : 'text-foreground'
+              isSaved ? 'text-destructive-foreground fill-current' : 'text-foreground'
             }`} 
           />
           <span className="absolute right-full mr-3 px-2 py-1 bg-foreground text-background text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">

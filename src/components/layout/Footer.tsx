@@ -277,33 +277,39 @@ export function Footer() {
             
             {/* Social Icons */}
             <div className="flex items-center gap-4 order-1 sm:order-2">
-              <a 
-                href={socialInstagram || '#'} 
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Follow us on Instagram"
-                 className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a 
-                href={socialFacebook || '#'} 
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Follow us on Facebook"
-                 className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a 
-                href={socialTwitter || '#'} 
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Follow us on X (Twitter)"
-                className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
+              {socialInstagram && (
+                <a 
+                  href={socialInstagram} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow us on Instagram"
+                   className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+              )}
+              {socialFacebook && (
+                <a 
+                  href={socialFacebook} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow us on Facebook"
+                   className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
+                >
+                  <Facebook className="h-5 w-5" />
+                </a>
+              )}
+              {socialTwitter && (
+                <a 
+                  href={socialTwitter} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow us on X (Twitter)"
+                  className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
+                >
+                  <Twitter className="h-5 w-5" />
+                </a>
+              )}
               
               {/* Dark Mode Toggle */}
               <Button

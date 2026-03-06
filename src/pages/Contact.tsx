@@ -43,11 +43,11 @@ const Contact = () => {
       {/* Hero */}
       <section className="relative py-32 md:py-40 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/40 to-foreground/30" />
         <div className="container mx-auto px-4 relative z-10">
           <motion.div initial={prefersReduced ? {} : { opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-serif font-medium text-white mb-6">{heroContent.heading}</h1>
-            <p className="text-lg md:text-xl text-white/80 leading-relaxed">{heroContent.subtitle}</p>
+            <h1 className="text-4xl md:text-6xl font-serif font-medium text-background mb-6">{heroContent.heading}</h1>
+            <p className="text-lg md:text-xl text-background/80 leading-relaxed">{heroContent.subtitle}</p>
           </motion.div>
         </div>
       </section>

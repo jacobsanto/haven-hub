@@ -114,11 +114,13 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
+    font-weight: var(--body-weight, 400);
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-serif);
-    @apply font-medium tracking-tight;
+    font-weight: var(--heading-weight, 500);
+    letter-spacing: var(--heading-tracking, -0.02em);
   }
 }
 
@@ -138,7 +140,7 @@
   /* Gold gradient CTA */
   .btn-gold-gradient {
     background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-hover)));
-    @apply text-white font-medium transition-all duration-300;
+    @apply text-accent-foreground font-medium transition-all duration-300;
   }
 
   .btn-gold-gradient:hover {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { viewportOnce } from '@/lib/motion';
+import { usePageContent } from '@/hooks/usePageContent';
 
 interface Testimonial {
   platform: 'booking' | 'tripadvisor';
@@ -39,6 +40,11 @@ export function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const active = testimonials[activeIndex];
 
+  const content = usePageContent('home', 'testimonials', {
+    label: 'Guest Stories',
+    heading: 'What They Remember',
+  });
+
   return (
     <section className="bg-background py-20 md:py-24">
       <div className="container mx-auto px-4">
@@ -49,9 +55,10 @@ export function TestimonialsSection() {
             viewport={viewportOnce}
             className="mb-12"
           >
-            <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">Guest Stories</p>
+            <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">{content.label}</p>
             <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-foreground leading-[1.2]">
-              What They <em className="font-normal text-accent not-italic">Remember</em>
+              {content.heading.split(' ').slice(0, -1).join(' ')}{' '}
+              <em className="font-normal text-accent not-italic">{content.heading.split(' ').pop()}</em>
             </h2>
           </motion.div>
 

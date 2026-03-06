@@ -36,11 +36,11 @@ export function DestinationCard({ destination, propertyCount = 0, index = 0 }: D
           )}
           
           {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
           {/* Featured badge */}
           {destination.is_featured && (
-            <div className="absolute top-4 right-4 bg-accent/85 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full">
+            <div className="absolute top-4 right-4 bg-accent/85 backdrop-blur-sm text-accent-foreground text-xs font-medium px-3 py-1 rounded-full">
               Featured
             </div>
           )}

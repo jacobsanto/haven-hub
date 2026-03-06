@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useActiveExperiences } from '@/hooks/useExperiences';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
+import { usePageContent } from '@/hooks/usePageContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
 
@@ -11,7 +12,17 @@ export function LiveExperiencesSection() {
   const { format } = useFormatCurrency();
   const featured = experiences?.filter(e => e.is_featured).slice(0, 8) || experiences?.slice(0, 8);
 
+  const content = usePageContent('home', 'experiences', {
+    label: 'Curated',
+    heading: 'Beyond the Villa',
+    subtitle: 'Elevate your stay with our hand-selected experiences.',
+  });
+
   if (!isLoading && (!featured || featured.length === 0)) return null;
+
+  const words = content.heading.split(' ');
+  const headingMain = words.slice(0, -1).join(' ');
+  const headingAccent = words[words.length - 1];
 
   return (
     <section className="bg-muted border-t border-b border-border py-20 md:py-24">
@@ -22,9 +33,9 @@ export function LiveExperiencesSection() {
           viewport={viewportOnce}
           className="text-center mb-14"
         >
-          <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">Curated</p>
+          <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">{content.label}</p>
           <h2 className="font-serif text-[clamp(32px,4vw,48px)] font-semibold text-foreground leading-[1.1]">
-            Beyond the <em className="font-normal text-accent not-italic">Villa</em>
+            {headingMain} <em className="font-normal text-accent not-italic">{headingAccent}</em>
           </h2>
         </motion.div>
 
