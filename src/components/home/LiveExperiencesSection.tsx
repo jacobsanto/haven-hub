@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useActiveExperiences } from '@/hooks/useExperiences';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { usePageContent } from '@/hooks/usePageContent';
