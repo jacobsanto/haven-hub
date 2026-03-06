@@ -150,7 +150,7 @@ export function HeroSection() {
           <div
             className="absolute inset-0 bg-cover bg-center blur-md scale-110 transition-[background-image] duration-1000 ease-in-out"
             style={{ backgroundImage: `url(${active.hero_image_url})` }} />
-          <div className="absolute inset-0 bg-foreground/40" />
+          <div className="absolute inset-0 bg-black/50" />
         </>}
 
           {!prefersReduced &&
