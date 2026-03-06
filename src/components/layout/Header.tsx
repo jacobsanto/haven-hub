@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
-import { HeaderSearchBar } from '@/components/search/HeaderSearchBar';
+
 import { CurrencySwitcher } from '@/components/ui/CurrencySwitcher';
 import { cn } from '@/lib/utils';
 import { useNavigationItems } from '@/hooks/useNavigationItems';
@@ -105,12 +105,6 @@ export function Header() {
           ))}
         </div>
 
-        {/* Search Bar - Center (hidden on homepage) */}
-        {!isHomepage && (
-          <div className="hidden lg:flex flex-1 justify-center min-w-0">
-            <HeaderSearchBar />
-          </div>
-        )}
 
         {/* Right Section */}
         <div className="hidden md:flex items-center gap-2 flex-shrink-0">
