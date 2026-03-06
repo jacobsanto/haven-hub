@@ -364,28 +364,58 @@ function HomepageSectionsLayout() {
                 <p className="text-sm font-medium text-foreground">{section.label}</p>
                 <p className="text-xs text-muted-foreground">{section.desc}</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {LAYOUT_OPTIONS.map((layout) => {
-                  const Icon = layout.icon;
-                  const isActive = activeMode === layout.id;
-                  return (
-                    <button
-                      key={layout.id}
-                      onClick={() => handleLayoutChange(section.key, layout.id)}
-                      disabled={upsert.isPending}
-                      className={`p-3 rounded-xl border-2 text-left transition-all ${
-                        isActive
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/30 hover:bg-muted/30'
-                      }`}
-                    >
-                      <Icon className={`h-4 w-4 mb-1.5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                      <p className="text-sm font-medium text-foreground">{layout.name}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{layout.desc}</p>
-                      {isActive && <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>}
-                    </button>
-                  );
-                })}
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Card Layouts</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {CARD_LAYOUT_OPTIONS.map((layout) => {
+                    const Icon = layout.icon;
+                    const isActive = activeMode === layout.id;
+                    return (
+                      <button
+                        key={layout.id}
+                        onClick={() => handleLayoutChange(section.key, layout.id)}
+                        disabled={upsert.isPending}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          isActive
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                        }`}
+                      >
+                        <Icon className={`h-4 w-4 mb-1.5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <p className="text-sm font-medium text-foreground">{layout.name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{layout.desc}</p>
+                        {isActive && <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Showcase Styles</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {SHOWCASE_LAYOUT_OPTIONS.map((layout) => {
+                    const Icon = layout.icon;
+                    const isActive = activeMode === layout.id;
+                    return (
+                      <button
+                        key={layout.id}
+                        onClick={() => handleLayoutChange(section.key, layout.id)}
+                        disabled={upsert.isPending}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          isActive
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                        }`}
+                      >
+                        <Icon className={`h-4 w-4 mb-1.5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <p className="text-sm font-medium text-foreground">{layout.name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{layout.desc}</p>
+                        {isActive && <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Carousel-specific options */}
