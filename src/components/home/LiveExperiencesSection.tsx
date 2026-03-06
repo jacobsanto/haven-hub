@@ -35,7 +35,7 @@ export function LiveExperiencesSection() {
       badge: exp.category,
       location: exp.duration || undefined,
       meta: exp.price_from ? format(exp.price_from) : undefined,
-      link: `/experiences/${exp.slug}`,
+      link: `/experiences`,
     })),
     [featured, format]
   );
