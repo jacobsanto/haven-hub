@@ -110,6 +110,7 @@ const App = () => (
                 <Route path="/experiences" element={<Experiences />} />
                 <Route path="/experiences/:slug" element={<ExperienceDetail />} />
                 <Route path="/blog" element={<Blog />} />
+                <Route path="/faq" element={<FAQ />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/properties" element={<AdminProperties />} />
