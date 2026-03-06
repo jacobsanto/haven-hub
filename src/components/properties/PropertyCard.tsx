@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+
 import { motion } from 'framer-motion';
 import { MapPin, Users, Bed, Bath, Zap, ArrowRight } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
