@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -9,17 +10,34 @@ import { viewportOnce } from '@/lib/motion';
 import { Button } from '@/components/ui/button';
 import { useSectionDisplay } from '@/hooks/useSectionDisplay';
 import { SectionRenderer } from '@/components/ui/SectionRenderer';
+import { SectionShowcase, type ShowcaseItem } from '@/components/ui/SectionShowcase';
+
+const SHOWCASE_MODES = ['parallax-depth', 'split-reveal', 'morph-tiles', 'cinematic', 'vertical-curtain', 'card-deck', 'bright-minimalist'];
 
 export function DiscoverVillasSection() {
   const { data: properties, isLoading } = useFeaturedProperties();
   const { format } = useFormatCurrency();
   const { openBooking } = useBooking();
   const settings = useSectionDisplay('home', 'discover-villas');
+  const isShowcase = SHOWCASE_MODES.includes(settings.layout_mode);
+
+  const showcaseItems: ShowcaseItem[] = useMemo(() =>
+    (properties || []).map(p => ({
+      id: p.id,
+      image: p.hero_image_url || '/placeholder.svg',
+      title: p.display_name || p.name,
+      subtitle: p.short_description || p.description?.slice(0, 80) || undefined,
+      location: `${p.city}, ${p.country}`,
+      meta: `${format(p.base_price)} / night`,
+      extra: `${p.bedrooms || 3} beds · ${p.max_guests || 6} guests`,
+      link: `/properties/${p.slug}`,
+    })),
+    [properties, format]
+  );
 
   return (
     <section className="bg-muted border-t border-border py-20 md:py-24">
       <div className="container mx-auto px-4">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -51,47 +69,51 @@ export function DiscoverVillasSection() {
             ))}
           </div>
         ) : properties && properties.length > 0 ? (
-          <SectionRenderer settings={settings}>
-            {properties.map((property) => (
-              <Link key={property.id} to={`/properties/${property.slug}`} className="block group">
-                <div className="overflow-hidden rounded-[14px] mb-4">
-                  <img
-                    src={property.hero_image_url || '/placeholder.svg'}
-                    alt={property.name}
-                    className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
-                  <MapPin className="w-3 h-3 text-accent" />
-                  {property.city}, {property.country}
-                </div>
-                <h3 className="text-base font-serif font-medium text-foreground group-hover:text-accent transition-colors mb-1">
-                  {property.display_name || property.name}
-                </h3>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                  {property.short_description || property.description?.slice(0, 80)}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">
-                    {format(property.base_price)} <span className="text-muted-foreground font-normal text-xs">/ night</span>
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs gap-1 rounded-full border-accent text-accent hover:bg-accent hover:text-accent-foreground"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openBooking({ mode: 'direct', property });
-                    }}
-                  >
-                    Book Now
-                  </Button>
-                </div>
-              </Link>
-            ))}
-          </SectionRenderer>
+          isShowcase ? (
+            <SectionShowcase settings={settings} items={showcaseItems} />
+          ) : (
+            <SectionRenderer settings={settings}>
+              {properties.map((property) => (
+                <Link key={property.id} to={`/properties/${property.slug}`} className="block group">
+                  <div className="overflow-hidden rounded-[14px] mb-4">
+                    <img
+                      src={property.hero_image_url || '/placeholder.svg'}
+                      alt={property.name}
+                      className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                    <MapPin className="w-3 h-3 text-accent" />
+                    {property.city}, {property.country}
+                  </div>
+                  <h3 className="text-base font-serif font-medium text-foreground group-hover:text-accent transition-colors mb-1">
+                    {property.display_name || property.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                    {property.short_description || property.description?.slice(0, 80)}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">
+                      {format(property.base_price)} <span className="text-muted-foreground font-normal text-xs">/ night</span>
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs gap-1 rounded-full border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openBooking({ mode: 'direct', property });
+                      }}
+                    >
+                      Book Now
+                    </Button>
+                  </div>
+                </Link>
+              ))}
+            </SectionRenderer>
+          )
         ) : null}
       </div>
     </section>

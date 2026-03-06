@@ -11,7 +11,7 @@ import { FontSelector } from '@/components/admin/FontSelector';
 import { CurrencySettingsCard } from '@/components/admin/CurrencySettingsCard';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X, CreditCard, Settings2, ChevronDown, Clock, Image, LayoutGrid, GalleryHorizontal, List, Star } from 'lucide-react';
+import { Palette, Type, Building2, Save, RotateCcw, Coins, Download, Upload, Sun, Moon, Check, AlertTriangle, X, CreditCard, Settings2, ChevronDown, Clock, Image, LayoutGrid, GalleryHorizontal, List, Star, Layers, Split, Grid2x2, Film, ArrowUpDown, CreditCard as CardIcon, Sparkles } from 'lucide-react';
 import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOptimizer';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { SupportedCurrency } from '@/types/currency';
@@ -300,11 +300,21 @@ function HeroImageSection() {
   );
 }
 
-const LAYOUT_OPTIONS = [
+const CARD_LAYOUT_OPTIONS = [
   { id: 'grid' as const, name: 'Grid', desc: 'Responsive column layout', icon: LayoutGrid },
   { id: 'carousel' as const, name: 'Carousel', desc: 'Horizontal slider with navigation', icon: GalleryHorizontal },
   { id: 'list' as const, name: 'List', desc: 'Vertical stacked cards', icon: List },
   { id: 'featured' as const, name: 'Featured', desc: 'Hero card + supporting grid', icon: Star },
+];
+
+const SHOWCASE_LAYOUT_OPTIONS = [
+  { id: 'parallax-depth' as const, name: 'Parallax Depth', desc: 'Full-bleed parallax with scale transitions', icon: Layers },
+  { id: 'split-reveal' as const, name: 'Split Reveal', desc: '55/45 split with clip-path reveal', icon: Split },
+  { id: 'morph-tiles' as const, name: 'Morph Tiles', desc: '4-tile grid that expands active tile', icon: Grid2x2 },
+  { id: 'cinematic' as const, name: 'Cinematic', desc: 'Centered text with Ken Burns zoom', icon: Film },
+  { id: 'vertical-curtain' as const, name: 'Vertical Curtain', desc: 'Vertical clip-path with side nav dots', icon: ArrowUpDown },
+  { id: 'card-deck' as const, name: 'Card Deck', desc: 'Stacked cards with ambient blur', icon: CardIcon },
+  { id: 'bright-minimalist' as const, name: 'Bright Minimalist', desc: 'Light split layout with color-tinted cards', icon: Sparkles },
 ];
 
 const HOMEPAGE_SECTIONS = [
@@ -324,8 +334,8 @@ function HomepageSectionsLayout() {
     return found || { layout_mode: 'grid', autoplay: false, items_per_view: 3, show_navigation: true, show_dots: false, columns: 3 };
   };
 
-  const handleLayoutChange = (sectionKey: string, mode: SectionDisplaySettings['layout_mode']) => {
-    upsert.mutate({ page_slug: 'home', section_key: sectionKey, layout_mode: mode }, {
+  const handleLayoutChange = (sectionKey: string, mode: string) => {
+    upsert.mutate({ page_slug: 'home', section_key: sectionKey, layout_mode: mode as SectionDisplaySettings['layout_mode'] }, {
       onSuccess: () => toast({ title: 'Layout updated', description: `Refresh the homepage to see the change.` }),
       onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
     });
@@ -354,28 +364,58 @@ function HomepageSectionsLayout() {
                 <p className="text-sm font-medium text-foreground">{section.label}</p>
                 <p className="text-xs text-muted-foreground">{section.desc}</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {LAYOUT_OPTIONS.map((layout) => {
-                  const Icon = layout.icon;
-                  const isActive = activeMode === layout.id;
-                  return (
-                    <button
-                      key={layout.id}
-                      onClick={() => handleLayoutChange(section.key, layout.id)}
-                      disabled={upsert.isPending}
-                      className={`p-3 rounded-xl border-2 text-left transition-all ${
-                        isActive
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/30 hover:bg-muted/30'
-                      }`}
-                    >
-                      <Icon className={`h-4 w-4 mb-1.5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                      <p className="text-sm font-medium text-foreground">{layout.name}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{layout.desc}</p>
-                      {isActive && <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>}
-                    </button>
-                  );
-                })}
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Card Layouts</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {CARD_LAYOUT_OPTIONS.map((layout) => {
+                    const Icon = layout.icon;
+                    const isActive = activeMode === layout.id;
+                    return (
+                      <button
+                        key={layout.id}
+                        onClick={() => handleLayoutChange(section.key, layout.id)}
+                        disabled={upsert.isPending}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          isActive
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                        }`}
+                      >
+                        <Icon className={`h-4 w-4 mb-1.5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <p className="text-sm font-medium text-foreground">{layout.name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{layout.desc}</p>
+                        {isActive && <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Showcase Styles</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {SHOWCASE_LAYOUT_OPTIONS.map((layout) => {
+                    const Icon = layout.icon;
+                    const isActive = activeMode === layout.id;
+                    return (
+                      <button
+                        key={layout.id}
+                        onClick={() => handleLayoutChange(section.key, layout.id)}
+                        disabled={upsert.isPending}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          isActive
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                        }`}
+                      >
+                        <Icon className={`h-4 w-4 mb-1.5 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <p className="text-sm font-medium text-foreground">{layout.name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{layout.desc}</p>
+                        {isActive && <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Carousel-specific options */}
