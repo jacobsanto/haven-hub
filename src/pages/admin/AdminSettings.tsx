@@ -217,6 +217,7 @@ const HERO_STYLES = [
   { id: 'morph-tiles', name: 'Morph Tiles', desc: '4-column grid that morphs active tile' },
   { id: 'cinematic', name: 'Cinematic', desc: 'Ken Burns zoom with centered text' },
   { id: 'vertical-curtain', name: 'Vertical Curtain', desc: 'Vertical clip-path wipe transition' },
+  { id: 'bright-minimalist', name: 'Bright Minimalist', desc: 'Light split layout with color-tinted stacked cards' },
 ];
 
 function HeroImageSection() {
