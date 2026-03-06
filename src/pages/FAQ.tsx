@@ -76,7 +76,7 @@ export default function FAQPage() {
 
   return (
     <PageLayout>
-      <PageSEO pageSlug="faq" defaults={{ meta_title: `FAQ | ${brandName}`, meta_description: 'Find answers to common questions about booking, properties, payments, and more.' }} />
+      <PageSEO pageSlug="faq" defaults={{ meta_title: `FAQ | ${brandName}`, meta_description: 'Find answers to common questions about booking, properties, payments, and more.', og_image: '' }} />
 
       {/* Hero */}
       <section className="relative py-24 md:py-32 overflow-hidden bg-muted">

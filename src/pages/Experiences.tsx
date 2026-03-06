@@ -104,7 +104,7 @@ const Experiences = () => {
   const [search, setSearch] = useState('');
   const [selectedExp, setSelectedExp] = useState<any>(null);
   const { data: experiences, isLoading } = useActiveExperiences();
-  const { formatPrice } = useFormatCurrency();
+  const { format: formatPrice } = useFormatCurrency();
 
   const filtered = useMemo(() => {
     let items = experiences || [];

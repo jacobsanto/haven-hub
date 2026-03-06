@@ -65,7 +65,7 @@ export default function Blog() {
 
   return (
     <PageLayout>
-      <PageSEO pageSlug="blog" defaults={{ meta_title: 'Journal | Haven Hub', meta_description: 'Travel stories, destination guides, and luxury living inspiration.' }} />
+      <PageSEO pageSlug="blog" defaults={{ meta_title: 'Journal | Haven Hub', meta_description: 'Travel stories, destination guides, and luxury living inspiration.', og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
 
       {/* Featured Hero */}
       {!isLoading && showHero && featuredPost && (
