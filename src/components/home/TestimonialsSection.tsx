@@ -40,7 +40,7 @@ export function TestimonialsSection() {
   const active = testimonials[activeIndex];
 
   return (
-    <section className="bg-[#0a0a0f] py-20 md:py-24">
+    <section className="bg-background py-20 md:py-24">
       <div className="container mx-auto px-4">
         <div className="max-w-[900px] mx-auto text-center">
           <motion.div
@@ -50,7 +50,7 @@ export function TestimonialsSection() {
             className="mb-12"
           >
             <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">Guest Stories</p>
-            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-[#f0ece4] leading-[1.2]">
+            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-foreground leading-[1.2]">
               What They <em className="font-normal text-accent not-italic">Remember</em>
             </h2>
           </motion.div>
@@ -59,7 +59,7 @@ export function TestimonialsSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewportOnce}
-            className="bg-[#15151f] border border-white/[0.06] rounded-2xl px-10 md:px-14 py-12 relative"
+            className="bg-card border border-border rounded-2xl px-10 md:px-14 py-12 relative"
           >
             {/* Quote mark */}
             <div className="font-serif text-[64px] text-accent/20 absolute top-4 left-8 leading-none">"</div>
@@ -72,12 +72,12 @@ export function TestimonialsSection() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
               >
-                <p className="font-serif text-xl italic text-[#f0ece4] leading-[1.7] mb-7">
+                <p className="font-serif text-xl italic text-foreground leading-[1.7] mb-7">
                   {active.text}
                 </p>
                 <div className="w-10 h-px bg-accent mx-auto mb-5" />
-                <p className="font-sans text-sm font-bold text-[#f0ece4]">{active.author}</p>
-                <p className="font-sans text-xs text-[#6b6560]">{active.location}</p>
+                <p className="font-sans text-sm font-bold text-foreground">{active.author}</p>
+                <p className="font-sans text-xs text-muted-foreground">{active.location}</p>
               </motion.div>
             </AnimatePresence>
 
@@ -85,7 +85,7 @@ export function TestimonialsSection() {
             <div className="flex items-center justify-center gap-4 mt-8">
               <button
                 onClick={() => setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
-                className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-[#a8a29e] hover:border-accent hover:text-accent transition-colors"
+                className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:border-accent hover:text-accent transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -98,14 +98,14 @@ export function TestimonialsSection() {
                     style={{
                       width: i === activeIndex ? 28 : 8,
                       height: 3,
-                      background: i === activeIndex ? 'hsl(var(--accent))' : 'rgba(255,255,255,0.15)',
+                      background: i === activeIndex ? 'hsl(var(--accent))' : 'hsl(var(--border))',
                     }}
                   />
                 ))}
               </div>
               <button
                 onClick={() => setActiveIndex((prev) => (prev + 1) % testimonials.length)}
-                className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-[#a8a29e] hover:border-accent hover:text-accent transition-colors"
+                className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:border-accent hover:text-accent transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

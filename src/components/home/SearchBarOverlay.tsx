@@ -24,22 +24,22 @@ export function SearchBarOverlay() {
   };
 
   return (
-    <section className="relative z-10 px-4 md:px-[5%] bg-[#0a0a0f]">
+    <section className="relative z-10 px-4 md:px-[5%] bg-background">
       <form
         onSubmit={handleSearch}
-        className="max-w-[900px] mx-auto -mt-9 relative bg-[#15151f] border border-white/[0.06] rounded-[14px] p-1.5 grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-px"
+        className="max-w-[900px] mx-auto -mt-9 relative bg-card border border-border rounded-[14px] p-1.5 grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-px"
         style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}
       >
         {/* Destination */}
-        <div className="p-3.5 md:border-r md:border-white/[0.06]">
+        <div className="p-3.5 md:border-r md:border-border">
           <p className="font-sans text-[10px] tracking-[0.12em] text-accent uppercase mb-1.5">Destination</p>
-          <div className="flex items-center gap-2 text-[#6b6560]">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin size={14} />
             <input
               placeholder="Where to?"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className="bg-transparent border-none outline-none font-sans text-[13px] text-[#f0ece4] w-full placeholder:text-[#6b6560]"
+              className="bg-transparent border-none outline-none font-sans text-[13px] text-foreground w-full placeholder:text-muted-foreground"
             />
           </div>
         </div>
@@ -47,11 +47,11 @@ export function SearchBarOverlay() {
         {/* Check In */}
         <Popover>
           <PopoverTrigger asChild>
-            <div className="p-3.5 md:border-r md:border-white/[0.06] cursor-pointer">
+            <div className="p-3.5 md:border-r md:border-border cursor-pointer">
               <p className="font-sans text-[10px] tracking-[0.12em] text-accent uppercase mb-1.5">Check In</p>
-              <div className="flex items-center gap-2 text-[#6b6560]">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar size={14} />
-                <span className={cn('font-sans text-[13px]', checkIn ? 'text-[#f0ece4]' : 'text-[#6b6560]')}>
+                <span className={cn('font-sans text-[13px]', checkIn ? 'text-foreground' : 'text-muted-foreground')}>
                   {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Add date'}
                 </span>
               </div>
@@ -75,11 +75,11 @@ export function SearchBarOverlay() {
         {/* Check Out */}
         <Popover>
           <PopoverTrigger asChild>
-            <div className="p-3.5 md:border-r md:border-white/[0.06] cursor-pointer">
+            <div className="p-3.5 md:border-r md:border-border cursor-pointer">
               <p className="font-sans text-[10px] tracking-[0.12em] text-accent uppercase mb-1.5">Check Out</p>
-              <div className="flex items-center gap-2 text-[#6b6560]">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar size={14} />
-                <span className={cn('font-sans text-[13px]', checkOut ? 'text-[#f0ece4]' : 'text-[#6b6560]')}>
+                <span className={cn('font-sans text-[13px]', checkOut ? 'text-foreground' : 'text-muted-foreground')}>
                   {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Add date'}
                 </span>
               </div>
@@ -100,12 +100,12 @@ export function SearchBarOverlay() {
         {/* Guests */}
         <div className="p-3.5">
           <p className="font-sans text-[10px] tracking-[0.12em] text-accent uppercase mb-1.5">Guests</p>
-          <div className="flex items-center gap-2 text-[#6b6560]">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Users size={14} />
             <select
               value={guests}
               onChange={(e) => setGuests(Number(e.target.value))}
-              className="bg-transparent border-none outline-none font-sans text-[13px] text-[#f0ece4] appearance-none cursor-pointer"
+              className="bg-transparent border-none outline-none font-sans text-[13px] text-foreground appearance-none cursor-pointer"
             >
               {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((n) => (
                 <option key={n} value={n} className="text-foreground bg-card">
@@ -119,7 +119,7 @@ export function SearchBarOverlay() {
         {/* Search button */}
         <button
           type="submit"
-          className="flex items-center justify-center gap-2 bg-accent border-none rounded-[10px] px-6 cursor-pointer transition-colors hover:bg-accent/80 text-[#0a0a0f] font-sans text-[13px] font-bold tracking-[0.05em] py-3 md:py-0"
+          className="flex items-center justify-center gap-2 bg-accent border-none rounded-[10px] px-6 cursor-pointer transition-colors hover:bg-accent/80 text-accent-foreground font-sans text-[13px] font-bold tracking-[0.05em] py-3 md:py-0"
         >
           <Search size={16} /> Search
         </button>

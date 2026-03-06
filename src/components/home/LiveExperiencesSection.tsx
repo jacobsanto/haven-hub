@@ -14,7 +14,7 @@ export function LiveExperiencesSection() {
   if (!isLoading && (!featured || featured.length === 0)) return null;
 
   return (
-    <section className="bg-[#111118] border-t border-b border-white/[0.06] py-20 md:py-24">
+    <section className="bg-muted border-t border-b border-border py-20 md:py-24">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -23,7 +23,7 @@ export function LiveExperiencesSection() {
           className="text-center mb-14"
         >
           <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">Curated</p>
-          <h2 className="font-serif text-[clamp(32px,4vw,48px)] font-semibold text-[#f0ece4] leading-[1.1]">
+          <h2 className="font-serif text-[clamp(32px,4vw,48px)] font-semibold text-foreground leading-[1.1]">
             Beyond the <em className="font-normal text-accent not-italic">Villa</em>
           </h2>
         </motion.div>
@@ -31,7 +31,7 @@ export function LiveExperiencesSection() {
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-64 rounded-[14px] bg-[#15151f]" />
+              <Skeleton key={i} className="h-64 rounded-[14px] bg-card" />
             ))}
           </div>
         ) : (
@@ -46,21 +46,21 @@ export function LiveExperiencesSection() {
               >
                 <Link
                   to={`/experiences/${exp.slug}`}
-                  className="block group bg-[#15151f] border border-white/[0.06] rounded-[14px] overflow-hidden hover:border-accent/40 hover:-translate-y-1 transition-all"
+                  className="block group bg-card border border-border rounded-[14px] overflow-hidden hover:border-accent/40 hover:-translate-y-1 transition-all"
                 >
                   <div className="p-7">
                     <span className="inline-block font-sans text-[10px] tracking-[0.15em] text-accent uppercase px-2.5 py-1 bg-accent/10 rounded">
                       {exp.category}
                     </span>
-                    <h3 className="font-serif text-xl font-semibold text-[#f0ece4] mt-4 mb-2">
+                    <h3 className="font-serif text-xl font-semibold text-foreground mt-4 mb-2">
                       {exp.name}
                     </h3>
-                    <p className="font-sans text-[13px] text-[#6b6560] leading-relaxed mb-5 line-clamp-2">
+                    <p className="font-sans text-[13px] text-muted-foreground leading-relaxed mb-5 line-clamp-2">
                       {exp.description}
                     </p>
                     <div className="flex justify-between items-center">
                       {exp.duration && (
-                        <span className="font-sans text-xs text-[#6b6560]">
+                        <span className="font-sans text-xs text-muted-foreground">
                           <Clock size={12} className="inline mr-1 align-middle" />
                           {exp.duration}
                         </span>

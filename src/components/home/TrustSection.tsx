@@ -11,7 +11,7 @@ const trustItems = [
 
 export function TrustSection() {
   return (
-    <section className="bg-[#111118] border-t border-b border-white/[0.06] py-9">
+    <section className="bg-muted border-t border-b border-border py-9">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -26,8 +26,8 @@ export function TrustSection() {
                 <div className="text-accent">
                   <Icon size={20} />
                 </div>
-                <p className="font-serif text-[15px] font-semibold text-[#f0ece4]">{t.label}</p>
-                <p className="font-sans text-xs text-[#6b6560] leading-relaxed">{t.desc}</p>
+                <p className="font-serif text-[15px] font-semibold text-foreground">{t.label}</p>
+                <p className="font-sans text-xs text-muted-foreground leading-relaxed">{t.desc}</p>
               </div>
             );
           })}

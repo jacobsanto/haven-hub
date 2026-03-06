@@ -21,7 +21,7 @@ export function DiscoverVillasSection() {
   const { openBooking } = useBooking();
 
   return (
-    <section className="bg-[#0a0a0f] py-20 md:py-24">
+    <section className="bg-background py-20 md:py-24">
       <div className="container mx-auto px-4">
         {/* Header */}
         <motion.div
@@ -32,7 +32,7 @@ export function DiscoverVillasSection() {
         >
           <div>
             <span className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3 block">Properties</span>
-            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-[#f0ece4] leading-tight max-w-lg">
+            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-foreground leading-tight max-w-lg">
               Find Your Perfect <em className="text-accent not-italic font-normal">Home</em>
             </h2>
           </div>
@@ -49,8 +49,8 @@ export function DiscoverVillasSection() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="space-y-4">
-                <Skeleton className="aspect-[4/3] rounded-[14px] bg-[#15151f]" />
-                <Skeleton className="h-6 w-3/4 bg-[#15151f]" />
+                <Skeleton className="aspect-[4/3] rounded-[14px] bg-card" />
+                <Skeleton className="h-6 w-3/4 bg-card" />
               </div>
             ))}
           </div>
@@ -74,24 +74,24 @@ export function DiscoverVillasSection() {
                           loading="lazy"
                         />
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-[#6b6560] mb-1.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
                         <MapPin className="w-3 h-3 text-accent" />
                         {property.city}, {property.country}
                       </div>
-                      <h3 className="text-base font-serif font-medium text-[#f0ece4] group-hover:text-accent transition-colors mb-1">
+                      <h3 className="text-base font-serif font-medium text-foreground group-hover:text-accent transition-colors mb-1">
                         {property.display_name || property.name}
                       </h3>
-                      <p className="text-sm text-[#6b6560] line-clamp-2 mb-3">
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                         {property.short_description || property.description?.slice(0, 80)}
                       </p>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-[#f0ece4]">
-                          {format(property.base_price)} <span className="text-[#6b6560] font-normal text-xs">/ night</span>
+                        <span className="text-sm font-medium text-foreground">
+                          {format(property.base_price)} <span className="text-muted-foreground font-normal text-xs">/ night</span>
                         </span>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-xs gap-1 rounded-full border-accent text-accent hover:bg-accent hover:text-[#0a0a0f]"
+                          className="text-xs gap-1 rounded-full border-accent text-accent hover:bg-accent hover:text-accent-foreground"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -107,8 +107,8 @@ export function DiscoverVillasSection() {
               ))}
             </CarouselContent>
             <div className="flex items-center justify-center gap-4 mt-10">
-              <CarouselPrevious className="static translate-y-0 h-10 w-10 rounded-full border border-white/10 text-[#a8a29e] hover:bg-accent hover:text-[#0a0a0f] hover:border-accent bg-transparent" />
-              <CarouselNext className="static translate-y-0 h-10 w-10 rounded-full border border-white/10 text-[#a8a29e] hover:bg-accent hover:text-[#0a0a0f] hover:border-accent bg-transparent" />
+              <CarouselPrevious className="static translate-y-0 h-10 w-10 rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent bg-transparent" />
+              <CarouselNext className="static translate-y-0 h-10 w-10 rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:border-accent bg-transparent" />
             </div>
           </Carousel>
         ) : null}

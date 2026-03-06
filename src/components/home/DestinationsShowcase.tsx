@@ -11,7 +11,7 @@ export function DestinationsShowcase() {
   if (!isLoading && (!destinations || destinations.length === 0)) return null;
 
   return (
-    <section className="bg-[#0a0a0f] py-20 md:py-24">
+    <section className="bg-background py-20 md:py-24">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -20,7 +20,7 @@ export function DestinationsShowcase() {
           className="text-center mb-14"
         >
           <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-3.5">Explore</p>
-          <h2 className="font-serif text-[clamp(32px,4vw,48px)] font-semibold text-[#f0ece4] leading-[1.1]">
+          <h2 className="font-serif text-[clamp(32px,4vw,48px)] font-semibold text-foreground leading-[1.1]">
             Sun-Kissed <em className="font-normal text-accent not-italic">Destinations</em>
           </h2>
         </motion.div>
@@ -28,7 +28,7 @@ export function DestinationsShowcase() {
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="aspect-[3/4] rounded-[14px] bg-[#15151f]" />
+              <Skeleton key={i} className="aspect-[3/4] rounded-[14px] bg-card" />
             ))}
           </div>
         ) : (
@@ -51,16 +51,16 @@ export function DestinationsShowcase() {
                     className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-[1.06]"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/85 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-transparent to-transparent" />
                   <div className="absolute bottom-6 left-6 right-6">
                     <p className="font-sans text-[11px] tracking-[0.15em] text-accent uppercase mb-1.5">
                       <MapPin size={11} className="inline mr-1 align-middle" />
                       {dest.country}
                     </p>
-                    <h3 className="font-serif text-2xl font-semibold text-[#f0ece4] mb-1.5">{dest.name}</h3>
+                    <h3 className="font-serif text-2xl font-semibold text-foreground mb-1.5">{dest.name}</h3>
                   </div>
                   {dest.is_featured && (
-                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-accent/90 text-[#0a0a0f] text-xs font-medium backdrop-blur-sm">
+                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-accent/90 text-accent-foreground text-xs font-medium backdrop-blur-sm">
                       Featured
                     </span>
                   )}
