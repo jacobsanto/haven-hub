@@ -155,7 +155,7 @@ export function HeroSection() {
               className="absolute inset-0 pointer-events-none"
               style={{
                 zIndex: 2,
-                background: 'radial-gradient(ellipse 60% 50% at var(--mouse-x) var(--mouse-y), rgba(255,255,255,0.04) 0%, transparent 70%)',
+                background: 'radial-gradient(ellipse 60% 50% at var(--mouse-x) var(--mouse-y), hsl(var(--background) / 0.04) 0%, transparent 70%)',
               }}
             />
           )}
@@ -174,7 +174,7 @@ export function HeroSection() {
                         </p>
                         <h1
                           className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-foreground leading-[1.1] tracking-tight"
-                          style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
+                          style={{ textShadow: '0 2px 20px hsl(var(--foreground) / 0.4)' }}
                         >
                           <WordReveal text={active.display_name || active.name} reduced={!!prefersReduced} />
                         </h1>
@@ -201,7 +201,7 @@ export function HeroSection() {
                           <button key={i} onClick={() => goTo(i)} className="relative rounded-full overflow-hidden" aria-label={`Go to property ${i + 1}`}>
                             <span className={`block rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-foreground' : 'w-2 h-2 bg-foreground/40'}`} />
                             {i === activeIndex && !prefersReduced && (
-                              <span key={progressKey} className="absolute inset-0 rounded-full border border-white/60" style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }} />
+                              <span key={progressKey} className="absolute inset-0 rounded-full border border-foreground/60" style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }} />
                             )}
                           </button>
                         ))}
@@ -264,10 +264,10 @@ export function HeroSection() {
               </div>
             )}
             <OdometerCounter value={activeIndex} total={count} reduced={!!prefersReduced} />
-            <button onClick={goPrev} className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Previous property">
+            <button onClick={goPrev} className="w-10 h-10 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground/10 transition-colors" aria-label="Previous property">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button onClick={goNext} className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Next property">
+            <button onClick={goNext} className="w-10 h-10 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground/10 transition-colors" aria-label="Next property">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
