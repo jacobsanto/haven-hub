@@ -19,7 +19,7 @@ export function PropertiesHeroBanner({
     <section className="relative pt-24 pb-14 bg-background overflow-hidden">
       {/* Ambient blurred background */}
       <div
-        className="absolute inset-0 bg-cover bg-center blur-[80px] brightness-[0.15] saturate-50 scale-[1.3]"
+        className="absolute inset-0 bg-cover bg-center blur-[40px] brightness-[0.35] saturate-75 scale-[1.3]"
         style={{ backgroundImage: `url(${bgImage})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background" />
