@@ -93,10 +93,10 @@ export function Header() {
                 to={item.path}
                 aria-current={isActive(item.path) ? 'page' : undefined}
                 className={cn(
-                  "text-sm font-medium transition-colors whitespace-nowrap tracking-wide",
+                  "text-sm font-medium transition-colors whitespace-nowrap tracking-wide px-3 py-2 rounded-full",
                   isTransparent
-                    ? isActive(item.path) ? "text-primary-foreground" : "text-primary-foreground/80 hover:text-primary-foreground"
-                    : isActive(item.path) ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                    ? isActive(item.path) ? "text-primary-foreground bg-primary-foreground/10" : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                    : isActive(item.path) ? "text-foreground bg-accent/50" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
               >
                 {item.label}
