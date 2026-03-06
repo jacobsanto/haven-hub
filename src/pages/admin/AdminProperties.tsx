@@ -250,6 +250,35 @@ export default function AdminProperties() {
                           {property.status}
                         </span>
                       </TableCell>
+                      <TableCell className="text-center">
+                        <Switch
+                          checked={property.is_featured}
+                          onCheckedChange={async (checked) => {
+                            try {
+                              await updateProperty.mutateAsync({ id: property.id, is_featured: checked });
+                              toast({ title: checked ? 'Marked as featured' : 'Removed from featured' });
+                            } catch {
+                              toast({ title: 'Error', description: 'Failed to update.', variant: 'destructive' });
+                            }
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Input
+                          type="number"
+                          min={0}
+                          className="w-16 h-7 text-xs text-center"
+                          value={property.featured_sort_order}
+                          onChange={async (e) => {
+                            const val = parseInt(e.target.value) || 0;
+                            try {
+                              await updateProperty.mutateAsync({ id: property.id, featured_sort_order: val });
+                            } catch {
+                              toast({ title: 'Error', description: 'Failed to update sort order.', variant: 'destructive' });
+                            }
+                          }}
+                        />
+                      </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(property.base_price)}
                       </TableCell>
