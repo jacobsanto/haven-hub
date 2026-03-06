@@ -14,7 +14,7 @@ interface VillaCardListProps {
 
 export function VillaCardList({ property, index, onClick, isFavorite, onToggleFavorite }: VillaCardListProps) {
   const [hovered, setHovered] = useState(false);
-  const formatCurrency = useFormatCurrency();
+  const { format: formatCurrency } = useFormatCurrency();
 
   const heroImage = property.hero_image_url || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=85';
 

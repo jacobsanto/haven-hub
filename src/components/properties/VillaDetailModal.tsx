@@ -32,7 +32,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
   const [imgIdx, setImgIdx] = useState(0);
   const [tab, setTab] = useState<'overview' | 'amenities' | 'highlights'>('overview');
   const navigate = useNavigate();
-  const formatCurrency = useFormatCurrency();
+  const { format: formatCurrency } = useFormatCurrency();
 
   useEffect(() => {
     if (property) {

@@ -16,7 +16,7 @@ interface VillaCardGridProps {
 export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFavorite }: VillaCardGridProps) {
   const [hovered, setHovered] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
-  const formatCurrency = useFormatCurrency();
+  const { format: formatCurrency } = useFormatCurrency();
 
   const images = [property.hero_image_url, ...(property.gallery || [])].filter(Boolean) as string[];
   const displayImages = images.length > 0 ? images : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=85'];
