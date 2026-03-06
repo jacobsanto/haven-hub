@@ -349,7 +349,6 @@ function CardDeckSection({ items, activeIndex, onSelect }: VariantProps) {
               {item.location && <p className="text-muted-foreground text-xs tracking-[3px] font-sans font-light uppercase mb-4">{item.location}</p>}
               <h3 className="font-serif text-[clamp(28px,5vw,52px)] font-normal text-foreground leading-[1.1] mb-4">{item.title}</h3>
               {item.subtitle && <p className="text-muted-foreground text-sm leading-relaxed max-w-[360px] font-sans font-light mb-4">{item.subtitle}</p>}
-              {item.meta && <p className="font-sans text-lg font-semibold text-foreground">{item.meta}</p>}
               <div className="w-[50px] h-[2px] rounded-sm opacity-80 mt-4" style={{ background: palette.color }} />
             </Link>
           );
