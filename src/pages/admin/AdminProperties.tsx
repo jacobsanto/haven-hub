@@ -210,9 +210,11 @@ export default function AdminProperties() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Property</TableHead>
+                     <TableHead>Property</TableHead>
                     <TableHead>Destination</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Featured</TableHead>
+                    <TableHead className="text-center w-20">Sort</TableHead>
                     <TableHead className="text-right">Base Rate</TableHead>
                     <TableHead className="text-center">Promotions</TableHead>
                     <TableHead className="text-center">Rate Plans</TableHead>
