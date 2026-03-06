@@ -14,6 +14,7 @@ import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidg
 import { useProperties } from '@/hooks/useProperties';
 import { useAvailableProperties } from '@/hooks/useAvailableProperties';
 import { useActiveDestinations } from '@/hooks/useDestinations';
+import { usePageContent } from '@/hooks/usePageContent';
 import { Button } from '@/components/ui/button';
 import { Property, PropertyType } from '@/types/database';
 
