@@ -106,8 +106,8 @@ export function HeroSection() {
 
   if (!properties.length) {
     return (
-      <section className="relative h-screen flex items-center justify-center bg-[#0a0a0f]">
-        <p className="text-[#a8a29e] text-lg">Loading properties…</p>
+      <section className="relative h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground text-lg">Loading properties…</p>
       </section>
     );
   }
@@ -119,7 +119,7 @@ export function HeroSection() {
   return (
     <section
       ref={containerRef}
-      className="relative h-screen w-full overflow-hidden select-none bg-[#0a0a0f]"
+      className="relative h-screen w-full overflow-hidden select-none bg-background"
       style={{ '--mouse-x': '50%', '--mouse-y': '50%' } as React.CSSProperties}
       onMouseMove={handleMouseMove}
       onTouchStart={(e) => { touchStartX.current = e.targetTouches[0].clientX; }}
@@ -147,7 +147,7 @@ export function HeroSection() {
               style={{ backgroundImage: `url(${active.hero_image_url})` }}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f]/70 via-[#0a0a0f]/50 to-[#0a0a0f]/80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background/80" />
 
           {!prefersReduced && (
             <div
@@ -168,16 +168,16 @@ export function HeroSection() {
                   <div className="flex-1 max-w-xl" ref={textRef}>
                     <AnimatePresence mode="wait">
                       <div key={activeIndex}>
-                        <p className="text-[#6b6560] text-xs uppercase tracking-[3px] font-sans mb-4">
+                        <p className="text-muted-foreground text-xs uppercase tracking-[3px] font-sans mb-4">
                           0{activeIndex + 1} — {(active.display_name || active.name).toUpperCase()}
                         </p>
                         <h1
-                          className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-[#f0ece4] leading-[1.1] tracking-tight"
+                          className="text-4xl md:text-5xl lg:text-7xl font-serif italic text-foreground leading-[1.1] tracking-tight"
                           style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
                         >
                           <WordReveal text={active.display_name || active.name} reduced={!!prefersReduced} />
                         </h1>
-                        <p className="mt-5 text-[#a8a29e] text-base md:text-lg max-w-md leading-relaxed font-sans font-light">
+                        <p className="mt-5 text-muted-foreground text-base md:text-lg max-w-md leading-relaxed font-sans font-light">
                           <WordReveal
                             text={active.short_description || `Explore the beauty of ${active.city}, ${active.country} — luxury villas handpicked for unforgettable stays.`}
                             reduced={!!prefersReduced}
@@ -186,7 +186,7 @@ export function HeroSection() {
                         <div className="w-14 h-px bg-accent/70 mt-6" />
                         <Link
                           to={`/properties/${active.slug}`}
-                          className="inline-flex items-center gap-2 mt-6 text-[#a8a29e] text-sm uppercase tracking-[2px] font-sans hover:text-[#f0ece4] transition-colors group"
+                          className="inline-flex items-center gap-2 mt-6 text-muted-foreground text-sm uppercase tracking-[2px] font-sans hover:text-foreground transition-colors group"
                         >
                           Explore Stay
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -198,7 +198,7 @@ export function HeroSection() {
                       <div className="flex items-center gap-3 mt-6">
                         {properties.map((_, i) => (
                           <button key={i} onClick={() => goTo(i)} className="relative rounded-full overflow-hidden" aria-label={`Go to property ${i + 1}`}>
-                            <span className={`block rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-[#f0ece4]' : 'w-2 h-2 bg-white/40'}`} />
+                            <span className={`block rounded-full transition-all ${i === activeIndex ? 'w-2.5 h-2.5 bg-foreground' : 'w-2 h-2 bg-foreground/40'}`} />
                             {i === activeIndex && !prefersReduced && (
                               <span key={progressKey} className="absolute inset-0 rounded-full border border-white/60" style={{ animation: `heroProgressRing ${AUTOPLAY_MS}ms linear forwards` }} />
                             )}
@@ -225,7 +225,7 @@ export function HeroSection() {
 
       {/* Footer bar — shared across all variants */}
       <div className="absolute bottom-0 left-0 right-0 z-20">
-        <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-[#f0ece4]">
+        <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-foreground">
           {/* Social icons */}
           <div className="hidden md:flex items-center gap-4">
             {socialFacebook && (
@@ -245,7 +245,7 @@ export function HeroSection() {
             )}
           </div>
 
-          <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-[#6b6560] font-sans">
+          <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-sans">
             Unique Locations
           </p>
 
@@ -254,7 +254,7 @@ export function HeroSection() {
               <div className="hidden md:flex items-center gap-1.5">
                 {properties.map((_, i) => (
                   <button key={i} onClick={() => goTo(i)} className="relative overflow-hidden rounded-full" aria-label={`Go to slide ${i + 1}`}>
-                    <span className={`block h-1 rounded-full transition-all duration-300 ${i === activeIndex ? 'w-6 bg-[#f0ece4]' : 'w-2 bg-white/20'}`} />
+                    <span className={`block h-1 rounded-full transition-all duration-300 ${i === activeIndex ? 'w-6 bg-foreground' : 'w-2 bg-foreground/20'}`} />
                     {i === activeIndex && (
                       <span key={progressKey} className="absolute inset-0 rounded-full" style={{ background: 'hsl(var(--accent))', opacity: 0.5, animation: `heroProgressFill ${AUTOPLAY_MS}ms linear forwards` }} />
                     )}
