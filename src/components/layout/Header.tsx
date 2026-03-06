@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useBrand } from '@/contexts/BrandContext';
-import { HeaderSearchBar } from '@/components/search/HeaderSearchBar';
+
 import { CurrencySwitcher } from '@/components/ui/CurrencySwitcher';
 import { cn } from '@/lib/utils';
 import { useNavigationItems } from '@/hooks/useNavigationItems';
