@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Plus, Edit, Trash2, MapPin, ExternalLink, Archive } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { AdminLoadingSkeleton } from '@/components/admin/AdminLoadingSkeleton';
@@ -98,7 +97,6 @@ const AdminDestinations = () => {
                   <TableHead className="hidden lg:table-cell text-center">Properties</TableHead>
                   <TableHead className="hidden lg:table-cell text-center">Experiences</TableHead>
                   <TableHead className="hidden md:table-cell">Featured</TableHead>
-                  <TableHead className="hidden md:table-cell text-center w-20">Sort</TableHead>
                   <TableHead className="hidden md:table-cell">Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -143,22 +141,6 @@ const AdminDestinations = () => {
                                 toast.success(checked ? 'Marked as featured' : 'Removed from featured');
                               } catch {
                                 toast.error('Failed to update');
-                              }
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-center">
-                          <Input
-                            type="number"
-                            min={0}
-                            className="w-16 h-7 text-xs text-center"
-                            value={dest.featured_sort_order}
-                            onChange={async (e) => {
-                              const val = parseInt(e.target.value) || 0;
-                              try {
-                                await updateDestination.mutateAsync({ id: dest.id, featured_sort_order: val });
-                              } catch {
-                                toast.error('Failed to update sort order');
                               }
                             }}
                           />

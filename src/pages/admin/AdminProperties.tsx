@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
-import { Switch } from '@/components/ui/switch';
 import { PropertyStatus } from '@/types/database';
 
 const STATUS_OPTIONS: { label: string; value: string }[] = [
@@ -210,11 +209,9 @@ export default function AdminProperties() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                     <TableHead>Property</TableHead>
+                    <TableHead>Property</TableHead>
                     <TableHead>Destination</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Featured</TableHead>
-                    <TableHead className="text-center w-20">Sort</TableHead>
                     <TableHead className="text-right">Base Rate</TableHead>
                     <TableHead className="text-center">Promotions</TableHead>
                     <TableHead className="text-center">Rate Plans</TableHead>
@@ -249,35 +246,6 @@ export default function AdminProperties() {
                         <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusColors(property.status)}`}>
                           {property.status}
                         </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Switch
-                          checked={property.is_featured}
-                          onCheckedChange={async (checked) => {
-                            try {
-                              await updateProperty.mutateAsync({ id: property.id, is_featured: checked });
-                              toast({ title: checked ? 'Marked as featured' : 'Removed from featured' });
-                            } catch {
-                              toast({ title: 'Error', description: 'Failed to update.', variant: 'destructive' });
-                            }
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Input
-                          type="number"
-                          min={0}
-                          className="w-16 h-7 text-xs text-center"
-                          value={property.featured_sort_order}
-                          onChange={async (e) => {
-                            const val = parseInt(e.target.value) || 0;
-                            try {
-                              await updateProperty.mutateAsync({ id: property.id, featured_sort_order: val });
-                            } catch {
-                              toast({ title: 'Error', description: 'Failed to update sort order.', variant: 'destructive' });
-                            }
-                          }}
-                        />
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(property.base_price)}

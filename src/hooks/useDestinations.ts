@@ -43,7 +43,6 @@ export function useFeaturedDestinations() {
         .select('*')
         .eq('status', 'active')
         .eq('is_featured', true)
-        .order('featured_sort_order', { ascending: true })
         .order('name');
 
       if (error) throw error;

@@ -95,8 +95,6 @@ export default function AdminPropertyForm() {
     longitude: null as number | null,
     postal_code: null as string | null,
     area_sqm: null as number | null,
-    is_featured: false,
-    featured_sort_order: 0,
   });
 
   const [uploading, setUploading] = useState(false);
@@ -140,8 +138,6 @@ export default function AdminPropertyForm() {
         longitude: existingProperty.longitude ?? null,
         postal_code: existingProperty.postal_code || null,
         area_sqm: (existingProperty as any).area_sqm ?? null,
-        is_featured: existingProperty.is_featured || false,
-        featured_sort_order: existingProperty.featured_sort_order || 0,
       });
     }
   }, [existingProperty]);

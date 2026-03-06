@@ -15,7 +15,6 @@ export interface Destination {
   latitude: number | null;
   longitude: number | null;
   is_featured: boolean;
-  featured_sort_order: number;
   status: DestinationStatus;
   created_at: string;
   updated_at: string;

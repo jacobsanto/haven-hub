@@ -874,7 +874,6 @@ export type Database = {
           country: string
           created_at: string
           description: string | null
-          featured_sort_order: number | null
           gallery: string[] | null
           hero_image_url: string | null
           highlights: string[] | null
@@ -894,7 +893,6 @@ export type Database = {
           country: string
           created_at?: string
           description?: string | null
-          featured_sort_order?: number | null
           gallery?: string[] | null
           hero_image_url?: string | null
           highlights?: string[] | null
@@ -914,7 +912,6 @@ export type Database = {
           country?: string
           created_at?: string
           description?: string | null
-          featured_sort_order?: number | null
           gallery?: string[] | null
           hero_image_url?: string | null
           highlights?: string[] | null
@@ -1781,7 +1778,6 @@ export type Database = {
           description: string | null
           destination_id: string | null
           display_name: string | null
-          featured_sort_order: number | null
           gallery: string[] | null
           guesty_widget_id: string | null
           hero_image_url: string | null
@@ -1789,7 +1785,6 @@ export type Database = {
           house_rules: string[]
           id: string
           instant_booking: boolean
-          is_featured: boolean | null
           latitude: number | null
           longitude: number | null
           max_guests: number
@@ -1825,7 +1820,6 @@ export type Database = {
           description?: string | null
           destination_id?: string | null
           display_name?: string | null
-          featured_sort_order?: number | null
           gallery?: string[] | null
           guesty_widget_id?: string | null
           hero_image_url?: string | null
@@ -1833,7 +1827,6 @@ export type Database = {
           house_rules?: string[]
           id?: string
           instant_booking?: boolean
-          is_featured?: boolean | null
           latitude?: number | null
           longitude?: number | null
           max_guests?: number
@@ -1869,7 +1862,6 @@ export type Database = {
           description?: string | null
           destination_id?: string | null
           display_name?: string | null
-          featured_sort_order?: number | null
           gallery?: string[] | null
           guesty_widget_id?: string | null
           hero_image_url?: string | null
@@ -1877,7 +1869,6 @@ export type Database = {
           house_rules?: string[]
           id?: string
           instant_booking?: boolean
-          is_featured?: boolean | null
           latitude?: number | null
           longitude?: number | null
           max_guests?: number
