@@ -255,12 +255,6 @@ export default function Checkout() {
                       <MapPin className="h-2.5 w-2.5 inline mr-1" />{property.city}
                     </p>
                     <h3 className="font-serif text-lg font-medium text-foreground">{property.name}</h3>
-                    {property.rating && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Star className="h-3 w-3 fill-accent text-accent" />
-                        <span className="text-xs text-muted-foreground">{property.rating}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Dates */}
