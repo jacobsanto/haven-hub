@@ -28,7 +28,7 @@ export function HeroSearchForm() {
   return (
     <div className="w-full max-w-4xl">
       {/* Search card */}
-      <div className="bg-foreground/8 backdrop-blur-md rounded-full px-2 py-1.5 border border-primary-foreground/30">
+      <div className="bg-black/30 backdrop-blur-lg rounded-full px-2 py-1.5 border border-primary-foreground/30">
         <form onSubmit={handleSearch} className="flex flex-col lg:flex-row items-stretch gap-1.5">
           {/* Check In */}
           <Popover>
