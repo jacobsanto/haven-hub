@@ -71,6 +71,8 @@ export default function Properties() {
     subtitle: 'Best rates guaranteed when you book direct. Instant confirmation available.',
     hero_image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1400&q=50',
   });
+
+  const properties = hasDateSearch ? availableProperties : allProperties;
   const isLoading = hasDateSearch ? availLoading : allLoading;
 
   // Client-side destination filter + sort
