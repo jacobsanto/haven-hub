@@ -67,7 +67,7 @@ export function SearchResultCard({ property, index = 0, nights, checkIn, checkOu
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06 }}
     >
-      <Link to={`/properties/${property.slug}${buildQueryString(checkIn, checkOut, guests)}`} className="group block">
+      <div onClick={() => openBooking({ mode: 'direct', property })} className="group block cursor-pointer">
         <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-soft hover:shadow-medium transition-shadow duration-300 flex flex-col md:flex-row">
           {/* Image */}
           <div className="relative md:w-[280px] lg:w-[320px] flex-shrink-0 aspect-[4/3] md:aspect-auto md:min-h-[220px]">
