@@ -143,7 +143,7 @@ export function HeroSection() {
           {/* Card deck default: background + text panel */}
           {active.hero_image_url && (
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-30 transition-[background-image] duration-1000 ease-in-out"
+              className="absolute inset-0 bg-cover bg-center opacity-40 transition-[background-image] duration-1000 ease-in-out"
               style={{ backgroundImage: `url(${active.hero_image_url})` }}
             />
           )}
