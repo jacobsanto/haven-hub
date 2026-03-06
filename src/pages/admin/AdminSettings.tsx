@@ -658,6 +658,9 @@ export default function AdminSettings() {
           {/* Section: Homepage Hero Image */}
           <HeroImageSection />
 
+          {/* Section: Homepage Section Layouts */}
+          <HomepageSectionsLayout />
+
           {/* Section 2: Color Palette */}
           <SettingsSection
             title="Color Palette"
