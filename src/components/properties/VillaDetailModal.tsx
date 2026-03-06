@@ -142,9 +142,9 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
         </div>
 
         {/* Content */}
-        <div className="px-9 pb-9">
+        <div className="px-9 pb-9 pt-5">
           {/* Title row */}
-          <div className="flex justify-between items-start mb-6 -mt-2">
+          <div className="flex justify-between items-start mb-6">
             <div>
               <p className="font-sans text-[11px] tracking-[0.2em] text-accent uppercase mb-2 flex items-center">
                 <MapPin size={11} className="mr-1" />
