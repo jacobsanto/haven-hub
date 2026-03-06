@@ -254,7 +254,7 @@ export function HeroSection() {
             }
           </div>
 
-          <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-muted-foreground font-sans">
+          <p className="hidden md:block text-[10px] uppercase tracking-[0.3em] text-primary-foreground/30 font-sans absolute left-1/2 -translate-x-1/2">
             Unique Locations
           </p>
 
