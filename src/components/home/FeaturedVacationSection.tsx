@@ -15,7 +15,7 @@ export function FeaturedVacationSection() {
   if (!isLoading && (!featured || featured.length === 0)) return null;
 
   return (
-    <section className="bg-[#111118] border-t border-b border-white/[0.06] py-20 md:py-24">
+    <section className="bg-muted border-t border-b border-border py-20 md:py-24">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <motion.div
@@ -27,7 +27,7 @@ export function FeaturedVacationSection() {
               <Palmtree className="w-5 h-5 text-accent" />
               <span className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase">Featured Vacations</span>
             </div>
-            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-[#f0ece4] leading-tight max-w-md">
+            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-foreground leading-tight max-w-md">
               Exceptional Properties for Your Next Escape
             </h2>
           </motion.div>
@@ -43,7 +43,7 @@ export function FeaturedVacationSection() {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="aspect-[4/5] rounded-[14px] bg-[#15151f]" />
+              <Skeleton key={i} className="aspect-[4/5] rounded-[14px] bg-card" />
             ))}
           </div>
         ) : (
@@ -64,16 +64,16 @@ export function FeaturedVacationSection() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/85 via-[#0a0a0f]/10 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
                     <div className="absolute bottom-5 left-5 right-5">
-                      <div className="flex items-center gap-1.5 text-[#a8a29e] text-xs mb-2">
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
                         <MapPin className="w-3 h-3 text-accent" />
                         {property.city}, {property.country}
                       </div>
-                      <h3 className="text-[#f0ece4] font-serif text-xl font-medium mb-2">
+                      <h3 className="text-foreground font-serif text-xl font-medium mb-2">
                         {property.display_name || property.name}
                       </h3>
-                      <span className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-[#f0ece4] text-sm">
+                      <span className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-foreground text-sm">
                         Starting from {format(property.base_price)}
                       </span>
                     </div>

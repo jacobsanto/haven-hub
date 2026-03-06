@@ -24,7 +24,7 @@ const Index = () => {
         }}
       />
 
-      <div className="relative bg-[#0a0a0f]">
+      <div className="relative bg-background">
         {/* Global grain for entire homepage */}
         <div className="fixed inset-0 pointer-events-none z-[9999]">
           <GrainOverlay />
