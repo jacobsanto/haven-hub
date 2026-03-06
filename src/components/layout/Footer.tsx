@@ -12,8 +12,15 @@ import { useToast } from '@/hooks/use-toast';
 
 export function Footer() {
   const {
-    brandName, brandTagline, logoUrl, contactEmail, contactPhone, contactAddress,
-    socialInstagram, socialFacebook, socialTwitter,
+    brandName,
+    brandTagline,
+    logoUrl,
+    contactEmail,
+    contactPhone,
+    contactAddress,
+    socialInstagram,
+    socialFacebook,
+    socialTwitter,
   } = useBrand();
   const ctaContent = usePageContent('footer', 'cta', {
     heading: 'Ready to Book Your Dream Escape?',
@@ -37,78 +44,153 @@ export function Footer() {
     if (!email || isSubmitting) return;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      toast({ title: 'Please enter a valid email address', variant: 'destructive' });
+      toast({
+        title: 'Please enter a valid email address',
+        variant: 'destructive'
+      });
       return;
     }
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('newsletter_subscribers').insert({ email: email.trim(), source: 'footer' });
+      const { error } = await supabase.from('newsletter_subscribers').insert({
+        email: email.trim(),
+        source: 'footer'
+      });
       if (error) {
-        if (error.code === '23505') { toast({ title: "You're already subscribed!" }); setIsSubscribed(true); }
-        else throw error;
-      } else { setIsSubscribed(true); toast({ title: 'Successfully subscribed!' }); }
-    } catch { toast({ title: 'Something went wrong. Please try again.', variant: 'destructive' }); }
-    finally { setIsSubmitting(false); }
+        if (error.code === '23505') {
+          toast({
+            title: 'You\'re already subscribed!'
+          });
+          setIsSubscribed(true);
+        } else {
+          throw error;
+        }
+      } else {
+        setIsSubscribed(true);
+        toast({
+          title: 'Successfully subscribed!'
+        });
+      }
+    } catch {
+      toast({
+        title: 'Something went wrong. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Split brand name for styling
   const nameParts = brandName.split(' ');
   const primaryPart = nameParts[0] || brandName;
   const secondaryPart = nameParts.slice(1).join(' ');
 
-  const socials = [
-    { icon: Instagram, href: socialInstagram, label: 'Instagram' },
-    { icon: Facebook, href: socialFacebook, label: 'Facebook' },
-    { icon: Twitter, href: socialTwitter, label: 'X (Twitter)' },
-  ].filter(s => s.href);
-
   return (
     <footer role="contentinfo" className="bg-foreground text-background">
-      {/* Booking CTA */}
-      <div className="border-b border-background/10 py-14">
-        <div className="max-w-[1100px] mx-auto px-[5%] flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-center md:text-left">
-            <h3 className="text-2xl font-serif font-semibold text-background mb-2">{ctaContent.heading}</h3>
-            <p className="text-background/60 text-sm">{ctaContent.subtitle}</p>
+      {/* Booking CTA Section */}
+      <div className="bg-primary py-12">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left">
+              <h3 className="text-2xl font-serif font-medium text-primary-foreground mb-2">
+                {ctaContent.heading}
+              </h3>
+              <p className="text-primary-foreground/80 text-sm">
+                {ctaContent.subtitle}
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate('/properties')} 
+              size="lg" 
+              variant="gold" 
+              className="rounded-full gap-2 px-8"
+            >
+              <Search className="h-5 w-5" />
+              Find Your Stay
+              <ArrowRight className="h-5 w-5" />
+            </Button>
           </div>
-          <Button onClick={() => navigate('/properties')} size="lg" className="rounded-lg gap-2 px-8 bg-accent text-accent-foreground hover:bg-accent/90">
-            <Search className="h-4 w-4" />
-            Find Your Stay
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          
+          {/* Trust indicators */}
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-10 mt-8 pt-6 border-t border-primary-foreground/20">
+            <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+              <Shield className="h-4 w-4" />
+              <span>Best Price Guarantee</span>
+            </div>
+            <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+              <Clock className="h-4 w-4" />
+              <span>Free Cancellation</span>
+            </div>
+            <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+              <CheckCircle className="h-4 w-4" />
+              <span>Verified Properties</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main Footer Grid */}
+      {/* Main Footer */}
       <div className="py-16">
-        <div className="max-w-[1100px] mx-auto px-[5%]">
+        <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
-            {/* Brand + Newsletter */}
+            {/* Brand + Newsletter Column */}
             <div className="space-y-6 sm:col-span-2 lg:col-span-1">
+              {/* Brand */}
               <div className="space-y-3">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={brandName} className="h-10 w-auto max-w-[160px] object-contain brightness-0 invert" />
+                  <img 
+                    src={logoUrl} 
+                    alt={brandName} 
+                    className="h-10 w-auto max-w-[160px] object-contain brightness-0 invert" 
+                  />
                 ) : (
                   <h3 className="text-2xl font-serif">
-                    <span className="text-background">{primaryPart}</span>
+                    <span className="text-primary-foreground">{primaryPart}</span>
                     {secondaryPart && <span className="opacity-60"> {secondaryPart}</span>}
                   </h3>
                 )}
-                {brandTagline && <p className="text-sm opacity-50 max-w-xs leading-relaxed">{brandTagline}</p>}
+                {brandTagline && (
+                  <p className="text-sm opacity-70 max-w-xs">{brandTagline}</p>
+                )}
               </div>
+
+              {/* Newsletter */}
               <div className="space-y-3">
-                <h4 className="font-sans font-semibold text-[11px] uppercase tracking-[0.15em] opacity-40">{newsletterContent.heading}</h4>
+                <h4 className="font-medium text-sm uppercase tracking-wider opacity-60">
+                  {newsletterContent.heading}
+                </h4>
                 {isSubscribed ? (
-                  <div className="flex items-center gap-2 text-sm opacity-70">
-                    <CheckCircle className="h-4 w-4 text-accent" />
+                  <div className="flex items-center gap-2 text-sm opacity-80">
+                    <CheckCircle className="h-4 w-4 text-primary" />
                     <span>Thanks for subscribing!</span>
                   </div>
                 ) : (
                   <form onSubmit={handleSubscribe} className="space-y-3">
-                    <p className="text-sm opacity-50">{newsletterContent.subtitle}</p>
+                    <p className="text-sm opacity-70">
+                      {newsletterContent.subtitle}
+                    </p>
                     <div className="flex gap-2">
-                      <Input type="email" placeholder="Your email" value={email} onChange={e => setEmail(e.target.value)} className="bg-background/10 border-background/15 text-background placeholder:text-background/40 h-11" disabled={isSubmitting} />
-                      <Button type="submit" size="icon" disabled={isSubmitting} className="h-11 w-11 shrink-0 bg-accent text-accent-foreground hover:bg-accent/90">
+                      <Input 
+                        type="email" 
+                        placeholder="Your email" 
+                        value={email} 
+                        onChange={e => setEmail(e.target.value)} 
+                        className="bg-background/10 border-background/20 text-background placeholder:text-background/50 h-11" 
+                        disabled={isSubmitting}
+                        aria-label="Email address for newsletter"
+                      />
+                      <Button 
+                        type="submit" 
+                        size="icon" 
+                        disabled={isSubmitting} 
+                        className="h-11 w-11 shrink-0"
+                        aria-label="Subscribe to newsletter"
+                      >
                         {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       </Button>
                     </div>
@@ -117,95 +199,130 @@ export function Footer() {
               </div>
             </div>
 
-            {/* Explore */}
+            {/* Explore Column */}
             <div className="space-y-4">
-              <h4 className="font-sans font-semibold text-[11px] uppercase tracking-[0.15em] opacity-40">Explore</h4>
+              <h4 className="font-medium text-sm uppercase tracking-wider opacity-60">
+                Explore
+              </h4>
               <ul className="space-y-3">
-                {exploreLinks.map(link => (
+                {exploreLinks.map((link) => (
                   <li key={link.path + link.label}>
-                    <Link to={link.path} className="text-sm opacity-60 hover:opacity-100 hover:text-accent transition-all duration-300">{link.label}</Link>
+                    <Link 
+                      to={link.path} 
+                      className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
+                    >
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Company */}
+            {/* Company Column */}
             <div className="space-y-4">
-              <h4 className="font-sans font-semibold text-[11px] uppercase tracking-[0.15em] opacity-40">Company</h4>
+              <h4 className="font-medium text-sm uppercase tracking-wider opacity-60">
+                Company
+              </h4>
               <ul className="space-y-3">
-                {companyLinks.map(link => (
+                {companyLinks.map((link) => (
                   <li key={link.path + link.label}>
-                    <Link to={link.path} className="text-sm opacity-60 hover:opacity-100 hover:text-accent transition-all duration-300">{link.label}</Link>
+                    <Link 
+                      to={link.path} 
+                      className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
+                    >
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Contact */}
+            {/* Contact Column */}
             <div className="space-y-4">
-              <h4 className="font-sans font-semibold text-[11px] uppercase tracking-[0.15em] opacity-40">Contact</h4>
+              <h4 className="font-medium text-sm uppercase tracking-wider opacity-60">
+                Contact
+              </h4>
               <ul className="space-y-3">
-                {contactAddress && (
-                  <li className="flex items-start gap-3 text-sm opacity-60">
-                    <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
-                    <span>{contactAddress}</span>
-                  </li>
-                )}
-                {contactEmail && (
-                  <li className="flex items-center gap-3 text-sm opacity-60 hover:opacity-100 transition-opacity">
-                    <Mail className="h-4 w-4 shrink-0" />
-                    <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
-                  </li>
-                )}
-                {contactPhone && (
-                  <li className="flex items-center gap-3 text-sm opacity-60 hover:opacity-100 transition-opacity">
-                    <Phone className="h-4 w-4 shrink-0" />
-                    <a href={`tel:${contactPhone?.replace(/\D/g, '')}`}>{contactPhone}</a>
-                  </li>
-                )}
+                <li className="flex items-start gap-3 text-sm opacity-80">
+                  <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{contactAddress}</span>
+                </li>
+                <li className="flex items-center gap-3 text-sm opacity-80">
+                  <Mail className="h-4 w-4 shrink-0" />
+                  <a 
+                    href={`mailto:${contactEmail}`} 
+                    className="hover:opacity-100 transition-opacity"
+                  >
+                    {contactEmail}
+                  </a>
+                </li>
+                <li className="flex items-center gap-3 text-sm opacity-80">
+                  <Phone className="h-4 w-4 shrink-0" />
+                  <a 
+                    href={`tel:${contactPhone?.replace(/\D/g, '')}`} 
+                    className="hover:opacity-100 transition-opacity"
+                  >
+                    {contactPhone}
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-background/8 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-6">
-            <p className="text-sm opacity-40 order-2 sm:order-1">
+          <div className="border-t border-background/10 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <p className="text-sm opacity-60 order-2 sm:order-1">
               © {new Date().getFullYear()} {brandName}. All rights reserved.
             </p>
-
-            <div className="flex items-center gap-3 order-1 sm:order-2">
-              {/* Social Icons - Circular with hover accent border */}
-              {socials.map(s => (
-                <a
-                  key={s.label}
-                  href={s.href || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Follow us on ${s.label}`}
-                  className="w-10 h-10 rounded-full border border-background/15 flex items-center justify-center opacity-50 hover:opacity-100 hover:border-accent hover:text-accent transition-all duration-300"
-                >
-                  <s.icon className="h-4 w-4" />
-                </a>
-              ))}
-
-              {/* Dark mode toggle */}
+            
+            {/* Social Icons */}
+            <div className="flex items-center gap-4 order-1 sm:order-2">
+              <a 
+                href={socialInstagram || '#'} 
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on Instagram"
+                 className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a 
+                href={socialFacebook || '#'} 
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on Facebook"
+                 className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a 
+                href={socialTwitter || '#'} 
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on X (Twitter)"
+                className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
+              
+              {/* Dark Mode Toggle */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label="Toggle dark mode"
-                className="rounded-full border border-background/15 hover:border-accent hover:bg-transparent ml-1 h-10 w-10 opacity-50 hover:opacity-100 transition-all"
+                className="rounded-full border border-background/20 hover:bg-background/10 ml-2 h-10 w-10"
               >
                 {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
 
-              {/* Back to top */}
+              {/* Back to Top Button */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={scrollToTop}
                 aria-label="Back to top"
-                className="rounded-full border border-background/15 hover:border-accent hover:bg-transparent ml-1 h-10 w-10 opacity-50 hover:opacity-100 transition-all"
+                className="rounded-full border border-background/20 hover:bg-background/10 ml-2 h-10 w-10"
               >
                 <ArrowUp className="h-4 w-4" />
               </Button>

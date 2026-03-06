@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Filter, Zap, LayoutGrid, LayoutList, Search, ArrowUpDown, Calendar as CalendarIcon, Home } from 'lucide-react';
+import { Filter, Zap, LayoutGrid, List, Map, Calendar as CalendarIcon, MapPin } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { PageHeroBanner } from '@/components/ui/PageHeroBanner';
-import { PropertyCard } from '@/components/properties/PropertyCard';
+import { SearchBar } from '@/components/search/SearchBar';
+import { QuickBookCard } from '@/components/booking/QuickBookCard';
 import { SearchResultCard } from '@/components/properties/SearchResultCard';
 import { RecentlyViewedWidget } from '@/components/properties/RecentlyViewedWidget';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 import { useProperties } from '@/hooks/useProperties';
 import { useAvailableProperties } from '@/hooks/useAvailableProperties';
-import { useActiveDestinations } from '@/hooks/useDestinations';
 import { usePageContent } from '@/hooks/usePageContent';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -35,23 +35,26 @@ export default function Properties() {
   const [priceRange, setPriceRange] = useState([0, 5000]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('featured');
-
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
+  
   const [bedrooms, setBedrooms] = useState<number | undefined>(undefined);
   const [bathrooms, setBathrooms] = useState<number | undefined>(undefined);
   const [propertyType, setPropertyType] = useState<PropertyType | undefined>(undefined);
   const [instantBooking, setInstantBooking] = useState(false);
+  const propertiesDisplay = useSectionDisplay('properties', 'grid');
 
   const location = searchParams.get('location') || undefined;
   const guests = searchParams.get('guests') ? parseInt(searchParams.get('guests')!) : undefined;
   const checkIn = searchParams.get('checkIn') || undefined;
   const checkOut = searchParams.get('checkOut') || undefined;
 
+  const headerContent = usePageContent('properties', 'header', {
+    heading: 'Find & Book Your Perfect Stay',
+    subtitle: 'Best rates guaranteed when you book direct. Instant confirmation available.',
+  });
+
   const hasDateSearch = !!checkIn && !!checkOut;
   const nights = hasDateSearch ? differenceInDays(parseISO(checkOut!), parseISO(checkIn!)) : undefined;
-  const { data: destinations } = useActiveDestinations();
 
   const searchParams_ = {
     location,
@@ -76,23 +79,7 @@ export default function Properties() {
 
   const properties = hasDateSearch ? availableProperties : allProperties;
   const isLoading = hasDateSearch ? availLoading : allLoading;
-
-  // Client-side search filter
-  const filteredProperties = properties?.filter(p => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return p.name.toLowerCase().includes(q) || p.city?.toLowerCase().includes(q) || p.country?.toLowerCase().includes(q);
-  });
-
-  // Sort
-  const sortedProperties = [...(filteredProperties || [])].sort((a, b) => {
-    switch (sortBy) {
-      case 'price-asc': return a.base_price - b.base_price;
-      case 'price-desc': return b.base_price - a.base_price;
-      case 'guests': return b.max_guests - a.max_guests;
-      default: return 0; // featured = default order
-    }
-  });
+  const effectiveView = hasDateSearch && viewMode === 'grid' ? 'list' : viewMode;
 
   const toggleAmenity = (amenity: string) => {
     setSelectedAmenities((prev) =>
@@ -107,35 +94,41 @@ export default function Properties() {
     setBathrooms(undefined);
     setPropertyType(undefined);
     setInstantBooking(false);
-    setSearchQuery('');
   };
 
-  const hasActiveFilters = priceRange[0] > 0 || priceRange[1] < 5000 || selectedAmenities.length > 0 ||
+  const hasActiveFilters = 
+    priceRange[0] > 0 || priceRange[1] < 5000 || selectedAmenities.length > 0 ||
     bedrooms !== undefined || bathrooms !== undefined || propertyType !== undefined || instantBooking;
 
-  const activeFilterCount = (priceRange[0] > 0 || priceRange[1] < 5000 ? 1 : 0) +
+  const activeFilterCount = 
+    (priceRange[0] > 0 || priceRange[1] < 5000 ? 1 : 0) +
     selectedAmenities.length +
     (bedrooms !== undefined ? 1 : 0) +
     (bathrooms !== undefined ? 1 : 0) +
     (propertyType !== undefined ? 1 : 0) +
     (instantBooking ? 1 : 0);
 
-  const uniqueDestinations = destinations?.length || 0;
-
   const FilterContent = () => (
     <div className="space-y-6">
+      {/* Instant Booking */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-accent" />
+          <Zap className="h-4 w-4 text-primary" />
           <Label htmlFor="instant-booking" className="font-medium text-sm">Instant Book Only</Label>
         </div>
         <Switch id="instant-booking" checked={instantBooking} onCheckedChange={setInstantBooking} />
       </div>
 
+      {/* Property Type */}
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Property Types</h3>
-        <Select value={propertyType || 'all'} onValueChange={(value) => setPropertyType(value === 'all' ? undefined : value as PropertyType)}>
-          <SelectTrigger className="w-full"><SelectValue placeholder="All property types" /></SelectTrigger>
+        <Select
+          value={propertyType || 'all'}
+          onValueChange={(value) => setPropertyType(value === 'all' ? undefined : value as PropertyType)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="All property types" />
+          </SelectTrigger>
           <SelectContent className="bg-card">
             <SelectItem value="all">All Types</SelectItem>
             {PROPERTY_TYPES.map((type) => (
@@ -145,28 +138,43 @@ export default function Properties() {
         </Select>
       </div>
 
+      {/* Bedrooms */}
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Bedrooms</h3>
         <div className="flex flex-wrap gap-2">
           {[undefined, 1, 2, 3, 4, 5].map((num) => (
-            <Button key={num ?? 'any'} variant={bedrooms === num ? 'default' : 'outline'} size="sm" onClick={() => setBedrooms(num)} className="rounded-full h-8 w-8 p-0 text-xs">
+            <Button
+              key={num ?? 'any'}
+              variant={bedrooms === num ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setBedrooms(num)}
+              className="rounded-full h-8 w-8 p-0 text-xs"
+            >
               {num === undefined ? 'Any' : num === 5 ? '5+' : num}
             </Button>
           ))}
         </div>
       </div>
 
+      {/* Bathrooms */}
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Bathrooms</h3>
         <div className="flex flex-wrap gap-2">
           {[undefined, 1, 2, 3, 4].map((num) => (
-            <Button key={num ?? 'any'} variant={bathrooms === num ? 'default' : 'outline'} size="sm" onClick={() => setBathrooms(num)} className="rounded-full h-8 w-8 p-0 text-xs">
+            <Button
+              key={num ?? 'any'}
+              variant={bathrooms === num ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setBathrooms(num)}
+              className="rounded-full h-8 w-8 p-0 text-xs"
+            >
               {num === undefined ? 'Any' : num === 4 ? '4+' : num}
             </Button>
           ))}
         </div>
       </div>
 
+      {/* Price Range */}
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Price Range</h3>
         <Slider value={priceRange} onValueChange={setPriceRange} max={5000} step={50} className="mb-3" />
@@ -176,6 +184,7 @@ export default function Properties() {
         </div>
       </div>
 
+      {/* Amenities */}
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Amenities</h3>
         <div className="space-y-2.5 max-h-48 overflow-y-auto">
@@ -188,6 +197,11 @@ export default function Properties() {
         </div>
       </div>
 
+      {/* Search CTA */}
+      <Button className="w-full rounded-full" size="lg">
+        Search & Find
+      </Button>
+
       {hasActiveFilters && (
         <Button variant="ghost" onClick={clearFilters} className="w-full text-sm text-muted-foreground">
           Clear All Filters
@@ -198,169 +212,173 @@ export default function Properties() {
 
   return (
     <PageLayout>
-      <PageSEO pageSlug="properties" defaults={{ meta_title: 'Luxury Villas | Haven Hub', meta_description: 'Browse our curated collection of luxury vacation villas. Best rates guaranteed.', og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
-
-      {/* Hero Banner */}
-      <PageHeroBanner
-        label="Our Collection"
-        labelIcon={Home}
-        title={
-          <>
-            Handpicked <em className="font-normal text-accent italic">Villas</em>
-          </>
-        }
-        subtitle={`Curated luxury properties across ${uniqueDestinations} destinations — each personally inspected, each genuinely extraordinary.`}
-        stats={[
-          { value: sortedProperties.length || '—', label: 'Villas' },
-          { value: uniqueDestinations, label: 'Destinations' },
-          { value: '4.9', label: 'Avg Rating' },
-        ]}
-        backgroundImage="https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1400&q=50"
-      />
-
-      {/* Sticky Filter Bar */}
-      <div className="sticky top-16 z-30 bg-card/95 backdrop-blur-xl border-b border-border">
-        <div className="max-w-[1200px] mx-auto px-[5%] py-3.5 flex items-center gap-3 flex-wrap">
-          {/* Search Input */}
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search villas..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-9 text-sm bg-muted/50 border-border rounded-lg"
-            />
+      <PageSEO pageSlug="properties" defaults={{ meta_title: 'Luxury Properties | Haven Hub', meta_description: 'Browse our curated collection of luxury vacation homes. Best rates guaranteed with instant booking available.', og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80' }} />
+      <div className="min-h-screen bg-background">
+        {/* Clean Header */}
+        <div className="border-b border-border bg-background py-6">
+          <div className="container mx-auto px-4">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-serif font-medium text-foreground">
+                    {hasDateSearch && location ? `Stays in ${location}` : location ? `Properties in ${location}` : headerContent.heading}
+                  </h1>
+                  {hasDateSearch && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 flex-wrap">
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      <span>{format(parseISO(checkIn!), 'MMM d')} – {format(parseISO(checkOut!), 'MMM d')}</span>
+                      <span>·</span>
+                      <span>{guests || 2} Guest{(guests || 2) > 1 ? 's' : ''}</span>
+                      <span>·</span>
+                      <span>{properties?.length || 0} results</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Mobile filter trigger */}
+                  <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="sm" className="lg:hidden gap-2">
+                        <Filter className="h-4 w-4" />
+                        Filters
+                        {activeFilterCount > 0 && (
+                          <span className="bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-[10px] leading-none">{activeFilterCount}</span>
+                        )}
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-80 overflow-y-auto">
+                      <SheetHeader><SheetTitle className="font-serif">Filters</SheetTitle></SheetHeader>
+                      <div className="mt-6"><FilterContent /></div>
+                    </SheetContent>
+                  </Sheet>
+                  {hasDateSearch && (
+                    <Button variant={effectiveView === 'list' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('list')} className="rounded-full h-8 w-8" aria-label="List view">
+                      <List className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button variant={effectiveView === 'grid' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('grid')} className="rounded-full h-8 w-8" aria-label="Grid view">
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              {!hasDateSearch && (
+                <div className="max-w-2xl">
+                  <SearchBar variant="compact" className="justify-start" />
+                </div>
+              )}
+            </motion.div>
           </div>
-
-          {/* Sort */}
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[160px] h-9 text-xs">
-              <ArrowUpDown className="h-3.5 w-3.5 mr-1.5" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-card">
-              <SelectItem value="featured">Featured</SelectItem>
-              <SelectItem value="price-asc">Price: Low → High</SelectItem>
-              <SelectItem value="price-desc">Price: High → Low</SelectItem>
-              <SelectItem value="guests">Most Guests</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Mobile filters */}
-          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="lg:hidden gap-2 h-9 rounded-lg">
-                <Filter className="h-3.5 w-3.5" />
-                Filters
-                {activeFilterCount > 0 && (
-                  <span className="bg-accent text-accent-foreground rounded-full px-1.5 py-0.5 text-[10px] leading-none">{activeFilterCount}</span>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-80 overflow-y-auto">
-              <SheetHeader><SheetTitle className="font-serif">Filters</SheetTitle></SheetHeader>
-              <div className="mt-6"><FilterContent /></div>
-            </SheetContent>
-          </Sheet>
-
-          {/* Date info */}
-          {hasDateSearch && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <CalendarIcon className="h-3.5 w-3.5" />
-              <span>{format(parseISO(checkIn!), 'MMM d')} – {format(parseISO(checkOut!), 'MMM d')}</span>
-              <span className="text-muted-foreground/40">·</span>
-              <span>{guests || 2} guests</span>
-            </div>
-          )}
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* View toggle */}
-          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="icon"
-              onClick={() => setViewMode('grid')}
-              className="h-8 w-8 rounded-md"
-              aria-label="Grid view"
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="icon"
-              onClick={() => setViewMode('list')}
-              className="h-8 w-8 rounded-md"
-              aria-label="List view"
-            >
-              <LayoutList className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-
-          {/* Results count */}
-          <p className="text-xs text-muted-foreground hidden sm:block">
-            {isLoading ? 'Searching...' : `${sortedProperties.length} villas`}
-          </p>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="bg-background">
-        <div className="max-w-[1200px] mx-auto px-[5%] py-10">
+        {/* 3-Column Layout */}
+        <div className="container mx-auto px-4 py-8">
           <div className="flex gap-8">
-            {/* Left Sidebar — Desktop */}
+            {/* Left Sidebar — Desktop Only */}
             <aside className="hidden lg:block w-64 shrink-0">
-              <div className="sticky top-36 bg-card border border-border rounded-2xl p-5">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Filter Results</h2>
-                <FilterContent />
+              <div className="sticky top-24 space-y-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Filter Results</h2>
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <FilterContent />
+                </div>
               </div>
             </aside>
 
-            {/* Grid/List Content */}
+            {/* Center — Property Grid */}
             <main className="flex-1 min-w-0">
-              {isLoading ? (
-                <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6' : 'space-y-4'}>
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="bg-card border border-border rounded-2xl overflow-hidden animate-pulse">
-                      <div className="aspect-[4/3] bg-muted" />
-                      <div className="p-5 space-y-3">
-                        <div className="h-5 bg-muted rounded w-3/4" />
-                        <div className="h-4 bg-muted rounded w-1/2" />
-                        <div className="h-4 bg-muted rounded w-1/3" />
-                      </div>
+              <div className="flex items-center justify-between mb-5">
+                <p className="text-sm text-muted-foreground">
+                  {isLoading ? 'Checking availability...' : `${properties?.length || 0} properties found`}
+                </p>
+              </div>
+
+              {effectiveView === 'list' ? (
+                <>
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="bg-card border border-border rounded-xl overflow-hidden animate-pulse flex flex-col md:flex-row">
+                          <div className="md:w-[280px] lg:w-[320px] aspect-[4/3] md:aspect-auto md:min-h-[220px] bg-muted" />
+                          <div className="flex-1 p-6 space-y-4">
+                            <div className="h-6 bg-muted rounded w-1/3" />
+                            <div className="h-4 bg-muted rounded w-1/4" />
+                            <div className="h-4 bg-muted rounded w-1/2" />
+                            <div className="h-8 bg-muted rounded w-1/3 mt-auto" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : sortedProperties.length > 0 ? (
-                viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {sortedProperties.map((property, index) => (
-                      <PropertyCard key={property.id} property={property} index={index} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {sortedProperties.map((property, index) => (
-                      <SearchResultCard key={property.id} property={property} index={index} nights={nights} checkIn={checkIn} checkOut={checkOut} guests={guests} />
-                    ))}
-                  </div>
-                )
+                  ) : properties && properties.length > 0 ? (
+                    <div className="space-y-4">
+                      {properties.map((property, index) => (
+                        <SearchResultCard key={property.id} property={property} index={index} nights={nights} checkIn={checkIn} checkOut={checkOut} guests={guests} />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState onClear={clearFilters} message="No properties available for these dates" />
+                  )}
+                </>
+              ) : effectiveView === 'grid' ? (
+                <>
+                  {isLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {[...Array(6)].map((_, i) => (
+                        <div key={i} className="bg-card border border-border rounded-2xl overflow-hidden animate-pulse">
+                          <div className="aspect-[4/3] bg-muted" />
+                          <div className="p-4 space-y-3">
+                            <div className="h-4 bg-muted rounded w-1/4" />
+                            <div className="h-5 bg-muted rounded w-3/4" />
+                            <div className="h-4 bg-muted rounded w-full" />
+                            <div className="h-8 bg-muted rounded w-1/3" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : properties && properties.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {properties.map((property, index) => (
+                        <QuickBookCard key={property.id} property={property} index={index} />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState onClear={clearFilters} message="No properties match your criteria" />
+                  )}
+                </>
               ) : (
-                <div className="text-center py-20 bg-card border border-border rounded-2xl">
-                  <Home className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-lg text-foreground mb-2">No villas found</p>
-                  <p className="text-sm text-muted-foreground mb-4">Try adjusting your filters or search criteria</p>
-                  <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
+                <div className="bg-card border border-border rounded-2xl p-8 text-center">
+                  <Map className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="font-serif text-xl font-medium mb-2">Map View Coming Soon</h3>
+                  <p className="text-muted-foreground">Interactive map view with property pins is in development.</p>
                 </div>
               )}
 
               <RecentlyViewedWidget variant="inline" className="mt-12" />
             </main>
+
+            {/* Right — Map Placeholder (xl+) */}
+            <aside className="hidden xl:block w-72 shrink-0">
+              <div className="sticky top-24">
+                <div className="bg-card border border-border rounded-2xl overflow-hidden h-[600px] flex flex-col items-center justify-center text-center p-6">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <MapPin className="h-7 w-7 text-primary" />
+                  </div>
+                  <h3 className="font-serif text-lg font-medium mb-2">Explore on Map</h3>
+                  <p className="text-sm text-muted-foreground">Interactive map with property locations coming soon.</p>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </div>
     </PageLayout>
+  );
+}
+
+function EmptyState({ onClear, message }: { onClear: () => void; message: string }) {
+  return (
+    <div className="text-center py-16 bg-card border border-border rounded-2xl">
+      <p className="text-muted-foreground text-lg mb-2">{message}</p>
+      <p className="text-sm text-muted-foreground mb-4">Try adjusting your filters</p>
+      <Button variant="outline" onClick={onClear}>Clear Filters</Button>
+    </div>
   );
 }
