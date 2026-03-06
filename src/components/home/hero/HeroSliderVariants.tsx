@@ -52,7 +52,7 @@ export function ParallaxDepthHero({ properties, activeIndex, onSelect }: SliderP
                 transition: prefersReduced ? 'none' : 'transform 8s ease-out',
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/90 via-[#0a0a0f]/30 to-[#0a0a0f]/50" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-background/50" />
             <div
               className="absolute bottom-[15%] left-[6%] z-[3]"
               style={{
@@ -64,15 +64,15 @@ export function ParallaxDepthHero({ properties, activeIndex, onSelect }: SliderP
               <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3">
                 {s.city}, {s.country}
               </p>
-              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-semibold text-[#f0ece4] leading-[1.1] mb-2">
+              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-semibold text-foreground leading-[1.1] mb-2">
                 {s.display_name || s.name}
               </h2>
-              <p className="font-serif text-lg italic text-[#a8a29e]">
+              <p className="font-serif text-lg italic text-muted-foreground">
                 {s.short_description || `Luxury villa in ${s.city}`}
               </p>
               <p className="font-sans text-[22px] font-bold text-accent mt-5">
                 {format(s.base_price)}
-                <span className="text-[13px] font-light text-[#6b6560]"> / night</span>
+                <span className="text-[13px] font-light text-muted-foreground"> / night</span>
               </p>
             </div>
           </div>
@@ -109,10 +109,10 @@ export function SplitRevealHero({ properties, activeIndex, onSelect }: SliderPro
                   transition: prefersReduced ? 'none' : 'transform 1.2s cubic-bezier(0.16,1,0.3,1)',
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0a0a0f]" style={{ backgroundPosition: '60%' }} />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background" style={{ backgroundPosition: '60%' }} />
             </div>
             {/* Right half — content */}
-            <div className="w-[45%] h-full flex items-center justify-center px-[6%] bg-[#0a0a0f]">
+            <div className="w-[45%] h-full flex items-center justify-center px-[6%] bg-background">
               <div
                 style={{
                   opacity: isActive ? 1 : 0,
@@ -121,23 +121,23 @@ export function SplitRevealHero({ properties, activeIndex, onSelect }: SliderPro
                 }}
               >
                 <p className="font-sans text-[11px] tracking-[0.25em] text-accent uppercase mb-4">{s.city}, {s.country}</p>
-                <h2 className="font-serif text-[clamp(32px,3.5vw,52px)] font-semibold text-[#f0ece4] leading-[1.15] mb-3">
+                <h2 className="font-serif text-[clamp(32px,3.5vw,52px)] font-semibold text-foreground leading-[1.15] mb-3">
                   {s.display_name || s.name}
                 </h2>
-                <p className="font-serif text-[17px] italic text-[#a8a29e] mb-7">
+                <p className="font-serif text-[17px] italic text-muted-foreground mb-7">
                   {s.short_description || `Luxury retreat in ${s.city}`}
                 </p>
-                <div className="flex gap-6 mb-7 font-sans text-[13px] text-[#6b6560]">
+                <div className="flex gap-6 mb-7 font-sans text-[13px] text-muted-foreground">
                   <span><Users size={14} className="inline mr-1.5 align-middle" />{s.max_guests || 6} guests</span>
                   <span>{s.bedrooms || 3} bedrooms</span>
                 </div>
                 <p className="font-sans text-[28px] font-bold text-accent">
                   {format(s.base_price)}
-                  <span className="text-[14px] font-light text-[#6b6560]"> / night</span>
+                  <span className="text-[14px] font-light text-muted-foreground"> / night</span>
                 </p>
                 <Link
                   to={`/properties/${s.slug}`}
-                  className="inline-block mt-7 px-9 py-3.5 border border-accent text-accent font-sans text-[13px] tracking-[0.15em] uppercase hover:bg-accent hover:text-[#0a0a0f] transition-colors"
+                  className="inline-block mt-7 px-9 py-3.5 border border-accent text-accent font-sans text-[13px] tracking-[0.15em] uppercase hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
                   View Villa
                 </Link>
@@ -181,7 +181,7 @@ export function MorphTilesHero({ properties, activeIndex, onSelect }: SliderProp
               }}
             />
             {isActive && (
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/85 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-transparent to-transparent" />
             )}
             <div
               className="absolute z-[5]"
@@ -201,15 +201,15 @@ export function MorphTilesHero({ properties, activeIndex, onSelect }: SliderProp
                   <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3 animate-[fadeUp_0.6s_0.4s_forwards] opacity-0">
                     {s.city}, {s.country}
                   </p>
-                  <h2 className="font-serif text-[clamp(34px,4.5vw,60px)] font-semibold text-[#f0ece4] leading-[1.1] mb-2 animate-[fadeUp_0.6s_0.5s_forwards] opacity-0">
+                  <h2 className="font-serif text-[clamp(34px,4.5vw,60px)] font-semibold text-foreground leading-[1.1] mb-2 animate-[fadeUp_0.6s_0.5s_forwards] opacity-0">
                     {s.display_name || s.name}
                   </h2>
-                  <p className="font-serif text-[17px] italic text-[#a8a29e] animate-[fadeUp_0.6s_0.6s_forwards] opacity-0">
+                  <p className="font-serif text-[17px] italic text-muted-foreground animate-[fadeUp_0.6s_0.6s_forwards] opacity-0">
                     {s.short_description || `Experience ${s.city}`}
                   </p>
                   <p className="font-sans text-2xl font-bold text-accent mt-4 animate-[fadeUp_0.6s_0.7s_forwards] opacity-0">
                     {format(s.base_price)}
-                    <span className="text-[13px] font-light text-[#6b6560]"> / night</span>
+                    <span className="text-[13px] font-light text-muted-foreground"> / night</span>
                   </p>
                 </>
               )}
@@ -251,7 +251,7 @@ export function CinematicHero({ properties, activeIndex, onSelect }: SliderProps
                 animation: isActive && !prefersReduced ? 'kenburns 12s ease-in-out infinite alternate' : 'none',
               }}
             />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, rgba(10,10,15,0.7) 0%, rgba(10,10,15,0.3) 40%, rgba(10,10,15,0.8) 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, hsl(var(--background) / 0.7) 0%, hsl(var(--background) / 0.3) 40%, hsl(var(--background) / 0.8) 100%)' }} />
             <div
               className="absolute inset-0 flex flex-col items-center justify-center text-center px-[8%]"
               style={{
@@ -261,16 +261,16 @@ export function CinematicHero({ properties, activeIndex, onSelect }: SliderProps
               }}
             >
               <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-5">{s.city}, {s.country}</p>
-              <h2 className="font-serif text-[clamp(40px,6vw,80px)] font-bold text-[#f0ece4] leading-[1.05] mb-2.5">
+              <h2 className="font-serif text-[clamp(40px,6vw,80px)] font-bold text-foreground leading-[1.05] mb-2.5">
                 {s.display_name || s.name}
               </h2>
-              <p className="font-serif text-xl italic text-[#a8a29e] mb-7">
+              <p className="font-serif text-xl italic text-muted-foreground mb-7">
                 {s.short_description || `Luxury living in ${s.city}`}
               </p>
               <div className="w-[60px] h-px bg-accent mb-7" />
               <p className="font-sans text-[26px] font-bold text-accent">
                 {format(s.base_price)}
-                <span className="text-[14px] font-light text-[#6b6560]"> / night</span>
+                <span className="text-[14px] font-light text-muted-foreground"> / night</span>
               </p>
             </div>
           </div>
@@ -305,7 +305,7 @@ export function VerticalCurtainHero({ properties, activeIndex, onSelect }: Slide
               className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: `url(${s.hero_image_url})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/85 via-[#0a0a0f]/20 to-[#0a0a0f]/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/20 to-background/40" />
             <div
               className="absolute bottom-[12%] left-[6%] z-[3]"
               style={{
@@ -315,15 +315,15 @@ export function VerticalCurtainHero({ properties, activeIndex, onSelect }: Slide
               }}
             >
               <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3">{s.city}, {s.country}</p>
-              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-semibold text-[#f0ece4] leading-[1.1] mb-2">
+              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-semibold text-foreground leading-[1.1] mb-2">
                 {s.display_name || s.name}
               </h2>
-              <p className="font-serif text-lg italic text-[#a8a29e]">
+              <p className="font-serif text-lg italic text-muted-foreground">
                 {s.short_description || `Discover ${s.city}`}
               </p>
               <p className="font-sans text-2xl font-bold text-accent mt-4">
                 {format(s.base_price)}
-                <span className="text-[13px] font-light text-[#6b6560]"> / night</span>
+                <span className="text-[13px] font-light text-muted-foreground"> / night</span>
               </p>
             </div>
           </div>
