@@ -219,7 +219,7 @@ function MorphTilesSection({ items, activeIndex, onSelect }: VariantProps) {
                 {isActive &&
                 <Link to={item.link} className="block">
                     {item.location && <p className="font-sans text-xs tracking-[0.2em] uppercase mb-3 animate-[fadeUp_0.6s_0.4s_forwards] opacity-0 text-primary-foreground">{item.location}</p>}
-                    <h3 className="font-serif text-[clamp(26px,3.5vw,44px)] font-semibold leading-[1.1] mb-2 animate-[fadeUp_0.6s_0.5s_forwards] opacity-0 text-accent">{item.title}</h3>
+                    <h3 className="font-serif text-[clamp(26px,3.5vw,44px)] font-semibold leading-[1.1] mb-2 animate-[fadeUp_0.6s_0.5s_forwards] opacity-0 text-secondary-foreground">{item.title}</h3>
                     {item.subtitle && <p className="font-serif text-[15px] italic animate-[fadeUp_0.6s_0.6s_forwards] opacity-0 text-muted">{item.subtitle}</p>}
                     
                   </Link>
