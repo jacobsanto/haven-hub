@@ -30,6 +30,7 @@ interface VillaDetailModalProps {
 
 export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavorite }: VillaDetailModalProps) {
   const [imgIdx, setImgIdx] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
   const [tab, setTab] = useState<'overview' | 'amenities' | 'highlights'>('overview');
   const { openBooking } = useBooking();
   const { format: formatCurrency } = useFormatCurrency();
@@ -39,6 +40,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
       document.body.style.overflow = 'hidden';
       setImgIdx(0);
       setTab('overview');
+      setFullscreen(false);
     }
     return () => { document.body.style.overflow = ''; };
   }, [property]);
@@ -63,13 +65,17 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
         onClick={(e) => e.stopPropagation()}
       >
         {/* Gallery */}
-        <div className="relative aspect-[21/9] overflow-hidden">
+        <div className="relative aspect-[21/9] overflow-hidden cursor-pointer" onDoubleClick={() => setFullscreen(true)}>
           <img
             src={displayImages[imgIdx]}
             alt={property.name}
             className="w-full h-full object-cover transition-opacity duration-400"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-muted via-transparent to-transparent" />
+          {/* Expand hint */}
+          <div className="absolute bottom-14 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background/60 backdrop-blur-sm text-[10px] text-muted-foreground pointer-events-none">
+            <Expand size={12} /> Double-click to expand
+          </div>
 
           {/* Close */}
           <button
@@ -246,6 +252,50 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Lightbox */}
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center animate-fade-in"
+          onClick={() => setFullscreen(false)}
+        >
+          <button
+            onClick={() => setFullscreen(false)}
+            className="absolute top-5 right-5 w-11 h-11 rounded-full bg-background/20 backdrop-blur-lg flex items-center justify-center text-primary-foreground hover:bg-background/40 transition-colors z-10"
+          >
+            <X size={20} />
+          </button>
+
+          {displayImages.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i - 1 + displayImages.length) % displayImages.length); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-background/20 backdrop-blur-lg flex items-center justify-center text-primary-foreground hover:bg-background/40 transition-colors z-10"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i + 1) % displayImages.length); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-background/20 backdrop-blur-lg flex items-center justify-center text-primary-foreground hover:bg-background/40 transition-colors z-10"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+
+          <img
+            src={displayImages[imgIdx]}
+            alt={property.name}
+            className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Counter */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-primary-foreground/60 text-sm font-sans">
+            {imgIdx + 1} / {displayImages.length}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
