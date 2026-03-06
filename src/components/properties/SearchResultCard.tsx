@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { useBooking } from '@/contexts/BookingContext';
 import { motion } from 'framer-motion';
 import { MapPin, Bed, Bath, Users, Zap, ArrowRight } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
