@@ -1,17 +1,33 @@
 
 
-## Remove SectionDisplayEditor from AdminPageContent
+## Improving hero text and search bar legibility
 
-### Problem
-The `SectionDisplayEditor` component embedded at the bottom of each page in the Page Content editor duplicates functionality that already exists in the dedicated Section Display settings. This duplication causes conflicting saves and React warnings in the console.
+Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
 
-### Change
+### Recommended approach: Layered depth
 
-**`src/pages/admin/AdminPageContent.tsx`**:
-- Remove the `<SectionDisplayEditor pageSlug={schema.pageSlug} />` call from the `PageEditor` component
-- Remove the entire `SectionDisplayEditor` function component definition (~80 lines)
-- Remove related imports: `useAllSectionDisplaySettings`, `useUpsertSectionDisplay`, `SectionDisplaySettings` from `useSectionDisplay`
-- Remove unused imports: `Slider`, `Select`/`SelectContent`/`SelectItem`/`SelectTrigger`/`SelectValue`, `LayoutGrid`, `LayoutList`, `Star`, `Play`, and the `SECTION_LABELS`, `LAYOUT_OPTIONS`, `ANIMATION_OPTIONS` constants
+Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
 
-This is a pure removal — no new code needed. Section display controls remain available in their proper location.
+1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
+
+2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
+   ```
+   bg-gradient-to-r from-black/50 via-black/20 to-transparent
+   ```
+   This keeps the right side (card deck) more vibrant while making the left text area very readable.
+
+3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
+
+4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
+
+### Summary of changes
+
+| File | What |
+|------|------|
+| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
+| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
+| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
+| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
+
+These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
 
