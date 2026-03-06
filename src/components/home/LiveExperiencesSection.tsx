@@ -76,7 +76,7 @@ export function LiveExperiencesSection() {
             {featured!.map((exp) => (
               <Link
                 key={exp.id}
-                to={`/experiences/${exp.slug}`}
+                to="/experiences"
                 className="block group bg-card border border-border rounded-[14px] overflow-hidden hover:border-accent/40 hover:-translate-y-1 transition-all"
               >
                 <div className="p-7">

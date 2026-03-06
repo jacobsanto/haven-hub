@@ -199,7 +199,7 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
             </div>
           </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 }

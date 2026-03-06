@@ -50,7 +50,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
 
   const handleBooking = () => {
     onClose();
-    navigate(`/properties/${property.slug}`);
+    openBooking({ mode: 'direct', property });
   };
 
   return (

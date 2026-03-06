@@ -103,7 +103,7 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
             </div>
           </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 });

@@ -176,7 +176,7 @@ export function SearchResultCard({ property, index = 0, nights, checkIn, checkOu
             </div>
           </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 }

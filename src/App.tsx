@@ -104,9 +104,7 @@ const App = () => (
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/destinations" element={<Destinations />} />
-                <Route path="/destinations/:slug" element={<DestinationDetail />} />
                 <Route path="/experiences" element={<Experiences />} />
-                <Route path="/experiences/:slug" element={<ExperienceDetail />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
