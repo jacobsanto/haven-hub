@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, MapPin, ExternalLink, Archive, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, ExternalLink, Archive } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { AdminGuard } from '@/components/admin/AdminGuard';
 import { AdminLoadingSkeleton } from '@/components/admin/AdminLoadingSkeleton';
