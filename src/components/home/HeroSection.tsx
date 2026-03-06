@@ -272,10 +272,10 @@ export function HeroSection() {
               </div>
             }
             <OdometerCounter value={activeIndex} total={count} reduced={!!prefersReduced} />
-            <button onClick={goPrev} className="w-10 h-10 rounded-full border border-primary-foreground/20 flex items-center justify-center hover:bg-primary-foreground/10 transition-colors text-primary-foreground" aria-label="Previous property">
+            <button onClick={goPrev} className="w-10 h-10 rounded-full border border-primary-foreground/15 flex items-center justify-center hover:bg-primary-foreground/10 transition-colors text-primary-foreground/40" aria-label="Previous property">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button onClick={goNext} className="w-10 h-10 rounded-full border border-primary-foreground/20 flex items-center justify-center hover:bg-primary-foreground/10 transition-colors text-primary-foreground" aria-label="Next property">
+            <button onClick={goNext} className="w-10 h-10 rounded-full border border-primary-foreground/15 flex items-center justify-center hover:bg-primary-foreground/10 transition-colors text-primary-foreground/40" aria-label="Next property">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
