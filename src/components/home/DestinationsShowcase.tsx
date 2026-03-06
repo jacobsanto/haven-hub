@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useActiveDestinations } from '@/hooks/useDestinations';
+import { useFeaturedDestinations } from '@/hooks/useDestinations';
 import { usePageContent } from '@/hooks/usePageContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 const SHOWCASE_MODES = ['parallax-depth', 'split-reveal', 'morph-tiles', 'cinematic', 'vertical-curtain', 'card-deck', 'bright-minimalist'];
 
 export function DestinationsShowcase() {
-  const { data: destinations, isLoading } = useActiveDestinations();
+  const { data: destinations, isLoading } = useFeaturedDestinations();
   const settings = useSectionDisplay('home', 'destinations');
   const content = usePageContent('home', 'destinations', {
     label: 'Explore',
@@ -27,7 +27,7 @@ export function DestinationsShowcase() {
       title: dest.name,
       subtitle: dest.description || undefined,
       location: dest.country,
-      badge: dest.is_featured ? 'Featured' : undefined,
+      badge: undefined,
       link: `/destinations`,
     })),
     [destinations]
