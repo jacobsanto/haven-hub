@@ -1,6 +1,6 @@
 import { useReducedMotion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
-import { CARD_SPACING, CARD_ROTATION, CARD_SCALE_BASE, CARD_SCALE_STEP, TRANSITION_MS } from './heroStyles';
+import { CARD_SPACING, CARD_ROTATION, CARD_SCALE_BASE, CARD_SCALE_STEP, TRANSITION_MS, EASE_SMOOTH } from './heroStyles';
 
 interface Property {
   id: string;
@@ -33,9 +33,14 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
         const isHovered = hoveredIndex === idx;
 
         const translateY = isActive ? 0 : offset * CARD_SPACING;
+        const translateX = isActive ? 0 : offset * 6;
         const rotateZ = isActive ? 0 : offset * CARD_ROTATION;
-        const scale = isActive ? 1 : CARD_SCALE_BASE + Math.abs(offset) * CARD_SCALE_STEP;
+        const scale = isActive ? 1 : CARD_SCALE_BASE - Math.abs(offset) * CARD_SCALE_STEP;
         const zIndex = isActive ? 10 : 5 - Math.abs(offset);
+
+        // Hover lift for active card
+        const hoverLift = isActive && isHovered ? -6 : 0;
+        const hoverScale = isActive && isHovered ? 1.02 : scale;
 
         return (
           <div
@@ -45,18 +50,21 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
             onMouseLeave={() => onHover(null)}
             className="absolute inset-0 rounded-lg overflow-hidden cursor-pointer border border-accent/20"
             style={{
-              transform: `translateY(${translateY}px) scale(${scale}) rotateZ(${rotateZ}deg)`,
+              transform: `translateY(${translateY + hoverLift}px) translateX(${translateX}px) scale(${hoverScale}) rotateZ(${rotateZ}deg)`,
               zIndex,
               opacity: isActive ? 1 : isHovered ? 0.85 : 0.5,
               transition: prefersReduced
                 ? 'none'
-                : `all ${TRANSITION_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+                : `transform ${TRANSITION_MS}ms ${EASE_SMOOTH}, opacity ${TRANSITION_MS * 0.7}ms ${EASE_SMOOTH}`,
             }}
           >
             {/* Property image */}
             <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${property.hero_image_url})` }}
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-[1200ms] ease-out"
+              style={{
+                backgroundImage: `url(${property.hero_image_url})`,
+                transform: isActive ? 'scale(1.05)' : 'scale(1)',
+              }}
             />
 
             {/* Gradient overlay */}
@@ -70,10 +78,10 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
               className="absolute bottom-0 left-0 right-0 p-5 lg:p-6"
               style={{
                 opacity: isActive ? 1 : 0,
-                transform: isActive ? 'translateY(0)' : 'translateY(16px)',
+                transform: isActive ? 'translateY(0)' : 'translateY(20px)',
                 transition: prefersReduced
                   ? 'none'
-                  : `all ${TRANSITION_MS}ms ease-out 0.15s`,
+                  : `opacity ${TRANSITION_MS * 0.6}ms ${EASE_SMOOTH} ${isActive ? '0.2s' : '0s'}, transform ${TRANSITION_MS * 0.8}ms ${EASE_SMOOTH} ${isActive ? '0.15s' : '0s'}`,
               }}
             >
               <h3 className="text-primary-foreground font-serif text-xl lg:text-2xl leading-tight">
