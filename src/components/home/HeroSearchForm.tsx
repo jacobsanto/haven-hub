@@ -39,7 +39,7 @@ export function HeroSearchForm() {
                   "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-white/20",
                   checkIn ? "text-white" : "text-white/50"
                 )}>
-                <Calendar className="w-4 h-4 text-white/60 shrink-0" />
+                <Calendar className="w-4 h-4 shrink-0 text-destructive-foreground" />
                 {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Check In'}
               </button>
             </PopoverTrigger>
@@ -66,7 +66,7 @@ export function HeroSearchForm() {
                   "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-white/20",
                   checkOut ? "text-white" : "text-white/50"
                 )}>
-                <Calendar className="w-4 h-4 text-white/60 shrink-0" />
+                <Calendar className="w-4 h-4 shrink-0 text-destructive-foreground" />
                 {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Check Out'}
               </button>
             </PopoverTrigger>
@@ -89,7 +89,7 @@ export function HeroSearchForm() {
               onChange={(e) => setGuests(Number(e.target.value))}
               className="w-full pl-10 pr-4 py-2 rounded-full bg-white/5 text-white text-xs focus:outline-none focus:ring-1 focus:ring-white/20 appearance-none">
               {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((n) =>
-                <option key={n} value={n} className="text-foreground bg-card">{n} Guest{n > 1 ? 's' : ''}</option>
+              <option key={n} value={n} className="text-foreground bg-card">{n} Guest{n > 1 ? 's' : ''}</option>
               )}
             </select>
           </div>
