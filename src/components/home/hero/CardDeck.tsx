@@ -59,7 +59,7 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
             />
 
             {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
 
             {/* Accent tint */}
             <div className="absolute inset-0 bg-accent/5" />
@@ -75,10 +75,10 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
                   : `all ${TRANSITION_MS}ms ease-out 0.15s`,
               }}
             >
-              <h3 className="text-white font-serif text-xl lg:text-2xl leading-tight">
+              <h3 className="text-primary-foreground font-serif text-xl lg:text-2xl leading-tight">
                 {property.display_name || property.name}
               </h3>
-              <p className="text-white/50 text-xs uppercase tracking-[3px] mt-1.5 font-sans">
+              <p className="text-primary-foreground/50 text-xs uppercase tracking-[3px] mt-1.5 font-sans">
                 {property.city}, {property.country}
               </p>
             </div>

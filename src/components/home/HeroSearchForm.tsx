@@ -28,7 +28,7 @@ export function HeroSearchForm() {
   return (
     <div className="w-full max-w-4xl">
       {/* Search card */}
-      <div className="bg-white/8 backdrop-blur-md rounded-full px-2 py-1.5 border border-white/15">
+      <div className="bg-foreground/8 backdrop-blur-md rounded-full px-2 py-1.5 border border-foreground/15">
         <form onSubmit={handleSearch} className="flex flex-col lg:flex-row items-stretch gap-1.5">
           {/* Check In */}
           <Popover>
@@ -36,8 +36,8 @@ export function HeroSearchForm() {
               <button
                 type="button"
                 className={cn(
-                  "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-white/20",
-                  checkIn ? "text-white" : "text-white/50"
+                  "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-foreground/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-foreground/20",
+                  checkIn ? "text-foreground" : "text-foreground/50"
                 )}>
                 <Calendar className="w-4 h-4 shrink-0 text-destructive-foreground" />
                 {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Check In'}
@@ -63,8 +63,8 @@ export function HeroSearchForm() {
               <button
                 type="button"
                 className={cn(
-                  "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-white/20",
-                  checkOut ? "text-white" : "text-white/50"
+                  "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-foreground/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-foreground/20",
+                  checkOut ? "text-foreground" : "text-foreground/50"
                 )}>
                 <Calendar className="w-4 h-4 shrink-0 text-destructive-foreground" />
                 {checkOut ? format(checkOut, 'MMM d, yyyy') : 'Check Out'}
@@ -83,11 +83,11 @@ export function HeroSearchForm() {
 
           {/* Guests */}
           <div className="flex-1 relative">
-            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/60" />
             <select
               value={guests}
               onChange={(e) => setGuests(Number(e.target.value))}
-              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/5 text-white text-xs focus:outline-none focus:ring-1 focus:ring-white/20 appearance-none">
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-foreground/5 text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground/20 appearance-none">
               {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((n) =>
               <option key={n} value={n} className="text-foreground bg-card">{n} Guest{n > 1 ? 's' : ''}</option>
               )}
