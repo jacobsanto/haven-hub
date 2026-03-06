@@ -210,6 +210,7 @@ export default function Properties() {
                   onClick={setSelectedProperty}
                   isFavorite={favorites.has(p.id)}
                   onToggleFavorite={toggleFav}
+                  onInstantBook={(prop) => openBooking({ mode: 'direct', property: prop })}
                 />
               ))}
             </div>
