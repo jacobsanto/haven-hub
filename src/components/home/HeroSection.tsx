@@ -17,8 +17,8 @@ import {
   MorphTilesHero,
   CinematicHero,
   VerticalCurtainHero,
-  BrightMinimalistHero,
-} from './hero/HeroSliderVariants';
+  BrightMinimalistHero } from
+'./hero/HeroSliderVariants';
 import { AUTOPLAY_MS, heroKeyframes } from './hero/heroStyles';
 
 const SLIDER_MAP: Record<string, React.ComponentType<any>> = {
@@ -27,7 +27,7 @@ const SLIDER_MAP: Record<string, React.ComponentType<any>> = {
   'morph-tiles': MorphTilesHero,
   'cinematic': CinematicHero,
   'vertical-curtain': VerticalCurtainHero,
-  'bright-minimalist': BrightMinimalistHero,
+  'bright-minimalist': BrightMinimalistHero
 };
 
 const VARIANTS_WITH_OWN_NAV = new Set(['bright-minimalist']);
@@ -173,7 +173,7 @@ export function HeroSection() {
                   <div className="flex-1 max-w-xl" ref={textRef}>
                     <AnimatePresence mode="wait">
                       <div key={activeIndex}>
-                        <p className="text-muted-foreground text-xs uppercase tracking-[3px] font-sans mb-4">
+                        <p className="text-xs uppercase tracking-[3px] font-sans mb-4 text-accent">
                           0{activeIndex + 1} — {(active.display_name || active.name).toUpperCase()}
                         </p>
                         <h1
@@ -229,7 +229,7 @@ export function HeroSection() {
       {SliderVariant && !prefersReduced && <GrainOverlay />}
 
       {/* Footer bar — shared across variants without their own nav */}
-      {!hasOwnNav && (
+      {!hasOwnNav &&
       <div className="absolute bottom-0 left-0 right-0 z-20">
         <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-foreground">
           {/* Social icons */}
@@ -278,7 +278,7 @@ export function HeroSection() {
           </div>
         </div>
       </div>
-      )}
+      }
 
       {/* Search bar for card-deck in hero */}
       {isCardDeck && showSearchBar &&
