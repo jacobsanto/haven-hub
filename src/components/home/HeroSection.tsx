@@ -16,8 +16,9 @@ import {
   SplitRevealHero,
   MorphTilesHero,
   CinematicHero,
-  VerticalCurtainHero } from
-'./hero/HeroSliderVariants';
+  VerticalCurtainHero,
+  BrightMinimalistHero,
+} from './hero/HeroSliderVariants';
 import { AUTOPLAY_MS, heroKeyframes } from './hero/heroStyles';
 
 const SLIDER_MAP: Record<string, React.ComponentType<any>> = {
@@ -25,8 +26,11 @@ const SLIDER_MAP: Record<string, React.ComponentType<any>> = {
   'split-reveal': SplitRevealHero,
   'morph-tiles': MorphTilesHero,
   'cinematic': CinematicHero,
-  'vertical-curtain': VerticalCurtainHero
+  'vertical-curtain': VerticalCurtainHero,
+  'bright-minimalist': BrightMinimalistHero,
 };
+
+const VARIANTS_WITH_OWN_NAV = new Set(['bright-minimalist']);
 
 export function HeroSection() {
   const { data: allProperties } = useFeaturedProperties();
@@ -114,6 +118,7 @@ export function HeroSection() {
 
   const active = properties[activeIndex];
   const isCardDeck = heroStyle === 'card-deck';
+  const hasOwnNav = VARIANTS_WITH_OWN_NAV.has(heroStyle);
   const SliderVariant = SLIDER_MAP[heroStyle];
 
   return (
@@ -222,7 +227,8 @@ export function HeroSection() {
       {/* Grain overlay for all variants */}
       {SliderVariant && !prefersReduced && <GrainOverlay />}
 
-      {/* Footer bar — shared across all variants */}
+      {/* Footer bar — shared across variants without their own nav */}
+      {!hasOwnNav && (
       <div className="absolute bottom-0 left-0 right-0 z-20">
         <div className="container mx-auto px-4 md:px-8 pb-6 flex items-center justify-between text-foreground">
           {/* Social icons */}
@@ -271,6 +277,7 @@ export function HeroSection() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Search bar for card-deck in hero */}
       {isCardDeck && showSearchBar &&
