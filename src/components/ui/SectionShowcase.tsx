@@ -297,7 +297,7 @@ function VerticalCurtainSection({ items, activeIndex, onSelect }: VariantProps) 
               {item.location && <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3">{item.location}</p>}
               <h3 className="font-serif text-[clamp(28px,4vw,48px)] font-semibold text-foreground leading-[1.1] mb-2">{item.title}</h3>
               {item.subtitle && <p className="font-serif text-base italic text-muted-foreground">{item.subtitle}</p>}
-              {item.meta && <p className="font-sans text-xl font-bold text-accent mt-3">{item.meta}</p>}
+              
             </Link>
           </div>
         );
