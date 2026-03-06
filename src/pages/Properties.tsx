@@ -22,6 +22,7 @@ export default function Properties() {
 
   // Filter state
   const [search, setSearch] = useState('');
+  const { openBooking } = useBooking();
   const [selectedDestination, setSelectedDestination] = useState('');
   const [priceRange, setPriceRange] = useState('any');
   const [guestFilter, setGuestFilter] = useState(0);
