@@ -12,7 +12,7 @@ export function OdometerCounter({ value, total, reduced }: OdometerCounterProps)
 
   if (reduced) {
     return (
-      <span className="text-sm font-sans tracking-wider text-primary-foreground/70">
+      <span className="text-sm font-sans tracking-wider text-primary-foreground/40">
         {padded} / {totalPadded}
       </span>
     );
