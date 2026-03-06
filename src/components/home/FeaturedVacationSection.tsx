@@ -5,10 +5,13 @@ import { useFeaturedProperties } from '@/hooks/useProperties';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 
 export function FeaturedVacationSection() {
   const { data: properties, isLoading } = useFeaturedProperties();
   const { format } = useFormatCurrency();
+  const settings = useSectionDisplay('home', 'featured-vacations');
 
   const featured = properties?.slice(0, 3);
 
@@ -47,41 +50,33 @@ export function FeaturedVacationSection() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featured!.map((property, index) => (
-              <motion.div
-                key={property.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewportOnce}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Link to={`/properties/${property.slug}`} className="block group">
-                  <div className="relative overflow-hidden rounded-[14px] aspect-[4/5]">
-                    <img
-                      src={property.hero_image_url || '/placeholder.svg'}
-                      alt={property.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
-                    <div className="absolute bottom-5 left-5 right-5">
-                      <div className="flex items-center gap-1.5 text-foreground/80 text-xs mb-2">
-                        <MapPin className="w-3 h-3 text-accent" />
-                        {property.city}, {property.country}
-                      </div>
-                      <h3 className="text-foreground font-serif text-xl font-medium mb-2">
-                        {property.display_name || property.name}
-                      </h3>
-                      <span className="inline-block px-3 py-1 rounded-full bg-foreground/10 backdrop-blur-sm text-foreground text-sm">
-                        Starting from {format(property.base_price)}
-                      </span>
+          <SectionRenderer settings={settings}>
+            {featured!.map((property) => (
+              <Link key={property.id} to={`/properties/${property.slug}`} className="block group">
+                <div className="relative overflow-hidden rounded-[14px] aspect-[4/5]">
+                  <img
+                    src={property.hero_image_url || '/placeholder.svg'}
+                    alt={property.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
+                  <div className="absolute bottom-5 left-5 right-5">
+                    <div className="flex items-center gap-1.5 text-foreground/80 text-xs mb-2">
+                      <MapPin className="w-3 h-3 text-accent" />
+                      {property.city}, {property.country}
                     </div>
+                    <h3 className="text-foreground font-serif text-xl font-medium mb-2">
+                      {property.display_name || property.name}
+                    </h3>
+                    <span className="inline-block px-3 py-1 rounded-full bg-foreground/10 backdrop-blur-sm text-foreground text-sm">
+                      Starting from {format(property.base_price)}
+                    </span>
                   </div>
-                </Link>
-              </motion.div>
+                </div>
+              </Link>
             ))}
-          </div>
+          </SectionRenderer>
         )}
       </div>
     </section>

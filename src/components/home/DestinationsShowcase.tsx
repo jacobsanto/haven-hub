@@ -5,9 +5,12 @@ import { useActiveDestinations } from '@/hooks/useDestinations';
 import { usePageContent } from '@/hooks/usePageContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 
 export function DestinationsShowcase() {
   const { data: destinations, isLoading } = useActiveDestinations();
+  const settings = useSectionDisplay('home', 'destinations');
   const content = usePageContent('home', 'destinations', {
     label: 'Explore',
     heading: 'Sun-Kissed Destinations',
@@ -15,7 +18,6 @@ export function DestinationsShowcase() {
 
   if (!isLoading && (!destinations || destinations.length === 0)) return null;
 
-  // Split heading for accent styling on last word
   const words = content.heading.split(' ');
   const headingMain = words.slice(0, -1).join(' ');
   const headingAccent = words[words.length - 1];
@@ -42,16 +44,11 @@ export function DestinationsShowcase() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 max-w-[1200px] mx-auto">
-            {destinations!.slice(0, 8).map((dest, index) => (
-              <motion.div
-                key={dest.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewportOnce}
-                transition={{ delay: index * 0.08 }}
-              >
+          <div className="max-w-[1200px] mx-auto">
+            <SectionRenderer settings={settings}>
+              {destinations!.slice(0, 8).map((dest) => (
                 <Link
+                  key={dest.id}
                   to={`/destinations/${dest.slug}`}
                   className="block group relative rounded-[14px] overflow-hidden aspect-[3/4] cursor-pointer transition-transform duration-500 hover:-translate-y-1.5"
                 >
@@ -75,8 +72,8 @@ export function DestinationsShowcase() {
                     </span>
                   )}
                 </Link>
-              </motion.div>
-            ))}
+              ))}
+            </SectionRenderer>
           </div>
         )}
       </div>

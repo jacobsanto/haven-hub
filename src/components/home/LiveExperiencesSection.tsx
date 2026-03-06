@@ -6,10 +6,13 @@ import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { usePageContent } from '@/hooks/usePageContent';
 import { Skeleton } from '@/components/ui/skeleton';
 import { viewportOnce } from '@/lib/motion';
+import { useSectionDisplay } from '@/hooks/useSectionDisplay';
+import { SectionRenderer } from '@/components/ui/SectionRenderer';
 
 export function LiveExperiencesSection() {
   const { data: experiences, isLoading } = useActiveExperiences();
   const { format } = useFormatCurrency();
+  const settings = useSectionDisplay('home', 'experiences');
   const featured = experiences?.filter(e => e.is_featured).slice(0, 8) || experiences?.slice(0, 8);
 
   const content = usePageContent('home', 'experiences', {
@@ -46,16 +49,11 @@ export function LiveExperiencesSection() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 max-w-[1200px] mx-auto">
-            {featured!.map((exp, index) => (
-              <motion.div
-                key={exp.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewportOnce}
-                transition={{ delay: index * 0.08 }}
-              >
+          <div className="max-w-[1200px] mx-auto">
+            <SectionRenderer settings={settings}>
+              {featured!.map((exp) => (
                 <Link
+                  key={exp.id}
                   to={`/experiences/${exp.slug}`}
                   className="block group bg-card border border-border rounded-[14px] overflow-hidden hover:border-accent/40 hover:-translate-y-1 transition-all"
                 >
@@ -84,8 +82,8 @@ export function LiveExperiencesSection() {
                     </div>
                   </div>
                 </Link>
-              </motion.div>
-            ))}
+              ))}
+            </SectionRenderer>
           </div>
         )}
       </div>
