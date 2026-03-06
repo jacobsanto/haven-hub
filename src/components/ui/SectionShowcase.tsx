@@ -213,7 +213,7 @@ function MorphTilesSection({ items, activeIndex, onSelect }: VariantProps) {
               }}>
                 {!isActive &&
                 <p className="font-sans text-[11px] tracking-[0.15em] text-accent uppercase" style={{ writingMode: 'vertical-lr', transform: 'rotate(180deg)' }}>
-                    {item.location || item.title}
+                    {item.title}
                   </p>
                 }
                 {isActive &&
