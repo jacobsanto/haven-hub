@@ -178,8 +178,7 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                       }}
                     >
                       <span
-                        className="inline-flex items-center gap-1 text-[11px] font-bold tracking-[1.5px] uppercase pb-3"
-                        style={{ color: palette.color }}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold tracking-[1.5px] uppercase pb-3 text-white/80"
                       >
                         <MapPin size={10} />
                         {prop.city}, {prop.country}
@@ -194,19 +193,19 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                         transition: prefersReduced ? 'none' : 'all 0.8s ease-out 0.2s',
                       }}
                     >
-                      <h3 className="font-serif text-[32px] font-normal text-foreground mb-2">
+                      <h3 className="font-serif text-[32px] font-normal text-white mb-2 drop-shadow-md">
                         {prop.display_name || prop.name}
                       </h3>
-                      <p className="text-muted-foreground text-[13px] tracking-[1px] font-light uppercase">
+                      <p className="text-white/60 text-[13px] tracking-[1px] font-light uppercase">
                         {prop.bedrooms || 3} beds · {prop.max_guests || 6} guests
                       </p>
                       <div
                         className="mt-4 pt-4"
-                        style={{ borderTop: `1px solid ${palette.color}30` }}
+                        style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}
                       >
-                        <p className="text-foreground font-sans font-semibold text-lg">
+                        <p className="text-white font-sans font-semibold text-lg drop-shadow-sm">
                           {format(prop.base_price)}
-                          <span className="text-muted-foreground text-xs font-light"> / night</span>
+                          <span className="text-white/60 text-xs font-light"> / night</span>
                         </p>
                       </div>
                     </div>
