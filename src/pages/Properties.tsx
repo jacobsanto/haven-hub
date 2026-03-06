@@ -127,7 +127,7 @@ export default function Properties() {
   const totalVillas = properties?.length || 0;
   const destCount = destinationNames.length;
   const avgRating = 4.8;
-  const heroImage = properties?.[0]?.hero_image_url || undefined;
+  const heroImage = headerContent.hero_image;
 
   return (
     <PageLayout>
