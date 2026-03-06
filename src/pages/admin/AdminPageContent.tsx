@@ -8,7 +8,7 @@ import {
   type PageContentSchema,
   type ContentField,
 } from '@/hooks/usePageContent';
-import { useAllSectionDisplaySettings, useUpsertSectionDisplay, type SectionDisplaySettings } from '@/hooks/useSectionDisplay';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
