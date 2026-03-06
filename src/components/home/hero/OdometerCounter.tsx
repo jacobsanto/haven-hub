@@ -19,7 +19,7 @@ export function OdometerCounter({ value, total, reduced }: OdometerCounterProps)
   }
 
   return (
-    <span className="text-sm font-sans tracking-wider text-primary-foreground/70 flex items-center gap-0.5">
+    <span className="text-sm font-sans tracking-wider text-primary-foreground/40 flex items-center gap-0.5">
       <OdometerDigit value={parseInt(padded[0])} />
       <OdometerDigit value={parseInt(padded[1])} />
       <span className="mx-1">/</span>
