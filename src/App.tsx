@@ -92,7 +92,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/properties" element={<Properties />} />
-                <Route path="/properties/:slug" element={<PropertyDetail />} />
+                
                 <Route path="/booking/confirm" element={<BookingConfirm />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
