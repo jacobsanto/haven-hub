@@ -20,15 +20,15 @@ export function Footer() {
     contactAddress,
     socialInstagram,
     socialFacebook,
-    socialTwitter,
+    socialTwitter
   } = useBrand();
   const ctaContent = usePageContent('footer', 'cta', {
     heading: 'Ready to Book Your Dream Escape?',
-    subtitle: 'Browse our curated collection of luxury properties',
+    subtitle: 'Browse our curated collection of luxury properties'
   });
   const newsletterContent = usePageContent('footer', 'newsletter', {
     heading: 'Exclusive Offers',
-    subtitle: 'Get early access to deals & new properties.',
+    subtitle: 'Get early access to deals & new properties.'
   });
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -93,46 +93,46 @@ export function Footer() {
   return (
     <footer role="contentinfo" className="bg-foreground text-background">
       {/* Booking CTA Section */}
-      <div className="bg-primary py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-              <h3 className="text-2xl font-serif font-medium text-primary-foreground mb-2">
-                {ctaContent.heading}
-              </h3>
-              <p className="text-primary-foreground/80 text-sm">
-                {ctaContent.subtitle}
-              </p>
-            </div>
-            <Button 
-              onClick={() => navigate('/properties')} 
-              size="lg" 
-              variant="gold" 
-              className="rounded-full gap-2 px-8"
-            >
-              <Search className="h-5 w-5" />
-              Find Your Stay
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-          </div>
-          
-          {/* Trust indicators */}
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-10 mt-8 pt-6 border-t border-primary-foreground/20">
-            <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
-              <Shield className="h-4 w-4" />
-              <span>Best Price Guarantee</span>
-            </div>
-            <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
-              <Clock className="h-4 w-4" />
-              <span>Free Cancellation</span>
-            </div>
-            <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
-              <CheckCircle className="h-4 w-4" />
-              <span>Verified Properties</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
 
       {/* Main Footer */}
       <div className="py-16">
@@ -142,21 +142,21 @@ export function Footer() {
             <div className="space-y-6 sm:col-span-2 lg:col-span-1">
               {/* Brand */}
               <div className="space-y-3">
-                {logoUrl ? (
-                  <img 
-                    src={logoUrl} 
-                    alt={brandName} 
-                    className="h-10 w-auto max-w-[160px] object-contain brightness-0 invert" 
-                  />
-                ) : (
-                  <h3 className="text-2xl font-serif">
+                {logoUrl ?
+                <img
+                  src={logoUrl}
+                  alt={brandName}
+                  className="h-10 w-auto max-w-[160px] object-contain brightness-0 invert" /> :
+
+
+                <h3 className="text-2xl font-serif">
                     <span className="text-primary-foreground">{primaryPart}</span>
                     {secondaryPart && <span className="opacity-60"> {secondaryPart}</span>}
                   </h3>
-                )}
-                {brandTagline && (
-                  <p className="text-sm opacity-70 max-w-xs">{brandTagline}</p>
-                )}
+                }
+                {brandTagline &&
+                <p className="text-sm opacity-70 max-w-xs">{brandTagline}</p>
+                }
               </div>
 
               {/* Newsletter */}
@@ -164,38 +164,38 @@ export function Footer() {
                 <h4 className="font-medium text-sm uppercase tracking-wider opacity-60">
                   {newsletterContent.heading}
                 </h4>
-                {isSubscribed ? (
-                  <div className="flex items-center gap-2 text-sm opacity-80">
+                {isSubscribed ?
+                <div className="flex items-center gap-2 text-sm opacity-80">
                     <CheckCircle className="h-4 w-4 text-primary" />
                     <span>Thanks for subscribing!</span>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubscribe} className="space-y-3">
+                  </div> :
+
+                <form onSubmit={handleSubscribe} className="space-y-3">
                     <p className="text-sm opacity-70">
                       {newsletterContent.subtitle}
                     </p>
                     <div className="flex gap-2">
-                      <Input 
-                        type="email" 
-                        placeholder="Your email" 
-                        value={email} 
-                        onChange={e => setEmail(e.target.value)} 
-                        className="bg-background/10 border-background/20 text-background placeholder:text-background/50 h-11" 
-                        disabled={isSubmitting}
-                        aria-label="Email address for newsletter"
-                      />
-                      <Button 
-                        type="submit" 
-                        size="icon" 
-                        disabled={isSubmitting} 
-                        className="h-11 w-11 shrink-0"
-                        aria-label="Subscribe to newsletter"
-                      >
+                      <Input
+                      type="email"
+                      placeholder="Your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="bg-background/10 border-background/20 text-background placeholder:text-background/50 h-11"
+                      disabled={isSubmitting}
+                      aria-label="Email address for newsletter" />
+                    
+                      <Button
+                      type="submit"
+                      size="icon"
+                      disabled={isSubmitting}
+                      className="h-11 w-11 shrink-0"
+                      aria-label="Subscribe to newsletter">
+                      
                         {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       </Button>
                     </div>
                   </form>
-                )}
+                }
               </div>
             </div>
 
@@ -205,16 +205,16 @@ export function Footer() {
                 Explore
               </h4>
               <ul className="space-y-3">
-                {exploreLinks.map((link) => (
-                  <li key={link.path + link.label}>
-                    <Link 
-                      to={link.path} 
-                      className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                    >
+                {exploreLinks.map((link) =>
+                <li key={link.path + link.label}>
+                    <Link
+                    to={link.path}
+                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+                    
                       {link.label}
                     </Link>
                   </li>
-                ))}
+                )}
               </ul>
             </div>
 
@@ -224,16 +224,16 @@ export function Footer() {
                 Company
               </h4>
               <ul className="space-y-3">
-                {companyLinks.map((link) => (
-                  <li key={link.path + link.label}>
-                    <Link 
-                      to={link.path} 
-                      className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left"
-                    >
+                {companyLinks.map((link) =>
+                <li key={link.path + link.label}>
+                    <Link
+                    to={link.path}
+                    className="text-sm opacity-80 hover:opacity-100 transition-opacity inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-background/60 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+                    
                       {link.label}
                     </Link>
                   </li>
-                ))}
+                )}
               </ul>
             </div>
 
@@ -249,19 +249,19 @@ export function Footer() {
                 </li>
                 <li className="flex items-center gap-3 text-sm opacity-80">
                   <Mail className="h-4 w-4 shrink-0" />
-                  <a 
-                    href={`mailto:${contactEmail}`} 
-                    className="hover:opacity-100 transition-opacity"
-                  >
+                  <a
+                    href={`mailto:${contactEmail}`}
+                    className="hover:opacity-100 transition-opacity">
+                    
                     {contactEmail}
                   </a>
                 </li>
                 <li className="flex items-center gap-3 text-sm opacity-80">
                   <Phone className="h-4 w-4 shrink-0" />
-                  <a 
-                    href={`tel:${contactPhone?.replace(/\D/g, '')}`} 
-                    className="hover:opacity-100 transition-opacity"
-                  >
+                  <a
+                    href={`tel:${contactPhone?.replace(/\D/g, '')}`}
+                    className="hover:opacity-100 transition-opacity">
+                    
                     {contactPhone}
                   </a>
                 </li>
@@ -277,39 +277,39 @@ export function Footer() {
             
             {/* Social Icons */}
             <div className="flex items-center gap-4 order-1 sm:order-2">
-              {socialInstagram && (
-                <a 
-                  href={socialInstagram} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow us on Instagram"
-                   className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
-                >
+              {socialInstagram &&
+              <a
+                href={socialInstagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on Instagram"
+                className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2">
+                
                   <Instagram className="h-5 w-5" />
                 </a>
-              )}
-              {socialFacebook && (
-                <a 
-                  href={socialFacebook} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow us on Facebook"
-                   className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
-                >
+              }
+              {socialFacebook &&
+              <a
+                href={socialFacebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on Facebook"
+                className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2">
+                
                   <Facebook className="h-5 w-5" />
                 </a>
-              )}
-              {socialTwitter && (
-                <a 
-                  href={socialTwitter} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow us on X (Twitter)"
-                  className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2"
-                >
+              }
+              {socialTwitter &&
+              <a
+                href={socialTwitter}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on X (Twitter)"
+                className="opacity-60 hover:opacity-100 hover:text-accent transition-all duration-200 hover:-translate-y-0.5 p-2">
+                
                   <Twitter className="h-5 w-5" />
                 </a>
-              )}
+              }
               
               {/* Dark Mode Toggle */}
               <Button
@@ -317,8 +317,8 @@ export function Footer() {
                 size="icon"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label="Toggle dark mode"
-                className="rounded-full border border-background/20 hover:bg-background/10 ml-2 h-10 w-10"
-              >
+                className="rounded-full border border-background/20 hover:bg-background/10 ml-2 h-10 w-10">
+                
                 {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
 
@@ -328,14 +328,14 @@ export function Footer() {
                 size="icon"
                 onClick={scrollToTop}
                 aria-label="Back to top"
-                className="rounded-full border border-background/20 hover:bg-background/10 ml-2 h-10 w-10"
-              >
+                className="rounded-full border border-background/20 hover:bg-background/10 ml-2 h-10 w-10">
+                
                 <ArrowUp className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>);
+
 }
