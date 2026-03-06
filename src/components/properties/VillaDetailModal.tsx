@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useBooking } from '@/contexts/BookingContext';
 import {
   X, Heart, Share2, ChevronLeft, ChevronRight, MapPin,
   Users, Bed, Bath, Expand, Star, Calendar, ArrowRight, Check,
@@ -31,7 +31,7 @@ interface VillaDetailModalProps {
 export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavorite }: VillaDetailModalProps) {
   const [imgIdx, setImgIdx] = useState(0);
   const [tab, setTab] = useState<'overview' | 'amenities' | 'highlights'>('overview');
-  const navigate = useNavigate();
+  const { openBooking } = useBooking();
   const { format: formatCurrency } = useFormatCurrency();
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
 
   const handleBooking = () => {
     onClose();
-    navigate(`/properties/${property.slug}`);
+    openBooking({ mode: 'direct', property });
   };
 
   return (

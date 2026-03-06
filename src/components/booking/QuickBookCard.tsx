@@ -1,5 +1,4 @@
 import { forwardRef } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, Users, Bed, Bath, Star, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,7 +33,7 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
       transition={{ delay: index * 0.08 }}
       className="group"
     >
-      <Link to={`/properties/${property.slug}`}>
+      <div onClick={() => openBooking({ mode: 'direct', property })} className="cursor-pointer">
         <div className="bg-card border border-border rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
           {/* Image */}
           <div className="relative aspect-[4/3] overflow-hidden">
@@ -102,7 +101,7 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
             </div>
           </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 });

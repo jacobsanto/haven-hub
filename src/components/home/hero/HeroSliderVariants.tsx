@@ -1,7 +1,7 @@
 import { useReducedMotion } from 'framer-motion';
 import { MapPin, Users, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 export { BrightMinimalistHero } from './BrightMinimalistHero';
-import { Link } from 'react-router-dom';
+
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 
 interface Property {
@@ -136,12 +136,12 @@ export function SplitRevealHero({ properties, activeIndex, onSelect }: SliderPro
                   {format(s.base_price)}
                   <span className="text-[14px] font-light text-muted-foreground"> / night</span>
                 </p>
-                <Link
-                  to={`/properties/${s.slug}`}
-                  className="inline-block mt-7 px-9 py-3.5 border border-accent text-accent font-sans text-[13px] tracking-[0.15em] uppercase hover:bg-accent hover:text-accent-foreground transition-colors"
+                <button
+                  onClick={() => onSelect(i)}
+                  className="inline-block mt-7 px-9 py-3.5 border border-accent text-accent font-sans text-[13px] tracking-[0.15em] uppercase hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
                 >
                   View Villa
-                </Link>
+                </button>
               </div>
             </div>
           </div>

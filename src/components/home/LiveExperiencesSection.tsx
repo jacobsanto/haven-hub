@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useActiveExperiences } from '@/hooks/useExperiences';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { usePageContent } from '@/hooks/usePageContent';
@@ -35,7 +35,7 @@ export function LiveExperiencesSection() {
       badge: exp.category,
       location: exp.duration || undefined,
       meta: exp.price_from ? format(exp.price_from) : undefined,
-      link: `/experiences/${exp.slug}`,
+      link: `/experiences`,
     })),
     [featured, format]
   );
@@ -76,7 +76,7 @@ export function LiveExperiencesSection() {
             {featured!.map((exp) => (
               <Link
                 key={exp.id}
-                to={`/experiences/${exp.slug}`}
+                to="/experiences"
                 className="block group bg-card border border-border rounded-[14px] overflow-hidden hover:border-accent/40 hover:-translate-y-1 transition-all"
               >
                 <div className="p-7">

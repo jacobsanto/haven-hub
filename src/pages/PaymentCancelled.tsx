@@ -39,9 +39,9 @@ export default function PaymentCancelled() {
               </Button>
               {propertySlug ? (
                 <Button asChild className="flex-1">
-                  <Link to={`/properties/${propertySlug}`}>
+                  <Link to="/properties">
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Return to Property
+                    Browse Properties
                   </Link>
                 </Button>
               ) : (

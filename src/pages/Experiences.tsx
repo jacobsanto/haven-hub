@@ -86,10 +86,8 @@ function ExperienceModal({ experience, onClose, formatPrice }: { experience: any
           )}
 
           <div className="flex gap-3">
-            <Link to={`/experiences/${experience.slug}`} className="flex-1">
-              <Button variant="outline" className="w-full rounded-full">View Details</Button>
-            </Link>
-            <Link to={`/experiences/${experience.slug}#enquiry`} className="flex-1">
+            <Button variant="outline" className="flex-1 rounded-full" onClick={onClose}>Close</Button>
+            <Link to="/contact" className="flex-1">
               <Button variant="gold" className="w-full rounded-full gap-2">Enquire Now <ArrowRight className="h-4 w-4" /></Button>
             </Link>
           </div>

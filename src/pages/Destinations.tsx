@@ -95,9 +95,7 @@ function DestinationModal({ destination, propertyCount, onClose }: { destination
           )}
 
           <div className="flex gap-3">
-            <Link to={`/destinations/${destination.slug}`} className="flex-1">
-              <Button variant="outline" className="w-full rounded-full">Explore Destination</Button>
-            </Link>
+            <Button variant="outline" className="flex-1 rounded-full" onClick={onClose}>Close</Button>
             <Link to={`/properties?destination=${destination.slug}`} className="flex-1">
               <Button variant="gold" className="w-full rounded-full gap-2">View Villas <ArrowRight className="h-4 w-4" /></Button>
             </Link>
@@ -258,9 +256,9 @@ const Destinations = () => {
                         <Button variant="outline" className="rounded-full" onClick={() => setSelectedDest(dest)}>
                           Quick View
                         </Button>
-                        <Link to={`/destinations/${dest.slug}`}>
+                        <Link to={`/properties?destination=${dest.slug}`}>
                           <Button variant="gold" className="rounded-full gap-2">
-                            Explore <ArrowRight className="h-4 w-4" />
+                            View Villas <ArrowRight className="h-4 w-4" />
                           </Button>
                         </Link>
                       </div>

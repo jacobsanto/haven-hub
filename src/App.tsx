@@ -14,7 +14,7 @@ import Index from "./pages/Index";
 
 // Lazy-loaded public pages
 const Properties = React.lazy(() => import("./pages/Properties"));
-const PropertyDetail = React.lazy(() => import("./pages/PropertyDetail"));
+
 const BookingConfirm = React.lazy(() => import("./pages/BookingConfirm"));
 const Checkout = React.lazy(() => import("./pages/Checkout"));
 const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
@@ -26,9 +26,7 @@ const Contact = React.lazy(() => import("./pages/Contact"));
 const Privacy = React.lazy(() => import("./pages/Privacy"));
 const Terms = React.lazy(() => import("./pages/Terms"));
 const Destinations = React.lazy(() => import("./pages/Destinations"));
-const DestinationDetail = React.lazy(() => import("./pages/DestinationDetail"));
 const Experiences = React.lazy(() => import("./pages/Experiences"));
-const ExperienceDetail = React.lazy(() => import("./pages/ExperienceDetail"));
 const Blog = React.lazy(() => import("./pages/Blog"));
 const BlogPost = React.lazy(() => import("./pages/BlogPost"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
@@ -94,7 +92,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/properties" element={<Properties />} />
-                <Route path="/properties/:slug" element={<PropertyDetail />} />
+                
                 <Route path="/booking/confirm" element={<BookingConfirm />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
@@ -106,9 +104,7 @@ const App = () => (
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/destinations" element={<Destinations />} />
-                <Route path="/destinations/:slug" element={<DestinationDetail />} />
                 <Route path="/experiences" element={<Experiences />} />
-                <Route path="/experiences/:slug" element={<ExperienceDetail />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
