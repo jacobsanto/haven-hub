@@ -131,7 +131,7 @@ function ParallaxDepthSection({ items, activeIndex }: VariantProps) {
               {item.location && <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3">{item.location}</p>}
               <h3 className="font-serif text-[clamp(28px,4vw,48px)] font-semibold text-foreground leading-[1.1] mb-2">{item.title}</h3>
               {item.subtitle && <p className="font-serif text-base italic text-muted-foreground">{item.subtitle}</p>}
-              {item.meta && <p className="font-sans text-xl font-bold text-accent mt-4">{item.meta}</p>}
+              
               {item.badge && <span className="inline-block mt-3 px-3 py-1 rounded-full bg-accent/15 text-accent text-xs font-medium">{item.badge}</span>}
             </Link>
           </div>
@@ -171,7 +171,7 @@ function SplitRevealSection({ items, activeIndex }: VariantProps) {
                 <h3 className="font-serif text-[clamp(24px,3vw,40px)] font-semibold text-foreground leading-[1.15] mb-3">{item.title}</h3>
                 {item.subtitle && <p className="font-serif text-[15px] italic text-muted-foreground mb-5">{item.subtitle}</p>}
                 {item.extra && <p className="text-[13px] text-muted-foreground mb-5">{item.extra}</p>}
-                {item.meta && <p className="font-sans text-2xl font-bold text-accent">{item.meta}</p>}
+                
                 <span className="inline-block mt-5 px-7 py-3 border border-accent text-accent font-sans text-[12px] tracking-[0.15em] uppercase hover:bg-accent hover:text-accent-foreground transition-colors">
                   View Details
                 </span>
@@ -221,7 +221,7 @@ function MorphTilesSection({ items, activeIndex, onSelect }: VariantProps) {
                     {item.location && <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3 animate-[fadeUp_0.6s_0.4s_forwards] opacity-0">{item.location}</p>}
                     <h3 className="font-serif text-[clamp(26px,3.5vw,44px)] font-semibold text-foreground leading-[1.1] mb-2 animate-[fadeUp_0.6s_0.5s_forwards] opacity-0">{item.title}</h3>
                     {item.subtitle && <p className="font-serif text-[15px] italic text-muted-foreground animate-[fadeUp_0.6s_0.6s_forwards] opacity-0">{item.subtitle}</p>}
-                    {item.meta && <p className="font-sans text-xl font-bold text-accent mt-3 animate-[fadeUp_0.6s_0.7s_forwards] opacity-0">{item.meta}</p>}
+                    
                   </Link>
                 )}
               </div>
@@ -297,7 +297,7 @@ function VerticalCurtainSection({ items, activeIndex, onSelect }: VariantProps) 
               {item.location && <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3">{item.location}</p>}
               <h3 className="font-serif text-[clamp(28px,4vw,48px)] font-semibold text-foreground leading-[1.1] mb-2">{item.title}</h3>
               {item.subtitle && <p className="font-serif text-base italic text-muted-foreground">{item.subtitle}</p>}
-              {item.meta && <p className="font-sans text-xl font-bold text-accent mt-3">{item.meta}</p>}
+              
             </Link>
           </div>
         );
@@ -349,7 +349,6 @@ function CardDeckSection({ items, activeIndex, onSelect }: VariantProps) {
               {item.location && <p className="text-muted-foreground text-xs tracking-[3px] font-sans font-light uppercase mb-4">{item.location}</p>}
               <h3 className="font-serif text-[clamp(28px,5vw,52px)] font-normal text-foreground leading-[1.1] mb-4">{item.title}</h3>
               {item.subtitle && <p className="text-muted-foreground text-sm leading-relaxed max-w-[360px] font-sans font-light mb-4">{item.subtitle}</p>}
-              {item.meta && <p className="font-sans text-lg font-semibold text-foreground">{item.meta}</p>}
               <div className="w-[50px] h-[2px] rounded-sm opacity-80 mt-4" style={{ background: palette.color }} />
             </Link>
           );
@@ -384,11 +383,6 @@ function CardDeckSection({ items, activeIndex, onSelect }: VariantProps) {
                   <div style={{ opacity: isActive ? 1 : 0, transform: isActive ? 'translateY(0)' : 'translateY(20px)', transition: prefersReduced ? 'none' : 'all 0.8s ease-out 0.2s' }}>
                     <h4 className="font-serif text-2xl font-normal text-foreground mb-1">{item.title}</h4>
                     {item.extra && <p className="text-muted-foreground text-xs tracking-[1px] font-light uppercase">{item.extra}</p>}
-                    {item.meta && (
-                      <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${palette.color}30` }}>
-                        <p className="text-foreground font-sans font-semibold text-base">{item.meta}</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -430,7 +424,7 @@ function BrightMinimalistSection({ items, activeIndex, onSelect }: VariantProps)
                   {item.location && <p className="text-muted-foreground text-xs tracking-[3px] font-sans font-light uppercase">{item.location}</p>}
                   <h3 className="font-serif text-[clamp(28px,5vw,52px)] font-normal text-foreground leading-[1.1]">{item.title}</h3>
                   {item.subtitle && <p className="text-muted-foreground text-sm leading-relaxed max-w-[360px] font-sans font-light">{item.subtitle}</p>}
-                  {item.meta && <p className="font-sans text-lg font-semibold text-foreground">{item.meta}</p>}
+                  
                   <div className="w-[50px] h-[2px] rounded-sm opacity-80" style={{ background: palette.color }} />
                   <span className="inline-flex items-center gap-2 text-foreground text-sm uppercase tracking-[2px] font-sans hover:opacity-70 transition-opacity">View Details →</span>
                 </div>
@@ -466,11 +460,6 @@ function BrightMinimalistSection({ items, activeIndex, onSelect }: VariantProps)
                     </div>
                     <div style={{ opacity: isActive ? 1 : 0, transform: isActive ? 'translateY(0)' : 'translateY(20px)', transition: prefersReduced ? 'none' : 'all 0.8s ease-out 0.2s' }}>
                       <h4 className="font-serif text-2xl font-normal text-foreground mb-1">{item.title}</h4>
-                      {item.meta && (
-                        <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${palette.color}30` }}>
-                          <p className="text-foreground font-sans font-semibold text-base">{item.meta}</p>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
