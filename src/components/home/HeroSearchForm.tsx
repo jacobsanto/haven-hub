@@ -37,9 +37,9 @@ export function HeroSearchForm() {
                 type="button"
                 className={cn(
                   "flex-1 flex items-center gap-2 px-3 py-2 rounded-full bg-foreground/5 text-xs text-left focus:outline-none focus:ring-1 focus:ring-foreground/20",
-                  checkIn ? "text-foreground" : "text-foreground/50"
+                  checkIn ? "text-primary-foreground" : "text-primary-foreground/70"
                 )}>
-                <Calendar className="w-4 h-4 shrink-0 text-destructive-foreground" />
+                <Calendar className="w-4 h-4 shrink-0 text-primary-foreground" />
                 {checkIn ? format(checkIn, 'MMM d, yyyy') : 'Check In'}
               </button>
             </PopoverTrigger>
