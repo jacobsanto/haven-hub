@@ -27,8 +27,7 @@ export function SearchBarOverlay() {
     <section className="relative z-10 px-4 md:px-[5%] bg-background">
       <form
         onSubmit={handleSearch}
-        className="max-w-[900px] mx-auto -mt-9 relative bg-card border border-border rounded-[14px] p-1.5 grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-px"
-        style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}
+        className="max-w-[900px] mx-auto -mt-9 relative bg-card border border-border rounded-[14px] p-1.5 grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-px shadow-[0_20px_60px_hsl(var(--foreground)/0.15)]"
       >
         {/* Destination */}
         <div className="p-3.5 md:border-r md:border-border">

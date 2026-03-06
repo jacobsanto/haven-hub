@@ -15,7 +15,7 @@ export function FeaturedVacationSection() {
   if (!isLoading && (!featured || featured.length === 0)) return null;
 
   return (
-    <section className="bg-muted border-t border-b border-border py-20 md:py-24">
+    <section className="bg-background py-20 md:py-24">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <motion.div
@@ -66,7 +66,7 @@ export function FeaturedVacationSection() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
                     <div className="absolute bottom-5 left-5 right-5">
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-2">
+                      <div className="flex items-center gap-1.5 text-foreground/80 text-xs mb-2">
                         <MapPin className="w-3 h-3 text-accent" />
                         {property.city}, {property.country}
                       </div>
