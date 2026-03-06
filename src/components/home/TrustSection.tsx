@@ -25,29 +25,5 @@ export function TrustSection() {
     desc: content[`badge_${i}_description` as keyof typeof content] as string
   }));
 
-  return;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return null;
 }
