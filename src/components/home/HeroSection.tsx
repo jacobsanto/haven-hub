@@ -191,7 +191,7 @@ export function HeroSection() {
                         <div className="w-14 h-px bg-accent/70 mt-6" />
                         <Link
                         to={`/properties/${active.slug}`}
-                        className="inline-flex items-center gap-2 mt-6 text-muted-foreground text-sm uppercase tracking-[2px] font-sans hover:text-foreground transition-colors group">
+                        className="inline-flex items-center gap-2 mt-6 text-primary-foreground text-sm uppercase tracking-[2px] font-sans hover:text-primary-foreground/80 transition-colors group">
                         
                           Explore Stay
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
