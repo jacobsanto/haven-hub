@@ -36,12 +36,24 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
       <div onClick={() => openBooking({ mode: 'direct', property })} className="cursor-pointer">
         <div className="bg-card border border-border rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
           {/* Image */}
-          <div className="relative aspect-[4/3] overflow-hidden">
+          <div className="relative aspect-[4/3] overflow-hidden group/img">
             <img
               src={property.hero_image_url || '/placeholder.svg'}
               alt={property.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
+            {/* Instant Book overlay */}
+            {property.instant_booking && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[4]">
+                <button
+                  onClick={handleBookNow}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
+                >
+                  <Zap className="h-4 w-4 fill-current" />
+                  Instant Book
+                </button>
+              </div>
+            )}
             {specialOffer && (
               <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-medium">
                 {specialOffer.discount_percent}% off
