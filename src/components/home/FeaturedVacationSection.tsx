@@ -73,7 +73,7 @@ export function FeaturedVacationSection() {
                       <h3 className="text-foreground font-serif text-xl font-medium mb-2">
                         {property.display_name || property.name}
                       </h3>
-                      <span className="inline-block px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm text-foreground text-sm">
+                      <span className="inline-block px-3 py-1 rounded-full bg-foreground/10 backdrop-blur-sm text-foreground text-sm">
                         Starting from {format(property.base_price)}
                       </span>
                     </div>
