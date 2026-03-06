@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useBooking } from '@/contexts/BookingContext';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
@@ -21,6 +22,7 @@ export default function Properties() {
 
   // Filter state
   const [search, setSearch] = useState('');
+  const { openBooking } = useBooking();
   const [selectedDestination, setSelectedDestination] = useState('');
   const [priceRange, setPriceRange] = useState('any');
   const [guestFilter, setGuestFilter] = useState(0);
@@ -209,6 +211,7 @@ export default function Properties() {
                   onClick={setSelectedProperty}
                   isFavorite={favorites.has(p.id)}
                   onToggleFavorite={toggleFav}
+                  onInstantBook={(prop) => openBooking({ mode: 'direct', property: prop })}
                 />
               ))}
             </div>

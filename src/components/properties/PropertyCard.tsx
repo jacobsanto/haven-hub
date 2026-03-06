@@ -70,7 +70,7 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
       <div onClick={() => openBooking({ mode: 'direct', property })} className="group block cursor-pointer">
         <div className="card-organic overflow-hidden hover-lift">
           {/* Image */}
-          <div className="aspect-[4/3] overflow-hidden relative">
+          <div className="aspect-[4/3] overflow-hidden relative group/img">
             {property.hero_image_url ? (
               <img
                 src={property.hero_image_url}
@@ -80,6 +80,19 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
             ) : (
               <div className="w-full h-full bg-muted flex items-center justify-center">
                 <span className="text-muted-foreground">No image</span>
+              </div>
+            )}
+
+            {/* Instant Book overlay */}
+            {property.instant_booking && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[4]">
+                <button
+                  onClick={handleBookNow}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium text-sm shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
+                >
+                  <Zap className="h-4 w-4 fill-current" />
+                  Instant Book
+                </button>
               </div>
             )}
             
