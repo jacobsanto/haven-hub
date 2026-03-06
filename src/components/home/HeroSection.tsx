@@ -147,7 +147,8 @@ export function HeroSection() {
               style={{ backgroundImage: `url(${active.hero_image_url})` }}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/15 to-background/40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/20 to-background/50" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-transparent" />
 
           {!prefersReduced && (
             <div

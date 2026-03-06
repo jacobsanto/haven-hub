@@ -21,7 +21,7 @@ export function DiscoverVillasSection() {
   const { openBooking } = useBooking();
 
   return (
-    <section className="bg-background py-20 md:py-24">
+    <section className="bg-muted border-t border-border py-20 md:py-24">
       <div className="container mx-auto px-4">
         {/* Header */}
         <motion.div
