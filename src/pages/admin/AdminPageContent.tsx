@@ -25,7 +25,7 @@ import { ImageUploadWithOptimizer } from '@/components/admin/ImageUploadWithOpti
 import { IconPicker, AMENITY_ICONS } from '@/components/admin/IconPicker';
 import { IMAGE_PRESETS } from '@/utils/image-optimizer';
 import { useIconSuggestion } from '@/hooks/useIconSuggestion';
-import { Save, RotateCcw, ChevronDown, FileText, Image, Eye, EyeOff, Sparkles, Palette, LayoutGrid, LayoutList, Star, Play, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { Save, RotateCcw, ChevronDown, FileText, Image, Eye, EyeOff, Sparkles, Palette, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 
 // Section health indicator
 function SectionHealth({ fields, formValues, sectionKey }: { fields: ContentField[]; formValues: Record<string, string>; sectionKey: string }) {
