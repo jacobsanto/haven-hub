@@ -21,12 +21,14 @@ interface CardDeckProps {
 
 export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHover }: CardDeckProps) {
   const prefersReduced = useReducedMotion();
+  // Front card shows a different property than the featured one (offset by 1)
+  const cardFrontIndex = (activeIndex + 1) % properties.length;
 
   return (
     <div className="relative w-[380px] h-[480px] lg:w-[420px] lg:h-[530px]">
       {properties.map((property, idx) => {
-        const offset = idx - activeIndex;
-        const isActive = idx === activeIndex;
+        const offset = idx - cardFrontIndex;
+        const isActive = idx === cardFrontIndex;
         const isHovered = hoveredIndex === idx;
 
         const translateY = isActive ? 0 : offset * CARD_SPACING;
