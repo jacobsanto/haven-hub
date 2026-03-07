@@ -92,9 +92,9 @@ const About = () => {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-background/70 mb-4">About Us</p>
             <h1 className="text-4xl md:text-6xl font-serif font-medium text-background mb-4">
-              {heroContent.heading}
+              {r(heroContent.heading)}
             </h1>
-            <p className="text-lg text-background/80 max-w-xl mx-auto">{heroContent.subtitle}</p>
+            <p className="text-lg text-background/80 max-w-xl mx-auto">{r(heroContent.subtitle)}</p>
           </motion.div>
         </div>
       </section>
