@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 import { Search, X, ChevronLeft, ChevronRight, BookOpen, Clock, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -74,19 +75,20 @@ export default function Blog() {
             <img
               src={featuredPost.featured_image_url || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80'}
               alt={featuredPost.title}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+              className="absolute inset-0 w-full h-full object-cover blur-sm scale-105 group-hover:scale-110 transition-transform duration-1000"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
+            <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
+            <GrainOverlay />
+            <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
               <div className="max-w-3xl">
                 <div className="flex items-center gap-3 mb-4">
                   {featuredPost.category && (
-                    <span className="text-[10px] font-bold uppercase tracking-widest bg-accent/90 text-background px-2.5 py-1 rounded">{featuredPost.category.name}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest bg-accent/90 text-accent-foreground px-2.5 py-1 rounded">{featuredPost.category.name}</span>
                   )}
-                  <span className="text-xs text-background/60">{readTime(featuredPost.content)}</span>
+                  <span className="text-xs text-muted-foreground">{readTime(featuredPost.content)}</span>
                 </div>
-                <h1 className="text-3xl md:text-5xl font-serif font-medium text-background mb-4 leading-tight">{featuredPost.title}</h1>
-                {featuredPost.excerpt && <p className="text-background/70 text-lg max-w-2xl line-clamp-2 mb-4">{featuredPost.excerpt}</p>}
+                <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4 leading-tight">{featuredPost.title}</h1>
+                {featuredPost.excerpt && <p className="text-muted-foreground text-lg max-w-2xl line-clamp-2 mb-4">{featuredPost.excerpt}</p>}
                 <div className="flex items-center gap-3">
                   {featuredPost.author && (
                     <>
@@ -94,10 +96,10 @@ export default function Blog() {
                         <AvatarImage src={featuredPost.author.avatar_url || undefined} />
                         <AvatarFallback className="text-xs">{featuredPost.author.name?.[0]}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-background/80">{featuredPost.author.name}</span>
+                      <span className="text-sm text-foreground/80">{featuredPost.author.name}</span>
                     </>
                   )}
-                  {featuredPost.published_at && <span className="text-sm text-background/50">· {format(new Date(featuredPost.published_at), 'MMM d, yyyy')}</span>}
+                  {featuredPost.published_at && <span className="text-sm text-muted-foreground">· {format(new Date(featuredPost.published_at), 'MMM d, yyyy')}</span>}
                 </div>
               </div>
             </div>
