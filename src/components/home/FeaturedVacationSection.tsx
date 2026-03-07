@@ -61,7 +61,7 @@ export function FeaturedVacationSection() {
               <Palmtree className="w-5 h-5 text-accent" />
               <span className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase">Featured Vacations</span>
             </div>
-            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-semibold text-foreground leading-tight max-w-md">
+            <h2 className="font-serif text-[clamp(28px,3.5vw,44px)] font-medium text-foreground leading-tight max-w-md">
               Exceptional Properties for Your Next Escape
             </h2>
           </motion.div>
