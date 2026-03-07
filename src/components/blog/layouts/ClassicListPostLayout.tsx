@@ -75,7 +75,7 @@ export function ClassicListPostLayout({ post, readTime, publishedDate, author, r
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Jump to</p>
                 {headings.filter(h => h.level === 2).map((h, i) => (
                   <a key={h.id} href={`#${h.id}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors py-1">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">{i + 1}</span>
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0">{i + 1}</span>
                     <span className="line-clamp-1">{h.text}</span>
                   </a>
                 ))}
