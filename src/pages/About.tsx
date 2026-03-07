@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
+import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 import { Link } from 'react-router-dom';
 import { Heart, Shield, Sparkles, ArrowRight, Star, Mail, Phone, Headphones, MapPin, Users, Home, Globe, Award, CheckCircle } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
