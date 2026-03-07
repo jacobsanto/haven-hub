@@ -129,15 +129,15 @@ const Experiences = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
         <GrainOverlay />
         <div className="container mx-auto px-4 relative z-10 text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Curated Experiences</p>
-            <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">
-              Unforgettable <em className="italic text-accent">Moments</em>
-            </h1>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              From culinary journeys to cultural immersions, each experience is designed to create lasting memories.
-            </p>
-          </motion.div>
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-4">
+            Curated Experiences
+          </motion.p>
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="font-serif text-[clamp(36px,5vw,60px)] font-bold text-foreground leading-[1.05] mb-3">
+            Unforgettable <em className="font-normal text-primary italic">Moments</em>
+          </motion.h1>
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="font-sans text-[15px] text-foreground/80 max-w-[520px] mx-auto leading-relaxed">
+            From culinary journeys to cultural immersions, each experience is designed to create lasting memories.
+          </motion.p>
         </div>
       </section>
 

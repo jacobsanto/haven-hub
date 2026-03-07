@@ -91,13 +91,15 @@ const About = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
         <GrainOverlay />
         <div className="container mx-auto px-4 relative z-10 h-full flex flex-col items-center justify-center text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">About Us</p>
-            <h1 className="text-4xl md:text-6xl font-serif font-medium text-foreground mb-4">
-              {r(heroContent.heading)}
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">{r(heroContent.subtitle)}</p>
-          </motion.div>
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-4">
+            About Us
+          </motion.p>
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="font-serif text-[clamp(36px,5vw,60px)] font-bold text-foreground leading-[1.05] mb-3">
+            {r(heroContent.heading)}
+          </motion.h1>
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="font-sans text-[15px] text-foreground/80 max-w-[520px] mx-auto leading-relaxed">
+            {r(heroContent.subtitle)}
+          </motion.p>
         </div>
       </section>
 
