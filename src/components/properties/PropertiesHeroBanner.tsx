@@ -29,7 +29,7 @@ export function PropertiesHeroBanner({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-4"
+          className="font-sans text-[11px] tracking-[0.3em] text-foreground uppercase mb-4"
         >
           Our Collection
         </motion.p>
@@ -47,7 +47,7 @@ export function PropertiesHeroBanner({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="font-sans text-[15px] text-muted-foreground max-w-[520px] mx-auto leading-relaxed"
+          className="font-sans text-[15px] text-foreground/80 max-w-[520px] mx-auto leading-relaxed"
         >
           Every villa personally inspected. Every detail considered. Find your perfect escape among {totalVillas} extraordinary properties.
         </motion.p>
@@ -60,17 +60,17 @@ export function PropertiesHeroBanner({
         >
           <div className="text-center">
             <p className="font-serif text-[28px] font-bold text-accent">{totalVillas}</p>
-            <p className="font-sans text-[11px] text-muted-foreground/80 tracking-[0.1em] uppercase">Villas</p>
+            <p className="font-sans text-[11px] text-foreground/70 tracking-[0.1em] uppercase">Villas</p>
           </div>
           <div className="w-px bg-border/50" />
           <div className="text-center">
             <p className="font-serif text-[28px] font-bold text-accent">{destinationsCount}</p>
-            <p className="font-sans text-[11px] text-muted-foreground/80 tracking-[0.1em] uppercase">Destinations</p>
+            <p className="font-sans text-[11px] text-foreground/70 tracking-[0.1em] uppercase">Destinations</p>
           </div>
           <div className="w-px bg-border/50" />
           <div className="text-center">
             <p className="font-serif text-[28px] font-bold text-accent">{avgRating.toFixed(1)}</p>
-            <p className="font-sans text-[11px] text-muted-foreground/80 tracking-[0.1em] uppercase">Avg Rating</p>
+            <p className="font-sans text-[11px] text-foreground/70 tracking-[0.1em] uppercase">Avg Rating</p>
           </div>
         </motion.div>
       </div>
