@@ -130,7 +130,7 @@ const Experiences = () => {
         <GrainOverlay />
         <div className="container mx-auto px-4 relative z-10 text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Curated Experiences</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">Curated Experiences</p>
             <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">
               Unforgettable <em className="italic text-accent">Moments</em>
             </h1>
