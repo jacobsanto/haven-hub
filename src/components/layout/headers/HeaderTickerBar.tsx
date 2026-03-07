@@ -52,7 +52,7 @@ export function HeaderTickerBar() {
               {[...Array(2)].map((_, r) => (
                 <div key={r} className="flex gap-10">
                   {tickerMessages.map((t) => (
-                    <span key={t + r} className="text-[11px] font-bold text-accent-foreground flex items-center gap-2 px-5">
+                    <span key={t + r} className="text-[11px] font-medium text-accent-foreground flex items-center gap-2 px-5">
                       <Sparkles className="h-3 w-3" />{t}
                     </span>
                   ))}

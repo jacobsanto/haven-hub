@@ -39,9 +39,9 @@ export function FooterEditorial() {
       <div className="container mx-auto px-4 py-16">
         {/* Giant watermark */}
         <div className="relative mb-12">
-          <h2 className="font-serif text-[clamp(60px,9vw,140px)] font-bold leading-none tracking-tighter opacity-[0.06] select-none">{brandName.toUpperCase()}</h2>
-          <div className="absolute top-1/2 left-0 -translate-y-1/2 flex items-center gap-5">
-            {logoUrl ? <img src={logoUrl} alt={brandName} className="h-8 brightness-0 invert" /> : <span className="font-serif text-2xl font-bold">{primaryPart}<span className="text-accent">.</span></span>}
+           <h2 className="font-serif text-[clamp(60px,9vw,140px)] font-medium leading-none tracking-tighter opacity-[0.06] select-none">{brandName.toUpperCase()}</h2>
+           <div className="absolute top-1/2 left-0 -translate-y-1/2 flex items-center gap-5">
+            {logoUrl ? <img src={logoUrl} alt={brandName} className="h-8 brightness-0 invert" /> : <span className="font-serif text-2xl font-medium">{primaryPart}<span className="text-accent">.</span></span>}
             <div className="w-10 h-px bg-accent" />
             {brandTagline && <p className="font-serif text-sm italic text-background/50">{brandTagline}</p>}
           </div>

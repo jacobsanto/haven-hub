@@ -27,7 +27,7 @@ export function CTASection() {
         </p>
         <Link
           to="/properties"
-          className="inline-block px-11 py-4 bg-accent border-none text-accent-foreground font-sans text-[13px] font-bold tracking-[0.12em] uppercase rounded-md hover:bg-accent/80 transition-colors"
+          className="inline-block px-11 py-4 bg-accent border-none text-accent-foreground font-sans text-[13px] font-medium tracking-[0.12em] uppercase rounded-md hover:bg-accent/80 transition-colors"
         >
           Explore Villas
         </Link>

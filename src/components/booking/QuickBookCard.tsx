@@ -70,7 +70,7 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
                   <Star key={i} className="h-3.5 w-3.5 fill-accent text-accent" />
                 ))}
               </div>
-              <span className="text-accent font-bold text-lg">{priceInfo.display}<span className="text-xs font-normal text-muted-foreground">/night</span></span>
+              <span className="text-accent font-medium text-lg">{priceInfo.display}<span className="text-xs font-normal text-muted-foreground">/night</span></span>
             </div>
 
             {/* Location */}

@@ -49,7 +49,7 @@ function DestinationModal({ destination, propertyCount, onClose }: { destination
         <div className="p-6 md:p-8">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent mb-1">{destination.country}</p>
+              <p className="text-xs font-medium uppercase tracking-[0.15em] text-accent mb-1">{destination.country}</p>
               <h2 className="text-2xl font-serif font-medium text-foreground">{destination.name}</h2>
             </div>
             <div className="text-right">
@@ -86,7 +86,7 @@ function DestinationModal({ destination, propertyCount, onClose }: { destination
           {/* Highlights */}
           {destination.highlights?.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-foreground mb-3">Highlights</h3>
+              <h3 className="text-sm font-medium text-foreground mb-3">Highlights</h3>
               <div className="flex flex-wrap gap-2">
                 {destination.highlights.map((h: string, i: number) => (
                   <span key={i} className="text-xs bg-accent/10 text-accent px-3 py-1.5 rounded-full">{h}</span>
@@ -140,7 +140,7 @@ const Destinations = () => {
         <GrainOverlay />
         <div className="container mx-auto px-4 relative z-10 text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Explore</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">Explore</p>
             <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">
               {heroContent.heading}
             </h1>
@@ -149,17 +149,17 @@ const Destinations = () => {
             {/* Stats */}
             <div className="flex items-center justify-center gap-8 text-sm">
               <div className="text-center">
-                <p className="text-xl font-serif font-semibold text-foreground">{destinations?.length || 0}</p>
+                <p className="text-xl font-serif font-medium text-foreground">{destinations?.length || 0}</p>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Destinations</p>
               </div>
               <div className="w-px h-8 bg-border" />
               <div className="text-center">
-                <p className="text-xl font-serif font-semibold text-foreground">{totalVillas}</p>
+                <p className="text-xl font-serif font-medium text-foreground">{totalVillas}</p>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Villas</p>
               </div>
               <div className="w-px h-8 bg-border" />
               <div className="text-center">
-                <p className="text-xl font-serif font-semibold text-foreground">{avgRating}</p>
+                <p className="text-xl font-serif font-medium text-foreground">{avgRating}</p>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Avg Rating</p>
               </div>
             </div>
@@ -208,7 +208,6 @@ const Destinations = () => {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
                       </div>
-                      {/* Thumbnails */}
                       {galleryThumbs.length > 0 && (
                         <div className="absolute bottom-4 left-4 flex gap-2">
                           {galleryThumbs.map((thumb, ti) => (
@@ -218,7 +217,6 @@ const Destinations = () => {
                           ))}
                         </div>
                       )}
-                      {/* Villa count badge */}
                       <div className="absolute top-4 right-4 bg-background/70 backdrop-blur px-3 py-1.5 rounded-full">
                         <span className="text-xs font-medium text-foreground">{count} villa{count !== 1 ? 's' : ''}</span>
                       </div>
@@ -226,14 +224,13 @@ const Destinations = () => {
 
                     {/* Content */}
                     <div className={cn(!isEven && 'md:order-1')}>
-                      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent mb-2">
+                      <p className="text-xs font-medium uppercase tracking-[0.15em] text-accent mb-2">
                         <MapPin className="h-3 w-3 inline mr-1" />{dest.country}
                       </p>
                       <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-3">{dest.name}</h2>
                       {dest.description && (
                         <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-3">{dest.description}</p>
                       )}
-                      {/* Highlights */}
                       {dest.highlights && dest.highlights.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-6">
                           {dest.highlights.slice(0, 4).map((h: string, hi: number) => (
@@ -241,7 +238,6 @@ const Destinations = () => {
                           ))}
                         </div>
                       )}
-                      {/* Climate & Best Time */}
                       <div className="flex gap-4 mb-6 text-sm">
                         {dest.climate && (
                           <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -282,7 +278,7 @@ const Destinations = () => {
       {/* CTA */}
       <section className="py-16 bg-muted border-t border-border">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-3">Always Expanding</p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-3">Always Expanding</p>
           <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-4">
             Can't Find Your <em className="italic text-accent">Dream Destination?</em>
           </h2>

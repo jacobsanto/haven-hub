@@ -83,7 +83,7 @@ export function TestimonialsSection() {
                   {active.text}
                 </p>
                 <div className="w-10 h-px bg-accent mx-auto mb-5" />
-                <p className="font-sans text-sm font-bold text-foreground">{active.author}</p>
+                <p className="font-sans text-sm font-medium text-foreground">{active.author}</p>
                 <p className="font-sans text-xs text-muted-foreground">{active.location}</p>
               </motion.div>
             </AnimatePresence>

@@ -44,7 +44,7 @@ export function CollapsibleDescription({
       {shortDescription && (
         <p className={cn(
           'text-lg leading-relaxed font-serif text-foreground/90 mb-4',
-          dropCap && 'first-letter:text-5xl first-letter:font-serif first-letter:font-bold first-letter:text-primary first-letter:float-left first-letter:mr-2 first-letter:mt-1 first-letter:leading-none',
+          dropCap && 'first-letter:text-5xl first-letter:font-serif first-letter:font-medium first-letter:text-primary first-letter:float-left first-letter:mr-2 first-letter:mt-1 first-letter:leading-none',
         )}>
           {shortDescription}
         </p>

@@ -65,13 +65,13 @@ export function ParallaxDepthHero({ properties, activeIndex, onSelect }: SliderP
               <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3">
                 {s.city}, {s.country}
               </p>
-              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-semibold text-foreground leading-[1.1] mb-2">
+              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-medium text-foreground leading-[1.1] mb-2">
                 {s.display_name || s.name}
               </h2>
               <p className="font-serif text-lg italic text-muted-foreground">
                 {s.short_description || `Luxury villa in ${s.city}`}
               </p>
-              <p className="font-sans text-[22px] font-bold text-accent mt-5">
+              <p className="font-sans text-[22px] font-medium text-accent mt-5">
                 {format(s.base_price)}
                 <span className="text-[13px] font-light text-muted-foreground"> / night</span>
               </p>
@@ -122,7 +122,7 @@ export function SplitRevealHero({ properties, activeIndex, onSelect }: SliderPro
                 }}
               >
                 <p className="font-sans text-[11px] tracking-[0.25em] text-accent uppercase mb-4">{s.city}, {s.country}</p>
-                <h2 className="font-serif text-[clamp(32px,3.5vw,52px)] font-semibold text-foreground leading-[1.15] mb-3">
+                <h2 className="font-serif text-[clamp(32px,3.5vw,52px)] font-medium text-foreground leading-[1.15] mb-3">
                   {s.display_name || s.name}
                 </h2>
                 <p className="font-serif text-[17px] italic text-muted-foreground mb-7">
@@ -132,7 +132,7 @@ export function SplitRevealHero({ properties, activeIndex, onSelect }: SliderPro
                   <span><Users size={14} className="inline mr-1.5 align-middle" />{s.max_guests || 6} guests</span>
                   <span>{s.bedrooms || 3} bedrooms</span>
                 </div>
-                <p className="font-sans text-[28px] font-bold text-accent">
+                <p className="font-sans text-[28px] font-medium text-accent">
                   {format(s.base_price)}
                   <span className="text-[14px] font-light text-muted-foreground"> / night</span>
                 </p>
@@ -202,13 +202,13 @@ export function MorphTilesHero({ properties, activeIndex, onSelect }: SliderProp
                   <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3 animate-[fadeUp_0.6s_0.4s_forwards] opacity-0">
                     {s.city}, {s.country}
                   </p>
-                  <h2 className="font-serif text-[clamp(34px,4.5vw,60px)] font-semibold text-foreground leading-[1.1] mb-2 animate-[fadeUp_0.6s_0.5s_forwards] opacity-0">
+                  <h2 className="font-serif text-[clamp(34px,4.5vw,60px)] font-medium text-foreground leading-[1.1] mb-2 animate-[fadeUp_0.6s_0.5s_forwards] opacity-0">
                     {s.display_name || s.name}
                   </h2>
                   <p className="font-serif text-[17px] italic text-muted-foreground animate-[fadeUp_0.6s_0.6s_forwards] opacity-0">
                     {s.short_description || `Experience ${s.city}`}
                   </p>
-                  <p className="font-sans text-2xl font-bold text-accent mt-4 animate-[fadeUp_0.6s_0.7s_forwards] opacity-0">
+                  <p className="font-sans text-2xl font-medium text-accent mt-4 animate-[fadeUp_0.6s_0.7s_forwards] opacity-0">
                     {format(s.base_price)}
                     <span className="text-[13px] font-light text-muted-foreground"> / night</span>
                   </p>
@@ -262,14 +262,14 @@ export function CinematicHero({ properties, activeIndex, onSelect }: SliderProps
               }}
             >
               <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-5">{s.city}, {s.country}</p>
-              <h2 className="font-serif text-[clamp(40px,6vw,80px)] font-bold text-foreground leading-[1.05] mb-2.5">
+              <h2 className="font-serif text-[clamp(40px,6vw,80px)] font-medium text-foreground leading-[1.05] mb-2.5">
                 {s.display_name || s.name}
               </h2>
               <p className="font-serif text-xl italic text-muted-foreground mb-7">
                 {s.short_description || `Luxury living in ${s.city}`}
               </p>
               <div className="w-[60px] h-px bg-accent mb-7" />
-              <p className="font-sans text-[26px] font-bold text-accent">
+              <p className="font-sans text-[26px] font-medium text-accent">
                 {format(s.base_price)}
                 <span className="text-[14px] font-light text-muted-foreground"> / night</span>
               </p>
@@ -316,13 +316,13 @@ export function VerticalCurtainHero({ properties, activeIndex, onSelect }: Slide
               }}
             >
               <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3">{s.city}, {s.country}</p>
-              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-semibold text-foreground leading-[1.1] mb-2">
+              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-medium text-foreground leading-[1.1] mb-2">
                 {s.display_name || s.name}
               </h2>
               <p className="font-serif text-lg italic text-muted-foreground">
                 {s.short_description || `Discover ${s.city}`}
               </p>
-              <p className="font-sans text-2xl font-bold text-accent mt-4">
+              <p className="font-sans text-2xl font-medium text-accent mt-4">
                 {format(s.base_price)}
                 <span className="text-[13px] font-light text-muted-foreground"> / night</span>
               </p>

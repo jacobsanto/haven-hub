@@ -97,7 +97,7 @@ export function LiveExperiencesSection() {
                       </span>
                     )}
                     {exp.price_from && (
-                      <span className="font-sans text-base font-bold text-accent">
+                      <span className="font-sans text-base font-medium text-accent">
                         {format(exp.price_from)}
                       </span>
                     )}

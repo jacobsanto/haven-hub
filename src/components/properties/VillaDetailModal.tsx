@@ -137,11 +137,11 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
           {/* Badges */}
           <div className="absolute bottom-5 left-7 flex gap-2">
             {property.instant_booking && (
-              <span className="text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
+              <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
                 Instant Book
               </span>
             )}
-            <span className="text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
+            <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
               {property.property_type}
             </span>
           </div>
@@ -156,7 +156,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
                 <MapPin size={11} className="mr-1" />
                 {property.city}, {property.country}
               </p>
-              <h2 className="font-serif text-[32px] font-bold text-foreground leading-[1.1]">
+              <h2 className="font-serif text-[32px] font-medium text-foreground leading-[1.1]">
                 {property.display_name || property.name}
               </h2>
               {property.short_description && (
@@ -164,7 +164,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
               )}
             </div>
             <div className="text-right">
-              <p className="font-sans text-[32px] font-bold text-accent">{formatCurrency(property.base_price)}</p>
+              <p className="font-sans text-[32px] font-medium text-accent">{formatCurrency(property.base_price)}</p>
               <p className="font-sans text-xs text-muted-foreground/60">per night</p>
             </div>
           </div>
@@ -206,7 +206,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
               {property.highlights.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {property.highlights.slice(0, 6).map((h) => (
-                    <span key={h} className="text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
+                    <span key={h} className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
                       {h}
                     </span>
                   ))}

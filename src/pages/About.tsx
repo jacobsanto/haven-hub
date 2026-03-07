@@ -94,7 +94,7 @@ const About = () => {
         <GrainOverlay />
         <div className="container mx-auto px-4 relative z-10 text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">About Us</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">About Us</p>
             <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">
               {r(heroContent.heading)}
             </h1>
@@ -108,7 +108,7 @@ const About = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Our Story</p>
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">Our Story</p>
               <h2 className="text-2xl md:text-4xl font-serif font-medium text-foreground mb-6 leading-snug">
                 {r(storyContent.heading)}
               </h2>
@@ -124,7 +124,7 @@ const About = () => {
                   <Award className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <p className="text-xl font-serif font-semibold text-foreground">5 Years</p>
+                  <p className="text-xl font-serif font-medium text-foreground">5 Years</p>
                   <p className="text-xs text-muted-foreground">of curating exceptional stays</p>
                 </div>
               </div>
@@ -160,7 +160,7 @@ const About = () => {
             ].map((stat, i) => (
               <motion.div key={i} variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
                 <stat.icon className="h-5 w-5 text-accent mx-auto mb-2" />
-                <p className="text-2xl md:text-3xl font-serif font-semibold text-foreground">{stat.value}</p>
+                <p className="text-2xl md:text-3xl font-serif font-medium text-foreground">{stat.value}</p>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">{stat.label}</p>
               </motion.div>
             ))}
@@ -172,7 +172,7 @@ const About = () => {
       <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-3">What We Stand For</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-3">What We Stand For</p>
             <h2 className="text-2xl md:text-4xl font-serif font-medium text-foreground">{valuesContent.heading}</h2>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
@@ -201,7 +201,7 @@ const About = () => {
               />
             </motion.div>
             <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Quality Guarantee</p>
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">Quality Guarantee</p>
               <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-4">
                 Our 87-Point <em className="italic text-accent">Inspection</em>
               </h2>
@@ -225,7 +225,7 @@ const About = () => {
       <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-3">The People</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-3">The People</p>
             <h2 className="text-2xl md:text-4xl font-serif font-medium text-foreground">Meet the Team</h2>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
@@ -249,14 +249,14 @@ const About = () => {
       <section className="py-16 md:py-24 bg-muted">
         <div className="container mx-auto px-4 max-w-2xl">
           <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-3">Our Journey</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-3">Our Journey</p>
             <h2 className="text-2xl md:text-4xl font-serif font-medium text-foreground">Timeline</h2>
           </motion.div>
           <div className="relative border-l-2 border-border pl-8 space-y-10">
             {timeline.map((item, i) => (
               <motion.div key={i} variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce} className="relative">
                 <div className="absolute -left-[41px] top-1 w-4 h-4 rounded-full bg-accent border-4 border-muted" />
-                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent mb-1">{item.year}</p>
+                <p className="text-xs font-medium uppercase tracking-[0.15em] text-accent mb-1">{item.year}</p>
                 <h3 className="font-serif font-medium text-foreground mb-1">{item.title}</h3>
                 <p className="text-sm text-muted-foreground">{item.desc}</p>
               </motion.div>
@@ -270,7 +270,7 @@ const About = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
             <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Get in Touch</p>
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">Get in Touch</p>
               <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-6">
                 Talk to a <em className="italic text-accent">Human</em>
               </h2>

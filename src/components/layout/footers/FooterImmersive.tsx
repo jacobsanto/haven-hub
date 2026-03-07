@@ -26,11 +26,11 @@ export function FooterImmersive() {
       {/* CTA section */}
       <div className="relative z-10 py-20 text-center">
         <p className="text-xs uppercase tracking-[.3em] text-accent mb-4">Your next escape</p>
-        <h2 className="font-serif text-4xl md:text-6xl font-bold mb-4">
+        <h2 className="font-serif text-4xl md:text-6xl font-medium mb-4">
           Ready to <em className="font-normal text-accent">Escape?</em>
         </h2>
         <p className="text-sm text-background/60 max-w-md mx-auto mb-8">Your perfect villa is waiting.</p>
-        <Link to="/properties" className="inline-flex items-center gap-2 px-12 py-4 bg-accent text-accent-foreground rounded-full text-sm font-bold uppercase tracking-wider hover:opacity-90 transition-opacity">
+        <Link to="/properties" className="inline-flex items-center gap-2 px-12 py-4 bg-accent text-accent-foreground rounded-full text-sm font-medium uppercase tracking-wider hover:opacity-90 transition-opacity">
           Explore Villas <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
@@ -57,7 +57,7 @@ export function FooterImmersive() {
             {logoUrl ? (
               <img src={logoUrl} alt={brandName} className="h-8 w-auto object-contain brightness-0 invert mb-4" />
             ) : (
-              <h3 className="font-serif text-2xl font-bold text-background mb-4">
+              <h3 className="font-serif text-2xl font-medium text-background mb-4">
                 {primaryPart}<span className="text-accent">.</span>
               </h3>
             )}

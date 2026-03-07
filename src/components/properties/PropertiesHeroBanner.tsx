@@ -47,17 +47,17 @@ export function PropertiesHeroBanner({
           className="mt-7 flex justify-center gap-6"
         >
           <div className="text-center">
-            <p className="font-serif text-[28px] font-bold text-accent">{totalVillas}</p>
+            <p className="font-serif text-[28px] font-medium text-accent">{totalVillas}</p>
             <p className="font-sans text-[11px] text-foreground/70 tracking-[0.1em] uppercase">Villas</p>
           </div>
           <div className="w-px bg-border/50" />
           <div className="text-center">
-            <p className="font-serif text-[28px] font-bold text-accent">{destinationsCount}</p>
+            <p className="font-serif text-[28px] font-medium text-accent">{destinationsCount}</p>
             <p className="font-sans text-[11px] text-foreground/70 tracking-[0.1em] uppercase">Destinations</p>
           </div>
           <div className="w-px bg-border/50" />
           <div className="text-center">
-            <p className="font-serif text-[28px] font-bold text-accent">{avgRating.toFixed(1)}</p>
+            <p className="font-serif text-[28px] font-medium text-accent">{avgRating.toFixed(1)}</p>
             <p className="font-sans text-[11px] text-foreground/70 tracking-[0.1em] uppercase">Avg Rating</p>
           </div>
         </motion.div>

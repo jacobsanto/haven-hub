@@ -51,12 +51,12 @@ function ExperienceModal({ experience, onClose, formatPrice }: { experience: any
         <div className="p-6 md:p-8">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] bg-accent/10 text-accent px-2.5 py-1 rounded-full">{experience.category}</span>
+              <span className="text-xs font-medium uppercase tracking-[0.12em] bg-accent/10 text-accent px-2.5 py-1 rounded-full">{experience.category}</span>
               <h2 className="text-2xl font-serif font-medium text-foreground mt-3">{experience.name}</h2>
             </div>
             {experience.price_from && (
               <div className="text-right">
-                <p className="text-lg font-serif font-semibold text-accent">{formatPrice(experience.price_from)}</p>
+                <p className="text-lg font-serif font-medium text-accent">{formatPrice(experience.price_from)}</p>
                 <p className="text-xs text-muted-foreground">{experience.price_type || 'per person'}</p>
               </div>
             )}
@@ -74,7 +74,7 @@ function ExperienceModal({ experience, onClose, formatPrice }: { experience: any
           {/* Includes */}
           {experience.includes && experience.includes.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-foreground mb-3">What's Included</h3>
+              <h3 className="text-sm font-medium text-foreground mb-3">What's Included</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {experience.includes.map((item: string, i: number) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -130,7 +130,7 @@ const Experiences = () => {
         <GrainOverlay />
         <div className="container mx-auto px-4 relative z-10 text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Curated Experiences</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">Curated Experiences</p>
             <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">
               Unforgettable <em className="italic text-accent">Moments</em>
             </h1>
@@ -195,11 +195,11 @@ const Experiences = () => {
                     <img src={exp.hero_image_url || heroImg} alt={exp.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 via-transparent to-transparent" />
                     {/* Category badge */}
-                    <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest bg-accent/90 text-background px-2.5 py-1 rounded">{exp.category}</span>
+                    <span className="absolute top-3 left-3 text-[10px] font-medium uppercase tracking-widest bg-accent/90 text-background px-2.5 py-1 rounded">{exp.category}</span>
                     {/* Price pill */}
                     {exp.price_from && (
                       <div className="absolute bottom-3 right-3 bg-background/70 backdrop-blur px-3 py-1.5 rounded-full">
-                        <span className="text-sm font-semibold text-foreground">{formatPrice(exp.price_from)}</span>
+                        <span className="text-sm font-medium text-foreground">{formatPrice(exp.price_from)}</span>
                       </div>
                     )}
                   </div>

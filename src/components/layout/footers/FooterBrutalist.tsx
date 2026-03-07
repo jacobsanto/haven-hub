@@ -35,7 +35,7 @@ export function FooterBrutalist() {
           {/* Brand */}
           <div className="p-6 border-b md:border-b-0 md:border-r border-background/20">
             <p className="font-mono text-[9px] uppercase tracking-widest text-accent mb-4">[BRAND]</p>
-            <div className="font-mono text-2xl font-bold text-background mb-2">{brandName}</div>
+            <div className="font-mono text-2xl font-medium text-background mb-2">{brandName}</div>
             <p className="font-mono text-xs text-background/40">STATUS: OPERATIONAL</p>
             <p className="font-mono text-xs text-background/40">UPTIME: 99.9%</p>
           </div>

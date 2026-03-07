@@ -150,7 +150,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
         <Separator />
         <div className="flex justify-between items-baseline">
           <span className="font-semibold text-foreground">Total</span>
-          <span className="text-xl font-bold font-serif text-foreground">{totalFormatted.display}</span>
+          <span className="text-xl font-medium font-serif text-foreground">{totalFormatted.display}</span>
         </div>
         {totalFormatted.isConverted && (
           <div className="text-xs text-muted-foreground text-right">
@@ -197,7 +197,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
           <div className="flex items-baseline gap-2">
             {specialOffer && discountedNightly ? (
               <>
-                <span className="text-2xl font-bold font-serif text-foreground">
+               <span className="text-2xl font-medium font-serif text-foreground">
                   {discountedNightly.display}
                 </span>
                 <span className="text-base text-muted-foreground line-through">
@@ -205,7 +205,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
                 </span>
               </>
             ) : (
-              <span className="text-2xl font-bold font-serif text-foreground">
+              <span className="text-2xl font-medium font-serif text-foreground">
                 {basePriceFormatted.display}
               </span>
             )}

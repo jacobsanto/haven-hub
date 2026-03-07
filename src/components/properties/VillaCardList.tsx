@@ -43,7 +43,7 @@ export function VillaCardList({ property, index, onClick, isFavorite, onToggleFa
 
         <div className="absolute top-3.5 left-3.5 flex gap-1.5">
           {property.instant_booking && (
-            <span className="text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
+            <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
               Instant
             </span>
           )}
@@ -92,7 +92,7 @@ export function VillaCardList({ property, index, onClick, isFavorite, onToggleFa
             {property.area_sqm && <span>{property.area_sqm}m²</span>}
           </div>
           <div>
-            <span className="font-sans text-[22px] font-bold text-accent">{formatCurrency(property.base_price)}</span>
+            <span className="font-sans text-[22px] font-medium text-accent">{formatCurrency(property.base_price)}</span>
             <span className="font-sans text-xs text-muted-foreground/60"> / night</span>
           </div>
         </div>

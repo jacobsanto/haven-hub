@@ -19,7 +19,7 @@ export function FooterKinetic() {
       <div className="py-3 border-b border-background/10 overflow-hidden">
         <div className="flex animate-[marquee_25s_linear_infinite] whitespace-nowrap w-max">
           {[...Array(4)].map((_, i) => (
-            <span key={i} className="font-serif text-4xl md:text-6xl font-bold tracking-tighter text-background/[0.06] mx-4">{tickerText}</span>
+            <span key={i} className="font-serif text-4xl md:text-6xl font-medium tracking-tighter text-background/[0.06] mx-4">{tickerText}</span>
           ))}
         </div>
       </div>
@@ -37,7 +37,7 @@ export function FooterKinetic() {
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="md:col-span-2">
-            <div className="font-serif text-4xl font-bold text-background mb-4">{primaryPart}<span className="text-accent">.</span></div>
+            <div className="font-serif text-4xl font-medium text-background mb-4">{primaryPart}<span className="text-accent">.</span></div>
             {brandTagline && <p className="text-sm text-background/50 max-w-xs">{brandTagline}</p>}
           </div>
 
