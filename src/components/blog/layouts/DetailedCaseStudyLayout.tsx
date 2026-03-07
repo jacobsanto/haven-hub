@@ -46,6 +46,7 @@ export function DetailedCaseStudyLayout({ post, readTime, publishedDate, author,
           <div className="w-full h-full bg-gradient-to-br from-rose-500/20 to-primary/10" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <GrainOverlay />
         <div className="absolute top-4 left-4 z-10">
           <Link to="/blog" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to Blog
