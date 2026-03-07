@@ -16,6 +16,8 @@ interface BrandContextValue {
   socialFacebook: string | null;
   socialTwitter: string | null;
   socialYoutube: string | null;
+  headerStyle: string;
+  footerStyle: string;
 }
 
 const BrandContext = createContext<BrandContextValue | undefined>(undefined);
@@ -242,6 +244,8 @@ export function BrandProvider({ children }: { children: ReactNode }) {
     socialFacebook: settings?.social_facebook ?? null,
     socialTwitter: settings?.social_twitter ?? null,
     socialYoutube: settings?.social_youtube ?? null,
+    headerStyle: (settings as any)?.header_style ?? 'default',
+    footerStyle: (settings as any)?.footer_style ?? 'default',
   };
 
   return (
@@ -273,6 +277,8 @@ export function useBrand() {
       socialFacebook: null,
       socialTwitter: null,
       socialYoutube: null,
+      headerStyle: 'default',
+      footerStyle: 'default',
     };
   }
   return context;
