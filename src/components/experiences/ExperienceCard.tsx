@@ -45,7 +45,7 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
             </span>
 
             {/* Name */}
-            <h3 className="text-base font-bold uppercase tracking-wide text-foreground mb-1 group-hover:text-primary transition-colors">
+            <h3 className="text-base font-medium uppercase tracking-wide text-foreground mb-1 group-hover:text-primary transition-colors">
               {experience.name}
             </h3>
 
