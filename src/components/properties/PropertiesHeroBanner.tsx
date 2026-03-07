@@ -24,7 +24,7 @@ export function PropertiesHeroBanner({
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
 
-      <div className="relative z-10 max-w-[1200px] mx-auto px-[5%] text-center">
+      <div className="relative z-10 max-w-[1200px] mx-auto px-[5%] text-center" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
