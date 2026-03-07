@@ -270,7 +270,7 @@ const About = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
             <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Get in Touch</p>
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">Get in Touch</p>
               <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-6">
                 Talk to a <em className="italic text-accent">Human</em>
               </h2>

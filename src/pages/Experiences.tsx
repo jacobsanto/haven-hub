@@ -199,7 +199,7 @@ const Experiences = () => {
                     {/* Price pill */}
                     {exp.price_from && (
                       <div className="absolute bottom-3 right-3 bg-background/70 backdrop-blur px-3 py-1.5 rounded-full">
-                        <span className="text-sm font-semibold text-foreground">{formatPrice(exp.price_from)}</span>
+                        <span className="text-sm font-medium text-foreground">{formatPrice(exp.price_from)}</span>
                       </div>
                     )}
                   </div>
