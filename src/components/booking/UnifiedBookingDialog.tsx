@@ -618,7 +618,7 @@ export function UnifiedBookingDialog() {
                 >
                   <Minus className="h-5 w-5" />
                 </Button>
-                <span className="text-4xl font-bold w-16 text-center">{guests}</span>
+                <span className="text-4xl font-medium w-16 text-center">{guests}</span>
                 <Button
                   variant="outline"
                   size="icon"
