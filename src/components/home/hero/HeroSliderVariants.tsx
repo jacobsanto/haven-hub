@@ -202,7 +202,7 @@ export function MorphTilesHero({ properties, activeIndex, onSelect }: SliderProp
                   <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3 animate-[fadeUp_0.6s_0.4s_forwards] opacity-0">
                     {s.city}, {s.country}
                   </p>
-                  <h2 className="font-serif text-[clamp(34px,4.5vw,60px)] font-semibold text-foreground leading-[1.1] mb-2 animate-[fadeUp_0.6s_0.5s_forwards] opacity-0">
+                  <h2 className="font-serif text-[clamp(34px,4.5vw,60px)] font-medium text-foreground leading-[1.1] mb-2 animate-[fadeUp_0.6s_0.5s_forwards] opacity-0">
                     {s.display_name || s.name}
                   </h2>
                   <p className="font-serif text-[17px] italic text-muted-foreground animate-[fadeUp_0.6s_0.6s_forwards] opacity-0">
