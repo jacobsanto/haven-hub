@@ -61,7 +61,7 @@ function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
       >
         {children}
       </motion.main>
-      {!hideFooter && <Footer />}
+      {!hideFooter && <FooterSwitcher />}
       
       {/* Exit Intent Modal - only show if no promotional campaign for exit and exit intent is enabled */}
       {exitIntentEnabled && !shouldShowExitPromo && (
