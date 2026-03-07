@@ -104,7 +104,7 @@ export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFa
 
         {/* Price pill */}
         <div className="absolute bottom-3.5 right-3.5 bg-background/70 backdrop-blur-lg rounded-lg px-3 py-1.5 border border-border/30">
-          <span className="font-sans text-lg font-bold text-accent">{formatCurrency(property.base_price)}</span>
+          <span className="font-sans text-lg font-medium text-accent">{formatCurrency(property.base_price)}</span>
           <span className="font-sans text-[11px] text-muted-foreground/60"> / night</span>
         </div>
       </div>

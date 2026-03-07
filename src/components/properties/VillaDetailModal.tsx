@@ -206,7 +206,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
               {property.highlights.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {property.highlights.slice(0, 6).map((h) => (
-                    <span key={h} className="text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
+                    <span key={h} className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
                       {h}
                     </span>
                   ))}

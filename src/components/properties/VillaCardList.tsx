@@ -92,7 +92,7 @@ export function VillaCardList({ property, index, onClick, isFavorite, onToggleFa
             {property.area_sqm && <span>{property.area_sqm}m²</span>}
           </div>
           <div>
-            <span className="font-sans text-[22px] font-bold text-accent">{formatCurrency(property.base_price)}</span>
+            <span className="font-sans text-[22px] font-medium text-accent">{formatCurrency(property.base_price)}</span>
             <span className="font-sans text-xs text-muted-foreground/60"> / night</span>
           </div>
         </div>
