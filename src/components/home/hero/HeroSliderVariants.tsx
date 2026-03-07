@@ -322,7 +322,7 @@ export function VerticalCurtainHero({ properties, activeIndex, onSelect }: Slide
               <p className="font-serif text-lg italic text-muted-foreground">
                 {s.short_description || `Discover ${s.city}`}
               </p>
-              <p className="font-sans text-2xl font-bold text-accent mt-4">
+              <p className="font-sans text-2xl font-medium text-accent mt-4">
                 {format(s.base_price)}
                 <span className="text-[13px] font-light text-muted-foreground"> / night</span>
               </p>
