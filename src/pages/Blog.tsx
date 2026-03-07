@@ -75,9 +75,10 @@ export default function Blog() {
             <img
               src={featuredPost.featured_image_url || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80'}
               alt={featuredPost.title}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+              className="absolute inset-0 w-full h-full object-cover blur-sm scale-105 group-hover:scale-110 transition-transform duration-1000"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
+            <GrainOverlay />
             <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
               <div className="max-w-3xl">
                 <div className="flex items-center gap-3 mb-4">
