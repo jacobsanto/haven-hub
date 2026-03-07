@@ -22,7 +22,7 @@ export function PropertiesHeroBanner({
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${bgImage})` }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
 
       <div className="relative z-10 max-w-[1200px] mx-auto px-[5%] text-center">
         <motion.p
