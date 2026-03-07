@@ -52,7 +52,7 @@ export function BeginnersGuideLayout({ post, readTime, publishedDate, author, re
             Beginner's Guide
           </div>
           {post.category && <Badge variant="secondary" className="mb-4 ml-2">{post.category.name}</Badge>}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6 leading-tight">{post.title}</h1>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-medium text-foreground mb-6 leading-tight">{post.title}</h1>
           {post.excerpt && <p className="text-lg text-muted-foreground mb-8 leading-relaxed">{post.excerpt}</p>}
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export function BeginnersGuideLayout({ post, readTime, publishedDate, author, re
                   {h2Headings.map((h, i) => (
                     <a key={h.id} href={`#${h.id}`} className="flex items-start gap-3 group py-2">
                       <div className="flex flex-col items-center">
-                        <span className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-primary/30 text-primary text-xs font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors">{i + 1}</span>
+                        <span className="flex items-center justify-center w-7 h-7 rounded-full border-2 border-primary/30 text-primary text-xs font-medium group-hover:bg-primary group-hover:text-primary-foreground transition-colors">{i + 1}</span>
                         {i < h2Headings.length - 1 && <div className="w-0.5 h-6 bg-border mt-1" />}
                       </div>
                       <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors pt-1 line-clamp-2">{h.text}</span>

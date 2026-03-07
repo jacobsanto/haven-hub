@@ -50,7 +50,7 @@ export function ClassicListPostLayout({ post, readTime, publishedDate, author, r
             List Post
           </div>
           {post.category && <Badge variant="secondary" className="mb-4">{post.category.name}</Badge>}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6 leading-tight">{post.title}</h1>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-medium text-foreground mb-6 leading-tight">{post.title}</h1>
           {post.excerpt && <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">{post.excerpt}</p>}
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -75,7 +75,7 @@ export function ClassicListPostLayout({ post, readTime, publishedDate, author, r
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Jump to</p>
                 {headings.filter(h => h.level === 2).map((h, i) => (
                   <a key={h.id} href={`#${h.id}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors py-1">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">{i + 1}</span>
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0">{i + 1}</span>
                     <span className="line-clamp-1">{h.text}</span>
                   </a>
                 ))}
@@ -85,7 +85,7 @@ export function ClassicListPostLayout({ post, readTime, publishedDate, author, r
 
           <article className="flex-1 max-w-3xl">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:border-b prose-h2:border-border/50 prose-h2:pb-3">
+              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:border-b prose-h2:border-border/50 prose-h2:pb-3">
                 {post.content ? <MarkdownRenderer content={post.content} style="destination-guide" /> : <p className="text-muted-foreground">No content available.</p>}
               </div>
               {post.tags && post.tags.length > 0 && (

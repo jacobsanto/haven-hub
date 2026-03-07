@@ -45,13 +45,13 @@ export function ExperienceCard({ experience, index = 0 }: ExperienceCardProps) {
             </span>
 
             {/* Name */}
-            <h3 className="text-base font-bold uppercase tracking-wide text-foreground mb-1 group-hover:text-primary transition-colors">
+            <h3 className="text-base font-medium uppercase tracking-wide text-foreground mb-1 group-hover:text-primary transition-colors">
               {experience.name}
             </h3>
 
             {/* Price */}
             {experience.price_from && (
-              <p className="text-accent font-bold text-sm mb-2">
+              <p className="text-accent font-semibold text-sm mb-2">
                 From €{experience.price_from}
                 {experience.price_type && (
                   <span className="text-muted-foreground font-normal text-xs ml-1">/{experience.price_type}</span>

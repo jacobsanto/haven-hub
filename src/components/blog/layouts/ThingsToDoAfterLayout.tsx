@@ -49,7 +49,7 @@ export function ThingsToDoAfterLayout({ post, readTime, publishedDate, author, r
             <CheckSquare className="h-4 w-4" />
             Action Checklist
           </div>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6 leading-tight">{post.title}</h1>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-medium text-foreground mb-6 leading-tight">{post.title}</h1>
           {post.excerpt && <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">{post.excerpt}</p>}
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export function ThingsToDoAfterLayout({ post, readTime, publishedDate, author, r
             <div className="space-y-2">
               {headings.filter(h => h.level === 2).map((h, i) => (
                 <a key={h.id} href={`#${h.id}`} className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
-                  <span className="flex items-center justify-center w-5 h-5 rounded border border-violet-300 dark:border-violet-700 text-[10px] font-bold text-violet-600 dark:text-violet-400 shrink-0">{i + 1}</span>
+                  <span className="flex items-center justify-center w-5 h-5 rounded border border-violet-300 dark:border-violet-700 text-[10px] font-medium text-violet-600 dark:text-violet-400 shrink-0">{i + 1}</span>
                   <span className="line-clamp-1">{h.text}</span>
                 </a>
               ))}
@@ -84,7 +84,7 @@ export function ThingsToDoAfterLayout({ post, readTime, publishedDate, author, r
       <div className="container mx-auto px-4 py-12 md:py-16">
         <article className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:flex prose-h2:items-center prose-h2:gap-3">
+            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:flex prose-h2:items-center prose-h2:gap-3">
               {post.content ? <MarkdownRenderer content={post.content} style="travel-tips" /> : <p className="text-muted-foreground">No content available.</p>}
             </div>
             {post.tags && post.tags.length > 0 && (

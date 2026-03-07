@@ -50,7 +50,7 @@ export function MythDebunkerLayout({ post, readTime, publishedDate, author, rela
             <ShieldQuestion className="h-4 w-4" />
             Myth Debunker
           </div>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6 leading-tight">{post.title}</h1>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-medium text-foreground mb-6 leading-tight">{post.title}</h1>
           {post.excerpt && <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">{post.excerpt}</p>}
           
           {/* Myth vs Truth quick visual */}
@@ -83,7 +83,7 @@ export function MythDebunkerLayout({ post, readTime, publishedDate, author, rela
       <div className="container mx-auto px-4 py-12 md:py-16">
         <article className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:bg-red-50/50 dark:prose-h2:bg-red-950/20 prose-h2:rounded-lg prose-h2:px-4 prose-h2:py-3 prose-h2:border-l-4 prose-h2:border-red-500">
+            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:bg-red-50/50 dark:prose-h2:bg-red-950/20 prose-h2:rounded-lg prose-h2:px-4 prose-h2:py-3 prose-h2:border-l-4 prose-h2:border-red-500">
               {post.content ? <MarkdownRenderer content={post.content} style="travel-tips" /> : <p className="text-muted-foreground">No content available.</p>}
             </div>
             {post.tags && post.tags.length > 0 && (
