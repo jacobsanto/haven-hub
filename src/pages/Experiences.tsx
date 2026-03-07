@@ -195,7 +195,7 @@ const Experiences = () => {
                     <img src={exp.hero_image_url || heroImg} alt={exp.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 via-transparent to-transparent" />
                     {/* Category badge */}
-                    <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest bg-accent/90 text-background px-2.5 py-1 rounded">{exp.category}</span>
+                    <span className="absolute top-3 left-3 text-[10px] font-medium uppercase tracking-widest bg-accent/90 text-background px-2.5 py-1 rounded">{exp.category}</span>
                     {/* Price pill */}
                     {exp.price_from && (
                       <div className="absolute bottom-3 right-3 bg-background/70 backdrop-blur px-3 py-1.5 rounded-full">
