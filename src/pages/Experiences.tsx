@@ -74,7 +74,7 @@ function ExperienceModal({ experience, onClose, formatPrice }: { experience: any
           {/* Includes */}
           {experience.includes && experience.includes.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-foreground mb-3">What's Included</h3>
+              <h3 className="text-sm font-medium text-foreground mb-3">What's Included</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {experience.includes.map((item: string, i: number) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
