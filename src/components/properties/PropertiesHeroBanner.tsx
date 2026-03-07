@@ -16,13 +16,13 @@ export function PropertiesHeroBanner({
   const bgImage = heroImageUrl || 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1400&q=50';
 
   return (
-    <section className="relative pt-24 pb-14 bg-background overflow-hidden">
-      {/* Ambient blurred background */}
+    <section className="relative pt-28 pb-16 bg-background overflow-hidden">
+      {/* Visible background image */}
       <div
-        className="absolute inset-0 bg-cover bg-center blur-[40px] brightness-[0.35] saturate-75 scale-[1.3]"
+        className="absolute inset-0 bg-cover bg-center blur-[2px] brightness-[0.45] saturate-75 scale-[1.05]"
         style={{ backgroundImage: `url(${bgImage})` }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-background" />
 
       <div className="relative z-10 max-w-[1200px] mx-auto px-[5%] text-center">
         <motion.p
