@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { cn } from '@/lib/utils';
+import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 
 const categories = ['All', 'Culinary', 'Adventure', 'Cultural', 'Wellness'];
 
