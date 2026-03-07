@@ -29,7 +29,7 @@ export function PropertiesHeroBanner({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-4"
+          className="font-sans text-[11px] tracking-[0.3em] text-foreground uppercase mb-4"
         >
           Our Collection
         </motion.p>
