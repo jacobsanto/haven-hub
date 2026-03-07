@@ -140,11 +140,11 @@ const Destinations = () => {
         <GrainOverlay />
         <div className="container mx-auto px-4 relative z-10 text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Explore</p>
-            <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">
+            <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-4">Explore</p>
+            <h1 className="font-serif text-[clamp(36px,5vw,60px)] font-bold text-foreground leading-[1.05] mb-3">
               {heroContent.heading}
             </h1>
-            <p className="text-muted-foreground max-w-xl mx-auto mb-8">{heroContent.subtitle}</p>
+            <p className="font-sans text-[15px] text-foreground/80 max-w-[520px] mx-auto leading-relaxed mb-8">{heroContent.subtitle}</p>
 
             {/* Stats */}
             <div className="flex items-center justify-center gap-8 text-sm">
