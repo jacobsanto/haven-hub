@@ -256,7 +256,7 @@ const About = () => {
             {timeline.map((item, i) => (
               <motion.div key={i} variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce} className="relative">
                 <div className="absolute -left-[41px] top-1 w-4 h-4 rounded-full bg-accent border-4 border-muted" />
-                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-accent mb-1">{item.year}</p>
+                <p className="text-xs font-medium uppercase tracking-[0.15em] text-accent mb-1">{item.year}</p>
                 <h3 className="font-serif font-medium text-foreground mb-1">{item.title}</h3>
                 <p className="text-sm text-muted-foreground">{item.desc}</p>
               </motion.div>
