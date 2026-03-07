@@ -137,11 +137,11 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
           {/* Badges */}
           <div className="absolute bottom-5 left-7 flex gap-2">
             {property.instant_booking && (
-              <span className="text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
+              <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
                 Instant Book
               </span>
             )}
-            <span className="text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
+            <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
               {property.property_type}
             </span>
           </div>
