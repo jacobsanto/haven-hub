@@ -83,12 +83,12 @@ export default function Blog() {
               <div className="max-w-3xl">
                 <div className="flex items-center gap-3 mb-4">
                   {featuredPost.category && (
-                    <span className="text-[10px] font-bold uppercase tracking-widest bg-accent/90 text-background px-2.5 py-1 rounded">{featuredPost.category.name}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest bg-accent/90 text-accent-foreground px-2.5 py-1 rounded">{featuredPost.category.name}</span>
                   )}
-                  <span className="text-xs text-background/60">{readTime(featuredPost.content)}</span>
+                  <span className="text-xs text-muted-foreground">{readTime(featuredPost.content)}</span>
                 </div>
-                <h1 className="text-3xl md:text-5xl font-serif font-medium text-background mb-4 leading-tight">{featuredPost.title}</h1>
-                {featuredPost.excerpt && <p className="text-background/70 text-lg max-w-2xl line-clamp-2 mb-4">{featuredPost.excerpt}</p>}
+                <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4 leading-tight">{featuredPost.title}</h1>
+                {featuredPost.excerpt && <p className="text-muted-foreground text-lg max-w-2xl line-clamp-2 mb-4">{featuredPost.excerpt}</p>}
                 <div className="flex items-center gap-3">
                   {featuredPost.author && (
                     <>
@@ -96,10 +96,10 @@ export default function Blog() {
                         <AvatarImage src={featuredPost.author.avatar_url || undefined} />
                         <AvatarFallback className="text-xs">{featuredPost.author.name?.[0]}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-background/80">{featuredPost.author.name}</span>
+                      <span className="text-sm text-foreground/80">{featuredPost.author.name}</span>
                     </>
                   )}
-                  {featuredPost.published_at && <span className="text-sm text-background/50">· {format(new Date(featuredPost.published_at), 'MMM d, yyyy')}</span>}
+                  {featuredPost.published_at && <span className="text-sm text-muted-foreground">· {format(new Date(featuredPost.published_at), 'MMM d, yyyy')}</span>}
                 </div>
               </div>
             </div>
