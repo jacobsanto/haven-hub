@@ -10,6 +10,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 
 /* ─── Destination Detail Modal ─── */
 function DestinationModal({ destination, propertyCount, onClose }: { destination: any; propertyCount: number; onClose: () => void }) {
