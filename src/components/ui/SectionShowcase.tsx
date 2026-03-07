@@ -168,7 +168,7 @@ function SplitRevealSection({ items, activeIndex }: VariantProps) {
                 transition: prefersReduced ? 'none' : 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.4s'
               }}>
                 {item.location && <p className="font-sans text-[11px] tracking-[0.25em] text-accent uppercase mb-4">{item.location}</p>}
-                <h3 className="font-serif text-[clamp(24px,3vw,40px)] font-semibold text-foreground leading-[1.15] mb-3">{item.title}</h3>
+                <h3 className="font-serif text-[clamp(24px,3vw,40px)] text-foreground leading-[1.15] mb-3 font-medium">{item.title}</h3>
                 {item.subtitle && <p className="font-serif text-[15px] italic text-muted-foreground mb-5">{item.subtitle}</p>}
                 {item.extra && <p className="text-[13px] text-muted-foreground mb-5">{item.extra}</p>}
                 
