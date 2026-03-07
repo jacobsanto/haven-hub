@@ -636,7 +636,7 @@ export function UnifiedBookingDialog() {
               <div className="p-4 bg-primary/5 rounded-xl">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Estimated total</span>
-                  <span className="text-xl font-bold">
+                  <span className="text-xl font-medium">
                     {formatPrice(estimatedTotal).display}
                   </span>
                 </div>

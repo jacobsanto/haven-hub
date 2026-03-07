@@ -205,7 +205,7 @@ export function BookingWidget({ property, specialOffer, initialCheckIn, initialC
                 </span>
               </>
             ) : (
-              <span className="text-2xl font-bold font-serif text-foreground">
+              <span className="text-2xl font-medium font-serif text-foreground">
                 {basePriceFormatted.display}
               </span>
             )}

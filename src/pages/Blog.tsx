@@ -196,7 +196,7 @@ export default function Blog() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
                       {post.category && (
-                        <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest bg-accent/90 text-background px-2.5 py-1 rounded">{post.category.name}</span>
+                        <span className="absolute top-3 left-3 text-[10px] font-medium uppercase tracking-widest bg-accent/90 text-background px-2.5 py-1 rounded">{post.category.name}</span>
                       )}
                     </div>
                     <h3 className="font-serif font-medium text-foreground mb-2 line-clamp-2 group-hover:text-accent transition-colors">{post.title}</h3>
