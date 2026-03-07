@@ -1,33 +1,52 @@
 
 
-## Improving hero text and search bar legibility
+## Plan: Remove all `font-bold` from public-facing components and pages
 
-Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
+### Scope
 
-### Recommended approach: Layered depth
+There are ~140 remaining `font-bold` instances in 15 non-admin component/page files. All will be replaced with `font-medium` (or `font-semibold` for specific cases like price totals and counters where slightly heavier weight aids readability).
 
-Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
+### Files to update
 
-1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
+**Pages (2 files):**
+- `src/pages/NotFound.tsx` — 404 heading
+- `src/pages/Checkout.tsx` — payment step label
 
-2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
-   ```
-   bg-gradient-to-r from-black/50 via-black/20 to-transparent
-   ```
-   This keeps the right side (card deck) more vibrant while making the left text area very readable.
+**Blog layouts (8 files):**
+- `ClassicListPostLayout.tsx` — h1 title, numbered circles, prose headings
+- `BeginnersGuideLayout.tsx` — h1 title, step numbers, prose headings
+- `DetailedCaseStudyLayout.tsx` — h1 title, prose headings
+- `ThingsToDoAfterLayout.tsx` — h1 title, checklist numbers, prose headings
+- `ProductShowdownLayout.tsx` — h1 title, prose headings
+- `HowTheyDidItLayout.tsx` — h1 title, prose headings
+- `MythDebunkerLayout.tsx` — h1 title, prose headings
+- `DestinationGuideLayout.tsx` — h1 title, prose headings
+- `LifestyleLayout.tsx` — h1 title, prose headings
+- `TravelTipsLayout.tsx` — h1 title, prose headings
 
-3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
+**Blog components (1 file):**
+- `MarkdownRenderer.tsx` — section numbers rendered as `font-bold`
 
-4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
+**Property components (1 file):**
+- `SearchResultCard.tsx` — price display
 
-### Summary of changes
+**Experience components (1 file):**
+- `ExperienceCard.tsx` — name and price
 
-| File | What |
-|------|------|
-| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
-| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
-| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
-| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
+**Promotions (1 file):**
+- `PromotionalPopup.tsx` — title and coupon code
 
-These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
+### Replacement rules
+
+| Current | Replacement | Where |
+|---------|------------|-------|
+| `font-bold` on headings (h1, h2, h3) | `font-medium` | All blog layouts, pages |
+| `font-bold` on small numbered indicators | `font-medium` | Blog TOC circles |
+| `font-bold` on prices | `font-semibold` | SearchResultCard, ExperienceCard |
+| `font-bold` on coupon codes | `font-semibold` | PromotionalPopup |
+| `prose-headings:font-bold` | `prose-headings:font-medium` | All blog layout prose containers |
+| `font-bold` on 404 | `font-medium` | NotFound page |
+| `font-bold` on checkout step | `font-semibold` | Checkout page |
+
+This covers every remaining `font-bold` instance in all public-facing files. Admin pages are excluded as they are internal tooling.
 
