@@ -271,6 +271,7 @@ const About = () => {
                 Talk to a <em className="italic text-accent">Human</em>
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-8">{r(missionContent.paragraph_1)}</p>
+              {missionContent.paragraph_2 && <p className="text-muted-foreground leading-relaxed mb-8">{r(missionContent.paragraph_2)}</p>}
               <div className="space-y-4 mb-8">
                 {contactEmail && (
                   <a href={`mailto:${contactEmail}`} className="flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
