@@ -47,7 +47,7 @@ export function PropertiesHeroBanner({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="font-sans text-[15px] text-muted-foreground max-w-[520px] mx-auto leading-relaxed"
+          className="font-sans text-[15px] text-foreground/80 max-w-[520px] mx-auto leading-relaxed"
         >
           Every villa personally inspected. Every detail considered. Find your perfect escape among {totalVillas} extraordinary properties.
         </motion.p>
