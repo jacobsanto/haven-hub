@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 import { Calendar, Clock, ArrowLeft, Tag, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { useRef } from 'react';
@@ -65,7 +66,8 @@ export function DestinationGuideLayout({
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+        <GrainOverlay />
         
         {/* Back Button - Consistent Style */}
         <div className="absolute top-4 left-4 z-10">

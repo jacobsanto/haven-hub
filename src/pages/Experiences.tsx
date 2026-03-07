@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFormatCurrency } from '@/hooks/useFormatCurrency';
 import { cn } from '@/lib/utils';
+import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 
 const categories = ['All', 'Culinary', 'Adventure', 'Cultural', 'Wellness'];
 
@@ -123,10 +124,11 @@ const Experiences = () => {
       {/* Hero */}
       <section className="relative py-24 md:py-36 overflow-hidden bg-muted">
         <div className="absolute inset-0 overflow-hidden">
-          <img src={heroImg} alt="" className="w-full h-full object-cover blur-[80px] brightness-[0.15] saturate-50 scale-[1.3]" />
+          <img src={heroImg} alt="" className="w-full h-full object-cover blur-sm scale-105" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background" />
-        <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
+        <GrainOverlay />
+        <div className="container mx-auto px-4 relative z-10 text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Curated Experiences</p>
             <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">
