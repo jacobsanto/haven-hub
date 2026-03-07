@@ -88,14 +88,15 @@ const About = () => {
       {/* ─── Hero ─── */}
       <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/40 to-foreground/20" />
-        <div className="container mx-auto px-4 relative z-10 h-full flex flex-col items-center justify-center text-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
+        <GrainOverlay />
+        <div className="container mx-auto px-4 relative z-10 h-full flex flex-col items-center justify-center text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-background/70 mb-4">About Us</p>
-            <h1 className="text-4xl md:text-6xl font-serif font-medium text-background mb-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">About Us</p>
+            <h1 className="text-4xl md:text-6xl font-serif font-medium text-foreground mb-4">
               {r(heroContent.heading)}
             </h1>
-            <p className="text-lg text-background/80 max-w-xl mx-auto">{r(heroContent.subtitle)}</p>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto">{r(heroContent.subtitle)}</p>
           </motion.div>
         </div>
       </section>
