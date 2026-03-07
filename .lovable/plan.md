@@ -1,24 +1,33 @@
 
 
-## Fix Destinations Hero to Match Properties Hero Effects
+## Improving hero text and search bar legibility
 
-The Destinations page hero is visually inconsistent with the rest of the site. It uses an overly aggressive blur (80px) that nearly destroys the background image, has no grain overlay, and no text shadow. The Properties hero and homepage hero both have these refinements.
+Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
 
-### Changes
+### Recommended approach: Layered depth
 
-**File: `src/pages/Destinations.tsx`**
+Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
 
-1. **Reduce background blur** — Change `blur-[80px]` to `blur-sm` and `brightness-[0.15]` to something gentler (matching Properties hero style with `bg-cover bg-center` approach).
+1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
 
-2. **Add grain overlay** — Import and add `GrainOverlay` component (same as Properties hero).
+2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
+   ```
+   bg-gradient-to-r from-black/50 via-black/20 to-transparent
+   ```
+   This keeps the right side (card deck) more vibrant while making the left text area very readable.
 
-3. **Add text shadow** — Add `textShadow: '0 1px 1px rgba(0,0,0,0.2)'` to the text container (matching Properties hero).
+3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
 
-4. **Adjust gradient overlay** — Update from `from-background/40 to-background` to `from-background/90 via-background/70 to-background` (matching Properties hero pattern for better legibility while showing more of the image).
+4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
 
-5. **Ensure "Explore" label uses accent color** — Already using `text-accent`, consistent with Properties hero's "Our Collection".
+### Summary of changes
 
-### Result
+| File | What |
+|------|------|
+| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
+| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
+| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
+| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
 
-The Destinations hero will have the same layered depth system as the Properties hero: visible but softened background image, grain texture, gradient scrim, and subtle text shadow. This creates visual consistency across all page heroes.
+These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
 

@@ -10,6 +10,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 
 /* ─── Destination Detail Modal ─── */
 function DestinationModal({ destination, propertyCount, onClose }: { destination: any; propertyCount: number; onClose: () => void }) {
@@ -132,11 +133,12 @@ const Destinations = () => {
       <section className="relative py-24 md:py-36 overflow-hidden bg-muted">
         {destinations?.[0]?.hero_image_url && (
           <div className="absolute inset-0 overflow-hidden">
-            <img src={destinations[0].hero_image_url} alt="" className="w-full h-full object-cover blur-[80px] brightness-[0.15] saturate-50 scale-[1.3]" />
+            <img src={destinations[0].hero_image_url} alt="" className="w-full h-full object-cover blur-sm scale-105" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background" />
-        <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
+        <GrainOverlay />
+        <div className="container mx-auto px-4 relative z-10 text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Explore</p>
             <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">
