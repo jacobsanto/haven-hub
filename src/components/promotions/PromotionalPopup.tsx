@@ -145,7 +145,7 @@ export function PromotionalPopup() {
 
             {/* Title & Subtitle */}
             <div>
-              <h2 className="text-2xl font-serif font-bold text-foreground">
+              <h2 className="text-2xl font-serif font-medium text-foreground">
                 {title}
               </h2>
               {subtitle && (
