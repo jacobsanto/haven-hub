@@ -496,6 +496,8 @@ export default function AdminSettings() {
     body_weight: defaultBrandSettings.body_weight ?? 400,
     heading_letter_spacing: defaultBrandSettings.heading_letter_spacing ?? 'normal',
     base_currency: defaultBrandSettings.base_currency,
+    header_style: 'default',
+    footer_style: 'default',
   });
 
   const [editingMode, setEditingMode] = useState<'light' | 'dark'>('light');
