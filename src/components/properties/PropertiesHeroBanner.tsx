@@ -17,12 +17,11 @@ export function PropertiesHeroBanner({
   const bgImage = heroImageUrl || 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=1400&q=50';
 
   return (
-    <section className="relative pt-28 pb-16 bg-background overflow-hidden">
-      {/* Visible background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      />
+    <section className="relative py-24 md:py-36 bg-muted overflow-hidden">
+      {/* Ambient background image */}
+      <div className="absolute inset-0 overflow-hidden">
+        <img src={bgImage} alt="" className="w-full h-full object-cover blur-sm scale-105" />
+      </div>
       <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
       <GrainOverlay />
 
