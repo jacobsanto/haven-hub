@@ -132,7 +132,7 @@ export function SplitRevealHero({ properties, activeIndex, onSelect }: SliderPro
                   <span><Users size={14} className="inline mr-1.5 align-middle" />{s.max_guests || 6} guests</span>
                   <span>{s.bedrooms || 3} bedrooms</span>
                 </div>
-                <p className="font-sans text-[28px] font-bold text-accent">
+                <p className="font-sans text-[28px] font-medium text-accent">
                   {format(s.base_price)}
                   <span className="text-[14px] font-light text-muted-foreground"> / night</span>
                 </p>
