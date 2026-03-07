@@ -208,7 +208,7 @@ export function MorphTilesHero({ properties, activeIndex, onSelect }: SliderProp
                   <p className="font-serif text-[17px] italic text-muted-foreground animate-[fadeUp_0.6s_0.6s_forwards] opacity-0">
                     {s.short_description || `Experience ${s.city}`}
                   </p>
-                  <p className="font-sans text-2xl font-bold text-accent mt-4 animate-[fadeUp_0.6s_0.7s_forwards] opacity-0">
+                  <p className="font-sans text-2xl font-medium text-accent mt-4 animate-[fadeUp_0.6s_0.7s_forwards] opacity-0">
                     {format(s.base_price)}
                     <span className="text-[13px] font-light text-muted-foreground"> / night</span>
                   </p>
