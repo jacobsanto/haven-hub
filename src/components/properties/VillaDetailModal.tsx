@@ -164,7 +164,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
               )}
             </div>
             <div className="text-right">
-              <p className="font-sans text-[32px] font-bold text-accent">{formatCurrency(property.base_price)}</p>
+              <p className="font-sans text-[32px] font-medium text-accent">{formatCurrency(property.base_price)}</p>
               <p className="font-sans text-xs text-muted-foreground/60">per night</p>
             </div>
           </div>
