@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 import { Search, X, ChevronLeft, ChevronRight, BookOpen, Clock, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
