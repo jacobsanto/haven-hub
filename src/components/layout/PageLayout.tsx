@@ -50,7 +50,7 @@ function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <HeaderSwitcher />
       <motion.main
         initial="initial"
         animate="animate"
