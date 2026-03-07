@@ -86,8 +86,10 @@ const About = () => {
       <PageSEO pageSlug="about" defaults={{ meta_title: `About Us | ${brandName}`, meta_description: `Learn about ${brandName}'s story, values, and commitment to extraordinary luxury vacation experiences.`, og_image: heroContent.hero_image }} />
 
       {/* ─── Hero ─── */}
-      <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${heroContent.hero_image}')` }} />
+      <section className="relative py-24 md:py-36 bg-muted overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
+          <img src={heroContent.hero_image} alt="" className="w-full h-full object-cover blur-sm scale-105" />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
         <GrainOverlay />
         <div className="container mx-auto px-4 relative z-10 h-full flex flex-col items-center justify-center text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
