@@ -56,7 +56,7 @@ function ExperienceModal({ experience, onClose, formatPrice }: { experience: any
             </div>
             {experience.price_from && (
               <div className="text-right">
-                <p className="text-lg font-serif font-semibold text-accent">{formatPrice(experience.price_from)}</p>
+                <p className="text-lg font-serif font-medium text-accent">{formatPrice(experience.price_from)}</p>
                 <p className="text-xs text-muted-foreground">{experience.price_type || 'per person'}</p>
               </div>
             )}
