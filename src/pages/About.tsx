@@ -160,7 +160,7 @@ const About = () => {
             ].map((stat, i) => (
               <motion.div key={i} variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
                 <stat.icon className="h-5 w-5 text-accent mx-auto mb-2" />
-                <p className="text-2xl md:text-3xl font-serif font-semibold text-foreground">{stat.value}</p>
+                <p className="text-2xl md:text-3xl font-serif font-medium text-foreground">{stat.value}</p>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">{stat.label}</p>
               </motion.div>
             ))}
