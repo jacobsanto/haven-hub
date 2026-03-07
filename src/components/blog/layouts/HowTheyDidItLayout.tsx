@@ -52,7 +52,7 @@ export function HowTheyDidItLayout({ post, readTime, publishedDate, author, rela
             </div>
             {post.category && <Badge variant="secondary">{post.category.name}</Badge>}
           </div>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6 leading-tight">{post.title}</h1>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-medium text-foreground mb-6 leading-tight">{post.title}</h1>
           {post.excerpt && <p className="text-lg text-muted-foreground mb-8 leading-relaxed border-l-4 border-teal-500/30 pl-6 italic">{post.excerpt}</p>}
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
