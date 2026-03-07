@@ -269,7 +269,7 @@ export function CinematicHero({ properties, activeIndex, onSelect }: SliderProps
                 {s.short_description || `Luxury living in ${s.city}`}
               </p>
               <div className="w-[60px] h-px bg-accent mb-7" />
-              <p className="font-sans text-[26px] font-bold text-accent">
+              <p className="font-sans text-[26px] font-medium text-accent">
                 {format(s.base_price)}
                 <span className="text-[14px] font-light text-muted-foreground"> / night</span>
               </p>
