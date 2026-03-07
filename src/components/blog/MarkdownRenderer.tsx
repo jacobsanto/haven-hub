@@ -237,7 +237,7 @@ export function MarkdownRenderer({ content, className = '', inlineImages = [], s
         (match, before, classes, after, text) => {
           sectionNumber++;
           return `<div class="relative mt-12 mb-6">
-            <span class="absolute -left-2 md:-left-12 top-0 text-4xl md:text-5xl font-bold text-primary/20">${sectionNumber.toString().padStart(2, '0')}</span>
+            <span class="absolute -left-2 md:-left-12 top-0 text-4xl md:text-5xl font-medium text-primary/20">${sectionNumber.toString().padStart(2, '0')}</span>
             <h2${before}class="${classes}"${after}>${text}</h2>
           </div>`;
         }

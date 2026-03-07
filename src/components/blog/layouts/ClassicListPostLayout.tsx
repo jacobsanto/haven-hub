@@ -85,7 +85,7 @@ export function ClassicListPostLayout({ post, readTime, publishedDate, author, r
 
           <article className="flex-1 max-w-3xl">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:border-b prose-h2:border-border/50 prose-h2:pb-3">
+              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:border-b prose-h2:border-border/50 prose-h2:pb-3">
                 {post.content ? <MarkdownRenderer content={post.content} style="destination-guide" /> : <p className="text-muted-foreground">No content available.</p>}
               </div>
               {post.tags && post.tags.length > 0 && (

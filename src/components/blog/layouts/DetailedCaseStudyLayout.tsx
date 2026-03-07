@@ -87,7 +87,7 @@ export function DetailedCaseStudyLayout({ post, readTime, publishedDate, author,
       <div className="container mx-auto px-4 py-12 md:py-16">
         <article className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-blockquote:border-l-rose-500 prose-blockquote:bg-rose-50/30 dark:prose-blockquote:bg-rose-950/10 prose-blockquote:rounded-r-lg prose-blockquote:py-1">
+            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-blockquote:border-l-rose-500 prose-blockquote:bg-rose-50/30 dark:prose-blockquote:bg-rose-950/10 prose-blockquote:rounded-r-lg prose-blockquote:py-1">
               {post.content ? <MarkdownRenderer content={post.content} style="destination-guide" /> : <p className="text-muted-foreground">No content available.</p>}
             </div>
             {post.tags && post.tags.length > 0 && (

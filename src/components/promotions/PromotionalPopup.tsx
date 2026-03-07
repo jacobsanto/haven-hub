@@ -165,7 +165,7 @@ export function PromotionalPopup() {
               <div className="bg-muted rounded-lg p-4 flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wide">Use code</p>
-                  <p className="text-lg font-mono font-bold text-primary">{coupon.code}</p>
+                  <p className="text-lg font-mono font-semibold text-primary">{coupon.code}</p>
                 </div>
                 <Button
                   variant="outline"

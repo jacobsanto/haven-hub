@@ -49,7 +49,7 @@ function StepIndicator() {
                   className={cn(
                     'text-[10px] uppercase tracking-[0.08em] font-medium whitespace-nowrap transition-colors',
                     isCompleted && 'text-emerald-500',
-                    isPayment && 'text-accent font-bold',
+                    isPayment && 'text-accent font-semibold',
                   )}
                 >
                   {step.label}

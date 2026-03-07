@@ -158,7 +158,7 @@ export function SearchResultCard({ property, index = 0, nights, checkIn, checkOu
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-0.5">
                       From
                     </p>
-                    <p className="text-xl md:text-2xl font-bold text-foreground">
+                    <p className="text-xl md:text-2xl font-semibold text-foreground">
                       {nightlyDisplay.display}
                       <span className="text-xs font-normal text-muted-foreground ml-1">/ night</span>
                     </p>

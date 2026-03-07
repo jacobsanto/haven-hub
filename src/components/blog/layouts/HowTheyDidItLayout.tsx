@@ -71,7 +71,7 @@ export function HowTheyDidItLayout({ post, readTime, publishedDate, author, rela
       <div className="container mx-auto px-4 py-12 md:py-16">
         <article className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:border-l-4 prose-h2:border-teal-500 prose-h2:pl-4 prose-blockquote:border-l-teal-500/50">
+            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:border-l-4 prose-h2:border-teal-500 prose-h2:pl-4 prose-blockquote:border-l-teal-500/50">
               {post.content ? <MarkdownRenderer content={post.content} style="lifestyle" /> : <p className="text-muted-foreground">No content available.</p>}
             </div>
             {post.tags && post.tags.length > 0 && (
