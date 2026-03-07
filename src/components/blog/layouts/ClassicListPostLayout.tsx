@@ -50,7 +50,7 @@ export function ClassicListPostLayout({ post, readTime, publishedDate, author, r
             List Post
           </div>
           {post.category && <Badge variant="secondary" className="mb-4">{post.category.name}</Badge>}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-6 leading-tight">{post.title}</h1>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif font-medium text-foreground mb-6 leading-tight">{post.title}</h1>
           {post.excerpt && <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">{post.excerpt}</p>}
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
