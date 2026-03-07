@@ -38,7 +38,7 @@ export function PropertiesHeroBanner({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="font-serif text-[clamp(36px,5vw,60px)] font-bold text-foreground leading-[1.05] mb-3"
+          className="font-serif text-[clamp(36px,5vw,60px)] font-bold text-primary-foreground leading-[1.05] mb-3"
         >
           Handpicked <em className="font-normal text-primary italic">Villas</em>
         </motion.h1>
