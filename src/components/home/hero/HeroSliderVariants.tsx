@@ -71,7 +71,7 @@ export function ParallaxDepthHero({ properties, activeIndex, onSelect }: SliderP
               <p className="font-serif text-lg italic text-muted-foreground">
                 {s.short_description || `Luxury villa in ${s.city}`}
               </p>
-              <p className="font-sans text-[22px] font-bold text-accent mt-5">
+              <p className="font-sans text-[22px] font-medium text-accent mt-5">
                 {format(s.base_price)}
                 <span className="text-[13px] font-light text-muted-foreground"> / night</span>
               </p>
