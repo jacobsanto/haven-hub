@@ -65,7 +65,7 @@ export function ParallaxDepthHero({ properties, activeIndex, onSelect }: SliderP
               <p className="font-sans text-xs tracking-[0.2em] text-accent uppercase mb-3">
                 {s.city}, {s.country}
               </p>
-              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-semibold text-foreground leading-[1.1] mb-2">
+              <h2 className="font-serif text-[clamp(36px,5vw,64px)] font-medium text-foreground leading-[1.1] mb-2">
                 {s.display_name || s.name}
               </h2>
               <p className="font-serif text-lg italic text-muted-foreground">
