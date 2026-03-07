@@ -620,7 +620,9 @@ export type Database = {
           contact_phone: string | null
           dark_palette: Json | null
           destructive_color: string | null
+          footer_style: string
           foreground_color: string | null
+          header_style: string
           heading_font: string | null
           heading_letter_spacing: string | null
           heading_weight: number | null
@@ -651,7 +653,9 @@ export type Database = {
           contact_phone?: string | null
           dark_palette?: Json | null
           destructive_color?: string | null
+          footer_style?: string
           foreground_color?: string | null
+          header_style?: string
           heading_font?: string | null
           heading_letter_spacing?: string | null
           heading_weight?: number | null
@@ -682,7 +686,9 @@ export type Database = {
           contact_phone?: string | null
           dark_palette?: Json | null
           destructive_color?: string | null
+          footer_style?: string
           foreground_color?: string | null
+          header_style?: string
           heading_font?: string | null
           heading_letter_spacing?: string | null
           heading_weight?: number | null
