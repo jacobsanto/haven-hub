@@ -172,7 +172,7 @@ const About = () => {
       <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce} className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-3">What We Stand For</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-3">What We Stand For</p>
             <h2 className="text-2xl md:text-4xl font-serif font-medium text-foreground">{valuesContent.heading}</h2>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
