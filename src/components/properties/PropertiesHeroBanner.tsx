@@ -60,7 +60,7 @@ export function PropertiesHeroBanner({
         >
           <div className="text-center">
             <p className="font-serif text-[28px] font-bold text-accent">{totalVillas}</p>
-            <p className="font-sans text-[11px] text-muted-foreground/60 tracking-[0.1em] uppercase">Villas</p>
+            <p className="font-sans text-[11px] text-muted-foreground/80 tracking-[0.1em] uppercase">Villas</p>
           </div>
           <div className="w-px bg-border/50" />
           <div className="text-center">
