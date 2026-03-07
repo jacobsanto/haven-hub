@@ -72,7 +72,7 @@ export function ThingsToDoAfterLayout({ post, readTime, publishedDate, author, r
             <div className="space-y-2">
               {headings.filter(h => h.level === 2).map((h, i) => (
                 <a key={h.id} href={`#${h.id}`} className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
-                  <span className="flex items-center justify-center w-5 h-5 rounded border border-violet-300 dark:border-violet-700 text-[10px] font-bold text-violet-600 dark:text-violet-400 shrink-0">{i + 1}</span>
+                  <span className="flex items-center justify-center w-5 h-5 rounded border border-violet-300 dark:border-violet-700 text-[10px] font-medium text-violet-600 dark:text-violet-400 shrink-0">{i + 1}</span>
                   <span className="line-clamp-1">{h.text}</span>
                 </a>
               ))}
