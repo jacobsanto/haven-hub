@@ -201,7 +201,7 @@ const About = () => {
               />
             </motion.div>
             <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Quality Guarantee</p>
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">Quality Guarantee</p>
               <h2 className="text-2xl md:text-3xl font-serif font-medium text-foreground mb-4">
                 Our 87-Point <em className="italic text-accent">Inspection</em>
               </h2>
