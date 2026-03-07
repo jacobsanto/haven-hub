@@ -27,32 +27,19 @@ export function PropertiesHeroBanner({
       <GrainOverlay />
 
       <div className="relative z-10 max-w-[1200px] mx-auto px-[5%] text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-4"
+          transition={{ duration: 0.7 }}
         >
-          Our Collection
-        </motion.p>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="font-serif text-[clamp(36px,5vw,60px)] font-bold text-foreground leading-[1.05] mb-3"
-        >
-          Handpicked <em className="font-normal text-primary italic">Villas</em>
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="font-sans text-[15px] text-foreground/80 max-w-[520px] mx-auto leading-relaxed"
-        >
-          Every villa personally inspected. Every detail considered. Find your perfect escape among {totalVillas} extraordinary properties.
-        </motion.p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Our Collection</p>
+          <h1 className="text-3xl md:text-5xl font-serif font-medium text-foreground mb-4">
+            Handpicked <em className="italic text-accent">Villas</em>
+          </h1>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Every villa personally inspected. Every detail considered. Find your perfect escape among {totalVillas} extraordinary properties.
+          </p>
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
