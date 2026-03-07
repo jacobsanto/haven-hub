@@ -172,7 +172,7 @@ function SplitRevealSection({ items, activeIndex }: VariantProps) {
                 {item.subtitle && <p className="font-serif text-[15px] italic text-muted-foreground mb-5">{item.subtitle}</p>}
                 {item.extra && <p className="text-[13px] text-muted-foreground mb-5">{item.extra}</p>}
                 
-                <span className="inline-block mt-5 px-7 py-3 border border-accent text-accent font-sans text-[12px] tracking-[0.15em] uppercase hover:bg-accent hover:text-accent-foreground transition-colors">
+                <span className="inline-block mt-5 px-7 py-3 border border-accent text-accent font-sans text-[12px] tracking-[0.15em] uppercase hover:bg-accent hover:text-accent-foreground transition-colors font-bold">
                   View Details
                 </span>
               </Link>
@@ -261,7 +261,7 @@ function CinematicSection({ items, activeIndex }: VariantProps) {
               transition: prefersReduced ? 'none' : 'all 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s'
             }}>
               {item.location && <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-4">{item.location}</p>}
-              <h3 className="font-serif text-[clamp(32px,5vw,60px)] font-medium text-primary-foreground leading-[1.05] mb-2.5">{item.title}</h3>
+              <h3 className="font-serif text-[clamp(32px,5vw,60px)] font-bold text-primary-foreground leading-[1.05] mb-2.5">{item.title}</h3>
               {item.subtitle && <p className="font-serif text-lg italic text-accent mb-5 drop-shadow-[0_2px_4px_hsl(var(--accent)/0.4)]">{item.subtitle}</p>}
               <div className="w-[60px] h-px bg-accent mb-5" />
             </Link>
@@ -455,9 +455,9 @@ function BrightMinimalistSection({ items, activeIndex, onSelect }: VariantProps)
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-[1200ms] ease-out"
                     style={{
                       backgroundImage: `url(${item.image || '/placeholder.svg'})`,
-                      transform: isActive ? 'scale(1.05)' : 'scale(1)',
-                    }}
-                  />
+                      transform: isActive ? 'scale(1.05)' : 'scale(1)'
+                    }} />
+                  
                   {/* Color tint blend */}
                   <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${palette.color}30, ${palette.color}15)`, mixBlendMode: 'multiply' }} />
                   {/* Bottom gradient for text */}
