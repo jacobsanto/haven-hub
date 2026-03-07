@@ -277,6 +277,8 @@ export function useBrand() {
       socialFacebook: null,
       socialTwitter: null,
       socialYoutube: null,
+      headerStyle: 'default',
+      footerStyle: 'default',
     };
   }
   return context;
