@@ -528,6 +528,8 @@ export default function AdminSettings() {
         body_weight: settings.body_weight ?? 400,
         heading_letter_spacing: settings.heading_letter_spacing ?? 'normal',
         base_currency: settings.base_currency,
+        header_style: (settings as any).header_style ?? 'default',
+        footer_style: (settings as any).footer_style ?? 'default',
       });
       setDarkPalette(settings.dark_palette ?? null);
     }
