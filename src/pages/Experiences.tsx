@@ -51,7 +51,7 @@ function ExperienceModal({ experience, onClose, formatPrice }: { experience: any
         <div className="p-6 md:p-8">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] bg-accent/10 text-accent px-2.5 py-1 rounded-full">{experience.category}</span>
+              <span className="text-xs font-medium uppercase tracking-[0.12em] bg-accent/10 text-accent px-2.5 py-1 rounded-full">{experience.category}</span>
               <h2 className="text-2xl font-serif font-medium text-foreground mt-3">{experience.name}</h2>
             </div>
             {experience.price_from && (
