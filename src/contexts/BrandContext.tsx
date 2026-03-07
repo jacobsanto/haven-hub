@@ -16,6 +16,8 @@ interface BrandContextValue {
   socialFacebook: string | null;
   socialTwitter: string | null;
   socialYoutube: string | null;
+  headerStyle: string;
+  footerStyle: string;
 }
 
 const BrandContext = createContext<BrandContextValue | undefined>(undefined);
