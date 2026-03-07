@@ -57,7 +57,7 @@ export function FooterImmersive() {
             {logoUrl ? (
               <img src={logoUrl} alt={brandName} className="h-8 w-auto object-contain brightness-0 invert mb-4" />
             ) : (
-              <h3 className="font-serif text-2xl font-bold text-background mb-4">
+              <h3 className="font-serif text-2xl font-medium text-background mb-4">
                 {primaryPart}<span className="text-accent">.</span>
               </h3>
             )}

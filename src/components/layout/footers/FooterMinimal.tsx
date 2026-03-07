@@ -24,7 +24,7 @@ export function FooterMinimal() {
       <div className="container mx-auto px-4">
         {/* Centered brand */}
         <div className="text-center mb-16">
-          <div className="font-serif text-5xl font-bold mb-5">{primaryPart}<span className="text-accent">.</span></div>
+          <div className="font-serif text-5xl font-medium mb-5">{primaryPart}<span className="text-accent">.</span></div>
           <div className="w-10 h-px bg-accent mx-auto mb-5" />
           {brandTagline && <p className="font-serif text-base italic text-background/50">{brandTagline}</p>}
         </div>

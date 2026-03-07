@@ -37,7 +37,7 @@ export function FooterKinetic() {
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="md:col-span-2">
-            <div className="font-serif text-4xl font-bold text-background mb-4">{primaryPart}<span className="text-accent">.</span></div>
+            <div className="font-serif text-4xl font-medium text-background mb-4">{primaryPart}<span className="text-accent">.</span></div>
             {brandTagline && <p className="text-sm text-background/50 max-w-xs">{brandTagline}</p>}
           </div>
 

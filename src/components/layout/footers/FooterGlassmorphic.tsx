@@ -48,7 +48,7 @@ export function FooterGlassmorphic() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
           {/* Brand + Newsletter panel */}
           <GlassPanel className="md:row-span-2 p-8 !bg-background/5 !border-background/10">
-            <div className="font-serif text-2xl font-bold text-background mb-5">{primaryPart}<span className="text-accent">.</span></div>
+            <div className="font-serif text-2xl font-medium text-background mb-5">{primaryPart}<span className="text-accent">.</span></div>
             <p className="text-sm text-background/50 leading-relaxed mb-6">{brandTagline}</p>
             <div className="w-full h-px bg-background/10 mb-6" />
             <p className="text-[9px] font-mono uppercase tracking-[.2em] text-accent mb-3">Newsletter</p>

@@ -71,7 +71,7 @@ export function FooterChatFirst() {
           {/* Links side */}
           <div className="space-y-10">
             <div>
-              <span className="font-serif text-2xl font-bold text-background">{primaryPart}<span className="text-accent">.</span></span>
+              <span className="font-serif text-2xl font-medium text-background">{primaryPart}<span className="text-accent">.</span></span>
               {brandTagline && <p className="text-sm text-background/50 mt-2">{brandTagline}</p>}
             </div>
 
