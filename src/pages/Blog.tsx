@@ -83,7 +83,7 @@ export default function Blog() {
               <div className="max-w-3xl">
                 <div className="flex items-center gap-3 mb-4">
                   {featuredPost.category && (
-                    <span className="text-[10px] font-bold uppercase tracking-widest bg-accent/90 text-accent-foreground px-2.5 py-1 rounded">{featuredPost.category.name}</span>
+                    <span className="text-[10px] font-medium uppercase tracking-widest bg-accent/90 text-accent-foreground px-2.5 py-1 rounded">{featuredPost.category.name}</span>
                   )}
                   <span className="text-xs text-muted-foreground">{readTime(featuredPost.content)}</span>
                 </div>
