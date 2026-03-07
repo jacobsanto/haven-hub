@@ -124,7 +124,7 @@ const About = () => {
                   <Award className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <p className="text-xl font-serif font-semibold text-foreground">5 Years</p>
+                  <p className="text-xl font-serif font-medium text-foreground">5 Years</p>
                   <p className="text-xs text-muted-foreground">of curating exceptional stays</p>
                 </div>
               </div>
