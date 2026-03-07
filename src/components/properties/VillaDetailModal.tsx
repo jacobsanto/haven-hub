@@ -156,7 +156,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
                 <MapPin size={11} className="mr-1" />
                 {property.city}, {property.country}
               </p>
-              <h2 className="font-serif text-[32px] font-bold text-foreground leading-[1.1]">
+              <h2 className="font-serif text-[32px] font-medium text-foreground leading-[1.1]">
                 {property.display_name || property.name}
               </h2>
               {property.short_description && (
