@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 
 interface PropertiesHeroBannerProps {
   totalVillas: number;
@@ -23,6 +24,7 @@ export function PropertiesHeroBanner({
         style={{ backgroundImage: `url(${bgImage})` }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
+      <GrainOverlay />
 
       <div className="relative z-10 max-w-[1200px] mx-auto px-[5%] text-center" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>
         <motion.p
