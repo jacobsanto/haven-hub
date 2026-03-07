@@ -108,7 +108,7 @@ const About = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <motion.div variants={v} initial="hidden" whileInView="visible" viewport={viewportOnce}>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">Our Story</p>
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent mb-4">Our Story</p>
               <h2 className="text-2xl md:text-4xl font-serif font-medium text-foreground mb-6 leading-snug">
                 {r(storyContent.heading)}
               </h2>
