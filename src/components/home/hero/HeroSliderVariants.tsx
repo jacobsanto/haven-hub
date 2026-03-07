@@ -262,7 +262,7 @@ export function CinematicHero({ properties, activeIndex, onSelect }: SliderProps
               }}
             >
               <p className="font-sans text-[11px] tracking-[0.3em] text-accent uppercase mb-5">{s.city}, {s.country}</p>
-              <h2 className="font-serif text-[clamp(40px,6vw,80px)] font-bold text-foreground leading-[1.05] mb-2.5">
+              <h2 className="font-serif text-[clamp(40px,6vw,80px)] font-medium text-foreground leading-[1.05] mb-2.5">
                 {s.display_name || s.name}
               </h2>
               <p className="font-serif text-xl italic text-muted-foreground mb-7">
