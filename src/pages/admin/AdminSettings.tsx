@@ -833,6 +833,83 @@ export default function AdminSettings() {
           {/* Section: Homepage Section Layouts */}
           <HomepageSectionsLayout />
 
+          {/* Section: Header & Footer Layout */}
+          <SettingsSection
+            title="Header & Footer Layout"
+            icon={<PanelTop className="h-5 w-5 text-primary" />}
+            description="Choose your site-wide header and footer style"
+          >
+            <div className="space-y-8">
+              {/* Header Style */}
+              <div>
+                <Label className="mb-3 block">Header Style</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { id: 'default', name: 'Classic Nav', desc: 'Horizontal nav with scroll transition' },
+                    { id: 'floating-glass', name: 'Floating Glass', desc: 'Pill-shaped glassmorphic bar' },
+                    { id: 'split-center', name: 'Split Center', desc: 'Logo centered, nav split L/R' },
+                    { id: 'mega-menu', name: 'Mega Menu', desc: 'Hover-reveal rich dropdowns' },
+                    { id: 'ticker-bar', name: 'Ticker Bar', desc: 'Announcement ribbon + nav' },
+                    { id: 'command-palette', name: 'Command ⌘K', desc: 'Spotlight search overlay' },
+                    { id: 'dock-nav', name: 'Dock Nav', desc: 'macOS-style bottom dock' },
+                    { id: 'full-overlay', name: 'Full Overlay', desc: 'Hamburger → cinematic reveal' },
+                    { id: 'contextual-strip', name: 'Context Strip', desc: 'Color strip + morphing states' },
+                  ].map((style) => (
+                    <button
+                      key={style.id}
+                      onClick={() => setFormState(prev => ({ ...prev, header_style: style.id }))}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        formState.header_style === style.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                      }`}
+                    >
+                      <p className="text-sm font-medium text-foreground">{style.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{style.desc}</p>
+                      {formState.header_style === style.id && (
+                        <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer Style */}
+              <div>
+                <Label className="mb-3 block">Footer Style</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { id: 'default', name: 'Classic', desc: '4-column grid with newsletter' },
+                    { id: 'bento', name: 'Bento Grid', desc: 'Asymmetric card mosaic' },
+                    { id: 'immersive', name: 'Immersive', desc: 'Full-bleed cinematic CTA' },
+                    { id: 'minimal', name: 'Minimal', desc: 'Hover-expand columns' },
+                    { id: 'editorial', name: 'Editorial', desc: 'Typography-forward magazine' },
+                    { id: 'glassmorphic', name: 'Glassmorphic', desc: 'Frosted overlapping panels' },
+                    { id: 'brutalist', name: 'Brutalist', desc: 'Raw terminal anti-design' },
+                    { id: 'chat-first', name: 'Chat-First', desc: 'AI concierge conversation' },
+                    { id: 'kinetic', name: 'Kinetic', desc: 'Scrolling ticker typography' },
+                  ].map((style) => (
+                    <button
+                      key={style.id}
+                      onClick={() => setFormState(prev => ({ ...prev, footer_style: style.id }))}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        formState.footer_style === style.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                      }`}
+                    >
+                      <p className="text-sm font-medium text-foreground">{style.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{style.desc}</p>
+                      {formState.footer_style === style.id && (
+                        <Badge variant="default" className="mt-2 text-[10px]">Active</Badge>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SettingsSection>
+
           {/* Section 2: Color Palette */}
           <SettingsSection
             title="Color Palette"
