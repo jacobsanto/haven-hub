@@ -179,6 +179,8 @@ interface FormState {
   body_weight: number;
   heading_letter_spacing: string;
   base_currency: SupportedCurrency;
+  header_style: string;
+  footer_style: string;
 }
 
 // Collapsible section wrapper with timestamp
