@@ -122,7 +122,7 @@ export function SplitRevealHero({ properties, activeIndex, onSelect }: SliderPro
                 }}
               >
                 <p className="font-sans text-[11px] tracking-[0.25em] text-accent uppercase mb-4">{s.city}, {s.country}</p>
-                <h2 className="font-serif text-[clamp(32px,3.5vw,52px)] font-semibold text-foreground leading-[1.15] mb-3">
+                <h2 className="font-serif text-[clamp(32px,3.5vw,52px)] font-medium text-foreground leading-[1.15] mb-3">
                   {s.display_name || s.name}
                 </h2>
                 <p className="font-serif text-[17px] italic text-muted-foreground mb-7">
