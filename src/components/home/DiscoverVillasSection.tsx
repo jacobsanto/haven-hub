@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useFeaturedProperties } from '@/hooks/useProperties';
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { useSectionDisplay } from '@/hooks/useSectionDisplay';
 import { SectionRenderer } from '@/components/ui/SectionRenderer';
 import { SectionShowcase, type ShowcaseItem } from '@/components/ui/SectionShowcase';
+import { VillaDetailModal } from '@/components/properties/VillaDetailModal';
+import { Property } from '@/types/database';
 
 const SHOWCASE_MODES = ['parallax-depth', 'split-reveal', 'morph-tiles', 'cinematic', 'vertical-curtain', 'card-deck', 'bright-minimalist'];
 
@@ -20,6 +22,16 @@ export function DiscoverVillasSection() {
   const { openBooking } = useBooking();
   const settings = useSectionDisplay('home', 'discover-villas');
   const isShowcase = SHOWCASE_MODES.includes(settings.layout_mode);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   const showcaseItems: ShowcaseItem[] = useMemo(() =>
     (properties || []).map(p => ({
@@ -76,7 +88,7 @@ export function DiscoverVillasSection() {
           <div className="container mx-auto px-4">
             <SectionRenderer settings={settings}>
               {properties.map((property) => (
-                <Link key={property.id} to={`/properties/${property.slug}`} className="block group">
+                <div key={property.id} className="block group cursor-pointer" onClick={() => setSelectedProperty(property)}>
                   <div className="overflow-hidden rounded-[14px] mb-4">
                     <img
                       src={property.hero_image_url || '/placeholder.svg'}
@@ -112,12 +124,23 @@ export function DiscoverVillasSection() {
                       Book Now
                     </Button>
                   </div>
-                </Link>
+                </div>
               ))}
             </SectionRenderer>
           </div>
         )
       ) : null}
+
+      <AnimatePresence>
+        {selectedProperty && (
+          <VillaDetailModal
+            property={selectedProperty}
+            onClose={() => setSelectedProperty(null)}
+            isFavorite={favorites.has(selectedProperty.id)}
+            onToggleFavorite={toggleFavorite}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
