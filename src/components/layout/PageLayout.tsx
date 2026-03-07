@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Header } from './Header';
-import { Footer } from './Footer';
+import { HeaderSwitcher } from './HeaderSwitcher';
+import { FooterSwitcher } from './FooterSwitcher';
 import { ExitIntentModal } from '@/components/booking/ExitIntentModal';
 import { FloatingBookButton } from '@/components/booking/FloatingBookButton';
 import { PromotionalPopup } from '@/components/promotions/PromotionalPopup';
@@ -50,7 +50,7 @@ function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <HeaderSwitcher />
       <motion.main
         initial="initial"
         animate="animate"
@@ -61,7 +61,7 @@ function PageLayoutContent({ children, hideFooter = false }: PageLayoutProps) {
       >
         {children}
       </motion.main>
-      {!hideFooter && <Footer />}
+      {!hideFooter && <FooterSwitcher />}
       
       {/* Exit Intent Modal - only show if no promotional campaign for exit and exit intent is enabled */}
       {exitIntentEnabled && !shouldShowExitPromo && (
