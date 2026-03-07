@@ -71,7 +71,7 @@ export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFa
         {/* Badges */}
         <div className="absolute top-3.5 left-3.5 flex gap-1.5">
           {property.instant_booking && (
-            <span className="text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
+            <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
               Instant
             </span>
           )}
