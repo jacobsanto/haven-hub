@@ -45,7 +45,7 @@ export function HeaderFullOverlay() {
       )}>
         <div className="container mx-auto px-4 h-[72px] flex items-center justify-between">
           <Link to="/">
-            {logoUrl ? <img src={logoUrl} alt={brandName} className="h-10 w-auto object-contain" /> : (
+            {logoUrl ? <img src={logoUrl} alt={brandName} width={140} height={40} className="h-10 w-auto object-contain" /> : (
               <span className="text-xl font-serif font-semibold">
                 <span className={isScrolled ? "text-primary" : "text-primary-foreground"}>{primaryPart}</span>
                 {secondaryPart && <span className={isScrolled ? "text-muted-foreground" : "text-primary-foreground/70"}> {secondaryPart}</span>}
@@ -56,6 +56,7 @@ export function HeaderFullOverlay() {
             <Button variant="default" size="sm" onClick={() => navigate('/properties')} className="rounded-full">Book Now</Button>
             {/* Hamburger */}
             <button
+              aria-label="Open menu"
               onClick={() => setOpen(true)}
               className={cn(
                 "w-10 h-10 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-colors",
@@ -81,11 +82,11 @@ export function HeaderFullOverlay() {
             <div className="container mx-auto px-4 h-full flex flex-col">
               <div className="flex items-center justify-between h-[72px]">
                 <Link to="/" onClick={() => setOpen(false)}>
-                  {logoUrl ? <img src={logoUrl} alt={brandName} className="h-10 w-auto object-contain" /> : (
+                  {logoUrl ? <img src={logoUrl} alt={brandName} width={140} height={40} className="h-10 w-auto object-contain" /> : (
                     <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>
                   )}
                 </Link>
-                <button onClick={() => setOpen(false)} className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:border-accent transition-colors">
+                <button aria-label="Close menu" onClick={() => setOpen(false)} className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:border-accent transition-colors">
                   <X className="h-5 w-5" />
                 </button>
               </div>

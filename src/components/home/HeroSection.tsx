@@ -147,12 +147,15 @@ export function HeroSection() {
       <>
           {/* Card deck default: background + text panel */}
           {active.hero_image_url && <>
-          <div
-            className="absolute inset-0 bg-cover bg-center blur-sm scale-105"
-            style={{
-              backgroundImage: `url(${active.hero_image_url})`,
-              transition: `background-image 1.2s cubic-bezier(0.22, 1, 0.36, 1)`,
-            }} />
+          <img
+            src={active.hero_image_url}
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            loading="eager"
+            className="absolute inset-0 w-full h-full object-cover blur-sm scale-105"
+            style={{ transition: 'opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1)' }}
+          />
           <div className="absolute inset-0 bg-black/40" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
         </>}
