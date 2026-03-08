@@ -39,9 +39,6 @@ export function FooterGlassmorphic() {
 
   return (
     <footer className="bg-foreground text-background relative overflow-hidden py-20">
-      {/* Background orbs */}
-      <div className="absolute w-[400px] h-[400px] rounded-full bg-accent/10 -top-24 left-[10%] blur-[80px]" />
-      <div className="absolute w-[300px] h-[300px] rounded-full bg-primary/10 -bottom-12 right-[15%] blur-[60px]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
