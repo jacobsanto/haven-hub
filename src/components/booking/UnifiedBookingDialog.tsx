@@ -15,7 +15,9 @@ import {
   Plus,
   X,
   ChevronDown,
-  Gift
+  Gift,
+  Star,
+  Sparkles
 } from 'lucide-react';
 import {
   Dialog,
@@ -309,9 +311,9 @@ export function UnifiedBookingDialog() {
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-border hover:border-primary/50 transition-all text-left bg-card"
+                    className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-border hover:border-accent/50 transition-all text-left bg-card shadow-sm"
                   >
-                    <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                    <MapPin className="h-4 w-4 text-accent flex-shrink-0" />
                     <span className={cn(
                       "text-sm flex-1",
                       selectedDestinationName ? "font-medium text-foreground" : "text-muted-foreground"
@@ -372,7 +374,7 @@ export function UnifiedBookingDialog() {
             </div>
 
             {/* Guest selector */}
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
+            <div className="flex items-center justify-between p-3.5 bg-secondary/50 rounded-xl">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Guests</span>
@@ -402,14 +404,15 @@ export function UnifiedBookingDialog() {
 
             {/* Summary */}
             {dateRange?.from && (
-              <div className="flex items-center justify-between p-3 bg-primary/5 rounded-xl">
+              <div className="flex items-center justify-between p-3.5 bg-accent/5 border border-accent/15 rounded-xl">
                 <div className="flex items-center gap-3 text-sm">
-                  <span>{format(dateRange.from, 'MMM d')}</span>
-                  <ArrowRight className="h-3 w-3" />
-                  <span>{dateRange.to ? format(dateRange.to, 'MMM d') : '—'}</span>
+                  <CalendarIcon className="h-4 w-4 text-accent" />
+                  <span className="font-medium">{format(dateRange.from, 'MMM d')}</span>
+                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                  <span className="font-medium">{dateRange.to ? format(dateRange.to, 'MMM d') : '—'}</span>
                 </div>
                 {nights > 0 && (
-                  <span className="text-sm font-medium text-primary">{nights} night{nights > 1 ? 's' : ''}</span>
+                  <span className="text-sm font-semibold text-accent">{nights} night{nights > 1 ? 's' : ''}</span>
                 )}
               </div>
             )}
@@ -437,17 +440,17 @@ export function UnifiedBookingDialog() {
                       type="button"
                       onClick={() => handleSelectProperty(property)}
                       className={cn(
-                        'w-full flex gap-4 p-3 rounded-xl border-2 transition-all text-left',
+                        'w-full flex gap-4 p-3.5 rounded-xl border-2 transition-all text-left group/prop',
                         selectedProperty?.id === property.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50'
+                          ? 'border-accent bg-accent/5 shadow-sm'
+                          : 'border-border hover:border-accent/40 hover:shadow-sm'
                       )}
                     >
                       {property.hero_image_url ? (
                         <img
                           src={property.hero_image_url}
                           alt={property.name}
-                          className="w-20 h-16 object-cover rounded-lg flex-shrink-0"
+                          className="w-20 h-16 object-cover rounded-xl flex-shrink-0 shadow-sm"
                         />
                       ) : (
                         <div className="w-20 h-16 bg-muted rounded-lg flex-shrink-0" />
@@ -463,13 +466,13 @@ export function UnifiedBookingDialog() {
                           <span>•</span>
                           <span>{property.max_guests} guests</span>
                         </div>
-                        <div className="mt-1 text-sm font-medium text-primary">
+                        <div className="mt-1 text-sm font-semibold text-accent">
                           From €{property.base_price}/night
                         </div>
                       </div>
                       {selectedProperty?.id === property.id && (
-                        <div className="self-center w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                          <Check className="w-3 h-3 text-primary-foreground" />
+                        <div className="self-center w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
+                          <Check className="w-3.5 h-3.5 text-accent-foreground" />
                         </div>
                       )}
                     </button>
@@ -491,19 +494,22 @@ export function UnifiedBookingDialog() {
           >
             {/* Selected property summary */}
             {selectedProperty && (
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+              <div className="flex items-center gap-3.5 p-3.5 bg-secondary/30 border border-border/50 rounded-xl">
                 {selectedProperty.hero_image_url ? (
                   <img
                     src={selectedProperty.hero_image_url}
                     alt={selectedProperty.name}
-                    className="w-16 h-12 object-cover rounded-lg"
+                    className="w-16 h-12 object-cover rounded-xl shadow-sm"
                   />
                 ) : (
-                  <div className="w-16 h-12 bg-muted rounded-lg" />
+                  <div className="w-16 h-12 bg-muted rounded-xl" />
                 )}
                 <div>
-                  <h4 className="font-serif font-medium text-sm">{selectedProperty.name}</h4>
-                  <p className="text-xs text-muted-foreground">{selectedProperty.city}, {selectedProperty.country}</p>
+                  <h4 className="font-serif font-medium text-sm text-foreground">{selectedProperty.name}</h4>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-accent" />
+                    {selectedProperty.city}, {selectedProperty.country}
+                  </p>
                 </div>
               </div>
             )}
@@ -539,26 +545,26 @@ export function UnifiedBookingDialog() {
             )}
 
             {/* Date summary */}
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
+            <div className="flex items-center justify-between p-3.5 bg-secondary/30 border border-border/50 rounded-xl">
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">Check-in</p>
-                  <p className="font-medium text-sm">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Check-in</p>
+                  <p className="font-medium text-sm text-foreground">
                     {dateRange?.from ? format(dateRange.from, 'MMM d, yyyy') : 'Select date'}
                   </p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                <ArrowRight className="h-4 w-4 text-accent" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Check-out</p>
-                  <p className="font-medium text-sm">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Check-out</p>
+                  <p className="font-medium text-sm text-foreground">
                     {dateRange?.to ? format(dateRange.to, 'MMM d, yyyy') : 'Select date'}
                   </p>
                 </div>
               </div>
               {nights > 0 && (
                 <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Duration</p>
-                  <p className="font-medium text-sm text-primary">{nights} night{nights > 1 ? 's' : ''}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Duration</p>
+                  <p className="font-semibold text-sm text-accent">{nights} night{nights > 1 ? 's' : ''}</p>
                 </div>
               )}
             </div>
@@ -576,22 +582,24 @@ export function UnifiedBookingDialog() {
           >
             {/* Summary */}
             {selectedProperty && (
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+              <div className="flex items-center gap-3.5 p-3.5 bg-secondary/30 border border-border/50 rounded-xl">
                 {selectedProperty.hero_image_url ? (
                   <img
                     src={selectedProperty.hero_image_url}
                     alt={selectedProperty.name}
-                    className="w-16 h-12 object-cover rounded-lg"
+                    className="w-16 h-12 object-cover rounded-xl shadow-sm"
                   />
                 ) : (
-                  <div className="w-16 h-12 bg-muted rounded-lg" />
+                  <div className="w-16 h-12 bg-muted rounded-xl" />
                 )}
                 <div className="flex-1">
-                  <h4 className="font-serif font-medium text-sm">{selectedProperty.name}</h4>
-                  <p className="text-xs text-muted-foreground">
+                  <h4 className="font-serif font-medium text-sm text-foreground">{selectedProperty.name}</h4>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <CalendarIcon className="h-3 w-3 text-accent" />
                     {dateRange?.from && dateRange?.to && (
                       <>
-                        {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d')} · {nights} night{nights > 1 ? 's' : ''}
+                        {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d')}
+                        <span className="text-accent font-medium"> · {nights} night{nights > 1 ? 's' : ''}</span>
                       </>
                     )}
                   </p>
@@ -600,9 +608,9 @@ export function UnifiedBookingDialog() {
             )}
 
             {/* Guest selector */}
-            <div className="p-6 bg-muted/30 rounded-2xl space-y-4">
+            <div className="p-6 bg-secondary/30 rounded-2xl space-y-4">
               <div className="text-center">
-                <h3 className="font-serif text-lg font-medium">How many guests?</h3>
+                <h3 className="font-serif text-lg font-medium text-foreground">How many guests?</h3>
                 <p className="text-sm text-muted-foreground">
                   Maximum {selectedProperty?.max_guests || 20} guests
                 </p>
@@ -612,17 +620,24 @@ export function UnifiedBookingDialog() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-12 w-12 rounded-full"
+                  className="h-12 w-12 rounded-full border-2 hover:border-accent"
                   onClick={() => handleGuestChange(-1)}
                   disabled={guests <= 1}
                 >
                   <Minus className="h-5 w-5" />
                 </Button>
-                <span className="text-4xl font-medium w-16 text-center">{guests}</span>
+                <motion.span
+                  key={guests}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-5xl font-serif font-semibold w-16 text-center text-foreground"
+                >
+                  {guests}
+                </motion.span>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-12 w-12 rounded-full"
+                  className="h-12 w-12 rounded-full border-2 hover:border-accent"
                   onClick={() => handleGuestChange(1)}
                   disabled={guests >= (selectedProperty?.max_guests || 20)}
                 >
@@ -633,10 +648,10 @@ export function UnifiedBookingDialog() {
 
             {/* Price estimate */}
             {selectedProperty && nights > 0 && (
-              <div className="p-4 bg-primary/5 rounded-xl">
+              <div className="p-5 bg-accent/5 border border-accent/15 rounded-xl">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Estimated total</span>
-                  <span className="text-xl font-medium">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Estimated total</span>
+                  <span className="text-2xl font-serif font-semibold text-foreground">
                     {formatPrice(estimatedTotal).display}
                   </span>
                 </div>
@@ -658,7 +673,10 @@ export function UnifiedBookingDialog() {
             className="space-y-4"
           >
             <div>
-              <h3 className="font-serif text-lg font-medium">Enhance Your Stay</h3>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <h3 className="font-serif text-lg font-medium text-foreground">Enhance Your Stay</h3>
+              </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Add extras to make your trip unforgettable.
               </p>
@@ -684,7 +702,7 @@ export function UnifiedBookingDialog() {
             className="space-y-4"
           >
             <div>
-              <h3 className="font-serif text-lg font-medium">Your Details</h3>
+              <h3 className="font-serif text-lg font-medium text-foreground">Your Details</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Fill in your information to complete the booking.
               </p>
@@ -705,7 +723,7 @@ export function UnifiedBookingDialog() {
       </AnimatePresence>
 
       {/* Footer Actions */}
-      <div className="flex gap-3 pt-4 border-t mt-4">
+      <div className="flex gap-3 pt-4 border-t border-accent/15 mt-4">
         {step !== 'search' && step !== 'dates' && (
           <Button variant="outline" onClick={handlePrevStep} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
@@ -825,14 +843,14 @@ export function UnifiedBookingDialog() {
               {Array.from({ length: totalSteps }).map((_, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <div className={cn(
-                    'flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium transition-colors',
-                    i + 1 < getStepNumber() ? 'bg-primary/20 text-primary' :
-                    i + 1 === getStepNumber() ? 'bg-primary text-primary-foreground' :
+                    'flex items-center justify-center w-7 h-7 rounded-full text-xs font-medium transition-all duration-300',
+                    i + 1 < getStepNumber() ? 'bg-accent/20 text-accent' :
+                    i + 1 === getStepNumber() ? 'bg-accent text-accent-foreground shadow-sm' :
                     'bg-muted text-muted-foreground'
                   )}>
                     {i + 1 < getStepNumber() ? <Check className="h-3 w-3" /> : i + 1}
                   </div>
-                  {i < totalSteps - 1 && <div className="h-0.5 w-4 bg-border" />}
+                  {i < totalSteps - 1 && <div className={cn('h-0.5 w-4 rounded-full transition-colors', i + 1 < getStepNumber() ? 'bg-accent' : 'bg-border')} />}
                 </div>
               ))}
             </div>
@@ -862,14 +880,14 @@ export function UnifiedBookingDialog() {
             {Array.from({ length: totalSteps }).map((_, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div className={cn(
-                  'flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium transition-colors',
-                  i + 1 < getStepNumber() ? 'bg-primary/20 text-primary' :
-                  i + 1 === getStepNumber() ? 'bg-primary text-primary-foreground' :
+                  'flex items-center justify-center w-7 h-7 rounded-full text-xs font-medium transition-all duration-300',
+                  i + 1 < getStepNumber() ? 'bg-accent/20 text-accent' :
+                  i + 1 === getStepNumber() ? 'bg-accent text-accent-foreground shadow-sm' :
                   'bg-muted text-muted-foreground'
                 )}>
                   {i + 1 < getStepNumber() ? <Check className="h-3 w-3" /> : i + 1}
                 </div>
-                {i < totalSteps - 1 && <div className="h-0.5 w-8 bg-border" />}
+                {i < totalSteps - 1 && <div className={cn('h-0.5 w-8 rounded-full transition-colors', i + 1 < getStepNumber() ? 'bg-accent' : 'bg-border')} />}
               </div>
             ))}
           </div>
