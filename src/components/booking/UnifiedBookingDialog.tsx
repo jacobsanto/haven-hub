@@ -404,14 +404,15 @@ export function UnifiedBookingDialog() {
 
             {/* Summary */}
             {dateRange?.from && (
-              <div className="flex items-center justify-between p-3 bg-primary/5 rounded-xl">
+              <div className="flex items-center justify-between p-3.5 bg-accent/5 border border-accent/15 rounded-xl">
                 <div className="flex items-center gap-3 text-sm">
-                  <span>{format(dateRange.from, 'MMM d')}</span>
-                  <ArrowRight className="h-3 w-3" />
-                  <span>{dateRange.to ? format(dateRange.to, 'MMM d') : '—'}</span>
+                  <CalendarIcon className="h-4 w-4 text-accent" />
+                  <span className="font-medium">{format(dateRange.from, 'MMM d')}</span>
+                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                  <span className="font-medium">{dateRange.to ? format(dateRange.to, 'MMM d') : '—'}</span>
                 </div>
                 {nights > 0 && (
-                  <span className="text-sm font-medium text-primary">{nights} night{nights > 1 ? 's' : ''}</span>
+                  <span className="text-sm font-semibold text-accent">{nights} night{nights > 1 ? 's' : ''}</span>
                 )}
               </div>
             )}
