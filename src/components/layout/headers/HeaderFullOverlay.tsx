@@ -84,7 +84,7 @@ export function HeaderFullOverlay() {
               <div className="flex items-center justify-between h-[72px]">
                 <Link to="/" onClick={() => setOpen(false)}>
                   {logoUrl ? <img src={logoUrl} alt={brandName} width={140} height={40} className="h-10 w-auto object-contain" /> : (
-                    <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>
+                    <span className="text-xl font-serif font-medium text-primary">{primaryPart}</span>
                   )}
                 </Link>
                 <button aria-label="Close menu" onClick={() => setOpen(false)} className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:border-accent transition-colors">
