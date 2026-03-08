@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Testimonial {
@@ -11,7 +11,10 @@ export interface Testimonial {
   display_order: number;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
+
+export type TestimonialInput = Omit<Testimonial, 'id' | 'created_at' | 'updated_at'>;
 
 // Fallback testimonials shown while the DB loads or if it is empty
 export const fallbackTestimonials: Testimonial[] = [
@@ -25,6 +28,7 @@ export const fallbackTestimonials: Testimonial[] = [
     display_order: 1,
     is_active: true,
     created_at: '',
+    updated_at: '',
   },
   {
     id: '2',
@@ -36,6 +40,7 @@ export const fallbackTestimonials: Testimonial[] = [
     display_order: 2,
     is_active: true,
     created_at: '',
+    updated_at: '',
   },
   {
     id: '3',
@@ -47,9 +52,11 @@ export const fallbackTestimonials: Testimonial[] = [
     display_order: 3,
     is_active: true,
     created_at: '',
+    updated_at: '',
   },
 ];
 
+/** Public query — only active testimonials, ordered by display_order */
 export function useTestimonials() {
   return useQuery({
     queryKey: ['testimonials'],
@@ -63,6 +70,72 @@ export function useTestimonials() {
       if (error) throw error;
       return (data ?? []) as Testimonial[];
     },
-    staleTime: 1000 * 60 * 10, // Cache 10 minutes
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+/** Admin query — all testimonials including inactive */
+export function useAllTestimonials() {
+  return useQuery({
+    queryKey: ['testimonials', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('*')
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      return (data ?? []) as Testimonial[];
+    },
+  });
+}
+
+export function useCreateTestimonial() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: TestimonialInput) => {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .insert(input)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Testimonial;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['testimonials'] });
+    },
+  });
+}
+
+export function useUpdateTestimonial() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...input }: Partial<TestimonialInput> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .update(input)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Testimonial;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['testimonials'] });
+    },
+  });
+}
+
+export function useDeleteTestimonial() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('testimonials').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['testimonials'] });
+    },
   });
 }
