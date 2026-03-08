@@ -103,7 +103,7 @@ export function HeaderSplitCenter() {
           {/* Mobile */}
           <div className="flex md:hidden items-center justify-between h-[72px]">
             <Link to="/">
-              {logoUrl ? <img src={logoUrl} alt={brandName} className="h-8" /> : <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>}
+              {logoUrl ? <img src={logoUrl} alt={brandName} width={120} height={32} className="h-8" /> : <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>}
             </Link>
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2">
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
