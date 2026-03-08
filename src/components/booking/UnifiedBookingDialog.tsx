@@ -440,10 +440,10 @@ export function UnifiedBookingDialog() {
                       type="button"
                       onClick={() => handleSelectProperty(property)}
                       className={cn(
-                        'w-full flex gap-4 p-3 rounded-xl border-2 transition-all text-left',
+                        'w-full flex gap-4 p-3.5 rounded-xl border-2 transition-all text-left group/prop',
                         selectedProperty?.id === property.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50'
+                          ? 'border-accent bg-accent/5 shadow-sm'
+                          : 'border-border hover:border-accent/40 hover:shadow-sm'
                       )}
                     >
                       {property.hero_image_url ? (
