@@ -208,9 +208,7 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
         </button>
 
         <div className="flex gap-2 items-center">
-          {properties.map((_, idx) => {
-            const palette = getColor(idx);
-            return (
+          {properties.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => onSelect(idx)}
@@ -218,15 +216,14 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                 style={{
                   width: idx === activeIndex ? 24 : 8,
                   height: 8,
-                  background: idx === activeIndex ? palette.color : 'hsl(var(--foreground) / 0.2)',
+                  background: idx === activeIndex ? 'hsl(var(--accent))' : 'hsl(var(--foreground) / 0.2)',
                   borderRadius: 4,
                   transition: 'all 0.4s ease',
-                  boxShadow: idx === activeIndex ? `0 2px 8px ${palette.color}40` : 'none',
+                  boxShadow: idx === activeIndex ? '0 2px 8px hsl(var(--accent) / 0.4)' : 'none',
                 }}
                 aria-label={`Go to slide ${idx + 1}`}
               />
-            );
-          })}
+          ))}
         </div>
 
         <button
