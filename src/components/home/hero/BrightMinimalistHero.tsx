@@ -119,23 +119,20 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
           <div className="relative" style={{ width: 400, height: 500 }}>
             {properties.map((prop, idx) => {
               const isActive = idx === activeIndex;
-              const palette = getColor(idx);
               return (
                 <div
                   key={prop.id}
                   onMouseEnter={() => setHoveredIndex(idx)}
                   onMouseLeave={() => setHoveredIndex(null)}
                   onClick={() => onSelect(idx)}
-                  className="absolute inset-0 rounded-xl cursor-pointer overflow-hidden"
+                  className="absolute inset-0 rounded-xl cursor-pointer overflow-hidden border border-accent/30"
                   style={{
-                    border: `1px solid ${palette.color}30`,
                     transition: prefersReduced ? 'none' : 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
                     transform: isActive
                       ? 'translateY(0) scale(1) rotateZ(0deg)'
                       : `translateY(${(idx - activeIndex) * 30}px) scale(${0.85 + idx * 0.05}) rotateZ(${(idx - activeIndex) * 2}deg)`,
                     zIndex: isActive ? 10 : 5 - Math.abs(idx - activeIndex),
                     opacity: isActive || hoveredIndex === idx ? 1 : 0.6,
-                    boxShadow: isActive ? `0 12px 32px ${palette.color}15` : 'none',
                   }}
                 >
                   {/* Property hero image */}
@@ -148,13 +145,10 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                   />
 
                   {/* Color tint blend overlay */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ background: `linear-gradient(135deg, ${palette.color}30, ${palette.color}15)`, mixBlendMode: 'multiply' }}
-                  />
+                  <div className="absolute inset-0 pointer-events-none bg-accent/10 mix-blend-multiply" />
 
                   {/* Bottom gradient for text legibility */}
-                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-foreground/60 via-foreground/20 to-transparent" />
 
                   {/* Card content */}
                   <div className="absolute inset-0 flex flex-col justify-between p-8 z-[5]">
