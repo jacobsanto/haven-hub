@@ -38,7 +38,7 @@ export function ThingsToDoAfterLayout({ post, readTime, publishedDate, author, r
       {isMobile && headings.length > 0 && <MobileTableOfContents headings={headings} />}
 
       {/* Hero with checklist vibe */}
-      <section className="relative bg-gradient-to-br from-violet-50/50 via-background to-primary/5 dark:from-violet-950/20 dark:to-background pt-20 pb-16">
+      <section className="relative bg-gradient-to-br from-accent/5 via-background to-primary/5 pt-20 pb-16">
         <div className="absolute top-4 left-4 z-10">
           <Link to="/blog" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to Blog
