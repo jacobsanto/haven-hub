@@ -582,22 +582,24 @@ export function UnifiedBookingDialog() {
           >
             {/* Summary */}
             {selectedProperty && (
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+              <div className="flex items-center gap-3.5 p-3.5 bg-secondary/30 border border-border/50 rounded-xl">
                 {selectedProperty.hero_image_url ? (
                   <img
                     src={selectedProperty.hero_image_url}
                     alt={selectedProperty.name}
-                    className="w-16 h-12 object-cover rounded-lg"
+                    className="w-16 h-12 object-cover rounded-xl shadow-sm"
                   />
                 ) : (
-                  <div className="w-16 h-12 bg-muted rounded-lg" />
+                  <div className="w-16 h-12 bg-muted rounded-xl" />
                 )}
                 <div className="flex-1">
-                  <h4 className="font-serif font-medium text-sm">{selectedProperty.name}</h4>
-                  <p className="text-xs text-muted-foreground">
+                  <h4 className="font-serif font-medium text-sm text-foreground">{selectedProperty.name}</h4>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <CalendarIcon className="h-3 w-3 text-accent" />
                     {dateRange?.from && dateRange?.to && (
                       <>
-                        {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d')} · {nights} night{nights > 1 ? 's' : ''}
+                        {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d')}
+                        <span className="text-accent font-medium"> · {nights} night{nights > 1 ? 's' : ''}</span>
                       </>
                     )}
                   </p>
