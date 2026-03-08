@@ -35,20 +35,6 @@ export function FooterImmersive() {
         </Link>
       </div>
 
-      {/* Destination ticker */}
-      <div className="border-t border-b border-background/10 py-3 overflow-hidden">
-        <div className="flex gap-12 animate-[marquee_30s_linear_infinite] whitespace-nowrap w-max">
-          {[...Array(2)].map((_, r) => (
-            <div key={r} className="flex gap-12">
-              {['Santorini', 'Tuscany', 'Bali', 'Maldives', 'Provence', 'Amalfi Coast'].map(d => (
-                <span key={d + r} className="font-serif text-sm italic text-background/40 flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-accent/40" />{d}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Links grid */}
       <div className="container mx-auto px-4 py-16">
