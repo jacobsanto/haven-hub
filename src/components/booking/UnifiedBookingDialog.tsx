@@ -15,7 +15,9 @@ import {
   Plus,
   X,
   ChevronDown,
-  Gift
+  Gift,
+  Star,
+  Sparkles
 } from 'lucide-react';
 import {
   Dialog,
