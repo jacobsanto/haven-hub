@@ -32,8 +32,7 @@ export function FooterGlassmorphic() {
   };
 
   const GlassPanel = ({ children, className = '' }: {children: React.ReactNode;className?: string;}) =>
-  <div className={`bg-card/60 backdrop-blur-xl border border-border/30 rounded-3xl relative overflow-hidden ${className}`}>
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border/30 to-transparent" />
+  <div className={`bg-background/5 border border-background/10 rounded-3xl relative overflow-hidden ${className}`}>
       {children}
     </div>;
 
