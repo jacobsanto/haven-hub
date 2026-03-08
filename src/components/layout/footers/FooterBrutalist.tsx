@@ -18,7 +18,7 @@ export function FooterBrutalist() {
   }, []);
 
   return (
-    <footer className="bg-foreground text-background border-t-4 border-accent">
+    <footer className="bg-foreground text-background border-t border-background/10">
       <div className="container mx-auto px-4 py-12">
         {/* Terminal header */}
         <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-dashed border-background/20">
