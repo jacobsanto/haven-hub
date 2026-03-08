@@ -83,59 +83,40 @@ export function useValidateCoupon() {
       nights: number; 
       bookingValue: number;
     }) => {
-      const today = new Date().toISOString().split('T')[0];
-
       const { data, error } = await supabase
-        .from('coupons_promos')
-        .select('*')
-        .eq('code', code.toUpperCase())
-        .eq('is_active', true)
-        .lte('valid_from', today)
-        .gte('valid_until', today)
-        .single();
+        .rpc('validate_coupon', {
+          _code: code.toUpperCase(),
+          _property_id: propertyId,
+          _nights: nights,
+          _booking_value: bookingValue,
+        });
 
-      if (error || !data) {
-        throw new Error('Invalid or expired coupon code');
+      if (error) {
+        throw new Error('Failed to validate coupon');
       }
 
-      // Check usage limit
-      if (data.max_uses && data.uses_count >= data.max_uses) {
-        throw new Error('This coupon has reached its usage limit');
-      }
+      const result = data as Record<string, unknown>;
 
-      // Check minimum nights
-      if (data.min_nights && nights < data.min_nights) {
-        throw new Error(`Minimum ${data.min_nights} nights required for this coupon`);
-      }
-
-      // Check minimum booking value
-      if (data.min_booking_value && bookingValue < Number(data.min_booking_value)) {
-        throw new Error(`Minimum booking value of €${data.min_booking_value} required`);
-      }
-
-      // Check applicable properties
-      if (data.applicable_properties && data.applicable_properties.length > 0) {
-        if (!data.applicable_properties.includes(propertyId)) {
-          throw new Error('This coupon is not valid for this property');
-        }
+      if (!result.valid) {
+        throw new Error(result.error as string);
       }
 
       return {
-        id: data.id,
-        code: data.code,
-        name: data.name,
-        description: data.description,
-        discountType: data.discount_type as CouponPromo['discountType'],
-        discountValue: Number(data.discount_value),
-        minNights: data.min_nights,
-        minBookingValue: data.min_booking_value ? Number(data.min_booking_value) : undefined,
-        maxUses: data.max_uses,
-        usesCount: data.uses_count,
-        validFrom: data.valid_from,
-        validUntil: data.valid_until,
-        applicableProperties: data.applicable_properties,
-        stackable: data.stackable,
-        isActive: data.is_active,
+        id: result.id,
+        code: result.code,
+        name: result.name,
+        description: result.description,
+        discountType: result.discount_type as CouponPromo['discountType'],
+        discountValue: Number(result.discount_value),
+        minNights: result.min_nights as number | null,
+        minBookingValue: result.min_booking_value ? Number(result.min_booking_value) : undefined,
+        maxUses: result.max_uses as number | null,
+        usesCount: result.uses_count as number,
+        validFrom: result.valid_from as string,
+        validUntil: result.valid_until as string,
+        applicableProperties: result.applicable_properties as string[] | null,
+        stackable: result.stackable as boolean,
+        isActive: result.is_active as boolean,
       } as CouponPromo;
     },
   });
