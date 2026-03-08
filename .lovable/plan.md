@@ -1,28 +1,33 @@
 
 
-# Full Semantic Color Token Enforcement
+## Improving hero text and search bar legibility
 
-## Problem
-Many public-facing components use hardcoded Tailwind colors (blue-600, green-400, rose-500, violet-700, etc.) that do NOT respond to admin dashboard palette changes. When you change colors in settings, these elements stay the same.
+Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
 
-## Scope
+### Recommended approach: Layered depth
 
-**Will fix** (public-facing, guest-visible components — ~20 files):
+Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
 
-| Category | Files | Current Problem | Fix |
-|----------|-------|----------------|-----|
-| Blog article badges | `ArticleStyleBadge.tsx` | 10 different hardcoded colors per style (rose, violet, teal, amber, blue, green, orange, red) | All use `bg-primary/10 text-primary` or `bg-accent/10 text-accent` |
-| Blog layout headers | 8 layout files (`DetailedCaseStudyLayout`, `ThingsToDoAfterLayout`, `ProductShowdownLayout`, `HowTheyDidItLayout`, `BeginnersGuideLayout`, `MythDebunkerLayout`, `ClassicListPostLayout`, `TravelTipsLayout`) | Each has hardcoded colored badges, borders, backgrounds | Convert to `primary`/`accent`/`muted` tokens |
-| Blog callouts | `TipCallout.tsx` | 6 callout types with hardcoded colors (amber, blue, emerald, purple, teal) | Map to semantic: tip→accent, info→primary, location→primary, highlight→primary, timing→muted, recommendation→accent |
-| Blog tip card | `TipCard.tsx` | Likely hardcoded colors | Convert to semantic tokens |
-| Property cards | `AtAGlanceCards.tsx` | `bg-green-100 text-green-600` for instant booking | `bg-accent/10 text-accent` |
-| Image overlays | `HeroSection.tsx`, `SectionShowcase.tsx`, `BlogPostCard.tsx`, `VillaCardGrid.tsx`, `QuickBookCard.tsx`, `VillaDetailModal.tsx`, `PromotionalPopup.tsx` | `bg-black/*` and `text-white` | `bg-foreground/*` and `text-background` |
+1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
 
-**Will NOT change** (correct to leave as-is):
-- **UI primitives** (dialog.tsx, sheet.tsx, drawer.tsx, alert-dialog.tsx) — standard shadcn overlays, internal framework
-- **Admin pages** — status colors (green=success, red=error, blue=info) are functional UX conventions, not brand colors
-- **Admin internal components** — ContentCalendar, BookingDetailDialog, PMSConnectionWizard status indicators
+2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
+   ```
+   bg-gradient-to-r from-black/50 via-black/20 to-transparent
+   ```
+   This keeps the right side (card deck) more vibrant while making the left text area very readable.
 
-## Result
-After this change, adjusting the palette in Admin Settings will propagate to every guest-facing element — headers, footers, cards, blog posts, callouts, badges, overlays, popups. No more orphaned colors.
+3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
+
+4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
+
+### Summary of changes
+
+| File | What |
+|------|------|
+| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
+| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
+| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
+| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
+
+These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
 

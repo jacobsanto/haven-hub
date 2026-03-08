@@ -39,14 +39,14 @@ export function MythDebunkerLayout({ post, readTime, publishedDate, author, rela
       {isMobile && headings.length > 0 && <MobileTableOfContents headings={headings} />}
 
       {/* Bold myth-busting hero */}
-      <section className="relative bg-gradient-to-br from-red-50/50 via-background to-background dark:from-red-950/20 dark:to-background pt-20 pb-16">
+      <section className="relative bg-gradient-to-br from-destructive/5 via-background to-background pt-20 pb-16">
         <div className="absolute top-4 left-4 z-10">
           <Link to="/blog" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to Blog
           </Link>
         </div>
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 text-red-700 dark:text-red-400 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive text-sm font-medium mb-6">
             <ShieldQuestion className="h-4 w-4" />
             Myth Debunker
           </div>
@@ -55,12 +55,12 @@ export function MythDebunkerLayout({ post, readTime, publishedDate, author, rela
           
           {/* Myth vs Truth quick visual */}
           <div className="flex items-center justify-center gap-6 mb-8">
-            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+            <div className="flex items-center gap-2 text-destructive">
               <XCircle className="h-5 w-5" />
               <span className="text-sm font-medium">{mythCount} Myths</span>
             </div>
             <div className="w-px h-6 bg-border" />
-            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+            <div className="flex items-center gap-2 text-primary">
               <CheckCircle2 className="h-5 w-5" />
               <span className="text-sm font-medium">{mythCount} Truths</span>
             </div>
@@ -83,7 +83,7 @@ export function MythDebunkerLayout({ post, readTime, publishedDate, author, rela
       <div className="container mx-auto px-4 py-12 md:py-16">
         <article className="max-w-3xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:bg-red-50/50 dark:prose-h2:bg-red-950/20 prose-h2:rounded-lg prose-h2:px-4 prose-h2:py-3 prose-h2:border-l-4 prose-h2:border-red-500">
+            <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-medium prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground prose-h2:bg-destructive/5 prose-h2:rounded-lg prose-h2:px-4 prose-h2:py-3 prose-h2:border-l-4 prose-h2:border-destructive">
               {post.content ? <MarkdownRenderer content={post.content} style="travel-tips" /> : <p className="text-muted-foreground">No content available.</p>}
             </div>
             {post.tags && post.tags.length > 0 && (

@@ -136,8 +136,8 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
 
           {/* Badges */}
           <div className="absolute bottom-5 left-7 flex gap-2">
-            {property.instant_booking && (
-              <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
+          {property.instant_booking && (
+              <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
                 Instant Book
               </span>
             )}
@@ -234,7 +234,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
             <div className="flex flex-col gap-3">
               {property.highlights.map((h, i) => (
                 <div key={i} className="flex items-center gap-3.5 p-3.5 bg-background border border-border rounded-[10px]">
-                  <Check size={16} className="text-emerald-500 shrink-0" />
+                  <Check size={16} className="text-primary shrink-0" />
                   <span className="font-sans text-sm text-muted-foreground">{h}</span>
                 </div>
               ))}
@@ -256,7 +256,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
       {/* Fullscreen Lightbox */}
       {fullscreen && (
         <div
-          className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center animate-fade-in"
+          className="fixed inset-0 z-[300] bg-foreground/95 flex items-center justify-center animate-fade-in"
           onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
         >
           <button

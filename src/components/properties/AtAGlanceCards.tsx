@@ -42,8 +42,8 @@ export function AtAGlanceCards({ property, specialOffer, destinationName }: AtAG
             title: 'Instant Book',
             value: 'Available',
             description: 'Book now, no waiting',
-            color: 'bg-green-100 dark:bg-green-900/30',
-            iconColor: 'text-green-600 dark:text-green-400',
+            color: 'bg-accent/10',
+            iconColor: 'text-accent',
           },
         ]
       : []),

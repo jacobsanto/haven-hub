@@ -73,7 +73,7 @@ export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFa
         {/* Badges */}
         <div className="absolute top-3.5 left-3.5 flex gap-1.5">
           {property.instant_booking && (
-            <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-500">
+            <span className="text-[10px] font-medium tracking-[0.1em] uppercase px-2.5 py-1 rounded bg-accent/15 text-accent">
               Instant
             </span>
           )}
@@ -93,7 +93,7 @@ export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFa
 
         {/* Instant Book overlay */}
         {property.instant_booking && hovered && (
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-[4] animate-fade-in">
+          <div className="absolute inset-0 bg-foreground/20 flex items-center justify-center z-[4] animate-fade-in">
             <button
               onClick={(e) => { e.stopPropagation(); onInstantBook(property); }}
               className="flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold text-sm shadow-[0_8px_30px_-4px_hsl(var(--primary)/0.5)] backdrop-blur-sm animate-scale-in hover:scale-110 hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.6)] transition-all duration-300"

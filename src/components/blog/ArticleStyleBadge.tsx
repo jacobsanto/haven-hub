@@ -17,14 +17,14 @@ const styleConfig: Record<ArticleStyle, {
 }> = {
   'destination-guide': { icon: Map, label: 'Guide', bgClass: 'bg-primary/10', textClass: 'text-primary' },
   'lifestyle': { icon: Sparkles, label: 'Lifestyle', bgClass: 'bg-secondary/20', textClass: 'text-secondary-foreground' },
-  'travel-tips': { icon: Lightbulb, label: 'Tips', bgClass: 'bg-amber-500/10', textClass: 'text-amber-600 dark:text-amber-400' },
-  'classic-list-post': { icon: List, label: 'List', bgClass: 'bg-blue-500/10', textClass: 'text-blue-600 dark:text-blue-400' },
-  'beginners-guide': { icon: BookOpen, label: 'Guide', bgClass: 'bg-green-500/10', textClass: 'text-green-600 dark:text-green-400' },
-  'things-to-do-after': { icon: CheckSquare, label: 'Checklist', bgClass: 'bg-violet-500/10', textClass: 'text-violet-600 dark:text-violet-400' },
-  'product-showdown': { icon: GitCompare, label: 'Comparison', bgClass: 'bg-orange-500/10', textClass: 'text-orange-600 dark:text-orange-400' },
-  'detailed-case-study': { icon: BarChart3, label: 'Case Study', bgClass: 'bg-rose-500/10', textClass: 'text-rose-600 dark:text-rose-400' },
-  'how-they-did-it': { icon: Users, label: 'Story', bgClass: 'bg-teal-500/10', textClass: 'text-teal-600 dark:text-teal-400' },
-  'myth-debunker': { icon: ShieldQuestion, label: 'Myths', bgClass: 'bg-red-500/10', textClass: 'text-red-600 dark:text-red-400' },
+  'travel-tips': { icon: Lightbulb, label: 'Tips', bgClass: 'bg-accent/10', textClass: 'text-accent' },
+  'classic-list-post': { icon: List, label: 'List', bgClass: 'bg-primary/10', textClass: 'text-primary' },
+  'beginners-guide': { icon: BookOpen, label: 'Guide', bgClass: 'bg-primary/10', textClass: 'text-primary' },
+  'things-to-do-after': { icon: CheckSquare, label: 'Checklist', bgClass: 'bg-accent/10', textClass: 'text-accent' },
+  'product-showdown': { icon: GitCompare, label: 'Comparison', bgClass: 'bg-accent/10', textClass: 'text-accent' },
+  'detailed-case-study': { icon: BarChart3, label: 'Case Study', bgClass: 'bg-primary/10', textClass: 'text-primary' },
+  'how-they-did-it': { icon: Users, label: 'Story', bgClass: 'bg-primary/10', textClass: 'text-primary' },
+  'myth-debunker': { icon: ShieldQuestion, label: 'Myths', bgClass: 'bg-destructive/10', textClass: 'text-destructive' },
 };
 
 export function ArticleStyleBadge({ 

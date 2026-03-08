@@ -172,8 +172,8 @@ export function HeroSection() {
             className="absolute inset-0 w-full h-full object-cover blur-sm scale-105"
             style={{ transition: 'opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1)' }}
           />
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
+          <div className="absolute inset-0 bg-foreground/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-foreground/35 via-foreground/10 to-transparent" />
         </>}
 
           {!prefersReduced &&

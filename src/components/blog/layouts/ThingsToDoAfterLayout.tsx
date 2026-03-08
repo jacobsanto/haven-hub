@@ -38,14 +38,14 @@ export function ThingsToDoAfterLayout({ post, readTime, publishedDate, author, r
       {isMobile && headings.length > 0 && <MobileTableOfContents headings={headings} />}
 
       {/* Hero with checklist vibe */}
-      <section className="relative bg-gradient-to-br from-violet-50/50 via-background to-primary/5 dark:from-violet-950/20 dark:to-background pt-20 pb-16">
+      <section className="relative bg-gradient-to-br from-accent/5 via-background to-primary/5 pt-20 pb-16">
         <div className="absolute top-4 left-4 z-10">
           <Link to="/blog" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to Blog
           </Link>
         </div>
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-400 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
             <CheckSquare className="h-4 w-4" />
             Action Checklist
           </div>
@@ -72,7 +72,7 @@ export function ThingsToDoAfterLayout({ post, readTime, publishedDate, author, r
             <div className="space-y-2">
               {headings.filter(h => h.level === 2).map((h, i) => (
                 <a key={h.id} href={`#${h.id}`} className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
-                  <span className="flex items-center justify-center w-5 h-5 rounded border border-violet-300 dark:border-violet-700 text-[10px] font-medium text-violet-600 dark:text-violet-400 shrink-0">{i + 1}</span>
+                  <span className="flex items-center justify-center w-5 h-5 rounded border border-accent/30 text-[10px] font-medium text-accent shrink-0">{i + 1}</span>
                   <span className="line-clamp-1">{h.text}</span>
                 </a>
               ))}

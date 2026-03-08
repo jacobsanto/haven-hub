@@ -51,7 +51,7 @@ export function ProductShowdownLayout({ post, readTime, publishedDate, author, r
           </Link>
         </div>
         <div className="relative container mx-auto px-4 max-w-3xl text-center pt-20 pb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 text-orange-700 dark:text-orange-400 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
             <GitCompare className="h-4 w-4" />
             Comparison
           </div>
