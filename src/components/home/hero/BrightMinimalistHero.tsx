@@ -161,7 +161,7 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                       }}
                     >
                       <span
-                        className="inline-flex items-center gap-1 text-[11px] font-medium tracking-[1.5px] uppercase pb-3 text-white/80"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium tracking-[1.5px] uppercase pb-3 text-primary-foreground/80"
                       >
                         <MapPin size={10} />
                         {prop.city}, {prop.country}
