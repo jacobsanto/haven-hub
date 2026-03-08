@@ -119,7 +119,7 @@ export function PriceBreakdownDisplay({
               .filter(item => item.type === 'discount')
               .map((item, i) => (
                 <div key={`disc-${i}`} className="flex justify-between text-sm">
-                  <span className="text-green-600 flex items-center gap-1">
+                  <span className="text-accent flex items-center gap-1">
                     <Tag className="h-3 w-3" />
                     {item.label}
                     {item.details && (
