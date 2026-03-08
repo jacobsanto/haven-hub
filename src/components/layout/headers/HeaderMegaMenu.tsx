@@ -22,9 +22,10 @@ export function HeaderMegaMenu() {
   const { data: navItems = [] } = useNavigationItems('header');
 
   useEffect(() => {
-    const f = () => setIsScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', f);
-    return () => window.removeEventListener('scroll', f);
+    let raf: number;
+    const f = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setIsScrolled(window.scrollY > 40)); };
+    window.addEventListener('scroll', f, { passive: true });
+    return () => { window.removeEventListener('scroll', f); cancelAnimationFrame(raf); };
   }, []);
 
   const nameParts = brandName.split(' ');
