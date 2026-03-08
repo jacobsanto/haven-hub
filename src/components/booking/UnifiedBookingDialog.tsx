@@ -648,10 +648,10 @@ export function UnifiedBookingDialog() {
 
             {/* Price estimate */}
             {selectedProperty && nights > 0 && (
-              <div className="p-4 bg-primary/5 rounded-xl">
+              <div className="p-5 bg-accent/5 border border-accent/15 rounded-xl">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Estimated total</span>
-                  <span className="text-xl font-medium">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Estimated total</span>
+                  <span className="text-2xl font-serif font-semibold text-foreground">
                     {formatPrice(estimatedTotal).display}
                   </span>
                 </div>
