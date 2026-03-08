@@ -77,10 +77,9 @@ export function PropertiesFilterBar({
   return (
     <section className="sticky top-[72px] z-50 bg-background/95 backdrop-blur-xl border-b border-border py-4 px-[5%]">
       <div className="max-w-[1200px] mx-auto">
-        {/* Top row */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          {/* Search */}
-          <div className="flex items-center gap-2.5 bg-muted border border-border rounded-lg px-3.5 py-2 flex-[1_1_260px] max-w-[340px]">
+        {/* Search row */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 bg-muted border border-border rounded-lg px-3.5 py-2 flex-1 min-w-0">
             <Search size={15} className="text-muted-foreground shrink-0" />
             <input
               placeholder="Search villas, destinations..."
@@ -96,61 +95,59 @@ export function PropertiesFilterBar({
               />
             )}
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setExpanded((x) => !x)}
+            className={cn(
+              'gap-1.5 shrink-0',
+              expanded && 'border-accent text-accent'
+            )}
+          >
+            <SlidersHorizontal size={14} /> More
+          </Button>
+        </div>
 
-          {/* Quick filters */}
-          <div className="flex gap-2 flex-[1_1_auto] justify-center">
-            <Select value={selectedDestination || 'all'} onValueChange={(v) => onDestinationChange(v === 'all' ? '' : v)}>
-              <SelectTrigger className="min-w-[150px] bg-muted border-border">
-                <SelectValue placeholder="All Destinations" />
-              </SelectTrigger>
-              <SelectContent className="bg-card">
-                <SelectItem value="all">All Destinations</SelectItem>
-                {destinations.map((d) => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Quick filters – horizontally scrollable on mobile */}
+        <div className="flex flex-nowrap items-center gap-2 mt-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+          <Select value={selectedDestination || 'all'} onValueChange={(v) => onDestinationChange(v === 'all' ? '' : v)}>
+            <SelectTrigger className="w-auto min-w-[140px] bg-muted border-border shrink-0">
+              <SelectValue placeholder="All Destinations" />
+            </SelectTrigger>
+            <SelectContent className="bg-card">
+              <SelectItem value="all">All Destinations</SelectItem>
+              {destinations.map((d) => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <Select value={priceRange} onValueChange={onPriceRangeChange}>
-              <SelectTrigger className="min-w-[130px] bg-muted border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-card">
-                {PRICE_RANGES.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Select value={priceRange} onValueChange={onPriceRangeChange}>
+            <SelectTrigger className="w-auto min-w-[120px] bg-muted border-border shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-card">
+              {PRICE_RANGES.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <Select value={String(guestFilter)} onValueChange={(v) => onGuestFilterChange(Number(v))}>
-              <SelectTrigger className="min-w-[120px] bg-muted border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-card">
-                <SelectItem value="0">Any Guests</SelectItem>
-                {GUEST_OPTIONS.map((g) => (
-                  <SelectItem key={g} value={String(g)}>{g}+ guests</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={String(guestFilter)} onValueChange={(v) => onGuestFilterChange(Number(v))}>
+            <SelectTrigger className="w-auto min-w-[110px] bg-muted border-border shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-card">
+              <SelectItem value="0">Any Guests</SelectItem>
+              {GUEST_OPTIONS.map((g) => (
+                <SelectItem key={g} value={String(g)}>{g}+ guests</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          {/* Right controls */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setExpanded((x) => !x)}
-              className={cn(
-                'gap-1.5',
-                expanded && 'border-accent text-accent'
-              )}
-            >
-              <SlidersHorizontal size={14} /> More
-            </Button>
-
+          <div className="hidden md:flex items-center gap-2 ml-auto shrink-0">
             <Select value={sortBy} onValueChange={onSortChange}>
-              <SelectTrigger className="min-w-[160px] bg-muted border-border">
+              <SelectTrigger className="min-w-[150px] bg-muted border-border">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-card">
@@ -185,6 +182,23 @@ export function PropertiesFilterBar({
               {resultCount} villa{resultCount !== 1 ? 's' : ''}
             </span>
           </div>
+
+          {/* Mobile: sort & count inline */}
+          <div className="flex md:hidden items-center gap-2 shrink-0">
+            <Select value={sortBy} onValueChange={onSortChange}>
+              <SelectTrigger className="w-auto min-w-[110px] bg-muted border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-card">
+                {SORT_OPTIONS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="font-sans text-xs text-muted-foreground whitespace-nowrap">
+              {resultCount}
+            </span>
+          </div>
         </div>
 
         {/* Expanded filters */}
@@ -213,7 +227,7 @@ export function PropertiesFilterBar({
               className={cn(
                 'px-3.5 py-1.5 rounded-md text-xs font-sans cursor-pointer transition-all border inline-flex items-center gap-1.5',
                 instantBooking
-                  ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500'
+                  ? 'bg-accent/10 border-accent text-accent'
                   : 'bg-muted border-border text-muted-foreground hover:text-foreground'
               )}
             >
