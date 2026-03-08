@@ -313,7 +313,7 @@ export function UnifiedBookingDialog() {
                     type="button"
                     className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-border hover:border-accent/50 transition-all text-left bg-card shadow-sm"
                   >
-                    <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                    <MapPin className="h-4 w-4 text-accent flex-shrink-0" />
                     <span className={cn(
                       "text-sm flex-1",
                       selectedDestinationName ? "font-medium text-foreground" : "text-muted-foreground"
