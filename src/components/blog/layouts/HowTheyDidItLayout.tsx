@@ -38,7 +38,7 @@ export function HowTheyDidItLayout({ post, readTime, publishedDate, author, rela
       {isMobile && headings.length > 0 && <MobileTableOfContents headings={headings} />}
 
       {/* Hero with people/strategy focus */}
-      <section className="relative bg-gradient-to-br from-teal-50/50 via-background to-background dark:from-teal-950/20 dark:to-background pt-20 pb-16 border-b border-border/50">
+      <section className="relative bg-gradient-to-br from-primary/5 via-background to-background pt-20 pb-16 border-b border-border/50">
         <div className="absolute top-4 left-4 z-10">
           <Link to="/blog" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to Blog
