@@ -55,12 +55,12 @@ export function MythDebunkerLayout({ post, readTime, publishedDate, author, rela
           
           {/* Myth vs Truth quick visual */}
           <div className="flex items-center justify-center gap-6 mb-8">
-            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+            <div className="flex items-center gap-2 text-destructive">
               <XCircle className="h-5 w-5" />
               <span className="text-sm font-medium">{mythCount} Myths</span>
             </div>
             <div className="w-px h-6 bg-border" />
-            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+            <div className="flex items-center gap-2 text-primary">
               <CheckCircle2 className="h-5 w-5" />
               <span className="text-sm font-medium">{mythCount} Truths</span>
             </div>
