@@ -75,7 +75,7 @@ export const QuickBookCard = forwardRef<HTMLDivElement, QuickBookCardProps>(func
 
             {/* Location */}
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-              <MapPin className="h-3 w-3 text-destructive" />
+              <MapPin className="h-3 w-3 text-accent" />
               <span>{property.city}, {property.country}</span>
             </div>
 

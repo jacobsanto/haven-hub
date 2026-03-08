@@ -47,7 +47,7 @@ export function BeginnersGuideLayout({ post, readTime, publishedDate, author, re
           </Link>
         </div>
         <div className="container mx-auto px-4 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
             <BookOpen className="h-4 w-4" />
             Beginner's Guide
           </div>

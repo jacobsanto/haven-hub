@@ -256,7 +256,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
       {/* Fullscreen Lightbox */}
       {fullscreen && (
         <div
-          className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center animate-fade-in"
+          className="fixed inset-0 z-[300] bg-foreground/95 flex items-center justify-center animate-fade-in"
           onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
         >
           <button

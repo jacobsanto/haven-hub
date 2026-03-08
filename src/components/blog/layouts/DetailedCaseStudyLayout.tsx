@@ -43,7 +43,7 @@ export function DetailedCaseStudyLayout({ post, readTime, publishedDate, author,
         {post.featured_image_url ? (
           <img src={post.featured_image_url} alt={post.title} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-rose-500/20 to-primary/10" />
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/10" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <GrainOverlay />
