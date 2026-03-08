@@ -65,7 +65,6 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
         <div className="flex-1 max-w-xl">
           {properties.map((prop, idx) => {
             const isActive = idx === activeIndex;
-            const palette = getColor(idx);
             return (
               <div
                 key={prop.id}
@@ -100,10 +99,7 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                   </p>
 
                   {/* Accent line */}
-                  <div
-                    className="w-[60px] h-[2px] rounded-sm opacity-80"
-                    style={{ background: palette.color }}
-                  />
+                  <div className="w-[60px] h-[2px] rounded-sm opacity-80 bg-accent" />
 
                   {/* CTA */}
                   <Link
