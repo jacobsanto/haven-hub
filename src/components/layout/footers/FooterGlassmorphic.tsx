@@ -50,7 +50,7 @@ export function FooterGlassmorphic() {
             <p className="text-[9px] font-mono uppercase tracking-[.2em] text-accent mb-3">Newsletter</p>
             {!isSubscribed ?
             <form onSubmit={handleSubscribe} className="flex gap-1.5">
-                <Input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background/5 border-background/10 text-background placeholder:text-background/40 h-11 backdrop-blur-sm" />
+                <Input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background/5 border-background/10 text-background placeholder:text-background/40 h-11" />
                 <button type="submit" className="w-11 h-11 bg-accent text-accent-foreground rounded-xl flex items-center justify-center"><Send className="h-4 w-4" /></button>
               </form> :
             <p className="text-sm text-accent">✓ Subscribed!</p>}
