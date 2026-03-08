@@ -35,8 +35,8 @@ export function FooterChatFirst() {
               </div>
               <div>
                 <p className="text-sm font-medium text-background">{primaryPart} Concierge</p>
-                <p className="text-[10px] text-green-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />Online now
+                <p className="text-[10px] text-accent flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent" />Online now
                 </p>
               </div>
             </div>

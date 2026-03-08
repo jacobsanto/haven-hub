@@ -163,7 +163,7 @@ export function AddonsSelection({
               </div>
               <div className="flex items-center gap-2">
                 {selectedAddons.some(s => s.addon.category === category) && (
-                  <Badge variant="default" className="bg-green-600">
+                  <Badge variant="default" className="bg-accent">
                     <Check className="h-3 w-3 mr-1" />
                     Selected
                   </Badge>

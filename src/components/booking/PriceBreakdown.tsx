@@ -38,7 +38,7 @@ export function PriceBreakdownDisplay({
           </div>
         )}
         {breakdown.discountAmount > 0 && (
-          <div className="flex justify-between text-sm text-green-600">
+          <div className="flex justify-between text-sm text-accent">
             <span className="flex items-center gap-1">
               <Tag className="h-3 w-3" />
               Discount
@@ -87,7 +87,7 @@ export function PriceBreakdownDisplay({
               .map((item, i) => (
                 <div key={`addon-${i}`} className="flex justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-1">
-                    <Check className="h-3 w-3 text-green-600" />
+                    <Check className="h-3 w-3 text-accent" />
                     {item.label}
                   </span>
                   <span>{formatAmount(item.amount)}</span>
@@ -119,7 +119,7 @@ export function PriceBreakdownDisplay({
               .filter(item => item.type === 'discount')
               .map((item, i) => (
                 <div key={`disc-${i}`} className="flex justify-between text-sm">
-                  <span className="text-green-600 flex items-center gap-1">
+                  <span className="text-accent flex items-center gap-1">
                     <Tag className="h-3 w-3" />
                     {item.label}
                     {item.details && (
@@ -128,7 +128,7 @@ export function PriceBreakdownDisplay({
                       </Badge>
                     )}
                   </span>
-                  <span className="text-green-600">{formatAmount(item.amount)}</span>
+                  <span className="text-accent">{formatAmount(item.amount)}</span>
                 </div>
               ))}
           </>
@@ -180,8 +180,8 @@ export function PriceBreakdownDisplay({
         )}
 
         {/* Direct booking savings */}
-        <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+        <div className="mt-4 p-3 bg-accent/5 rounded-lg">
+          <div className="flex items-center gap-2 text-sm text-accent">
             <Check className="h-4 w-4" />
             <span className="font-medium">You're saving up to 15% by booking direct!</span>
           </div>

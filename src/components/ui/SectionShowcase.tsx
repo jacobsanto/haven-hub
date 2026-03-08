@@ -461,15 +461,15 @@ function BrightMinimalistSection({ items, activeIndex, onSelect }: VariantProps)
                   {/* Color tint blend */}
                   <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(135deg, ${palette.color}30, ${palette.color}15)`, mixBlendMode: 'multiply' }} />
                   {/* Bottom gradient for text */}
-                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                   <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-foreground/60 via-foreground/20 to-transparent" />
                   <div className="absolute inset-0 flex flex-col justify-between p-6 z-[5]">
                     <div style={{ opacity: isActive ? 1 : 0, transition: 'opacity 0.6s ease' }}>
-                      {item.location && <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-[1.5px] uppercase text-white/80">
+                      {item.location && <span className="inline-flex items-center gap-1 text-[11px] font-bold tracking-[1.5px] uppercase text-background/80">
                         <MapPin size={10} />{item.location}
                       </span>}
                     </div>
                     <div style={{ opacity: isActive ? 1 : 0, transform: isActive ? 'translateY(0)' : 'translateY(20px)', transition: prefersReduced ? 'none' : 'all 0.8s ease-out 0.2s' }}>
-                      <h4 className="font-serif text-2xl font-normal text-white drop-shadow-md mb-1">{item.title}</h4>
+                      <h4 className="font-serif text-2xl font-normal text-background drop-shadow-md mb-1">{item.title}</h4>
                     </div>
                   </div>
                 </div>);

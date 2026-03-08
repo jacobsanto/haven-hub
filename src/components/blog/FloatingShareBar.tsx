@@ -86,7 +86,7 @@ export function FloatingShareBar({ title }: FloatingShareBarProps) {
           aria-label="Copy link"
         >
           {copied ? (
-            <Check className="h-4 w-4 text-emerald-500" />
+            <Check className="h-4 w-4 text-accent" />
           ) : (
             <LinkIcon className="h-4 w-4" />
           )}

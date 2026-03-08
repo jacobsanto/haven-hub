@@ -160,10 +160,10 @@ export function MarkdownRenderer({ content, className = '', inlineImages = [], s
     // Process tip callouts
     rawHtml = rawHtml.replace(
       /<div class="callout-tip">([\s\S]*?)<\/div>/g,
-      `<div class="my-8 md:my-10 rounded-xl border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 overflow-hidden">
-        <div class="flex items-center gap-2 px-5 py-3 border-b border-amber-200 dark:border-amber-800">
-          <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-          <span class="font-semibold text-sm uppercase tracking-wide text-amber-600 dark:text-amber-400">Pro Tip</span>
+      `<div class="my-8 md:my-10 rounded-xl border bg-accent/5 border-accent/20 overflow-hidden">
+        <div class="flex items-center gap-2 px-5 py-3 border-b border-accent/20">
+          <svg class="h-5 w-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+          <span class="font-semibold text-sm uppercase tracking-wide text-accent">Pro Tip</span>
         </div>
         <div class="px-5 py-4 text-foreground/90 leading-relaxed">$1</div>
       </div>`
@@ -172,10 +172,10 @@ export function MarkdownRenderer({ content, className = '', inlineImages = [], s
     // Process info callouts
     rawHtml = rawHtml.replace(
       /<div class="callout-info">([\s\S]*?)<\/div>/g,
-      `<div class="my-8 md:my-10 rounded-xl border bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 overflow-hidden">
-        <div class="flex items-center gap-2 px-5 py-3 border-b border-blue-200 dark:border-blue-800">
-          <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <span class="font-semibold text-sm uppercase tracking-wide text-blue-600 dark:text-blue-400">Good to Know</span>
+      `<div class="my-8 md:my-10 rounded-xl border bg-primary/5 border-primary/20 overflow-hidden">
+        <div class="flex items-center gap-2 px-5 py-3 border-b border-primary/20">
+          <svg class="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span class="font-semibold text-sm uppercase tracking-wide text-primary">Good to Know</span>
         </div>
         <div class="px-5 py-4 text-foreground/90 leading-relaxed">$1</div>
       </div>`
@@ -184,10 +184,10 @@ export function MarkdownRenderer({ content, className = '', inlineImages = [], s
     // Process timing callouts
     rawHtml = rawHtml.replace(
       /<div class="callout-timing">([\s\S]*?)<\/div>/g,
-      `<div class="my-8 md:my-10 rounded-xl border bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800 overflow-hidden">
-        <div class="flex items-center gap-2 px-5 py-3 border-b border-purple-200 dark:border-purple-800">
-          <svg class="h-5 w-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <span class="font-semibold text-sm uppercase tracking-wide text-purple-600 dark:text-purple-400">Best Time</span>
+      `<div class="my-8 md:my-10 rounded-xl border bg-muted border-border overflow-hidden">
+        <div class="flex items-center gap-2 px-5 py-3 border-b border-border">
+          <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span class="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Best Time</span>
         </div>
         <div class="px-5 py-4 text-foreground/90 leading-relaxed">$1</div>
       </div>`
@@ -196,10 +196,10 @@ export function MarkdownRenderer({ content, className = '', inlineImages = [], s
     // Process recommendation callouts
     rawHtml = rawHtml.replace(
       /<div class="callout-recommendation">([\s\S]*?)<\/div>/g,
-      `<div class="my-8 md:my-10 rounded-xl border bg-teal-50 dark:bg-teal-950/30 border-teal-200 dark:border-teal-800 overflow-hidden">
-        <div class="flex items-center gap-2 px-5 py-3 border-b border-teal-200 dark:border-teal-800">
-          <svg class="h-5 w-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <span class="font-semibold text-sm uppercase tracking-wide text-teal-600 dark:text-teal-400">Recommendation</span>
+      `<div class="my-8 md:my-10 rounded-xl border bg-accent/5 border-accent/20 overflow-hidden">
+        <div class="flex items-center gap-2 px-5 py-3 border-b border-accent/20">
+          <svg class="h-5 w-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span class="font-semibold text-sm uppercase tracking-wide text-accent">Recommendation</span>
         </div>
         <div class="px-5 py-4 text-foreground/90 leading-relaxed">$1</div>
       </div>`
