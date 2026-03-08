@@ -45,7 +45,7 @@ export function ThingsToDoAfterLayout({ post, readTime, publishedDate, author, r
           </Link>
         </div>
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-400 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
             <CheckSquare className="h-4 w-4" />
             Action Checklist
           </div>
