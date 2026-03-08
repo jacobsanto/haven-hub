@@ -57,7 +57,7 @@ export function DetailedCaseStudyLayout({ post, readTime, publishedDate, author,
       {/* Results highlight card */}
       <div className="container mx-auto px-4 -mt-20 relative z-10">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="bg-card rounded-2xl p-6 md:p-10 shadow-xl max-w-4xl mx-auto border border-border/50">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-400 text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
             <BarChart3 className="h-4 w-4" />
             Case Study
           </div>
