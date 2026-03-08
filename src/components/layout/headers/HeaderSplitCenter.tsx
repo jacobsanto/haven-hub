@@ -105,7 +105,7 @@ export function HeaderSplitCenter() {
             <Link to="/">
               {logoUrl ? <img src={logoUrl} alt={brandName} width={120} height={32} className="h-8" /> : <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>}
             </Link>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2">
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2" aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}>
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
