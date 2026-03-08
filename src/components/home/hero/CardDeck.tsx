@@ -27,6 +27,12 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
 
   return (
     <div className="relative w-[380px] h-[480px] lg:w-[420px] lg:h-[530px]">
+      <style>{`
+        @keyframes card-float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(0.5deg); }
+        }
+      `}</style>
       {properties.map((property, idx) => {
         const offset = idx - cardFrontIndex;
         const isActive = idx === cardFrontIndex;
@@ -50,9 +56,10 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
             onMouseLeave={() => onHover(null)}
             className="absolute inset-0 rounded-2xl overflow-hidden cursor-pointer border border-accent/20"
             style={{
-              transform: `translateY(${translateY + hoverLift}px) translateX(${translateX}px) scale(${hoverScale}) rotateZ(${rotateZ}deg)`,
+              transform: isActive && !isHovered ? undefined : `translateY(${translateY + hoverLift}px) translateX(${translateX}px) scale(${hoverScale}) rotateZ(${rotateZ}deg)`,
               zIndex,
               opacity: isActive ? 1 : isHovered ? 0.85 : 0.5,
+              animation: isActive && !prefersReduced && !isHovered ? 'card-float 4s ease-in-out infinite' : 'none',
               transition: prefersReduced
                 ? 'none'
                 : `transform ${TRANSITION_MS}ms ${EASE_SMOOTH}, opacity ${TRANSITION_MS * 0.7}ms ${EASE_SMOOTH}`,
