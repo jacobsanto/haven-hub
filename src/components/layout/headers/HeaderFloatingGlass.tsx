@@ -52,7 +52,7 @@ export function HeaderFloatingGlass() {
           {logoUrl ? (
             <img src={logoUrl} alt={brandName} className="h-8 w-auto max-w-[120px] object-contain" />
           ) : (
-            <span className="text-lg font-serif font-semibold">
+            <span className="text-lg font-serif font-medium">
               <span className="text-primary">{primaryPart}</span>
               {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
             </span>

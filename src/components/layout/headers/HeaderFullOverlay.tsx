@@ -109,7 +109,7 @@ export function HeaderFullOverlay() {
                         className="flex items-center justify-between py-5 border-b border-border group"
                       >
                         <span className={cn(
-                          "font-serif text-3xl md:text-4xl font-semibold transition-all",
+                          "font-serif text-3xl md:text-4xl font-medium transition-all",
                           hovItem === item.label ? "text-accent" : "text-foreground"
                         )}>{item.label}</span>
                         <ArrowRight className={cn(

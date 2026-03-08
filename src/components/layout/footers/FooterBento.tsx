@@ -82,7 +82,7 @@ export function FooterBento() {
           {/* Newsletter cell */}
           <BentoCell id="news" hovCell={hovCell} setHovCell={setHovCell} className="md:col-span-2 p-6 !bg-foreground !border-background/10">
             <p className="text-[10px] font-mono uppercase tracking-wider text-accent mb-2 flex items-center gap-1"><Mail className="h-3 w-3" />Newsletter</p>
-            <p className="font-serif text-base font-semibold text-background mb-3">Travel stories, delivered monthly.</p>
+            <p className="font-serif text-base font-medium text-background mb-3">Travel stories, delivered monthly.</p>
             {isSubscribed ? (
               <div className="flex items-center gap-2 text-sm text-background/80"><CheckCircle className="h-4 w-4 text-accent" />Thanks for subscribing!</div>
             ) : (

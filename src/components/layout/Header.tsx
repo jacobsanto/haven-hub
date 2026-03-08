@@ -174,7 +174,7 @@ export function Header() {
               <img src={logoUrl} alt={brandName} width={140} height={40} className={cn("h-10 w-auto max-w-[140px] object-contain transition-all duration-300", isTransparent && "brightness-0 invert")} />
             ) : (
               <span className={cn(
-                "text-xl font-serif font-semibold transition-colors duration-300",
+                "text-xl font-serif font-medium transition-colors duration-300",
                 isTransparent ? "text-primary-foreground" : "text-foreground"
               )}>
                 <span className={isTransparent ? "text-primary-foreground" : "text-primary"}>{primaryPart}</span>
