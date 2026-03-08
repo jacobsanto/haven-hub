@@ -1,33 +1,77 @@
 
 
-## Improving hero text and search bar legibility
+# Brand Palette & Typography Enforcement — Sliders, Headers, Footers
 
-Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
+## Problem
 
-### Recommended approach: Layered depth
+Several components still violate the Arivia brand guidelines:
 
-Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
+1. **BrightMinimalistHero** has a hardcoded `COLOR_PALETTE` with hex values (`#FF6B35`, `#1B7B8B`, etc.) and uses `text-white`, `from-black/60` — directly violating the semantic token rule.
+2. **All 8 header variants** use `font-semibold` on brand name text — the typography standard requires `font-medium` for headings/labels.
+3. **All 8 footer variants** have the same `font-semibold` issue on brand names and section headings.
+4. **FooterFullOverlay overlay nav** uses `font-semibold` on nav items in the fullscreen overlay.
 
-1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
+The 5 dark slider variants (Parallax, SplitReveal, MorphTiles, Cinematic, VerticalCurtain) are already compliant — they use `font-medium`, `text-foreground`, `text-accent`, and semantic gradient tokens.
 
-2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
-   ```
-   bg-gradient-to-r from-black/50 via-black/20 to-transparent
-   ```
-   This keeps the right side (card deck) more vibrant while making the left text area very readable.
+---
 
-3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
+## Plan
 
-4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
+### 1. Fix BrightMinimalistHero — Replace Hardcoded Colors
 
-### Summary of changes
+**File**: `src/components/home/hero/BrightMinimalistHero.tsx`
 
-| File | What |
-|------|------|
-| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
-| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
-| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
-| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
+- Remove the `COLOR_PALETTE` array with hex values
+- Replace with accent-based semantic alternatives: the accent line uses `bg-accent`, card border uses `border-accent/30`, dot indicators use `hsl(var(--accent))`, card gradient uses `from-foreground/60` instead of `from-black/60`
+- Replace `text-white` and `text-white/80` with `text-primary-foreground` and `text-primary-foreground/80`
+- Replace `rgba(255,255,255,0.2)` border with `border-primary-foreground/20`
+- Remove `style={{ background: palette.color }}` inline styles and use Tailwind accent tokens
 
-These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
+### 2. Fix All 8 Headers — Typography Weight
+
+**Files**: All files in `src/components/layout/headers/`
+
+In each header, change brand name `font-semibold` → `font-medium`:
+- `HeaderFloatingGlass.tsx` (line 55)
+- `HeaderMegaMenu.tsx` (line 45)
+- `HeaderCommandPalette.tsx` (line 62)
+- `HeaderContextStrip.tsx` (line 48)
+- `HeaderDockNav.tsx` (line 49)
+- `HeaderFullOverlay.tsx` (lines 50, 87, 112)
+- `HeaderSplitCenter.tsx` (line 65 area)
+- `HeaderTickerBar.tsx` (line 75)
+
+Also fix `src/components/layout/Header.tsx` (lines 77, 177).
+
+### 3. Fix All 8 Footers — Typography Weight
+
+**Files**: All files in `src/components/layout/footers/`
+
+Change `font-semibold` → `font-medium` on brand names and heading text in:
+- `FooterBento.tsx` (lines 51, 85)
+- `FooterGlassmorphic.tsx` (line 88)
+- `FooterEditorial.tsx` — already uses `font-medium` (compliant)
+- `FooterBrutalist.tsx` — uses `font-medium` (compliant)
+- `FooterImmersive.tsx` — uses `font-medium` (compliant)
+- `FooterKinetic.tsx` — uses `font-medium` (compliant)
+- `FooterMinimal.tsx` — uses `font-medium` (compliant)
+- `FooterChatFirst.tsx` — uses `font-medium` on brand name (check heading)
+
+### 4. Fix Main Header Component
+
+**File**: `src/components/layout/Header.tsx`
+
+Change `font-semibold` → `font-medium` on brand name (2 instances, lines 77 and 177).
+
+---
+
+## Summary
+
+| Area | Files | Change |
+|------|-------|--------|
+| BrightMinimalistHero | 1 file | Remove hardcoded hex palette, use semantic tokens |
+| Headers | 9 files | `font-semibold` → `font-medium` on brand names |
+| Footers | 2-3 files | `font-semibold` → `font-medium` where needed |
+
+No database changes. No structural changes. All edits are find-and-replace typography and color token swaps.
 
