@@ -471,8 +471,8 @@ export function UnifiedBookingDialog() {
                         </div>
                       </div>
                       {selectedProperty?.id === property.id && (
-                        <div className="self-center w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                          <Check className="w-3 h-3 text-primary-foreground" />
+                        <div className="self-center w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
+                          <Check className="w-3.5 h-3.5 text-accent-foreground" />
                         </div>
                       )}
                     </button>
