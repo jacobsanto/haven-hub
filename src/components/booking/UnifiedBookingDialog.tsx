@@ -545,26 +545,26 @@ export function UnifiedBookingDialog() {
             )}
 
             {/* Date summary */}
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
+            <div className="flex items-center justify-between p-3.5 bg-secondary/30 border border-border/50 rounded-xl">
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">Check-in</p>
-                  <p className="font-medium text-sm">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Check-in</p>
+                  <p className="font-medium text-sm text-foreground">
                     {dateRange?.from ? format(dateRange.from, 'MMM d, yyyy') : 'Select date'}
                   </p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                <ArrowRight className="h-4 w-4 text-accent" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Check-out</p>
-                  <p className="font-medium text-sm">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Check-out</p>
+                  <p className="font-medium text-sm text-foreground">
                     {dateRange?.to ? format(dateRange.to, 'MMM d, yyyy') : 'Select date'}
                   </p>
                 </div>
               </div>
               {nights > 0 && (
                 <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Duration</p>
-                  <p className="font-medium text-sm text-primary">{nights} night{nights > 1 ? 's' : ''}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Duration</p>
+                  <p className="font-semibold text-sm text-accent">{nights} night{nights > 1 ? 's' : ''}</p>
                 </div>
               )}
             </div>
