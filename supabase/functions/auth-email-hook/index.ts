@@ -35,7 +35,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "tranquil-stays-core"
+const SITE_NAME = "Arivia"
 const SENDER_DOMAIN = "notify.ariviavillas.com"
 const ROOT_DOMAIN = "ariviavillas.com"
 const FROM_DOMAIN = "ariviavillas.com" // Domain shown in From address (may be root or sender subdomain)
