@@ -186,7 +186,7 @@ export function PropertiesFilterBar({
           {/* Mobile: sort & count inline */}
           <div className="flex md:hidden items-center gap-2 shrink-0">
             <Select value={sortBy} onValueChange={onSortChange}>
-              <SelectTrigger className="min-w-[110px] bg-muted border-border">
+              <SelectTrigger className="w-auto min-w-[110px] bg-muted border-border">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-card">
