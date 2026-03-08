@@ -121,8 +121,8 @@ export function formatFileSize(bytes: number): string {
 }
 
 export const IMAGE_PRESETS = {
-  hero: { maxWidth: 1920, maxHeight: 1080, quality: 0.82, format: 'webp' as const },
-  gallery: { maxWidth: 1600, maxHeight: 1200, quality: 0.80, format: 'webp' as const },
-  logo: { maxWidth: 800, maxHeight: 400, quality: 0.90, format: 'webp' as const },
-  og: { maxWidth: 1200, maxHeight: 630, quality: 0.80, format: 'webp' as const },
+  hero: { maxWidth: 1920, maxHeight: 1080, quality: 0.72, format: 'webp' as const },
+  gallery: { maxWidth: 1600, maxHeight: 1200, quality: 0.70, format: 'webp' as const },
+  logo: { maxWidth: 800, maxHeight: 400, quality: 0.85, format: 'webp' as const },
+  og: { maxWidth: 1200, maxHeight: 630, quality: 0.72, format: 'webp' as const },
 } as const;

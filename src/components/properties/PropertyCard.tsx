@@ -75,6 +75,8 @@ export function PropertyCard({ property, index = 0 }: PropertyCardProps) {
               <img
                 src={property.hero_image_url}
                 alt={property.name}
+                loading="lazy"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
             ) : (
