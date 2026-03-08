@@ -86,7 +86,7 @@ export function FooterEditorial() {
           {/* Newsletter */}
           <div>
             <p className="text-[9px] font-mono uppercase tracking-[.25em] text-accent mb-5 pb-2 border-b border-background/10">Newsletter</p>
-            <p className="font-serif text-lg font-semibold text-background mb-2">The {primaryPart} Letter</p>
+            <p className="font-serif text-lg font-medium text-background mb-2">The {primaryPart} Letter</p>
             <p className="text-sm text-background/50 mb-4">Monthly. No spam.</p>
             {!isSubscribed ? (
               <form onSubmit={handleSubscribe} className="flex gap-1.5 mb-6">
