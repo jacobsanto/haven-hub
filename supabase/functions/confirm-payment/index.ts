@@ -281,13 +281,15 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[confirm-payment] Error:', error);
+    const errorId = crypto.randomUUID();
+    console.error(`[confirm-payment] Error ${errorId}:`, error);
     
     return new Response(
       JSON.stringify({ 
         error: true, 
         code: 'INTERNAL_ERROR', 
-        message: error instanceof Error ? error.message : 'An unexpected error occurred' 
+        message: 'Payment confirmation failed. Please contact support if this persists.',
+        error_id: errorId,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );

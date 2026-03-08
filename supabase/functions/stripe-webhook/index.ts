@@ -91,9 +91,10 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Webhook processing error:", error);
+    const errorId = crypto.randomUUID();
+    console.error(`Webhook processing error ${errorId}:`, error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Internal error" }),
+      JSON.stringify({ error: "Webhook processing failed", error_id: errorId }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
