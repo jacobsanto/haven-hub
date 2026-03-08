@@ -40,7 +40,7 @@ export function BeginnersGuideLayout({ post, readTime, publishedDate, author, re
       {isMobile && headings.length > 0 && <MobileTableOfContents headings={headings} />}
 
       {/* Clean educational hero */}
-      <section className="relative bg-gradient-to-b from-green-50/50 to-background dark:from-green-950/20 dark:to-background pt-20 pb-16 border-b border-border/50">
+      <section className="relative bg-gradient-to-b from-primary/5 to-background pt-20 pb-16 border-b border-border/50">
         <div className="absolute top-4 left-4 z-10">
           <Link to="/blog" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm text-foreground text-sm font-medium hover:bg-background transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to Blog
