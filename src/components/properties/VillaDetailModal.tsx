@@ -234,7 +234,7 @@ export function VillaDetailModal({ property, onClose, isFavorite, onToggleFavori
             <div className="flex flex-col gap-3">
               {property.highlights.map((h, i) => (
                 <div key={i} className="flex items-center gap-3.5 p-3.5 bg-background border border-border rounded-[10px]">
-                  <Check size={16} className="text-emerald-500 shrink-0" />
+                  <Check size={16} className="text-primary shrink-0" />
                   <span className="font-sans text-sm text-muted-foreground">{h}</span>
                 </div>
               ))}
