@@ -227,7 +227,7 @@ export function PropertiesFilterBar({
               className={cn(
                 'px-3.5 py-1.5 rounded-md text-xs font-sans cursor-pointer transition-all border inline-flex items-center gap-1.5',
                 instantBooking
-                  ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500'
+                  ? 'bg-accent/10 border-accent text-accent'
                   : 'bg-muted border-border text-muted-foreground hover:text-foreground'
               )}
             >
