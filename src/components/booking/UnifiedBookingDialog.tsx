@@ -880,14 +880,14 @@ export function UnifiedBookingDialog() {
             {Array.from({ length: totalSteps }).map((_, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div className={cn(
-                  'flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium transition-colors',
-                  i + 1 < getStepNumber() ? 'bg-primary/20 text-primary' :
-                  i + 1 === getStepNumber() ? 'bg-primary text-primary-foreground' :
+                  'flex items-center justify-center w-7 h-7 rounded-full text-xs font-medium transition-all duration-300',
+                  i + 1 < getStepNumber() ? 'bg-accent/20 text-accent' :
+                  i + 1 === getStepNumber() ? 'bg-accent text-accent-foreground shadow-sm' :
                   'bg-muted text-muted-foreground'
                 )}>
                   {i + 1 < getStepNumber() ? <Check className="h-3 w-3" /> : i + 1}
                 </div>
-                {i < totalSteps - 1 && <div className="h-0.5 w-8 bg-border" />}
+                {i < totalSteps - 1 && <div className={cn('h-0.5 w-8 rounded-full transition-colors', i + 1 < getStepNumber() ? 'bg-accent' : 'bg-border')} />}
               </div>
             ))}
           </div>
