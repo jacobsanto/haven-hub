@@ -59,7 +59,7 @@ export function HeaderSplitCenter() {
             {/* Center logo */}
             <Link to="/" className="flex items-center">
               {logoUrl ? (
-                <img src={logoUrl} alt={brandName} className="h-10 w-auto max-w-[140px] object-contain" />
+                <img src={logoUrl} alt={brandName} width={140} height={40} className="h-10 w-auto max-w-[140px] object-contain" />
               ) : (
                 <span className={cn("font-serif font-semibold transition-all", isScrolled ? "text-xl" : "text-2xl")}>
                   <span className="text-primary">{primaryPart}</span>
@@ -80,7 +80,7 @@ export function HeaderSplitCenter() {
               ))}
               <div className="flex items-center gap-2 ml-3">
                 <CurrencySwitcher variant="icon" className="rounded-full" />
-                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Toggle dark mode">
                   {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </Button>
                 {user ? (
@@ -103,9 +103,9 @@ export function HeaderSplitCenter() {
           {/* Mobile */}
           <div className="flex md:hidden items-center justify-between h-[72px]">
             <Link to="/">
-              {logoUrl ? <img src={logoUrl} alt={brandName} className="h-8" /> : <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>}
+              {logoUrl ? <img src={logoUrl} alt={brandName} width={120} height={32} className="h-8" /> : <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>}
             </Link>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2">
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2" aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}>
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>

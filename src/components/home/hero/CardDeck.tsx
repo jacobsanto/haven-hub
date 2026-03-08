@@ -25,8 +25,15 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
   // Front card shows a different property than the featured one (offset by 1)
   const cardFrontIndex = (activeIndex + 1) % properties.length;
 
+  const handleKeyDown = (e: React.KeyboardEvent, idx: number) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect(idx);
+    }
+  };
+
   return (
-    <div className="relative w-[380px] h-[480px] lg:w-[420px] lg:h-[530px]">
+    <div className="relative w-[380px] h-[480px] lg:w-[420px] lg:h-[530px]" role="group" aria-label="Property cards">
       <style>{`
         @keyframes card-float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -48,13 +55,19 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
         const hoverLift = isActive && isHovered ? -6 : 0;
         const hoverScale = isActive && isHovered ? 1.02 : scale;
 
+        const cardLabel = property.display_name || property.name;
+
         return (
           <div
             key={property.id}
+            role="button"
+            tabIndex={isActive ? 0 : -1}
+            aria-label={`View ${cardLabel} in ${property.city}, ${property.country}`}
             onClick={() => onSelect(idx)}
+            onKeyDown={(e) => handleKeyDown(e, idx)}
             onMouseEnter={() => onHover(idx)}
             onMouseLeave={() => onHover(null)}
-            className="absolute inset-0 rounded-2xl overflow-hidden cursor-pointer border border-accent/20"
+            className="absolute inset-0 rounded-2xl overflow-hidden cursor-pointer border border-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             style={{
               transform: isActive && !isHovered ? undefined : `translateY(${translateY + hoverLift}px) translateX(${translateX}px) scale(${hoverScale}) rotateZ(${rotateZ}deg)`,
               zIndex,
@@ -65,14 +78,22 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
                 : `transform ${TRANSITION_MS}ms ${EASE_SMOOTH}, opacity ${TRANSITION_MS * 0.7}ms ${EASE_SMOOTH}`,
             }}
           >
-            {/* Property image */}
-            <div
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-[1200ms] ease-out"
-              style={{
-                backgroundImage: `url(${property.hero_image_url})`,
-                transform: isActive ? 'scale(1.05)' : 'scale(1)',
-              }}
-            />
+            {/* Property image — <img> for active card (LCP), bg-image for others */}
+            {isActive ? (
+              <img
+                src={property.hero_image_url || '/placeholder.svg'}
+                alt=""
+                fetchPriority="high"
+                loading="eager"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out scale-105"
+              />
+            ) : (
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${property.hero_image_url})` }}
+                aria-hidden="true"
+              />
+            )}
 
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
@@ -92,9 +113,9 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
               }}
             >
               <h3 className="text-primary-foreground font-serif text-xl lg:text-2xl leading-tight">
-                {property.display_name || property.name}
+                {cardLabel}
               </h3>
-              <p className="text-primary-foreground/50 text-xs uppercase tracking-[3px] mt-1.5 font-sans flex items-center gap-1.5">
+              <p className="text-primary-foreground/70 text-xs uppercase tracking-[3px] mt-1.5 font-sans flex items-center gap-1.5">
                 <MapPin className="w-3 h-3" />
                 {property.city}, {property.country}
               </p>
