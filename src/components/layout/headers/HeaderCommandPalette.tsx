@@ -59,7 +59,7 @@ export function HeaderCommandPalette() {
         <nav className="container mx-auto px-4 h-[64px] flex items-center justify-between">
           <Link to="/">
             {logoUrl ? <img src={logoUrl} alt={brandName} className="h-8 w-auto object-contain" /> : (
-              <span className="text-lg font-serif font-semibold"><span className="text-primary">{primaryPart}</span>{secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}</span>
+              <span className="text-lg font-serif font-medium"><span className="text-primary">{primaryPart}</span>{secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}</span>
             )}
           </Link>
           <div className="hidden md:flex gap-7">

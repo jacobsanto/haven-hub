@@ -85,7 +85,7 @@ export function FooterGlassmorphic() {
           <GlassPanel className="md:col-span-2 p-6 flex items-center gap-8 !bg-background/[0.04] !border-background/10">
             <div className="flex-1">
               <p className="text-[9px] font-mono uppercase tracking-[.2em] text-accent mb-2">Get in Touch</p>
-              <p className="font-serif text-lg font-semibold text-background">Talk to our concierge</p>
+              <p className="font-serif text-lg font-medium text-background">Talk to our concierge</p>
             </div>
             <div className="flex gap-3">
               {[{ icon: Mail, label: 'Email' }, { icon: Phone, label: 'Call' }, { icon: MessageCircle, label: 'Chat' }].map(({ icon: Icon, label }) =>

@@ -42,7 +42,7 @@ export function HeaderMegaMenu() {
             {logoUrl ? (
               <img src={logoUrl} alt={brandName} className="h-10 w-auto max-w-[140px] object-contain" />
             ) : (
-              <span className="text-xl font-serif font-semibold">
+              <span className="text-xl font-serif font-medium">
                 <span className="text-primary">{primaryPart}</span>
                 {secondaryPart && <span className="text-muted-foreground"> {secondaryPart}</span>}
               </span>

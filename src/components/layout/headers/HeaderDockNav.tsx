@@ -46,7 +46,7 @@ export function HeaderDockNav() {
         <div className="container mx-auto px-4 h-[56px] flex items-center justify-between">
           <Link to="/">
             {logoUrl ? <img src={logoUrl} alt={brandName} className="h-8 w-auto object-contain" /> : (
-              <span className="text-lg font-serif font-semibold text-primary">{primaryPart}</span>
+              <span className="text-lg font-serif font-medium text-primary">{primaryPart}</span>
             )}
           </Link>
           <div className="flex items-center gap-2">

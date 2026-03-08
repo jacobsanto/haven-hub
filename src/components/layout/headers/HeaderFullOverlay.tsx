@@ -47,7 +47,7 @@ export function HeaderFullOverlay() {
         <div className="container mx-auto px-4 h-[72px] flex items-center justify-between">
           <Link to="/">
             {logoUrl ? <img src={logoUrl} alt={brandName} width={140} height={40} className="h-10 w-auto object-contain" /> : (
-              <span className="text-xl font-serif font-semibold">
+              <span className="text-xl font-serif font-medium">
                 <span className={isScrolled ? "text-primary" : "text-primary-foreground"}>{primaryPart}</span>
                 {secondaryPart && <span className={isScrolled ? "text-muted-foreground" : "text-primary-foreground/70"}> {secondaryPart}</span>}
               </span>
@@ -84,7 +84,7 @@ export function HeaderFullOverlay() {
               <div className="flex items-center justify-between h-[72px]">
                 <Link to="/" onClick={() => setOpen(false)}>
                   {logoUrl ? <img src={logoUrl} alt={brandName} width={140} height={40} className="h-10 w-auto object-contain" /> : (
-                    <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>
+                    <span className="text-xl font-serif font-medium text-primary">{primaryPart}</span>
                   )}
                 </Link>
                 <button aria-label="Close menu" onClick={() => setOpen(false)} className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:border-accent transition-colors">
@@ -109,7 +109,7 @@ export function HeaderFullOverlay() {
                         className="flex items-center justify-between py-5 border-b border-border group"
                       >
                         <span className={cn(
-                          "font-serif text-3xl md:text-4xl font-semibold transition-all",
+                          "font-serif text-3xl md:text-4xl font-medium transition-all",
                           hovItem === item.label ? "text-accent" : "text-foreground"
                         )}>{item.label}</span>
                         <ArrowRight className={cn(

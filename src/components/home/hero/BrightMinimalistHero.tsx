@@ -26,14 +26,7 @@ interface SliderProps {
   onPrev?: () => void;
 }
 
-const COLOR_PALETTE = [
-  { color: '#FF6B35', lightBg: '30 80% 96%' },
-  { color: '#1B7B8B', lightBg: '190 40% 94%' },
-  { color: '#2D9C6F', lightBg: '155 40% 94%' },
-  { color: '#E67E22', lightBg: '30 90% 95%' },
-  { color: '#8B5CF6', lightBg: '260 60% 96%' },
-  { color: '#EC4899', lightBg: '330 60% 96%' },
-];
+// Semantic accent color used for all palette references
 
 export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext, onPrev }: SliderProps) {
   const prefersReduced = useReducedMotion();
@@ -52,7 +45,7 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
     else onSelect((activeIndex + 1) % count);
   };
 
-  const getColor = (i: number) => COLOR_PALETTE[i % COLOR_PALETTE.length];
+  
 
   return (
     <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-muted/60 overflow-hidden">
@@ -72,7 +65,6 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
         <div className="flex-1 max-w-xl">
           {properties.map((prop, idx) => {
             const isActive = idx === activeIndex;
-            const palette = getColor(idx);
             return (
               <div
                 key={prop.id}
@@ -107,10 +99,7 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                   </p>
 
                   {/* Accent line */}
-                  <div
-                    className="w-[60px] h-[2px] rounded-sm opacity-80"
-                    style={{ background: palette.color }}
-                  />
+                  <div className="w-[60px] h-[2px] rounded-sm opacity-80 bg-accent" />
 
                   {/* CTA */}
                   <Link
@@ -130,23 +119,20 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
           <div className="relative" style={{ width: 400, height: 500 }}>
             {properties.map((prop, idx) => {
               const isActive = idx === activeIndex;
-              const palette = getColor(idx);
               return (
                 <div
                   key={prop.id}
                   onMouseEnter={() => setHoveredIndex(idx)}
                   onMouseLeave={() => setHoveredIndex(null)}
                   onClick={() => onSelect(idx)}
-                  className="absolute inset-0 rounded-xl cursor-pointer overflow-hidden"
+                  className="absolute inset-0 rounded-xl cursor-pointer overflow-hidden border border-accent/30"
                   style={{
-                    border: `1px solid ${palette.color}30`,
                     transition: prefersReduced ? 'none' : 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
                     transform: isActive
                       ? 'translateY(0) scale(1) rotateZ(0deg)'
                       : `translateY(${(idx - activeIndex) * 30}px) scale(${0.85 + idx * 0.05}) rotateZ(${(idx - activeIndex) * 2}deg)`,
                     zIndex: isActive ? 10 : 5 - Math.abs(idx - activeIndex),
                     opacity: isActive || hoveredIndex === idx ? 1 : 0.6,
-                    boxShadow: isActive ? `0 12px 32px ${palette.color}15` : 'none',
                   }}
                 >
                   {/* Property hero image */}
@@ -159,13 +145,10 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                   />
 
                   {/* Color tint blend overlay */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ background: `linear-gradient(135deg, ${palette.color}30, ${palette.color}15)`, mixBlendMode: 'multiply' }}
-                  />
+                  <div className="absolute inset-0 pointer-events-none bg-accent/10 mix-blend-multiply" />
 
                   {/* Bottom gradient for text legibility */}
-                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-foreground/60 via-foreground/20 to-transparent" />
 
                   {/* Card content */}
                   <div className="absolute inset-0 flex flex-col justify-between p-8 z-[5]">
@@ -178,7 +161,7 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                       }}
                     >
                       <span
-                        className="inline-flex items-center gap-1 text-[11px] font-medium tracking-[1.5px] uppercase pb-3 text-white/80"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium tracking-[1.5px] uppercase pb-3 text-primary-foreground/80"
                       >
                         <MapPin size={10} />
                         {prop.city}, {prop.country}
@@ -193,19 +176,16 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                         transition: prefersReduced ? 'none' : 'all 0.8s ease-out 0.2s',
                       }}
                     >
-                      <h3 className="font-serif text-[32px] font-normal text-white mb-2 drop-shadow-md">
+                      <h3 className="font-serif text-[32px] font-normal text-primary-foreground mb-2 drop-shadow-md">
                         {prop.display_name || prop.name}
                       </h3>
-                      <p className="text-white/60 text-[13px] tracking-[1px] font-light uppercase">
+                      <p className="text-primary-foreground/60 text-[13px] tracking-[1px] font-light uppercase">
                         {prop.bedrooms || 3} beds · {prop.max_guests || 6} guests
                       </p>
-                      <div
-                        className="mt-4 pt-4"
-                        style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}
-                      >
-                        <p className="text-white font-sans font-semibold text-lg drop-shadow-sm">
+                      <div className="mt-4 pt-4 border-t border-primary-foreground/20">
+                        <p className="text-primary-foreground font-sans font-semibold text-lg drop-shadow-sm">
                           {format(prop.base_price)}
-                          <span className="text-white/60 text-xs font-light"> / night</span>
+                          <span className="text-primary-foreground/60 text-xs font-light"> / night</span>
                         </p>
                       </div>
                     </div>
@@ -228,9 +208,7 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
         </button>
 
         <div className="flex gap-2 items-center">
-          {properties.map((_, idx) => {
-            const palette = getColor(idx);
-            return (
+          {properties.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => onSelect(idx)}
@@ -238,15 +216,14 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                 style={{
                   width: idx === activeIndex ? 24 : 8,
                   height: 8,
-                  background: idx === activeIndex ? palette.color : 'hsl(var(--foreground) / 0.2)',
+                  background: idx === activeIndex ? 'hsl(var(--accent))' : 'hsl(var(--foreground) / 0.2)',
                   borderRadius: 4,
                   transition: 'all 0.4s ease',
-                  boxShadow: idx === activeIndex ? `0 2px 8px ${palette.color}40` : 'none',
+                  boxShadow: idx === activeIndex ? '0 2px 8px hsl(var(--accent) / 0.4)' : 'none',
                 }}
                 aria-label={`Go to slide ${idx + 1}`}
               />
-            );
-          })}
+          ))}
         </div>
 
         <button
