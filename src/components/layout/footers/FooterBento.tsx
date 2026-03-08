@@ -48,7 +48,7 @@ export function FooterBento() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3.5">
           {/* Brand cell */}
           <BentoCell id="brand" hovCell={hovCell} setHovCell={setHovCell} className="md:col-span-2 p-8 !bg-foreground !border-background/10">
-            <h3 className="font-serif text-xl font-semibold mb-3">
+            <h3 className="font-serif text-xl font-medium mb-3">
               <span className="text-background">{primaryPart}</span>
               {secondaryPart && <span className="text-background/60"> {secondaryPart}</span>}
             </h3>
