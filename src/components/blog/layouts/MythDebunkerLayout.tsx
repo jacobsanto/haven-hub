@@ -46,7 +46,7 @@ export function MythDebunkerLayout({ post, readTime, publishedDate, author, rela
           </Link>
         </div>
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 text-red-700 dark:text-red-400 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive text-sm font-medium mb-6">
             <ShieldQuestion className="h-4 w-4" />
             Myth Debunker
           </div>
