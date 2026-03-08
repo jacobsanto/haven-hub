@@ -45,7 +45,7 @@ export function HeaderFullOverlay() {
       )}>
         <div className="container mx-auto px-4 h-[72px] flex items-center justify-between">
           <Link to="/">
-            {logoUrl ? <img src={logoUrl} alt={brandName} className="h-10 w-auto object-contain" /> : (
+            {logoUrl ? <img src={logoUrl} alt={brandName} width={140} height={40} className="h-10 w-auto object-contain" /> : (
               <span className="text-xl font-serif font-semibold">
                 <span className={isScrolled ? "text-primary" : "text-primary-foreground"}>{primaryPart}</span>
                 {secondaryPart && <span className={isScrolled ? "text-muted-foreground" : "text-primary-foreground/70"}> {secondaryPart}</span>}
