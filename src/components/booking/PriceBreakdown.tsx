@@ -180,8 +180,8 @@ export function PriceBreakdownDisplay({
         )}
 
         {/* Direct booking savings */}
-        <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+        <div className="mt-4 p-3 bg-accent/5 rounded-lg">
+          <div className="flex items-center gap-2 text-sm text-accent">
             <Check className="h-4 w-4" />
             <span className="font-medium">You're saving up to 15% by booking direct!</span>
           </div>

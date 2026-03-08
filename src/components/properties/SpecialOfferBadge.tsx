@@ -21,7 +21,7 @@ export function SpecialOfferBadge({
     return (
       <span
         className={cn(
-          'inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400',
+          'inline-flex items-center gap-1 text-xs font-medium text-accent',
           className
         )}
       >
@@ -35,7 +35,7 @@ export function SpecialOfferBadge({
     return (
       <div
         className={cn(
-          'inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium',
+          'inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 text-accent rounded-full text-sm font-medium',
           className
         )}
       >
@@ -54,20 +54,20 @@ export function SpecialOfferBadge({
   return (
     <div
       className={cn(
-        'card-organic p-4 border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/10',
+        'card-organic p-4 border-2 border-accent/20 bg-accent/5',
         className
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-          <Percent className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/10">
+          <Percent className="h-6 w-6 text-accent" />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h4 className="font-medium text-emerald-700 dark:text-emerald-400">
+            <h4 className="font-medium text-accent">
               {offer.title}
             </h4>
-            <span className="px-2 py-0.5 bg-emerald-600 text-primary-foreground text-xs font-medium rounded">
+            <span className="px-2 py-0.5 bg-accent text-primary-foreground text-xs font-medium rounded">
               {offer.discount_percent}% OFF
             </span>
           </div>
@@ -82,7 +82,7 @@ export function SpecialOfferBadge({
               Valid until {format(parseISO(offer.valid_until), 'MMM d, yyyy')}
             </span>
             {isExpiringSoon && (
-              <span className="text-orange-500 font-medium">
+              <span className="text-destructive font-medium">
                 · Only {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left!
               </span>
             )}
