@@ -80,7 +80,7 @@ export function HeaderSplitCenter() {
               ))}
               <div className="flex items-center gap-2 ml-3">
                 <CurrencySwitcher variant="icon" className="rounded-full" />
-                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Toggle dark mode">
                   {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </Button>
                 {user ? (
