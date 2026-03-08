@@ -2522,6 +2522,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      validate_coupon: {
+        Args: {
+          _booking_value: number
+          _code: string
+          _nights: number
+          _property_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user"
