@@ -87,7 +87,7 @@ export function PriceBreakdownDisplay({
               .map((item, i) => (
                 <div key={`addon-${i}`} className="flex justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-1">
-                    <Check className="h-3 w-3 text-green-600" />
+                    <Check className="h-3 w-3 text-accent" />
                     {item.label}
                   </span>
                   <span>{formatAmount(item.amount)}</span>
