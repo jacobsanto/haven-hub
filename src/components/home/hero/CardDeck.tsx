@@ -48,7 +48,7 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
             onClick={() => onSelect(idx)}
             onMouseEnter={() => onHover(idx)}
             onMouseLeave={() => onHover(null)}
-            className="absolute inset-0 rounded-lg overflow-hidden cursor-pointer border border-accent/20"
+            className="absolute inset-0 rounded-2xl overflow-hidden cursor-pointer border border-accent/20"
             style={{
               transform: `translateY(${translateY + hoverLift}px) translateX(${translateX}px) scale(${hoverScale}) rotateZ(${rotateZ}deg)`,
               zIndex,
