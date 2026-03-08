@@ -723,7 +723,7 @@ export function UnifiedBookingDialog() {
       </AnimatePresence>
 
       {/* Footer Actions */}
-      <div className="flex gap-3 pt-4 border-t mt-4">
+      <div className="flex gap-3 pt-4 border-t border-accent/15 mt-4">
         {step !== 'search' && step !== 'dates' && (
           <Button variant="outline" onClick={handlePrevStep} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
