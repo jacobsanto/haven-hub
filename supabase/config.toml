@@ -1,5 +1,14 @@
-project_id = "xavjbiuhcmupsoocrmhf"
+# Supabase project configuration.
+# Set your project ref by running:
+#   supabase link --project-ref <your-project-ref>
+# Your project ref is in: Supabase Dashboard → Project Settings → General
+project_id = "your-project-ref"
 
+# ── Edge Functions ─────────────────────────────────────────────────────────────
+# verify_jwt = false lets the frontend call these without a bearer token.
+# Each function performs its own internal validation.
+
+# PMS integrations
 [functions.advancecm-sync]
 verify_jwt = false
 
@@ -9,15 +18,40 @@ verify_jwt = false
 [functions.pms-webhook]
 verify_jwt = false
 
+[functions.pms-generic-test]
+verify_jwt = false
+
+[functions.pms-analyze-docs]
+verify_jwt = false
+
+[functions.guesty-sync]
+verify_jwt = false
+
+# Pricing & rates
 [functions.seasonal-rates-import]
 verify_jwt = false
 
+# AI content generation
 [functions.generate-content]
 verify_jwt = false
 
+[functions.generate-image]
+verify_jwt = false
+
+[functions.suggest-icon]
+verify_jwt = false
+
+# Social media
 [functions.scheduled-posts-cron]
 verify_jwt = false
 
+[functions.social-publish]
+verify_jwt = false
+
+[functions.social-analytics-sync]
+verify_jwt = false
+
+# Stripe payments
 [functions.create-checkout-session]
 verify_jwt = false
 
@@ -27,6 +61,10 @@ verify_jwt = false
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.verify-checkout-session]
+verify_jwt = false
+
+# Utilities
 [functions.exchange-rates]
 verify_jwt = false
 
@@ -39,14 +77,5 @@ verify_jwt = false
 [functions.geocode-address]
 verify_jwt = false
 
-[functions.suggest-icon]
-verify_jwt = false
-
-[functions.pms-generic-test]
-verify_jwt = false
-
-[functions.pms-analyze-docs]
-verify_jwt = false
-
-[functions.guesty-sync]
+[functions.destination-weather]
 verify_jwt = false
