@@ -1,6 +1,5 @@
 import { PageLayout } from '@/components/layout/PageLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { useBrand } from '@/contexts/BrandContext';
 import { HeroSection } from '@/components/home/HeroSection';
 import { SearchBarOverlay } from '@/components/home/SearchBarOverlay';
 import { TrustSection } from '@/components/home/TrustSection';
@@ -14,15 +13,13 @@ import { CTASection } from '@/components/home/CTASection';
 import { GrainOverlay } from '@/components/home/hero/GrainOverlay';
 
 const Index = () => {
-  const { brandName, brandTagline } = useBrand();
-
   return (
     <PageLayout>
       <PageSEO
         pageSlug="home"
         defaults={{
-          meta_title: `${brandName} | Luxury Vacation Homes`,
-          meta_description: `Discover extraordinary luxury vacation homes in the world's most desirable destinations. ${brandName} — ${brandTagline}`,
+          meta_title: 'Arivia Villas | Luxury Vacation Homes',
+          meta_description: 'Discover extraordinary luxury vacation homes in the world\'s most desirable destinations.',
           og_image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80',
         }}
       />
