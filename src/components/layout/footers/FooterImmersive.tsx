@@ -78,7 +78,7 @@ export function FooterImmersive() {
 
       <div className="container mx-auto px-4 pb-8 flex justify-between items-center border-t border-background/10 pt-6">
         <p className="text-xs font-mono text-background/40">© {new Date().getFullYear()} {brandName}</p>
-        <p className="text-xs font-mono text-background/40">Made with <Heart className="inline h-3 w-3 text-destructive" /> </p>
+        <p className="text-xs font-mono text-background/40">Made with care</p>
       </div>
     </footer>
   );
