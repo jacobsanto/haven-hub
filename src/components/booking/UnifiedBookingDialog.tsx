@@ -494,19 +494,22 @@ export function UnifiedBookingDialog() {
           >
             {/* Selected property summary */}
             {selectedProperty && (
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+              <div className="flex items-center gap-3.5 p-3.5 bg-secondary/30 border border-border/50 rounded-xl">
                 {selectedProperty.hero_image_url ? (
                   <img
                     src={selectedProperty.hero_image_url}
                     alt={selectedProperty.name}
-                    className="w-16 h-12 object-cover rounded-lg"
+                    className="w-16 h-12 object-cover rounded-xl shadow-sm"
                   />
                 ) : (
-                  <div className="w-16 h-12 bg-muted rounded-lg" />
+                  <div className="w-16 h-12 bg-muted rounded-xl" />
                 )}
                 <div>
-                  <h4 className="font-serif font-medium text-sm">{selectedProperty.name}</h4>
-                  <p className="text-xs text-muted-foreground">{selectedProperty.city}, {selectedProperty.country}</p>
+                  <h4 className="font-serif font-medium text-sm text-foreground">{selectedProperty.name}</h4>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-accent" />
+                    {selectedProperty.city}, {selectedProperty.country}
+                  </p>
                 </div>
               </div>
             )}
