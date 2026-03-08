@@ -450,7 +450,7 @@ export function UnifiedBookingDialog() {
                         <img
                           src={property.hero_image_url}
                           alt={property.name}
-                          className="w-20 h-16 object-cover rounded-lg flex-shrink-0"
+                          className="w-20 h-16 object-cover rounded-xl flex-shrink-0 shadow-sm"
                         />
                       ) : (
                         <div className="w-20 h-16 bg-muted rounded-lg flex-shrink-0" />
