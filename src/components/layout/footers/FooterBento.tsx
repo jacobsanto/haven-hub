@@ -7,6 +7,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
+function BentoCell({ id, hovCell, setHovCell, children, className = '' }: { id: string; hovCell: string | null; setHovCell: (id: string | null) => void; children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      onMouseEnter={() => setHovCell(id)} onMouseLeave={() => setHovCell(null)}
+      className={`bg-card border border-border rounded-2xl overflow-hidden transition-all duration-500 relative ${hovCell === id ? '-translate-y-1 shadow-xl border-accent/20' : ''} ${className}`}
+    >{children}</div>
+  );
+}
+
 export function FooterBento() {
   const { brandName, brandTagline, logoUrl, contactEmail, socialInstagram, socialTwitter } = useBrand();
   const { data: exploreLinks = [] } = useNavigationItems('footer_explore');
@@ -33,19 +42,12 @@ export function FooterBento() {
     finally { setIsSubmitting(false); }
   };
 
-  const Cell = ({ id, children, className = '' }: { id: string; children: React.ReactNode; className?: string }) => (
-    <div
-      onMouseEnter={() => setHovCell(id)} onMouseLeave={() => setHovCell(null)}
-      className={`bg-card border border-border rounded-2xl overflow-hidden transition-all duration-500 relative ${hovCell === id ? '-translate-y-1 shadow-xl border-accent/20' : ''} ${className}`}
-    >{children}</div>
-  );
-
   return (
     <footer className="bg-foreground text-background border-t border-background/10">
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3.5">
           {/* Brand cell */}
-          <Cell id="brand" className="md:col-span-2 p-8 !bg-foreground !border-background/10">
+          <BentoCell id="brand" hovCell={hovCell} setHovCell={setHovCell} className="md:col-span-2 p-8 !bg-foreground !border-background/10">
             <h3 className="font-serif text-xl font-semibold mb-3">
               <span className="text-background">{primaryPart}</span>
               {secondaryPart && <span className="text-background/60"> {secondaryPart}</span>}
@@ -55,30 +57,30 @@ export function FooterBento() {
               {socialInstagram && <a href={socialInstagram} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-background/5 border border-background/10 flex items-center justify-center text-background/60 hover:text-accent hover:bg-accent/10 transition-all"><Instagram className="h-4 w-4" /></a>}
               {socialTwitter && <a href={socialTwitter} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-background/5 border border-background/10 flex items-center justify-center text-background/60 hover:text-accent hover:bg-accent/10 transition-all"><Twitter className="h-4 w-4" /></a>}
             </div>
-          </Cell>
+          </BentoCell>
 
           {/* Explore cell */}
-          <Cell id="explore" className="p-6 !bg-foreground !border-background/10">
+          <BentoCell id="explore" hovCell={hovCell} setHovCell={setHovCell} className="p-6 !bg-foreground !border-background/10">
             <p className="text-[10px] font-mono uppercase tracking-wider text-accent mb-4">Explore</p>
             {exploreLinks.map((link) => (
               <Link key={link.path} to={link.path} className="flex items-center justify-between text-sm text-background/60 py-2 border-b border-background/5 hover:text-background transition-colors">
                 {link.label}<ArrowUpRight className="h-3 w-3 text-accent opacity-0 group-hover:opacity-100" />
               </Link>
             ))}
-          </Cell>
+          </BentoCell>
 
           {/* Company cell */}
-          <Cell id="company" className="p-6 !bg-foreground !border-background/10">
+          <BentoCell id="company" hovCell={hovCell} setHovCell={setHovCell} className="p-6 !bg-foreground !border-background/10">
             <p className="text-[10px] font-mono uppercase tracking-wider text-accent mb-4">Company</p>
             {companyLinks.map((link) => (
               <Link key={link.path} to={link.path} className="flex items-center justify-between text-sm text-background/60 py-2 border-b border-background/5 hover:text-background transition-colors">
                 {link.label}
               </Link>
             ))}
-          </Cell>
+          </BentoCell>
 
           {/* Newsletter cell */}
-          <Cell id="news" className="md:col-span-2 p-6 !bg-foreground !border-background/10">
+          <BentoCell id="news" hovCell={hovCell} setHovCell={setHovCell} className="md:col-span-2 p-6 !bg-foreground !border-background/10">
             <p className="text-[10px] font-mono uppercase tracking-wider text-accent mb-2 flex items-center gap-1"><Mail className="h-3 w-3" />Newsletter</p>
             <p className="font-serif text-base font-semibold text-background mb-3">Travel stories, delivered monthly.</p>
             {isSubscribed ? (
@@ -91,19 +93,19 @@ export function FooterBento() {
                 </button>
               </form>
             )}
-          </Cell>
+          </BentoCell>
 
           {/* Email cell */}
-          <Cell id="email" className="p-5 flex flex-col items-center justify-center text-center !bg-foreground !border-background/10">
+          <BentoCell id="email" hovCell={hovCell} setHovCell={setHovCell} className="p-5 flex flex-col items-center justify-center text-center !bg-foreground !border-background/10">
             <Mail className="h-5 w-5 text-accent mb-2" />
             <p className="text-xs font-mono text-background/70">{contactEmail}</p>
-          </Cell>
+          </BentoCell>
 
           {/* Status cell */}
-          <Cell id="status" className="p-5 flex flex-col items-center justify-center text-center !bg-foreground !border-background/10">
+          <BentoCell id="status" hovCell={hovCell} setHovCell={setHovCell} className="p-5 flex flex-col items-center justify-center text-center !bg-foreground !border-background/10">
             <div className="w-2.5 h-2.5 rounded-full bg-green-500 mb-2 animate-pulse" />
             <p className="text-xs font-mono text-green-400">Online</p>
-          </Cell>
+          </BentoCell>
         </div>
 
         <div className="flex justify-between items-center mt-5 pt-4 border-t border-background/10">

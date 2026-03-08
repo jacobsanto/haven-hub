@@ -76,6 +76,7 @@ export function DestinationsShowcase() {
                 <img
               src={dest.hero_image_url || '/placeholder.svg'}
               alt={dest.name}
+              sizes="(max-width: 768px) 50vw, 25vw"
               className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-[1.06]"
               loading="lazy" />
             

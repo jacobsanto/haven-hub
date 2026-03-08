@@ -86,7 +86,7 @@ export function HeaderFullOverlay() {
                     <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>
                   )}
                 </Link>
-                <button onClick={() => setOpen(false)} className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:border-accent transition-colors">
+                <button aria-label="Close menu" onClick={() => setOpen(false)} className="w-11 h-11 rounded-full border border-border flex items-center justify-center hover:border-accent transition-colors">
                   <X className="h-5 w-5" />
                 </button>
               </div>
