@@ -134,7 +134,7 @@ export function PropertiesFilterBar({
           </Select>
 
           <Select value={String(guestFilter)} onValueChange={(v) => onGuestFilterChange(Number(v))}>
-            <SelectTrigger className="min-w-[110px] bg-muted border-border shrink-0">
+            <SelectTrigger className="w-auto min-w-[110px] bg-muted border-border shrink-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-card">
