@@ -26,10 +26,10 @@ export function CancellationPolicyDisplay({
   const summaryLines = useMemo(() => getPolicySummary(policyKey, checkInDate), [policyKey, checkInDate]);
 
   const iconMap = {
-    flexible: <CheckCircle className="h-4 w-4 text-green-600" />,
-    moderate: <Clock className="h-4 w-4 text-amber-600" />,
-    strict: <AlertCircle className="h-4 w-4 text-orange-600" />,
-    non_refundable: <XCircle className="h-4 w-4 text-red-600" />,
+    flexible: <CheckCircle className="h-4 w-4 text-accent" />,
+    moderate: <Clock className="h-4 w-4 text-primary" />,
+    strict: <AlertCircle className="h-4 w-4 text-destructive/70" />,
+    non_refundable: <XCircle className="h-4 w-4 text-destructive" />,
   };
 
   if (compact) {
