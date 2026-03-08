@@ -78,22 +78,16 @@ export function CardDeck({ properties, activeIndex, onSelect, hoveredIndex, onHo
                 : `transform ${TRANSITION_MS}ms ${EASE_SMOOTH}, opacity ${TRANSITION_MS * 0.7}ms ${EASE_SMOOTH}`,
             }}
           >
-            {/* Property image — <img> for active card (LCP), bg-image for others */}
-            {isActive ? (
-              <img
-                src={property.hero_image_url || '/placeholder.svg'}
-                alt=""
-                fetchPriority="high"
-                loading="eager"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out scale-105"
-              />
-            ) : (
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${property.hero_image_url})` }}
-                aria-hidden="true"
-              />
-            )}
+            {/* All cards use <img> so browser can discover LCP image from HTML */}
+            <img
+              src={property.hero_image_url || '/placeholder.svg'}
+              alt={isActive ? (property.display_name || property.name) : ''}
+              aria-hidden={!isActive}
+              fetchPriority={isActive ? 'high' : 'auto'}
+              loading={isActive ? 'eager' : 'lazy'}
+              sizes="(max-width: 1024px) 380px, 420px"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out scale-105"
+            />
 
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />

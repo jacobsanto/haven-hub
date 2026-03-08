@@ -38,6 +38,8 @@ export function VillaCardGrid({ property, index, onClick, isFavorite, onToggleFa
         <img
           src={displayImages[imgIdx]}
           alt={property.name}
+          loading="lazy"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className={cn(
             'w-full h-full object-cover transition-transform duration-700',
             hovered ? 'scale-105' : 'scale-100'
