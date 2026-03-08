@@ -23,10 +23,7 @@ export function useRealtimeAvailability(propertyId: string | undefined) {
           table: 'availability',
           filter: `property_id=eq.${propertyId}`,
         },
-        (payload) => {
-          const newData = payload.new as Record<string, unknown> | null;
-          const oldData = payload.old as Record<string, unknown> | null;
-          console.log('[RT] Availability change:', payload.eventType, newData?.date || oldData?.date);
+        () => {
           queryClient.invalidateQueries({ queryKey: ['availability', propertyId] });
           queryClient.invalidateQueries({ queryKey: ['availability-calendar', propertyId] });
           queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
@@ -41,10 +38,7 @@ export function useRealtimeAvailability(propertyId: string | undefined) {
           table: 'bookings',
           filter: `property_id=eq.${propertyId}`,
         },
-        (payload) => {
-          const newData = payload.new as Record<string, unknown> | null;
-          const oldData = payload.old as Record<string, unknown> | null;
-          console.log('[RT] Booking change:', payload.eventType, newData?.check_in || oldData?.check_in);
+        () => {
           queryClient.invalidateQueries({ queryKey: ['availability', propertyId] });
           queryClient.invalidateQueries({ queryKey: ['availability-calendar', propertyId] });
           queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
@@ -59,8 +53,7 @@ export function useRealtimeAvailability(propertyId: string | undefined) {
           table: 'checkout_holds',
           filter: `property_id=eq.${propertyId}`,
         },
-        (payload) => {
-          console.log('[RT] Checkout hold change:', payload.eventType);
+        () => {
           queryClient.invalidateQueries({ queryKey: ['availability', propertyId] });
           queryClient.invalidateQueries({ queryKey: ['availability-calendar', propertyId] });
           queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
@@ -92,8 +85,7 @@ export function useRealtimeAvailabilityGlobal() {
           schema: 'public',
           table: 'availability',
         },
-        (payload) => {
-          console.log('[RT-Global] Availability change:', payload.eventType);
+        () => {
           queryClient.invalidateQueries({ queryKey: ['availability'] });
           queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
           queryClient.invalidateQueries({ queryKey: ['admin', 'availability'] });
@@ -106,8 +98,7 @@ export function useRealtimeAvailabilityGlobal() {
           schema: 'public',
           table: 'bookings',
         },
-        (payload) => {
-          console.log('[RT-Global] Booking change:', payload.eventType);
+        () => {
           queryClient.invalidateQueries({ queryKey: ['availability'] });
           queryClient.invalidateQueries({ queryKey: ['availability-calendar'] });
           queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
