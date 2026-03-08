@@ -128,7 +128,7 @@ export function PriceBreakdownDisplay({
                       </Badge>
                     )}
                   </span>
-                  <span className="text-green-600">{formatAmount(item.amount)}</span>
+                  <span className="text-accent">{formatAmount(item.amount)}</span>
                 </div>
               ))}
           </>
