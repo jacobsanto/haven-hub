@@ -23,10 +23,11 @@ export function FloatingBookButton() {
 
   useEffect(() => {
     const threshold = window.innerHeight * 0.7;
-    const onScroll = () => setIsVisible(window.scrollY > threshold);
+    let raf: number;
+    const onScroll = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => setIsVisible(window.scrollY > threshold)); };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(raf); };
   }, []);
 
   const handleClick = useCallback(() => {
