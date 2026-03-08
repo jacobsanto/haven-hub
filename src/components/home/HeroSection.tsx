@@ -84,7 +84,23 @@ export function HeroSection() {
     return () => {stop();el?.removeEventListener('mouseenter', stop);el?.removeEventListener('mouseleave', start);};
   }, [properties.length, count]);
 
-  // Parallax (only for card-deck)
+  // Preload LCP image: inject <link rel="preload"> for the first property hero image
+  useEffect(() => {
+    const firstImg = properties[0]?.hero_image_url;
+    if (!firstImg) return;
+    // Avoid duplicate preload links
+    const existing = document.querySelector(`link[rel="preload"][href="${firstImg}"]`);
+    if (existing) return;
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = firstImg;
+    link.setAttribute('fetchpriority', 'high');
+    document.head.appendChild(link);
+    return () => { link.remove(); };
+  }, [properties]);
+
+
   useEffect(() => {
     if (prefersReduced || heroStyle !== 'card-deck') return;
     let raf: number;
