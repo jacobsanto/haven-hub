@@ -105,12 +105,14 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[verify-checkout-session] Error:', error);
+    const errorId = crypto.randomUUID();
+    console.error(`[verify-checkout-session] Error ${errorId}:`, error);
     
     return new Response(
       JSON.stringify({ 
         error: true, 
-        message: error instanceof Error ? error.message : 'Verification failed' 
+        message: 'Unable to verify payment session. Please contact support.',
+        error_id: errorId,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );

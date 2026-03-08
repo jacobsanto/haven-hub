@@ -186,13 +186,15 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[create-checkout-session] Error:', error);
+    const errorId = crypto.randomUUID();
+    console.error(`[create-checkout-session] Error ${errorId}:`, error);
     
     return new Response(
       JSON.stringify({ 
         error: true, 
         code: 'INTERNAL_ERROR', 
-        message: error instanceof Error ? error.message : 'Failed to create checkout session' 
+        message: 'Unable to create checkout session. Please try again or contact support.',
+        error_id: errorId,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
