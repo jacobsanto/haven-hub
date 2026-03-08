@@ -47,32 +47,32 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
 
 export default ReauthenticationEmail
 
-const gold = '#d4a24e'
-const darkCharcoal = '#302e33'
-const mutedGray = '#86838c'
-const borderColor = '#edecee'
+const aegeanNavy = '#1A3A5C'
+const copperGold = '#C4956A'
+const mutedGray = '#7F8C8D'
+const borderColor = '#ECF0F1'
 
 const main = {
   backgroundColor: '#ffffff',
-  fontFamily: '"Fira Sans", "Helvetica Neue", Arial, sans-serif',
+  fontFamily: '"Nunito Sans", "Helvetica Neue", Arial, sans-serif',
 }
 const container = { padding: '40px 32px', maxWidth: '480px', margin: '0 auto' }
 const header = { textAlign: 'center' as const, paddingBottom: '16px' }
 const brandNameStyle = {
-  fontFamily: '"Fira Serif", Georgia, serif',
+  fontFamily: '"Montserrat", "Helvetica Neue", Arial, sans-serif',
   fontSize: '24px',
-  fontWeight: 500 as const,
-  color: darkCharcoal,
+  fontWeight: 600 as const,
+  color: aegeanNavy,
   letterSpacing: '0.02em',
   margin: '0',
 }
 const divider = { borderColor, margin: '24px 0' }
 const content = { padding: '8px 0' }
 const h1 = {
-  fontFamily: '"Fira Serif", Georgia, serif',
+  fontFamily: '"Montserrat", "Helvetica Neue", Arial, sans-serif',
   fontSize: '22px',
-  fontWeight: 500 as const,
-  color: darkCharcoal,
+  fontWeight: 600 as const,
+  color: aegeanNavy,
   margin: '0 0 20px',
 }
 const text = {
@@ -84,8 +84,8 @@ const text = {
 const codeStyle = {
   fontFamily: 'Courier, monospace',
   fontSize: '28px',
-  fontWeight: 500 as const,
-  color: gold,
+  fontWeight: 600 as const,
+  color: copperGold,
   letterSpacing: '0.15em',
   margin: '0 0 24px',
 }

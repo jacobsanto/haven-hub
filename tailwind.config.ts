@@ -14,8 +14,8 @@ export default {
   	},
   	extend: {
 		fontFamily: {
-			serif: ['var(--font-serif)', 'ui-serif', 'Georgia', 'serif'],
-			sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+			serif: ['var(--font-serif)', 'Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+			sans: ['var(--font-sans)', 'Nunito Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
 			mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
 		},
   		colors: {
