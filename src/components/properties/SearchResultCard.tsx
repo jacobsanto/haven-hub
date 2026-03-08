@@ -79,13 +79,13 @@ export function SearchResultCard({ property, index = 0, nights, checkIn, checkOu
             {/* Badges */}
             <div className="absolute top-3 left-3 flex flex-col gap-1.5">
               {property.instant_booking && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100/90 dark:bg-amber-900/80 text-amber-700 dark:text-amber-300 rounded-full text-[11px] font-semibold backdrop-blur-sm">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/10 text-accent rounded-full text-[11px] font-semibold backdrop-blur-sm">
                   <Zap className="h-3 w-3 fill-current" />
                   Instant Book
                 </span>
               )}
               {activeOffer && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100/90 dark:bg-green-900/80 text-green-700 dark:text-green-300 rounded-full text-[11px] font-semibold backdrop-blur-sm">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/10 text-accent rounded-full text-[11px] font-semibold backdrop-blur-sm">
                   {activeOffer.discount_percent}% off
                 </span>
               )}
