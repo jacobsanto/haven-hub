@@ -1,52 +1,39 @@
 project_id = "xavjbiuhcmupsoocrmhf"
 
-[functions.advancecm-sync]
-verify_jwt = false
-
-[functions.pms-sync-cron]
-verify_jwt = false
-
-[functions.pms-webhook]
-verify_jwt = false
-
-[functions.seasonal-rates-import]
-verify_jwt = false
-
-[functions.generate-content]
-verify_jwt = false
-
-[functions.scheduled-posts-cron]
-verify_jwt = false
-
-[functions.create-checkout-session]
-verify_jwt = false
-
-[functions.confirm-payment]
-verify_jwt = false
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.exchange-rates]
-verify_jwt = false
-
-[functions.website-analytics]
-verify_jwt = false
-
-[functions.check-holds]
-verify_jwt = false
-
-[functions.geocode-address]
-verify_jwt = false
-
-[functions.suggest-icon]
-verify_jwt = false
-
-[functions.pms-generic-test]
-verify_jwt = false
-
-[functions.pms-analyze-docs]
-verify_jwt = false
-
-[functions.guesty-sync]
-verify_jwt = false
+[functions]
+  [functions.advancecm-sync]
+    verify_jwt = false
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.check-holds]
+    verify_jwt = false
+  [functions.confirm-payment]
+    verify_jwt = false
+  [functions.create-checkout-session]
+    verify_jwt = false
+  [functions.exchange-rates]
+    verify_jwt = false
+  [functions.generate-content]
+    verify_jwt = false
+  [functions.geocode-address]
+    verify_jwt = false
+  [functions.guesty-sync]
+    verify_jwt = false
+  [functions.pms-analyze-docs]
+    verify_jwt = false
+  [functions.pms-generic-test]
+    verify_jwt = false
+  [functions.pms-sync-cron]
+    verify_jwt = false
+  [functions.pms-webhook]
+    verify_jwt = false
+  [functions.scheduled-posts-cron]
+    verify_jwt = false
+  [functions.seasonal-rates-import]
+    verify_jwt = false
+  [functions.stripe-webhook]
+    verify_jwt = false
+  [functions.suggest-icon]
+    verify_jwt = false
+  [functions.website-analytics]
+    verify_jwt = false
