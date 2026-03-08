@@ -1,7 +1,6 @@
 import { PageLayout } from '@/components/layout/PageLayout';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { HeroSection } from '@/components/home/HeroSection';
-import { SearchBarOverlay } from '@/components/home/SearchBarOverlay';
 import { TrustSection } from '@/components/home/TrustSection';
 import { DestinationsShowcase } from '@/components/home/DestinationsShowcase';
 import { DiscoverVillasSection } from '@/components/home/DiscoverVillasSection';
@@ -25,13 +24,11 @@ const Index = () => {
       />
 
       <div className="relative bg-background">
-        {/* Global grain for entire homepage */}
         <div className="fixed inset-0 pointer-events-none z-[9999]">
           <GrainOverlay />
         </div>
 
         <HeroSection />
-        <SearchBarOverlay />
         <div className="pt-12">
           <TrustSection />
           <DiscoverVillasSection />
