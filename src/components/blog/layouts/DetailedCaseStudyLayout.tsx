@@ -64,8 +64,8 @@ export function DetailedCaseStudyLayout({ post, readTime, publishedDate, author,
           {post.category && <Badge variant="secondary" className="mb-4 ml-2">{post.category.name}</Badge>}
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-medium text-foreground mb-4 leading-tight">{post.title}</h1>
           {post.excerpt && (
-            <div className="bg-rose-50/50 dark:bg-rose-950/20 rounded-xl p-4 mb-6 border border-rose-200/50 dark:border-rose-800/30">
-              <div className="flex items-center gap-2 text-sm font-semibold text-rose-700 dark:text-rose-400 mb-2">
+            <div className="bg-primary/5 rounded-xl p-4 mb-6 border border-primary/20">
+              <div className="flex items-center gap-2 text-sm font-semibold text-primary mb-2">
                 <TrendingUp className="h-4 w-4" /> Key Results
               </div>
               <p className="text-muted-foreground">{post.excerpt}</p>
