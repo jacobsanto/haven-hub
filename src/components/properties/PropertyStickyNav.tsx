@@ -16,33 +16,50 @@ export function PropertyStickyNav({ sections, propertyName }: PropertyStickyNavP
   const [isVisible, setIsVisible] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('');
 
+  // Cache section offsets to avoid forced reflows on every scroll
+  const cachedOffsets = useRef<{ id: string; top: number }[]>([]);
+  const rafId = useRef<number>(0);
+
+  const recacheOffsets = useCallback(() => {
+    cachedOffsets.current = sections
+      .map(s => {
+        const el = document.getElementById(s.id);
+        return el ? { id: s.id, top: el.offsetTop } : null;
+      })
+      .filter(Boolean) as { id: string; top: number }[];
+  }, [sections]);
+
   useEffect(() => {
+    // Cache offsets once on mount and on resize (geometry changes)
+    recacheOffsets();
+    window.addEventListener('resize', recacheOffsets, { passive: true });
+
     const handleScroll = () => {
-      setIsVisible(window.scrollY > 400);
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        const sy = window.scrollY;
+        setIsVisible(sy > 400);
 
-      const sectionElements = sections
-        .map(section => ({
-          id: section.id,
-          element: document.getElementById(section.id),
-        }))
-        .filter(item => item.element !== null);
-
-      const scrollPosition = window.scrollY + 150;
-
-      for (let i = sectionElements.length - 1; i >= 0; i--) {
-        const { id, element } = sectionElements[i];
-        if (element && element.offsetTop <= scrollPosition) {
-          setActiveSection(id);
-          break;
+        const scrollPosition = sy + 150;
+        const offsets = cachedOffsets.current;
+        for (let i = offsets.length - 1; i >= 0; i--) {
+          if (offsets[i].top <= scrollPosition) {
+            setActiveSection(offsets[i].id);
+            break;
+          }
         }
-      }
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [sections]);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', recacheOffsets);
+      cancelAnimationFrame(rafId.current);
+    };
+  }, [sections, recacheOffsets]);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
