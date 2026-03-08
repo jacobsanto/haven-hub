@@ -19,7 +19,7 @@ export function DestinationCard({ destination, propertyCount = 0, index = 0 }: D
     >
       <Link 
         to={`/destinations/${destination.slug}`}
-        className="group block card-organic overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+        className="group block card-organic card-hover-lift overflow-hidden"
       >
         {/* Image */}
         <div className="aspect-[4/3] relative overflow-hidden">
@@ -35,40 +35,43 @@ export function DestinationCard({ destination, propertyCount = 0, index = 0 }: D
             </div>
           )}
           
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* Always-visible bottom gradient scrim for text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-transparent to-transparent" />
           
           {/* Featured badge */}
           {destination.is_featured && (
-            <div className="absolute top-4 right-4 bg-accent/85 backdrop-blur-sm text-accent-foreground text-xs font-medium px-3 py-1 rounded-full">
+            <div className="absolute top-4 left-4 bg-accent/85 backdrop-blur-sm text-accent-foreground text-xs font-medium px-3 py-1 rounded-full">
               Featured
             </div>
           )}
+
+          {/* Frosted property count badge — bottom-right over image */}
+          <div className="absolute bottom-4 right-4 z-[3]">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md bg-background/80 text-foreground shadow-sm">
+              <Home className="h-3 w-3 text-accent" />
+              {propertyCount} {propertyCount === 1 ? 'Villa' : 'Villas'}
+            </span>
+          </div>
+
+          {/* Destination name overlay on image */}
+          <div className="absolute bottom-4 left-4 z-[3]">
+            <p className="text-primary-foreground font-serif text-xl font-medium drop-shadow-md">
+              {destination.name}
+            </p>
+            <div className="flex items-center gap-1 text-primary-foreground/80 text-sm mt-0.5">
+              <MapPin className="h-3.5 w-3.5" />
+              <span>{destination.country}</span>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
         <div className="p-5">
-          <div className="flex items-center gap-1 text-sm text-accent mb-2">
-            <MapPin className="h-4 w-4" />
-            <span>{destination.country}</span>
-          </div>
-          
-          <h3 className="text-xl font-serif font-medium text-foreground mb-2 group-hover:text-primary transition-colors">
-            {destination.name}
-          </h3>
-          
           {destination.description && (
-            <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
+            <p className="text-muted-foreground text-sm line-clamp-2">
               {destination.description}
             </p>
           )}
-
-          <div className="flex items-center gap-1 text-sm text-accent">
-            <Home className="h-4 w-4" />
-            <span>
-              {propertyCount} {propertyCount === 1 ? 'property' : 'properties'}
-            </span>
-          </div>
         </div>
       </Link>
     </motion.div>

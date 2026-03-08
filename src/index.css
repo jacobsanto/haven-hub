@@ -264,6 +264,18 @@
       0 8px 10px -6px hsl(var(--foreground) / 0.05);
   }
 
+  /* Card hover lift — unified micro-interaction for all card types */
+  .card-hover-lift {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .card-hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 20px 30px -8px hsl(var(--foreground) / 0.10),
+      0 8px 12px -4px hsl(var(--accent) / 0.08);
+  }
+
   /* Animation utilities */
   .animate-fade-up {
     animation: fadeUp 0.6s ease-out forwards;

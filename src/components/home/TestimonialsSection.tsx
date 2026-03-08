@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { viewportOnce } from '@/lib/motion';
 import { usePageContent } from '@/hooks/usePageContent';
 
@@ -36,6 +36,21 @@ const testimonials: Testimonial[] = [
   },
 ];
 
+function getInitials(name: string) {
+  return name.split(/[\s&]+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+function PlatformBadge({ platform }: { platform: 'booking' | 'tripadvisor' }) {
+  if (platform === 'booking') {
+    return (
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-[#003580] text-[10px] font-bold text-primary-foreground">B</span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-[#00af87] text-[10px] font-bold text-primary-foreground">T</span>
+  );
+}
+
 export function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const active = testimonials[activeIndex];
@@ -66,7 +81,7 @@ export function TestimonialsSection() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={viewportOnce}
-            className="bg-card border border-border rounded-2xl px-10 md:px-14 py-12 relative"
+            className="bg-secondary border border-border rounded-2xl px-10 md:px-14 py-12 relative"
           >
             {/* Quote mark */}
             <div className="font-serif text-[64px] text-accent/20 absolute top-4 left-8 leading-none">"</div>
@@ -79,12 +94,31 @@ export function TestimonialsSection() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
               >
+                {/* Star rating + platform */}
+                <div className="flex items-center justify-center gap-2 mb-5">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(active.rating)].map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                    ))}
+                  </div>
+                  <PlatformBadge platform={active.platform} />
+                </div>
+
                 <p className="font-serif text-xl italic text-foreground leading-[1.7] mb-7">
                   {active.text}
                 </p>
                 <div className="w-10 h-px bg-accent mx-auto mb-5" />
-                <p className="font-sans text-sm font-medium text-foreground">{active.author}</p>
-                <p className="font-sans text-xs text-muted-foreground">{active.location}</p>
+
+                {/* Author with avatar */}
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-accent/15 text-accent flex items-center justify-center text-xs font-semibold">
+                    {getInitials(active.author)}
+                  </div>
+                  <div className="text-left">
+                    <p className="font-sans text-sm font-medium text-foreground">{active.author}</p>
+                    <p className="font-sans text-xs text-muted-foreground">{active.location}</p>
+                  </div>
+                </div>
               </motion.div>
             </AnimatePresence>
 
