@@ -123,7 +123,7 @@ export function PropertiesFilterBar({
           </Select>
 
           <Select value={priceRange} onValueChange={onPriceRangeChange}>
-            <SelectTrigger className="min-w-[120px] bg-muted border-border shrink-0">
+            <SelectTrigger className="w-auto min-w-[120px] bg-muted border-border shrink-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-card">
