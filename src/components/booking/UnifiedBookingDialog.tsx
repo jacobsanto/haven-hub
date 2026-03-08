@@ -673,7 +673,10 @@ export function UnifiedBookingDialog() {
             className="space-y-4"
           >
             <div>
-              <h3 className="font-serif text-lg font-medium">Enhance Your Stay</h3>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <h3 className="font-serif text-lg font-medium text-foreground">Enhance Your Stay</h3>
+              </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Add extras to make your trip unforgettable.
               </p>
