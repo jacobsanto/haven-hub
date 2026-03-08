@@ -608,9 +608,9 @@ export function UnifiedBookingDialog() {
             )}
 
             {/* Guest selector */}
-            <div className="p-6 bg-muted/30 rounded-2xl space-y-4">
+            <div className="p-6 bg-secondary/30 rounded-2xl space-y-4">
               <div className="text-center">
-                <h3 className="font-serif text-lg font-medium">How many guests?</h3>
+                <h3 className="font-serif text-lg font-medium text-foreground">How many guests?</h3>
                 <p className="text-sm text-muted-foreground">
                   Maximum {selectedProperty?.max_guests || 20} guests
                 </p>
@@ -620,17 +620,24 @@ export function UnifiedBookingDialog() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-12 w-12 rounded-full"
+                  className="h-12 w-12 rounded-full border-2 hover:border-accent"
                   onClick={() => handleGuestChange(-1)}
                   disabled={guests <= 1}
                 >
                   <Minus className="h-5 w-5" />
                 </Button>
-                <span className="text-4xl font-medium w-16 text-center">{guests}</span>
+                <motion.span
+                  key={guests}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="text-5xl font-serif font-semibold w-16 text-center text-foreground"
+                >
+                  {guests}
+                </motion.span>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-12 w-12 rounded-full"
+                  className="h-12 w-12 rounded-full border-2 hover:border-accent"
                   onClick={() => handleGuestChange(1)}
                   disabled={guests >= (selectedProperty?.max_guests || 20)}
                 >
