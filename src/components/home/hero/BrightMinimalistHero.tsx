@@ -176,19 +176,16 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
                         transition: prefersReduced ? 'none' : 'all 0.8s ease-out 0.2s',
                       }}
                     >
-                      <h3 className="font-serif text-[32px] font-normal text-white mb-2 drop-shadow-md">
+                      <h3 className="font-serif text-[32px] font-normal text-primary-foreground mb-2 drop-shadow-md">
                         {prop.display_name || prop.name}
                       </h3>
-                      <p className="text-white/60 text-[13px] tracking-[1px] font-light uppercase">
+                      <p className="text-primary-foreground/60 text-[13px] tracking-[1px] font-light uppercase">
                         {prop.bedrooms || 3} beds · {prop.max_guests || 6} guests
                       </p>
-                      <div
-                        className="mt-4 pt-4"
-                        style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}
-                      >
-                        <p className="text-white font-sans font-semibold text-lg drop-shadow-sm">
+                      <div className="mt-4 pt-4 border-t border-primary-foreground/20">
+                        <p className="text-primary-foreground font-sans font-semibold text-lg drop-shadow-sm">
                           {format(prop.base_price)}
-                          <span className="text-white/60 text-xs font-light"> / night</span>
+                          <span className="text-primary-foreground/60 text-xs font-light"> / night</span>
                         </p>
                       </div>
                     </div>
