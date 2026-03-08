@@ -1,52 +1,33 @@
 
 
-# Flatten Footer Backgrounds — Remove Decorative Effects
+## Improving hero text and search bar legibility
 
-## Goal
-All 8 footer templates get a flat `bg-foreground` (Aegean Navy) background with no decorative effects. Text, links, and interactive elements keep their current readable contrast colors.
+Currently the hero has a blurred background image with a `bg-black/50` overlay. Here are the most effective techniques to boost foreground readability:
 
-## Changes Per Footer
+### Recommended approach: Layered depth
 
-### FooterEditorial.tsx
-- **Remove** the gradient color strip: `<div className="h-0.5 bg-gradient-to-r from-accent via-primary to-accent" />`
+Apply **three complementary effects** (all in `src/components/home/HeroSection.tsx`):
 
-### FooterGlassmorphic.tsx
-- **Remove** the two background orbs (`bg-accent/10` blur and `bg-primary/10` blur divs)
-- **Remove** `backdrop-blur-xl` and `backdrop-blur-sm` from GlassPanel and inner elements — flatten panels to simple `bg-background/5` with `border-background/10`
-- **Remove** the top highlight gradient line inside GlassPanel (`h-px bg-gradient-to-r from-transparent via-border/30 to-transparent`)
+1. **Increase overlay darkness** — Change `bg-black/50` → `bg-black/60` for stronger contrast behind text.
 
-### FooterBento.tsx
-- **Remove** the green status cell entirely (lines 104-108: `bg-green-500 animate-pulse` dot and `text-green-400` text) — or replace with plain background/60 styling without pulse animation
+2. **Add a directional gradient scrim on the left** — A second overlay div with a gradient that's darkest where the text sits and fades toward the card deck side:
+   ```
+   bg-gradient-to-r from-black/50 via-black/20 to-transparent
+   ```
+   This keeps the right side (card deck) more vibrant while making the left text area very readable.
 
-### FooterBrutalist.tsx
-- **Remove** `border-t-4 border-accent` (thick accent top border) → replace with plain `border-t border-background/10`
-- **Remove** the green live indicator (`bg-green-500 animate-pulse` dot and `text-green-400` text)
+3. **Add text shadow to headings** — The `h1` already has a `textShadow` but it uses `foreground` which may be light. Change to a solid dark shadow: `0 2px 20px rgba(0,0,0,0.6)` so the text pops regardless of background brightness.
 
-### FooterImmersive.tsx
-- **Remove** the destination marquee ticker section (scrolling text with `animate-[marquee_30s...]`)
-- **Remove** the `Heart` icon with `text-destructive`
+4. **Search bar backdrop** — The `HeroSearchForm` already uses `backdrop-blur-md` but its background (`bg-foreground/8`) is very faint. Increase to `bg-black/30 backdrop-blur-lg` for a more defined, legible search bar against any hero image.
 
-### FooterKinetic.tsx
-- **Remove** both marquee ticker rows (the two scrolling text bands at the top)
+### Summary of changes
 
-### FooterMinimal.tsx
-- **Remove** the accent-colored expand bar (`h-1 bg-accent`) inside hover columns
+| File | What |
+|------|------|
+| `HeroSection.tsx` line 153 | `bg-black/50` → `bg-black/60` |
+| `HeroSection.tsx` after line 153 | Add gradient scrim div: `bg-gradient-to-r from-black/50 via-black/20 to-transparent` |
+| `HeroSection.tsx` line 184 | Update text shadow to use `rgba(0,0,0,0.6)` |
+| `HeroSearchForm.tsx` line 25 | `bg-foreground/8` → `bg-black/30 backdrop-blur-lg` |
 
-### FooterChatFirst.tsx
-- No decorative background effects to remove — already flat
-
-## Summary
-
-| File | What's Removed |
-|------|---------------|
-| FooterEditorial | Gradient color strip |
-| FooterGlassmorphic | 2 blur orbs, backdrop-blur, gradient highlight line |
-| FooterBento | Green status cell (pulse + green text) |
-| FooterBrutalist | Thick accent border-top, green live indicator |
-| FooterImmersive | Marquee ticker, destructive heart icon |
-| FooterKinetic | 2 marquee ticker rows |
-| FooterMinimal | Accent expand bar |
-| FooterChatFirst | No changes needed |
-
-All backgrounds remain `bg-foreground` (Aegean Navy). No structural layout changes. Text contrast preserved.
+These four changes together create a layered depth effect: the background is uniformly darker, the text zone is extra-dark via gradient, headings have their own halo, and the search bar has a visible frosted-glass panel.
 

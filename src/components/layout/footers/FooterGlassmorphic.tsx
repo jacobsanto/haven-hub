@@ -32,17 +32,13 @@ export function FooterGlassmorphic() {
   };
 
   const GlassPanel = ({ children, className = '' }: {children: React.ReactNode;className?: string;}) =>
-  <div className={`bg-card/60 backdrop-blur-xl border border-border/30 rounded-3xl relative overflow-hidden ${className}`}>
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border/30 to-transparent" />
+  <div className={`bg-background/5 border border-background/10 rounded-3xl relative overflow-hidden ${className}`}>
       {children}
     </div>;
 
 
   return (
     <footer className="bg-foreground text-background relative overflow-hidden py-20">
-      {/* Background orbs */}
-      <div className="absolute w-[400px] h-[400px] rounded-full bg-accent/10 -top-24 left-[10%] blur-[80px]" />
-      <div className="absolute w-[300px] h-[300px] rounded-full bg-primary/10 -bottom-12 right-[15%] blur-[60px]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
@@ -54,13 +50,13 @@ export function FooterGlassmorphic() {
             <p className="text-[9px] font-mono uppercase tracking-[.2em] text-accent mb-3">Newsletter</p>
             {!isSubscribed ?
             <form onSubmit={handleSubscribe} className="flex gap-1.5">
-                <Input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background/5 border-background/10 text-background placeholder:text-background/40 h-11 backdrop-blur-sm" />
+                <Input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background/5 border-background/10 text-background placeholder:text-background/40 h-11" />
                 <button type="submit" className="w-11 h-11 bg-accent text-accent-foreground rounded-xl flex items-center justify-center"><Send className="h-4 w-4" /></button>
               </form> :
             <p className="text-sm text-accent">✓ Subscribed!</p>}
             <div className="flex gap-2 mt-6">
               {[{ url: socialInstagram, icon: Instagram }, { url: socialTwitter, icon: Twitter }, { url: socialYoutube, icon: Youtube }].filter((s) => s.url).map(({ url, icon: Icon }, i) =>
-              <a key={i} href={url!} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-background/5 border border-background/10 flex items-center justify-center text-background/50 hover:text-accent hover:border-accent transition-all backdrop-blur-sm"><Icon className="h-4 w-4" /></a>
+              <a key={i} href={url!} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-background/5 border border-background/10 flex items-center justify-center text-background/50 hover:text-accent hover:border-accent transition-all"><Icon className="h-4 w-4" /></a>
               )}
             </div>
           </GlassPanel>
@@ -89,7 +85,7 @@ export function FooterGlassmorphic() {
             </div>
             <div className="flex gap-3">
               {[{ icon: Mail, label: 'Email' }, { icon: Phone, label: 'Call' }, { icon: MessageCircle, label: 'Chat' }].map(({ icon: Icon, label }) =>
-              <div key={label} className="flex flex-col items-center gap-1.5 px-5 py-3 bg-background/5 border border-background/10 rounded-2xl cursor-pointer hover:border-accent transition-all backdrop-blur-sm">
+              <div key={label} className="flex flex-col items-center gap-1.5 px-5 py-3 bg-background/5 border border-background/10 rounded-2xl cursor-pointer hover:border-accent transition-all">
                   <Icon className="h-4 w-4 text-accent" />
                   <span className="text-[9px] font-mono text-background/50">{label}</span>
                 </div>

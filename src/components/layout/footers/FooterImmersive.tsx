@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Heart, Instagram, Twitter, Facebook, Youtube } from 'lucide-react';
+import { ArrowRight, Instagram, Twitter, Facebook, Youtube } from 'lucide-react';
 import { useBrand } from '@/contexts/BrandContext';
 import { useNavigationItems } from '@/hooks/useNavigationItems';
 
@@ -35,20 +35,6 @@ export function FooterImmersive() {
         </Link>
       </div>
 
-      {/* Destination ticker */}
-      <div className="border-t border-b border-background/10 py-3 overflow-hidden">
-        <div className="flex gap-12 animate-[marquee_30s_linear_infinite] whitespace-nowrap w-max">
-          {[...Array(2)].map((_, r) => (
-            <div key={r} className="flex gap-12">
-              {['Santorini', 'Tuscany', 'Bali', 'Maldives', 'Provence', 'Amalfi Coast'].map(d => (
-                <span key={d + r} className="font-serif text-sm italic text-background/40 flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-accent/40" />{d}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Links grid */}
       <div className="container mx-auto px-4 py-16">
@@ -92,7 +78,7 @@ export function FooterImmersive() {
 
       <div className="container mx-auto px-4 pb-8 flex justify-between items-center border-t border-background/10 pt-6">
         <p className="text-xs font-mono text-background/40">© {new Date().getFullYear()} {brandName}</p>
-        <p className="text-xs font-mono text-background/40">Made with <Heart className="inline h-3 w-3 text-destructive" /> </p>
+        <p className="text-xs font-mono text-background/40">Made with care</p>
       </div>
     </footer>
   );

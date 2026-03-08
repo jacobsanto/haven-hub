@@ -42,7 +42,7 @@ export function FooterMinimal() {
                   isActive ? 'flex-[3] bg-background/5' : 'flex-1 bg-background/[0.02]'
                 }`}
               >
-                <div className={`relative ${isActive ? 'h-1 bg-accent mb-5' : 'h-0 mb-0'} transition-all rounded`} />
+                <div className={`relative ${isActive ? 'h-1 bg-background/20 mb-5' : 'h-0 mb-0'} transition-all rounded`} />
                 <p className={`text-[10px] font-mono uppercase tracking-wider ${isActive ? col.accent : 'text-background/40'} transition-colors whitespace-nowrap mb-4`}>{col.label}</p>
                 <div className={`transition-all duration-500 overflow-hidden ${isActive ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
                   {col.links.map(l => (
