@@ -311,7 +311,7 @@ export function UnifiedBookingDialog() {
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-border hover:border-primary/50 transition-all text-left bg-card"
+                    className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-border hover:border-accent/50 transition-all text-left bg-card shadow-sm"
                   >
                     <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                     <span className={cn(
