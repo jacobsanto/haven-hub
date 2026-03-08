@@ -56,6 +56,7 @@ export function HeaderFullOverlay() {
             <Button variant="default" size="sm" onClick={() => navigate('/properties')} className="rounded-full">Book Now</Button>
             {/* Hamburger */}
             <button
+              aria-label="Open menu"
               onClick={() => setOpen(true)}
               className={cn(
                 "w-10 h-10 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-colors",
