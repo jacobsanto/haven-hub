@@ -111,7 +111,7 @@ export function PropertiesFilterBar({
         {/* Quick filters – horizontally scrollable on mobile */}
         <div className="flex flex-nowrap items-center gap-2 mt-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
           <Select value={selectedDestination || 'all'} onValueChange={(v) => onDestinationChange(v === 'all' ? '' : v)}>
-            <SelectTrigger className="min-w-[140px] bg-muted border-border shrink-0">
+            <SelectTrigger className="w-auto min-w-[140px] bg-muted border-border shrink-0">
               <SelectValue placeholder="All Destinations" />
             </SelectTrigger>
             <SelectContent className="bg-card">
