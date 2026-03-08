@@ -26,14 +26,7 @@ interface SliderProps {
   onPrev?: () => void;
 }
 
-const COLOR_PALETTE = [
-  { color: '#FF6B35', lightBg: '30 80% 96%' },
-  { color: '#1B7B8B', lightBg: '190 40% 94%' },
-  { color: '#2D9C6F', lightBg: '155 40% 94%' },
-  { color: '#E67E22', lightBg: '30 90% 95%' },
-  { color: '#8B5CF6', lightBg: '260 60% 96%' },
-  { color: '#EC4899', lightBg: '330 60% 96%' },
-];
+// Semantic accent color used for all palette references
 
 export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext, onPrev }: SliderProps) {
   const prefersReduced = useReducedMotion();
