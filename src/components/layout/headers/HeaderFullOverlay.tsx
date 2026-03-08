@@ -82,7 +82,7 @@ export function HeaderFullOverlay() {
             <div className="container mx-auto px-4 h-full flex flex-col">
               <div className="flex items-center justify-between h-[72px]">
                 <Link to="/" onClick={() => setOpen(false)}>
-                  {logoUrl ? <img src={logoUrl} alt={brandName} className="h-10 w-auto object-contain" /> : (
+                  {logoUrl ? <img src={logoUrl} alt={brandName} width={140} height={40} className="h-10 w-auto object-contain" /> : (
                     <span className="text-xl font-serif font-semibold text-primary">{primaryPart}</span>
                   )}
                 </Link>
