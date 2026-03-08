@@ -38,7 +38,7 @@ export function PriceBreakdownDisplay({
           </div>
         )}
         {breakdown.discountAmount > 0 && (
-          <div className="flex justify-between text-sm text-green-600">
+          <div className="flex justify-between text-sm text-accent">
             <span className="flex items-center gap-1">
               <Tag className="h-3 w-3" />
               Discount
