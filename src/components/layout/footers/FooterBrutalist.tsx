@@ -66,8 +66,8 @@ export function FooterBrutalist() {
             <p className="font-mono text-xs text-background/60 mb-2">EMAIL: {contactEmail}</p>
             <p className="font-mono text-xs text-background/60 mb-4">TEL: {contactPhone}</p>
             <div className="flex items-center gap-2 mt-6">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="font-mono text-[10px] text-green-400">LIVE</span>
+              <div className="w-2 h-2 rounded-full bg-background/60" />
+              <span className="font-mono text-[10px] text-background/60">LIVE</span>
             </div>
           </div>
         </div>

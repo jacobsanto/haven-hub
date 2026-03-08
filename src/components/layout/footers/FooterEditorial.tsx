@@ -34,8 +34,6 @@ export function FooterEditorial() {
 
   return (
     <footer className="bg-foreground text-background">
-      {/* Color strip */}
-      <div className="h-0.5 bg-gradient-to-r from-accent via-primary to-accent" />
       <div className="container mx-auto px-4 py-16">
         {/* Giant watermark */}
         <div className="relative mb-12">

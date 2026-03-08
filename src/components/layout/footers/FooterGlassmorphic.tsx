@@ -85,7 +85,7 @@ export function FooterGlassmorphic() {
             </div>
             <div className="flex gap-3">
               {[{ icon: Mail, label: 'Email' }, { icon: Phone, label: 'Call' }, { icon: MessageCircle, label: 'Chat' }].map(({ icon: Icon, label }) =>
-              <div key={label} className="flex flex-col items-center gap-1.5 px-5 py-3 bg-background/5 border border-background/10 rounded-2xl cursor-pointer hover:border-accent transition-all backdrop-blur-sm">
+              <div key={label} className="flex flex-col items-center gap-1.5 px-5 py-3 bg-background/5 border border-background/10 rounded-2xl cursor-pointer hover:border-accent transition-all">
                   <Icon className="h-4 w-4 text-accent" />
                   <span className="text-[9px] font-mono text-background/50">{label}</span>
                 </div>

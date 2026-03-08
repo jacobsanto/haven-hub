@@ -15,23 +15,6 @@ export function FooterKinetic() {
 
   return (
     <footer className="bg-foreground text-background overflow-hidden">
-      {/* Scrolling ticker row 1 */}
-      <div className="py-3 border-b border-background/10 overflow-hidden">
-        <div className="flex animate-[marquee_25s_linear_infinite] whitespace-nowrap w-max">
-          {[...Array(4)].map((_, i) => (
-            <span key={i} className="font-serif text-4xl md:text-6xl font-medium tracking-tighter text-background/[0.06] mx-4">{tickerText}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Scrolling ticker row 2 — reverse */}
-      <div className="py-3 border-b border-background/10 overflow-hidden">
-        <div className="flex animate-[marquee_30s_linear_infinite_reverse] whitespace-nowrap w-max" style={{ animationDirection: 'reverse' }}>
-          {[...Array(4)].map((_, i) => (
-            <span key={i} className="font-serif text-2xl md:text-4xl italic font-normal tracking-tighter text-background/[0.04] mx-4">{tickerText}</span>
-          ))}
-        </div>
-      </div>
 
       {/* Content */}
       <div className="container mx-auto px-4 py-16">

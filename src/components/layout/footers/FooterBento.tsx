@@ -103,8 +103,8 @@ export function FooterBento() {
 
           {/* Status cell */}
           <BentoCell id="status" hovCell={hovCell} setHovCell={setHovCell} className="p-5 flex flex-col items-center justify-center text-center !bg-foreground !border-background/10">
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500 mb-2 animate-pulse" />
-            <p className="text-xs font-mono text-green-400">Online</p>
+            <div className="w-2.5 h-2.5 rounded-full bg-background/60 mb-2" />
+            <p className="text-xs font-mono text-background/60">Online</p>
           </BentoCell>
         </div>
 

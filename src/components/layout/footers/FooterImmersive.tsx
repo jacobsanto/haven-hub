@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Heart, Instagram, Twitter, Facebook, Youtube } from 'lucide-react';
+import { ArrowRight, Instagram, Twitter, Facebook, Youtube } from 'lucide-react';
 import { useBrand } from '@/contexts/BrandContext';
 import { useNavigationItems } from '@/hooks/useNavigationItems';
 
