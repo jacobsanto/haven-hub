@@ -702,7 +702,7 @@ export function UnifiedBookingDialog() {
             className="space-y-4"
           >
             <div>
-              <h3 className="font-serif text-lg font-medium">Your Details</h3>
+              <h3 className="font-serif text-lg font-medium text-foreground">Your Details</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Fill in your information to complete the booking.
               </p>
