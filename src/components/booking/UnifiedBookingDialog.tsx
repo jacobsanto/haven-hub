@@ -466,7 +466,7 @@ export function UnifiedBookingDialog() {
                           <span>•</span>
                           <span>{property.max_guests} guests</span>
                         </div>
-                        <div className="mt-1 text-sm font-medium text-primary">
+                        <div className="mt-1 text-sm font-semibold text-accent">
                           From €{property.base_price}/night
                         </div>
                       </div>
