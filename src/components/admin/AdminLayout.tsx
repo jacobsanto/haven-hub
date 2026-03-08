@@ -30,7 +30,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Send,
-  Quote,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,7 +89,6 @@ const navSections: NavSection[] = [
     title: 'Growth',
     items: [
       { href: '/admin/promotions', icon: Tag, label: 'Promotions' },
-      { href: '/admin/testimonials', icon: Quote, label: 'Testimonials' },
       { href: '/admin/newsletter', icon: Mail, label: 'Newsletter' },
       { href: '/admin/content-hub', icon: FileText, label: 'Content Hub' },
       { href: '/admin/social-posts', icon: Send, label: 'Social Media' },
