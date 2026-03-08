@@ -45,7 +45,7 @@ export function BrightMinimalistHero({ properties, activeIndex, onSelect, onNext
     else onSelect((activeIndex + 1) % count);
   };
 
-  const getColor = (i: number) => COLOR_PALETTE[i % COLOR_PALETTE.length];
+  
 
   return (
     <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-muted/60 overflow-hidden">
