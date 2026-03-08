@@ -59,7 +59,7 @@ export function HeaderSplitCenter() {
             {/* Center logo */}
             <Link to="/" className="flex items-center">
               {logoUrl ? (
-                <img src={logoUrl} alt={brandName} className="h-10 w-auto max-w-[140px] object-contain" />
+                <img src={logoUrl} alt={brandName} width={140} height={40} className="h-10 w-auto max-w-[140px] object-contain" />
               ) : (
                 <span className={cn("font-serif font-semibold transition-all", isScrolled ? "text-xl" : "text-2xl")}>
                   <span className="text-primary">{primaryPart}</span>
