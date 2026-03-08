@@ -56,7 +56,7 @@ export function FooterGlassmorphic() {
             <p className="text-sm text-accent">✓ Subscribed!</p>}
             <div className="flex gap-2 mt-6">
               {[{ url: socialInstagram, icon: Instagram }, { url: socialTwitter, icon: Twitter }, { url: socialYoutube, icon: Youtube }].filter((s) => s.url).map(({ url, icon: Icon }, i) =>
-              <a key={i} href={url!} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-background/5 border border-background/10 flex items-center justify-center text-background/50 hover:text-accent hover:border-accent transition-all backdrop-blur-sm"><Icon className="h-4 w-4" /></a>
+              <a key={i} href={url!} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-background/5 border border-background/10 flex items-center justify-center text-background/50 hover:text-accent hover:border-accent transition-all"><Icon className="h-4 w-4" /></a>
               )}
             </div>
           </GlassPanel>
