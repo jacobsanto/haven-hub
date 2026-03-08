@@ -46,7 +46,7 @@ export function HowTheyDidItLayout({ post, readTime, publishedDate, author, rela
         </div>
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="flex items-center gap-4 mb-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-400 text-sm font-medium">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
               <Users className="h-4 w-4" />
               Success Story
             </div>
